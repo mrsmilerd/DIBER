@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UberCalc - Calculadora Inteligente para Conductores</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="logo_b.png" type="image/png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+</head>
+<body>
+    <!-- Pantalla de Selección de Perfil -->
+    <div id="perfil-screen" class="screen active">
+        <div class="container">
+            <div class="logo-container">
+                <img src="logo_b.png" alt="Logo UberCalc" class="app-logo">
+            </div>
+
+            <div class="perfil-section">
+                <h2>👤 Seleccionar Perfil</h2>
+                <div id="perfiles-lista" class="perfiles-lista">
+                    <!-- Los perfiles se cargarán aquí -->
+                </div>
+                
+                <button id="nuevo-perfil-btn" class="primary-button">
+                    <span class="button-icon">➕</span>
+                    Crear Nuevo Perfil
+                </button>
+
+                <!-- Info de Sync -->
+                <div class="sync-info-small" id="sync-perfil-info">
+                    <span class="sync-icon">🌐</span>
+                    <span class="sync-text">Sincronización activa</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla de Creación/Edición de Perfil -->
+    <div id="config-perfil-screen" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <button id="volver-perfiles" class="back-button">
+                    <span class="button-icon">⬅️</span>
+                    Volver
+                </button>
+                <h2>⚙️ Configurar Perfil</h2>
+            </div>
+
+            <form id="perfil-form" class="perfil-form">
+                <input type="hidden" id="perfil-id">
+                
+                <div class="input-group">
+                    <label for="nombre-perfil">
+                        👤 Nombre del Perfil
+                        <span class="required">*</span>
+                    </label>
+                    <input type="text" id="nombre-perfil" required placeholder="Ej: Mi Perfil Principal">
+                </div>
+
+                <div class="form-section">
+                    <h3>🚗 Configuración del Vehículo</h3>
+                    
+                    <div class="input-group">
+                        <label for="tipo-medida">
+                            📏 Sistema de Medida
+                            <span class="required">*</span>
+                        </label>
+                        <select id="tipo-medida" required>
+                            <option value="km">Kilómetros (Km)</option>
+                            <option value="mi">Millas (Mi)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="tipo-combustible">
+                            ⛽ Tipo de Combustible
+                            <span class="required">*</span>
+                        </label>
+                        <select id="tipo-combustible" required>
+                            <option value="glp">Gas Licuado de Petróleo (GLP)</option>
+                            <option value="gas">Gasolina (GSL)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="rendimiento">
+                            🎯 Rendimiento del Vehículo
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-with-unit">
+                            <input type="number" id="rendimiento" min="1" step="0.1" required placeholder="22.0" inputmode="decimal">
+                            <span id="rendimiento-unit" class="input-unit">Km/Gl</span>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="precio-combustible">
+                            💰 Precio del Combustible
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-with-unit">
+                            <input type="number" id="precio-combustible" min="0" step="0.01" required placeholder="137.20" inputmode="decimal">
+                            <span id="precio-combustible-unit" class="input-unit">DOP/Gl</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>💰 Configuración de Rentabilidad</h3>
+                    
+                    <div class="input-group">
+                        <label for="moneda">
+                            💵 Moneda
+                            <span class="required">*</span>
+                        </label>
+                        <select id="moneda" required>
+                            <option value="DOP">Peso Dominicano (DOP)</option>
+                            <option value="USD">Dólar Americano (USD)</option>
+                        </select>
+                    </div>
+
+                    <div class="config-grid">
+                        <div class="input-group">
+                            <label for="umbral-minuto-rentable">
+                                ✅ Viaje Rentable - Por Minuto
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-with-unit">
+                                <input type="number" id="umbral-minuto-rentable" min="0" step="0.01" required value="6.00" inputmode="decimal">
+                                <span class="input-unit umbral-minuto">DOP/min</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="umbral-km-rentable">
+                                ✅ Viaje Rentable - Por Distancia
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-with-unit">
+                                <input type="number" id="umbral-km-rentable" min="0" step="0.01" required value="25.00" inputmode="decimal">
+                                <span id="umbral-km-unit" class="input-unit">DOP/Km</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="umbral-minuto-oportunidad">
+                                ⚠️ Viaje Oportunidad - Por Minuto
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-with-unit">
+                                <input type="number" id="umbral-minuto-oportunidad" min="0" step="0.01" required value="5.00" inputmode="decimal">
+                                <span class="input-unit umbral-minuto">DOP/min</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="umbral-km-oportunidad">
+                                ⚠️ Viaje Oportunidad - Por Distancia
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-with-unit">
+                                <input type="number" id="umbral-km-oportunidad" min="0" step="0.01" required value="23.00" inputmode="decimal">
+                                <span id="umbral-km-oportunidad-unit" class="input-unit">DOP/Km</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>📊 Costos Mensuales</h3>
+                    
+                    <div class="config-grid">
+                        <div class="input-group">
+                            <label for="costo-seguro">Seguro Mensual</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="costo-seguro" min="0" step="0.01" value="0" inputmode="decimal">
+                                <span class="input-unit costo-mensual">DOP</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="costo-mantenimiento">Mantenimiento Mensual</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="costo-mantenimiento" min="0" step="0.01" value="0" inputmode="decimal">
+                                <span class="input-unit costo-mensual">DOP</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="primary-button">
+                        <span class="button-icon">💾</span>
+                        Guardar Perfil
+                    </button>
+                    <button type="button" id="cancelar-perfil" class="secondary-button">
+                        <span class="button-icon">❌</span>
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pantalla Principal de Cálculos -->
+    <div id="main-screen" class="screen">
+        <div class="container">
+            <!-- Header Mejorado -->
+            <div class="app-header">
+                <div class="header-actions">
+                    <button id="cambiar-perfil" class="secondary-button small" title="Cambiar perfil">
+                        <span class="button-icon">👤</span>
+                    </button>
+                    <button id="theme-toggle" class="theme-toggle" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                </div>
+                <div class="logo-container">
+                    <img src="logo_b.png" alt="Logo UberCalc" class="app-logo">
+                </div>
+            </div>
+
+            <!-- Barra de Estado de Sync -->
+            <div class="sync-status-bar">
+                <div class="sync-info" id="sync-info">
+                    <span class="sync-icon" id="sync-icon">🌐</span>
+                    <span class="sync-text" id="sync-text">Conectando a la nube...</span>
+                </div>
+                <button class="sync-details-btn" onclick="mostrarPanelSync()">
+                    <span class="button-icon">📱</span>
+                    Sincronización
+                </button>
+            </div>
+
+            <!-- Indicador de Estado -->
+            <div id="status-indicator" class="status-indicator hidden">
+                <span id="status-text">Calculando...</span>
+            </div>
+
+            <!-- Sistema de Pestañas -->
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-button active" data-tab="calcular">
+                        <span class="tab-icon">🧮</span>
+                        <span class="tab-text">CALCULAR</span>
+                    </button>
+                    <button class="tab-button" data-tab="resumen">
+                        <span class="tab-icon">📊</span>
+                        <span class="tab-text">RESUMEN</span>
+                    </button>
+                    <button class="tab-button" data-tab="historial">
+                        <span class="tab-icon">📋</span>
+                        <span class="tab-text">HISTORIAL</span>
+                    </button>
+                </div>
+
+                <!-- Contenido de Pestañas -->
+                <div class="tab-content active" id="tab-calcular">
+                    <!-- Formulario Principal -->
+                    <div class="form-section">
+                        <h2 class="section-title centered">📊 Datos del Viaje</h2>
+                        
+                        <div class="input-group">
+                            <label for="tarifa">
+                                💰 Ganancia Ofrecida
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-with-unit">
+                                <input type="number" id="tarifa" min="0" step="0.01" placeholder="350.00" required inputmode="decimal">
+                                <span id="moneda-tarifa" class="input-unit">DOP</span>
+                            </div>
+                            <span class="error-message" id="tarifa-error"></span>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="minutos">
+                                ⏱️ Tiempo Estimado (Minutos)
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-with-unit">
+                                <input type="number" id="minutos" min="1" step="1" placeholder="25" required inputmode="numeric">
+                                <span class="input-unit">min</span>
+                            </div>
+                            <span class="error-message" id="minutos-error"></span>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="distancia">
+                                🛣️ Distancia Estimada
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-with-unit">
+                                <input type="number" id="distancia" min="0" step="0.1" placeholder="8.5" required inputmode="decimal">
+                                <span id="distancia-unit" class="input-unit">Km</span>
+                            </div>
+                            <span class="error-message" id="distancia-error"></span>
+                        </div>
+
+                        <!-- Indicador de Cálculo Automático -->
+                        <div id="auto-calc-indicator" class="auto-calc-indicator hidden">
+                            <div class="auto-calc-content">
+                                <span class="auto-calc-icon">🔄</span>
+                                <span class="auto-calc-text">CÁLCULO AUTOMÁTICO ACTIVO</span>
+                            </div>
+                        </div>
+
+                        <!-- Resultado Rápido -->
+                        <div id="resultado-rapido" class="resultado-rapido hidden">
+                            <div class="resultado-header">
+                                <h3>🎯 Resultado Instantáneo</h3>
+                            </div>
+                            <div class="resultado-content">
+                                <div class="resultado-badge" id="resultado-badge">
+                                    <span id="resultado-emoji">✅</span>
+                                    <span id="resultado-texto">RENTABLE</span>
+                                </div>
+                                <div class="resultado-metricas">
+                                    <div class="metrica-rapida">
+                                        <span class="metrica-label">Por minuto:</span>
+                                        <span id="metrica-minuto" class="metrica-valor">--</span>
+                                    </div>
+                                    <div class="metrica-rapida">
+                                        <span class="metrica-label">Por km:</span>
+                                        <span id="metrica-km" class="metrica-valor">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="action-buttons">
+                            <button id="rechazar-viaje-tab" class="secondary-button">
+                                <span class="button-icon">❌</span>
+                                Rechazar Viaje
+                            </button>
+                            <button id="aceptar-viaje-tab" class="primary-button">
+                                <span class="button-icon">✅</span>
+                                Aceptar Viaje
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-resumen">
+                    <!-- Estadísticas del Día -->
+                    <div class="estadisticas-container">
+                        <h3>📈 Estadísticas del Día</h3>
+                        <div class="estadisticas-grid">
+                            <div class="estadistica-item">
+                                <span class="estadistica-valor" id="stats-viajes">0</span>
+                                <span class="estadistica-label">Viajes</span>
+                            </div>
+                            <div class="estadistica-item">
+                                <span class="estadistica-valor" id="stats-ganancia">RD$0</span>
+                                <span class="estadistica-label">Ganancia</span>
+                            </div>
+                            <div class="estadistica-item">
+                                <span class="estadistica-valor" id="stats-tiempo">0min</span>
+                                <span class="estadistica-label">Tiempo</span>
+                            </div>
+                            <div class="estadistica-item">
+                                <span class="estadistica-valor" id="stats-rentables">0</span>
+                                <span class="estadistica-label">Rentables</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rendimiento -->
+                    <div class="rendimiento-container">
+                        <h3>🎯 Rendimiento</h3>
+                        <div class="rendimiento-grid">
+                            <div class="rendimiento-item">
+                                <span class="rendimiento-label">Ganancia/hora:</span>
+                                <span class="rendimiento-valor" id="stats-ganancia-hora">RD$0</span>
+                            </div>
+                            <div class="rendimiento-item">
+                                <span class="rendimiento-label">Viaje promedio:</span>
+                                <span class="rendimiento-valor" id="stats-viaje-promedio">RD$0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-historial">
+                    <!-- Historial de Cálculos -->
+                    <div class="history-section">
+                        <div id="history-list" class="history-list">
+                            <!-- Los cálculos aparecerán aquí -->
+                        </div>
+                        <div class="history-actions">
+                            <button id="exportar-historial" class="secondary-button small">
+                                📤 Exportar Historial
+                            </button>
+                            <button id="clear-history" class="secondary-button small">
+                                🗑️ Limpiar Historial
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultados Mejorado -->
+    <div id="modalFondo" class="modal-fondo">
+        <div id="modalContenido" class="modal-contenido">
+            <span class="cerrar-btn" onclick="cerrarModal()">&times;</span>
+            
+            <div class="modal-header">
+                <h2>📊 Resultado del Análisis</h2>
+                <div id="modal-badge" class="result-badge">
+                    <span id="modal-emoji">✅</span>
+                    <span id="modal-texto">RENTABLE</span>
+                </div>
+            </div>
+
+            <div id="modalResultadosDoble" class="modal-resultados-doble">
+                <!-- Los resultados aparecerán aquí -->
+            </div>
+
+            <div class="modal-actions">
+                <button id="rechazar-viaje" class="secondary-button">
+                    ❌ Rechazar Viaje
+                </button>
+                <button id="aceptar-viaje" class="primary-button">
+                    ✅ Aceptar Viaje
+                </button>
+            </div>
+
+            <p class="modal-footer small-info">
+                💡 Los viajes aceptados se guardan en tu historial semanal
+            </p>
+        </div>
+    </div>
+
+    <!-- Modal de Exportación Mejorado -->
+    <div id="exportModal" class="modal-fondo">
+        <div class="modal-contenido">
+            <span class="cerrar-btn" onclick="cerrarExportModal()">&times;</span>
+            <div class="modal-header">
+                <h2>📤 Exportar Historial</h2>
+            </div>
+            <div class="modal-body">
+                <p>¿Deseas generar un reporte PDF con todo tu historial?</p>
+                <p class="small-info">El reporte incluirá estadísticas completas y desglose de costos</p>
+                <div class="export-options" style="justify-content: center;">
+                    <button id="exportar-pdf" class="primary-button" style="max-width: 200px;">
+                        📄 Generar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Sincronización Firebase -->
+    <div id="sync-panel" class="modal-fondo">
+        <div class="modal-contenido">
+            <span class="cerrar-btn" onclick="cerrarSyncPanel()">&times;</span>
+            <div class="modal-header">
+                <h2>🌐 Sincronización Multi-Dispositivo</h2>
+                <div class="sync-status-badge" id="sync-panel-status">
+                    <span class="sync-icon">🔄</span>
+                    <span>Conectando...</span>
+                </div>
+            </div>
+            
+            <div class="sync-panel-content">
+                <div class="sync-info-section">
+                    <h3>📱 Dispositivo Actual</h3>
+                    <div class="device-info-current">
+                        <span class="device-icon" id="current-device-icon">📱</span>
+                        <div class="device-details">
+                            <strong id="current-device-name">Teléfono Principal</strong>
+                            <span class="device-id" id="current-device-id">ID: cargando...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sync-status-section">
+                    <h3>🔗 Estado de Conexión</h3>
+                    <div class="connection-status">
+                        <div class="status-item">
+                            <span class="status-label">Firebase:</span>
+                            <span class="status-value" id="firebase-status">Conectando...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Última sync:</span>
+                            <span class="status-value" id="last-sync-time">--</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Perfiles en nube:</span>
+                            <span class="status-value" id="cloud-profiles-count">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sync-actions-panel">
+                    <button id="force-sync-btn" class="primary-button" onclick="forzarSincronizacion()">
+                        <span class="button-icon">🔄</span>
+                        Sincronizar Ahora
+                    </button>
+                    <button class="secondary-button" onclick="mostrarInfoSync()">
+                        <span class="button-icon">ℹ️</span>
+                        Cómo Funciona
+                    </button>
+                </div>
+
+                <div class="sync-tips">
+                    <h4>💡 Tips de Sincronización</h4>
+                    <ul>
+                        <li>Los perfiles se sincronizan automáticamente</li>
+                        <li>Funciona en todos tus dispositivos</li>
+                        <li>Los datos se mantienen seguros en la nube</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>
