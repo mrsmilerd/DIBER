@@ -1,6 +1,6 @@
 // =============================================
 // UBER CALC - Calculadora Inteligente para Conductores
-// Versión COMPLETA con Firebase Sync FUNCIONANDO
+// Versión COMPLETA con Google Sheets Sync
 // =============================================
 
 // --- Variables Globales ---
@@ -9,110 +9,18 @@ let perfilActual = null;
 let historial = [];
 let calculoActual = null;
 let timeoutCalculo = null;
-let firebaseSync;
+let syncManager;
 
-// --- Configuración Firebase CORREGIDA ---
-const firebaseConfig = {
-    apiKey: "AIzaSyCf5j5Pu-go6ipUw2EnTO2OnKgvYLzkonY",
-    authDomain: "diber-32875.firebaseapp.com",
-    projectId: "diber-32875",
-    storageBucket: "diber-32875.firebasestorage.app", // CORREGIDO
-    messagingSenderId: "260349079723",
-    appId: "1:260349079723:web:babe1cc51e8bb067ba87ee"
-};
+// --- Configuración Google Sheets Sync ---
+// REEMPLAZA ESTA URL CON LA URL DE TU GOOGLE APPS SCRIPT
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8O285FcLwNvmMOn8VIEIzVF7djFZ3V4glvcop4-_HjIgDCgG0JzBr3alm_qEGiuhoFg/exec';
 
-// --- Clase Firebase Sync COMPLETA Y CORREGIDA ---
-class FirebaseSync {
+// --- Clase Google Sheets Sync ---
+class GoogleSheetsSync {
     constructor() {
         this.initialized = false;
-        this.userId = null;
-        this.db = null;
-        this.unsubscribe = null;
-        this.retryCount = 0;
-        this.maxRetries = 3;
-    }
-
-    async initialize() {
-        if (this.initialized) {
-            console.log('✅ Firebase ya estaba inicializado');
-            return true;
-        }
-
-        try {
-            console.log('🔥 Iniciando inicialización de Firebase...');
-            
-            // Verificar si Firebase está disponible
-            if (typeof firebase === 'undefined') {
-                console.error('❌ Firebase no está cargado en la página');
-                console.error('💡 Verifica que el script de Firebase esté cargado correctamente');
-                this.actualizarUIEstado('error');
-                return false;
-            }
-
-            console.log('✅ Firebase está disponible, versión:', firebase.SDK_VERSION);
-
-            // Inicializar Firebase
-            let app;
-            if (!firebase.apps.length) {
-                console.log('🚀 Inicializando nueva app de Firebase');
-                app = firebase.initializeApp(firebaseConfig);
-            } else {
-                app = firebase.apps[0];
-                console.log('✅ Firebase app ya existe');
-            }
-            
-            // Configurar Firestore con mejores opciones
-            this.db = firebase.firestore();
-            
-            // Configuración optimizada
-            const settings = {
-                cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-            };
-            
-            await this.db.settings(settings);
-            console.log('✅ Firestore configurado');
-
-            // Intentar habilitar persistencia offline
-            try {
-                await this.db.enablePersistence({ synchronizeTabs: true })
-                    .catch(err => {
-                        if (err.code === 'failed-precondition') {
-                            console.warn('⚠️ Múltiples pestañas abiertas, persistencia deshabilitada');
-                        } else if (err.code === 'unimplemented') {
-                            console.warn('⚠️ Persistencia no soportada en este navegador');
-                        } else {
-                            console.warn('⚠️ Persistencia no disponible:', err.message);
-                        }
-                    });
-            } catch (err) {
-                console.warn('⚠️ Persistencia offline no disponible:', err.message);
-            }
-            
-            this.userId = this.getUserId();
-            this.initialized = true;
-            
-            console.log('🎉 Firebase Sync inicializado CORRECTAMENTE');
-            console.log('👤 User ID:', this.userId);
-            this.actualizarUIEstado('connected');
-            return true;
-            
-        } catch (error) {
-            console.error('💥 ERROR crítico inicializando Firebase:', error);
-            console.error('Stack:', error.stack);
-            this.actualizarUIEstado('error');
-            
-            // Reintento automático mejorado
-            if (this.retryCount < this.maxRetries) {
-                this.retryCount++;
-                const delay = Math.min(3000 * this.retryCount, 10000); // Backoff exponencial
-                console.log(`🔄 Reintentando en ${delay}ms... (${this.retryCount}/${this.maxRetries})`);
-                setTimeout(() => this.initialize(), delay);
-            } else {
-                console.error('❌ Se agotaron los reintentos de Firebase');
-                console.log('💡 Usando modo offline con almacenamiento local');
-            }
-            return false;
-        }
+        this.userId = this.getUserId();
+        this.scriptUrl = GOOGLE_SCRIPT_URL;
     }
 
     getUserId() {
@@ -127,147 +35,122 @@ class FirebaseSync {
         return userId;
     }
 
+    async initialize() {
+        if (this.initialized) {
+            console.log('✅ Google Sheets ya estaba inicializado');
+            return true;
+        }
+
+        try {
+            console.log('🔥 Iniciando inicialización de Google Sheets...');
+            
+            // Test de conexión
+            const testUrl = `${this.scriptUrl}?action=test&timestamp=${Date.now()}`;
+            console.log('🔗 Probando URL:', testUrl);
+            
+            const testResponse = await fetch(testUrl);
+            const testResult = await testResponse.json();
+            
+            if (testResult.success) {
+                this.initialized = true;
+                console.log('🎉 Google Sheets Sync inicializado CORRECTAMENTE');
+                this.actualizarUIEstado('connected');
+                return true;
+            } else {
+                throw new Error(testResult.error || 'Error en test de conexión');
+            }
+            
+        } catch (error) {
+            console.error('❌ ERROR inicializando Google Sheets:', error);
+            this.actualizarUIEstado('error');
+            
+            // Reintento automático
+            setTimeout(async () => {
+                console.log('🔄 Reintentando conexión Google Sheets...');
+                await this.initialize();
+            }, 3000);
+            
+            return false;
+        }
+    }
+
     async saveProfiles(profiles) {
         if (!this.initialized) {
-            console.warn('⚠️ Firebase no inicializado, no se puede guardar');
+            console.warn('⚠️ Google Sheets no inicializado, no se puede guardar');
             return false;
         }
 
         try {
-            console.log('💾 Intentando guardar', profiles.length, 'perfiles en Firebase...');
+            console.log('💾 Intentando guardar', profiles.length, 'perfiles en Google Sheets...');
             
-            const userData = {
-                perfiles: profiles,
-                ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
-                dispositivo: this.getDeviceInfo(),
-                version: '2.0',
-                syncTimestamp: Date.now()
+            const data = {
+                action: 'save',
+                userId: this.userId,
+                profiles: profiles,
+                deviceInfo: this.getDeviceInfo(),
+                timestamp: new Date().toISOString()
             };
 
-            console.log('📤 Enviando datos a Firestore...');
-            await this.db.collection('users').doc(this.userId).set(userData, { merge: true });
+            console.log('📤 Enviando datos a Google Sheets...');
+            const response = await fetch(this.scriptUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
             
-            console.log('✅ Perfiles guardados EXITOSAMENTE en Firebase');
-            this.actualizarUIEstado('syncing');
-            
-            // Volver a estado conectado después de un tiempo
-            setTimeout(() => {
-                this.actualizarUIEstado('connected');
-            }, 1500);
-            
-            return true;
+            if (result.success) {
+                console.log('✅ Perfiles guardados EXITOSAMENTE en Google Sheets');
+                this.actualizarUIEstado('syncing');
+                
+                // Volver a estado conectado después de un tiempo
+                setTimeout(() => {
+                    this.actualizarUIEstado('connected');
+                }, 1500);
+                
+                return true;
+            } else {
+                throw new Error(result.error || 'Error del servidor');
+            }
             
         } catch (error) {
-            console.error('❌ ERROR guardando en Firebase:', error);
+            console.error('❌ ERROR guardando en Google Sheets:', error);
             console.error('Detalles del error:', error.message);
             this.actualizarUIEstado('error');
-            
-            // Reintentar una vez
-            setTimeout(async () => {
-                console.log('🔄 Reintentando guardado...');
-                try {
-                    await this.db.collection('users').doc(this.userId).set({
-                        perfiles: profiles,
-                        ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                    console.log('✅ Reintento exitoso');
-                    this.actualizarUIEstado('connected');
-                } catch (retryError) {
-                    console.error('❌ Reintento fallido:', retryError);
-                }
-            }, 2000);
-            
             return false;
         }
     }
 
     async loadProfiles() {
         if (!this.initialized) {
-            console.warn('⚠️ Firebase no inicializado');
+            console.warn('⚠️ Google Sheets no inicializado');
             return null;
         }
 
         try {
-            console.log('📥 Cargando perfiles desde Firebase...');
+            console.log('📥 Cargando perfiles desde Google Sheets...');
             
-            const docRef = this.db.collection('users').doc(this.userId);
-            const doc = await docRef.get();
+            const url = `${this.scriptUrl}?action=load&userId=${this.userId}&timestamp=${Date.now()}`;
+            const response = await fetch(url);
+            const result = await response.json();
             
-            if (doc.exists) {
-                const data = doc.data();
-                const perfilesCount = data.perfiles ? data.perfiles.length : 0;
-                console.log(`✅ ${perfilesCount} perfiles cargados desde Firebase`);
+            if (result.success) {
+                const perfilesCount = result.profiles ? result.profiles.length : 0;
+                console.log(`✅ ${perfilesCount} perfiles cargados desde Google Sheets`);
                 this.actualizarUIEstado('connected');
-                return data.perfiles || [];
+                return result.profiles || [];
             } else {
-                console.log('ℹ️ No existe documento en Firebase, creando uno nuevo...');
-                // Crear documento vacío
-                await docRef.set({
-                    perfiles: [],
-                    ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
-                    dispositivo: this.getDeviceInfo(),
-                    version: '2.0'
-                });
-                return [];
+                throw new Error(result.error || 'Error cargando datos');
             }
             
         } catch (error) {
-            console.error('❌ ERROR cargando desde Firebase:', error);
+            console.error('❌ ERROR cargando desde Google Sheets:', error);
             console.error('Detalles:', error.message);
             this.actualizarUIEstado('error');
             return null;
-        }
-    }
-
-    listenForChanges(callback) {
-        if (!this.initialized) {
-            console.warn('⚠️ No se puede crear listener - Firebase no inicializado');
-            return;
-        }
-
-        try {
-            console.log('👂 Iniciando listener en tiempo real...');
-            
-            const docRef = this.db.collection('users').doc(this.userId);
-            
-            this.unsubscribe = docRef.onSnapshot((doc) => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    console.log('🔄 CAMBIO DETECTADO en Firebase - Perfiles:', data.perfiles?.length || 0);
-                    this.actualizarUIEstado('connected');
-                    
-                    if (callback && typeof callback === 'function') {
-                        console.log('📨 Enviando perfiles actualizados al callback');
-                        callback(data.perfiles || []);
-                    }
-                } else {
-                    console.log('📄 Documento no existe en listener');
-                }
-            }, (error) => {
-                console.error('❌ ERROR en listener Firebase:', error);
-                this.actualizarUIEstado('error');
-                
-                // Reintentar conexión después de 5 segundos
-                console.log('🔄 Reintentando conexión del listener en 5 segundos...');
-                setTimeout(() => {
-                    if (this.initialized) {
-                        this.listenForChanges(callback);
-                    }
-                }, 5000);
-            });
-            
-            console.log('✅ Listener activado correctamente');
-            
-        } catch (error) {
-            console.error('💥 ERROR configurando listener:', error);
-        }
-    }
-
-    stopListening() {
-        if (this.unsubscribe) {
-            console.log('🔇 Deteniendo listener...');
-            this.unsubscribe();
-            this.unsubscribe = null;
         }
     }
 
@@ -276,7 +159,7 @@ class FirebaseSync {
             id: this.userId,
             name: localStorage.getItem('ubercalc_device_name') || this.guessDeviceName(),
             type: this.detectDeviceType(),
-            userAgent: navigator.userAgent.substring(0, 100), // Limitar tamaño
+            userAgent: navigator.userAgent.substring(0, 100),
             lastSync: new Date().toISOString(),
             platform: navigator.platform,
             appVersion: '2.0'
@@ -331,23 +214,23 @@ class FirebaseSync {
             switch(estado) {
                 case 'connected':
                     syncIcon.textContent = '✅';
-                    syncText.textContent = 'Conectado a la nube';
+                    syncText.textContent = 'Conectado a Google Sheets';
                     syncInfo.title = 'Sincronización activa - Todo funciona correctamente';
                     break;
                 case 'syncing':
                     syncIcon.textContent = '🔄';
                     syncText.textContent = 'Sincronizando...';
-                    syncInfo.title = 'Sincronizando datos con la nube';
+                    syncInfo.title = 'Sincronizando datos con Google Sheets';
                     break;
                 case 'error':
                     syncIcon.textContent = '❌';
                     syncText.textContent = 'Error de conexión';
-                    syncInfo.title = 'Problema de conexión con la nube';
+                    syncInfo.title = 'Problema de conexión con Google Sheets';
                     break;
                 default:
                     syncIcon.textContent = '🌐';
                     syncText.textContent = 'Conectando...';
-                    syncInfo.title = 'Estableciendo conexión con la nube';
+                    syncInfo.title = 'Estableciendo conexión con Google Sheets';
             }
             
             console.log(`🔄 Estado de Sync actualizado: ${estado}`);
@@ -359,33 +242,31 @@ class FirebaseSync {
 
     async getSyncStatus() {
         if (!this.initialized) {
-            return { status: 'not_initialized', message: 'Firebase no inicializado' };
+            return { status: 'not_initialized', message: 'Google Sheets no inicializado' };
         }
 
         try {
-            const doc = await this.db.collection('users').doc(this.userId).get();
-            if (doc.exists) {
-                const data = doc.data();
-                return {
-                    status: 'connected',
-                    lastSync: data.ultimaActualizacion?.toDate() || new Date(),
-                    profilesCount: data.perfiles?.length || 0,
-                    device: data.dispositivo?.name || 'Desconocido'
-                };
-            }
-            return { status: 'no_data', message: 'No hay datos en la nube' };
+            const testUrl = `${this.scriptUrl}?action=test&timestamp=${Date.now()}`;
+            const response = await fetch(testUrl);
+            const result = await response.json();
+            
+            return {
+                status: result.success ? 'connected' : 'error',
+                lastSync: new Date().toLocaleTimeString(),
+                profilesCount: perfiles.length,
+                device: this.getDeviceInfo().name
+            };
         } catch (error) {
             return { status: 'error', message: error.message };
         }
     }
 
     // Método para debug
-    async debugFirebase() {
-        console.group('🔥 DEBUG FIREBASE');
+    async debugGoogleSheets() {
+        console.group('🔥 DEBUG GOOGLE SHEETS');
         console.log('✅ Initialized:', this.initialized);
         console.log('✅ User ID:', this.userId);
-        console.log('✅ DB disponible:', !!this.db);
-        console.log('✅ Firebase app:', firebase.apps[0]?.name || 'No app');
+        console.log('✅ Script URL:', this.scriptUrl);
         
         if (this.initialized) {
             const status = await this.getSyncStatus();
@@ -393,79 +274,6 @@ class FirebaseSync {
         }
         console.groupEnd();
     }
-}
-
-// --- Funciones de Diagnóstico ---
-async function diagnosticarFirebase() {
-    console.group('🔍 DIAGNÓSTICO FIREBASE');
-    
-    try {
-        // Verificar si Firebase está cargado
-        console.log('✅ Firebase cargado:', typeof firebase !== 'undefined');
-        
-        if (typeof firebase !== 'undefined') {
-            console.log('✅ Firebase.app disponible:', !!firebase.apps.length);
-            
-            if (firebase.apps.length > 0) {
-                const app = firebase.apps[0];
-                console.log('✅ App name:', app.name);
-                
-                // Verificar Firestore
-                console.log('✅ Firestore disponible:', !!firebase.firestore);
-                
-                if (firebase.firestore) {
-                    const db = firebase.firestore();
-                    console.log('✅ Firestore instance creada');
-                    
-                    // Test simple de conexión
-                    try {
-                        const testDoc = await db.collection('test').doc('connection').get();
-                        console.log('✅ Conexión a Firestore: EXITOSA');
-                    } catch (error) {
-                        console.error('❌ Conexión a Firestore falló:', error.message);
-                    }
-                }
-            }
-        }
-        
-        // Verificar configuración
-        console.log('✅ Config projectId:', firebaseConfig.projectId);
-        
-    } catch (error) {
-        console.error('💥 Error en diagnóstico:', error);
-    }
-    
-    console.groupEnd();
-}
-
-// Función para resetear Firebase (útil para debugging)
-async function resetearFirebase() {
-    console.log('🔄 Reseteando Firebase...');
-    
-    if (firebaseSync) {
-        firebaseSync.stopListening();
-        firebaseSync.initialized = false;
-    }
-    
-    // Cerrar todas las apps de Firebase
-    if (typeof firebase !== 'undefined') {
-        try {
-            await Promise.all(firebase.apps.map(app => app.delete()));
-            console.log('✅ Apps de Firebase cerradas');
-        } catch (error) {
-            console.error('Error cerrando apps:', error);
-        }
-    }
-    
-    // Recrear la instancia
-    firebaseSync = new FirebaseSync();
-    await firebaseSync.initialize();
-    
-    // Recargar datos
-    await cargarDatos();
-    actualizarInterfazPerfiles();
-    
-    mostrarStatus('🔄 Firebase reiniciado', 'info');
 }
 
 // --- Elementos DOM ---
@@ -555,57 +363,25 @@ async function inicializarApp() {
     console.log('🎯 Inicializando aplicación...');
     
     try {
-        // 1. Inicializar Firebase Sync PRIMERO
-        console.log('🔥 Paso 1: Inicializando Firebase Sync...');
-        firebaseSync = new FirebaseSync();
-        const firebaseReady = await firebaseSync.initialize();
+        // 1. Inicializar Google Sheets Sync PRIMERO
+        console.log('🔥 Paso 1: Inicializando Google Sheets Sync...');
+        syncManager = new GoogleSheetsSync();
+        const syncReady = await syncManager.initialize();
         
-        if (firebaseReady) {
-            console.log('✅ Firebase listo - Configurando listener...');
+        if (syncReady) {
+            console.log('✅ Google Sheets listo - Cargando datos...');
             
-            // Configurar listener para cambios en tiempo real
-            firebaseSync.listenForChanges((nuevosPerfiles) => {
-                if (nuevosPerfiles && Array.isArray(nuevosPerfiles)) {
-                    console.log(`🔄 📱 Sincronización recibida: ${nuevosPerfiles.length} perfiles`);
-                    
-                    // Actualizar perfiles locales
-                    perfiles = nuevosPerfiles;
-                    
-                    // Actualizar perfil actual si existe
-                    if (perfilActual) {
-                        const perfilActualizado = perfiles.find(p => p.id === perfilActual.id);
-                        if (perfilActualizado) {
-                            perfilActual = perfilActualizado;
-                            console.log('✅ Perfil actual actualizado:', perfilActual.nombre);
-                        } else if (perfiles.length > 0) {
-                            perfilActual = perfiles[0];
-                            console.log('🔄 Cambiando al primer perfil disponible:', perfilActual.nombre);
-                        }
-                    }
-                    
-                    // Guardar y actualizar UI
-                    guardarDatos();
-                    actualizarInterfazPerfiles();
-                    actualizarUnidades();
-                    
-                    // Mostrar notificación solo si hay cambios reales
-                    if (nuevosPerfiles.length > 0) {
-                        mostrarStatus('🔄 Perfiles actualizados desde la nube', 'info');
-                    }
-                }
-            });
-            
-            // Cargar datos desde Firebase
-            console.log('📥 Cargando datos iniciales desde Firebase...');
+            // Cargar datos desde Google Sheets
+            console.log('📥 Cargando datos iniciales desde Google Sheets...');
             await cargarDatos();
             
         } else {
-            console.warn('⚠️ Firebase no disponible - Modo offline');
+            console.warn('⚠️ Google Sheets no disponible - Modo offline');
             cargarDatos(); // Cargar desde localStorage
         }
         
     } catch (error) {
-        console.error('❌ Error en inicialización Firebase:', error);
+        console.error('❌ Error en inicialización Google Sheets:', error);
         cargarDatos(); // Fallback a localStorage
     }
     
@@ -629,12 +405,12 @@ async function inicializarApp() {
     actualizarPanelSync();
     
     console.log('🎉 UberCalc inicializado COMPLETAMENTE');
-    mostrarStatus('✅ Aplicación lista', 'success');
+    mostrarStatus('✅ Aplicación lista con Google Sheets', 'success');
     
     // Debug opcional
     setTimeout(() => {
-        if (firebaseSync) {
-            firebaseSync.debugFirebase();
+        if (syncManager) {
+            syncManager.debugGoogleSheets();
         }
     }, 3000);
 }
@@ -1133,20 +909,20 @@ async function guardarPerfil(event) {
     // Guardar localmente
     guardarDatos();
     
-    // SINCRONIZAR CON FIREBASE - PARTE CRÍTICA
-    if (firebaseSync && firebaseSync.initialized) {
-        console.log('🔥 Sincronizando con Firebase...');
-        const success = await firebaseSync.saveProfiles(perfiles);
+    // SINCRONIZAR CON GOOGLE SHEETS
+    if (syncManager && syncManager.initialized) {
+        console.log('🔥 Sincronizando con Google Sheets...');
+        const success = await syncManager.saveProfiles(perfiles);
         
         if (success) {
-            console.log('✅ Sincronización EXITOSA con Firebase');
-            mostrarStatus('✅ Perfil guardado y sincronizado en la nube', 'success');
+            console.log('✅ Sincronización EXITOSA con Google Sheets');
+            mostrarStatus('✅ Perfil guardado y sincronizado en Google Sheets', 'success');
         } else {
             console.warn('⚠️ Sincronización falló, pero perfil guardado localmente');
             mostrarStatus('💾 Perfil guardado (solo local)', 'warning');
         }
     } else {
-        console.log('📱 Firebase no disponible - Guardado solo local');
+        console.log('📱 Google Sheets no disponible - Guardado solo local');
         mostrarStatus('💾 Perfil guardado (almacenamiento local)', 'info');
     }
     
@@ -1263,10 +1039,10 @@ async function seleccionarPerfil(perfilId) {
         perfilActual = perfil;
         guardarDatos();
         
-        // Sincronizar con Firebase
-        if (firebaseSync && firebaseSync.initialized) {
-            console.log('🔥 Sincronizando cambio de perfil con Firebase...');
-            await firebaseSync.saveProfiles(perfiles);
+        // Sincronizar con Google Sheets
+        if (syncManager && syncManager.initialized) {
+            console.log('🔥 Sincronizando cambio de perfil con Google Sheets...');
+            await syncManager.saveProfiles(perfiles);
         }
         
         console.log('🔄 Mostrando pantalla principal...');
@@ -1315,9 +1091,9 @@ async function eliminarPerfil(perfilId) {
         
         guardarDatos();
         
-        // Sincronizar con Firebase
-        if (firebaseSync && firebaseSync.initialized) {
-            await firebaseSync.saveProfiles(perfiles);
+        // Sincronizar con Google Sheets
+        if (syncManager && syncManager.initialized) {
+            await syncManager.saveProfiles(perfiles);
         }
         
         actualizarInterfazPerfiles();
@@ -1380,7 +1156,7 @@ function aplicarTemaGuardado() {
     }
 }
 
-// --- Sincronización Firebase UI ---
+// --- Sincronización Google Sheets UI ---
 function mostrarPanelSync() {
     console.log('🌐 Mostrando panel de sincronización');
     actualizarPanelSync();
@@ -1397,15 +1173,15 @@ function cerrarSyncPanel() {
 }
 
 async function actualizarPanelSync() {
-    if (!firebaseSync) {
-        console.log('❌ Firebase Sync no disponible');
+    if (!syncManager) {
+        console.log('❌ Sync Manager no disponible');
         return;
     }
     
     console.log('🔄 Actualizando panel de sync');
     
     try {
-        const deviceInfo = firebaseSync.getDeviceInfo();
+        const deviceInfo = syncManager.getDeviceInfo();
         const deviceName = document.getElementById('current-device-name');
         const deviceId = document.getElementById('current-device-id');
         const deviceIcon = document.getElementById('current-device-icon');
@@ -1417,29 +1193,29 @@ async function actualizarPanelSync() {
                                     deviceInfo.type === 'tablet' ? '📟' : '💻';
         }
         
-        const firebaseStatus = document.getElementById('firebase-status');
+        const sheetsStatus = document.getElementById('sheets-status');
         const lastSyncTime = document.getElementById('last-sync-time');
         const cloudProfilesCount = document.getElementById('cloud-profiles-count');
         
-        if (firebaseSync.initialized) {
-            if (firebaseStatus) {
-                firebaseStatus.textContent = 'Conectado';
-                firebaseStatus.style.color = 'var(--success-green)';
+        if (syncManager.initialized) {
+            if (sheetsStatus) {
+                sheetsStatus.textContent = 'Conectado';
+                sheetsStatus.style.color = 'var(--success-green)';
             }
             
-            const syncStatus = await firebaseSync.getSyncStatus();
+            const syncStatus = await syncManager.getSyncStatus();
             if (syncStatus.status === 'connected') {
                 if (lastSyncTime) {
-                    lastSyncTime.textContent = syncStatus.lastSync.toLocaleTimeString();
+                    lastSyncTime.textContent = syncStatus.lastSync;
                 }
                 if (cloudProfilesCount) {
                     cloudProfilesCount.textContent = syncStatus.profilesCount;
                 }
             }
         } else {
-            if (firebaseStatus) {
-                firebaseStatus.textContent = 'Desconectado';
-                firebaseStatus.style.color = 'var(--error-red)';
+            if (sheetsStatus) {
+                sheetsStatus.textContent = 'Desconectado';
+                sheetsStatus.style.color = 'var(--error-red)';
             }
             if (lastSyncTime) lastSyncTime.textContent = '--';
             if (cloudProfilesCount) cloudProfilesCount.textContent = '--';
@@ -1450,35 +1226,72 @@ async function actualizarPanelSync() {
 }
 
 async function forzarSincronizacion() {
-    if (!firebaseSync || !firebaseSync.initialized) {
-        mostrarError('Firebase no está configurado');
+    if (!syncManager || !syncManager.initialized) {
+        mostrarError('Google Sheets no está configurado');
         return;
     }
     
     console.log('🔄 Forzando sincronización...');
-    mostrarStatus('🔄 Sincronizando con la nube...', 'info');
+    mostrarStatus('🔄 Sincronizando con Google Sheets...', 'info');
     
-    const success = await firebaseSync.saveProfiles(perfiles);
+    const success = await syncManager.saveProfiles(perfiles);
     if (success) {
-        mostrarStatus('✅ Sincronización completada', 'success');
+        mostrarStatus('✅ Sincronización completada con Google Sheets', 'success');
         actualizarPanelSync();
     } else {
-        mostrarError('❌ Error en la sincronización');
+        mostrarError('❌ Error en la sincronización con Google Sheets');
     }
 }
 
 function mostrarInfoSync() {
-    alert(`🌐 SINCRONIZACIÓN MULTI-DISPOSITIVO
+    alert(`🌐 SINCRONIZACIÓN CON GOOGLE SHEETS
 
 ✅ Cómo funciona:
-1. Tus perfiles se guardan automáticamente en la nube
+1. Tus perfiles se guardan automáticamente en Google Sheets
 2. Todos tus dispositivos acceden a los mismos perfiles
-3. Los cambios se sincronizan en tiempo real
-4. Tus datos están seguros y respaldados
+3. Los cambios se sincronizan automáticamente
+4. Tus datos están seguros en tu cuenta de Google
 
-📱 Dispositivos conectados: Todos los que usen tu misma cuenta
+📱 Dispositivos conectados: Todos los que usen tu misma cuenta de Google
+
+🔧 Método: Google Sheets (Más confiable que Firebase)
 
 💡 Los viajes e historial se mantienen locales en cada dispositivo`);
+}
+
+// --- Funciones de Diagnóstico ---
+async function diagnosticarGoogleSheets() {
+    console.group('🔍 DIAGNÓSTICO GOOGLE SHEETS');
+    
+    try {
+        if (!syncManager) {
+            alert('❌ Sync Manager no inicializado');
+            return;
+        }
+        
+        // Test de conexión
+        const testUrl = `${GOOGLE_SCRIPT_URL}?action=test&timestamp=${Date.now()}`;
+        console.log('🔗 Probando URL:', testUrl);
+        
+        const response = await fetch(testUrl);
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('✅ Conexión exitosa:', result);
+            alert('✅ Google Sheets Sync funcionando correctamente!\n\n' + 
+                  'Mensaje: ' + result.message + '\n' +
+                  'Timestamp: ' + result.timestamp);
+        } else {
+            console.error('❌ Error en test:', result);
+            alert('❌ Error en Google Sheets:\n\n' + (result.error || 'Error desconocido'));
+        }
+        
+    } catch (error) {
+        console.error('💥 Error en diagnóstico:', error);
+        alert('💥 Error de conexión:\n\n' + error.message);
+    }
+    
+    console.groupEnd();
 }
 
 // --- Exportación ---
@@ -1515,6 +1328,68 @@ function exportarPDF() {
         mostrarStatus('📄 PDF generado correctamente', 'success');
         cerrarExportModal();
     }, 1000);
+}
+
+function exportarBackup() {
+    const data = {
+        perfiles: perfiles,
+        perfilActual: perfilActual,
+        historial: historial,
+        exportDate: new Date().toISOString(),
+        version: '2.0',
+        totalProfiles: perfiles.length,
+        totalTrips: historial.length
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ubercalc-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    mostrarStatus('📤 Backup exportado correctamente', 'success');
+}
+
+function importarBackup(file) {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            if (!data.perfiles || !Array.isArray(data.perfiles)) {
+                throw new Error('Formato de archivo inválido');
+            }
+
+            const confirmMsg = `¿Importar ${data.perfiles.length} perfiles y ${data.historial?.length || 0} viajes?\n\nEsto reemplazará tus datos actuales.`;
+            
+            if (confirm(confirmMsg)) {
+                perfiles = data.perfiles;
+                perfilActual = data.perfilActual || (perfiles.length > 0 ? perfiles[0] : null);
+                historial = data.historial || [];
+                
+                guardarDatos();
+                actualizarInterfazPerfiles();
+                actualizarEstadisticas();
+                actualizarHistorial();
+                
+                // Sincronizar con Google Sheets si está disponible
+                if (syncManager && syncManager.initialized) {
+                    syncManager.saveProfiles(perfiles);
+                }
+                
+                mostrarStatus(`📥 Backup importado: ${perfiles.length} perfiles, ${historial.length} viajes`, 'success');
+            }
+        } catch (error) {
+            mostrarError('Error importando backup: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
 }
 
 function generarContenidoPDF() {
@@ -1716,24 +1591,24 @@ async function cargarDatos() {
     try {
         console.log('📥 Iniciando carga de datos...');
         
-        // 1. Intentar cargar desde Firebase
-        if (firebaseSync && firebaseSync.initialized) {
-            console.log('🔥 Intentando cargar desde Firebase...');
-            const perfilesRemotos = await firebaseSync.loadProfiles();
+        // 1. Intentar cargar desde Google Sheets
+        if (syncManager && syncManager.initialized) {
+            console.log('🔥 Intentando cargar desde Google Sheets...');
+            const perfilesRemotos = await syncManager.loadProfiles();
             
             if (perfilesRemotos !== null) { // null significa error
                 perfiles = perfilesRemotos;
                 if (perfiles.length > 0) {
                     perfilActual = perfiles[0];
                     historial = []; // Historial se mantiene local
-                    console.log(`✅ Datos cargados desde Firebase: ${perfiles.length} perfiles`);
+                    console.log(`✅ Datos cargados desde Google Sheets: ${perfiles.length} perfiles`);
                     guardarDatos(); // Sincronizar localStorage
                     return;
                 } else {
-                    console.log('ℹ️ Firebase vacío, continuando con localStorage');
+                    console.log('ℹ️ Google Sheets vacío, continuando con localStorage');
                 }
             } else {
-                console.log('ℹ️ Error cargando de Firebase, continuando con localStorage');
+                console.log('ℹ️ Error cargando de Google Sheets, continuando con localStorage');
             }
         }
         
@@ -1748,10 +1623,10 @@ async function cargarDatos() {
             
             console.log(`✅ Datos cargados desde localStorage: ${perfiles.length} perfiles`);
             
-            // Sincronizar datos locales a Firebase si es posible
-            if (firebaseSync && firebaseSync.initialized && perfiles.length > 0) {
-                console.log('🔄 Sincronizando datos locales con Firebase...');
-                await firebaseSync.saveProfiles(perfiles);
+            // Sincronizar datos locales a Google Sheets si es posible
+            if (syncManager && syncManager.initialized && perfiles.length > 0) {
+                console.log('🔄 Sincronizando datos locales con Google Sheets...');
+                await syncManager.saveProfiles(perfiles);
             }
         } else {
             console.log('ℹ️ No hay datos guardados - Inicializando vacío');
@@ -1797,8 +1672,9 @@ window.eliminarPerfil = eliminarPerfil;
 window.mostrarPanelSync = mostrarPanelSync;
 window.forzarSincronizacion = forzarSincronizacion;
 window.mostrarInfoSync = mostrarInfoSync;
-window.diagnosticarFirebase = diagnosticarFirebase;
-window.resetearFirebase = resetearFirebase;
+window.diagnosticarGoogleSheets = diagnosticarGoogleSheets;
+window.exportarBackup = exportarBackup;
+window.importarBackup = importarBackup;
 
 // --- Event Listeners Globales ---
 window.addEventListener('beforeunload', function(e) {
@@ -1825,4 +1701,4 @@ setTimeout(() => {
     }
 }, 1000);
 
-console.log('🎉 Script UberCalc COMPLETO cargado - Listo para usar!');
+console.log('🎉 Script UberCalc con Google Sheets COMPLETO cargado - Listo para usar!');
