@@ -6,10 +6,6 @@
     <title>UberCalc - Calculadora Inteligente para Conductores</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="logo_b.png" type="image/png">
-    
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
 <body>
     <!-- Pantalla de Selección de Perfil -->
@@ -456,12 +452,12 @@
         </div>
     </div>
 
-    <!-- Panel de Sincronización Firebase -->
+    <!-- Panel de Sincronización Google Sheets -->
     <div id="sync-panel" class="modal-fondo">
         <div class="modal-contenido">
             <span class="cerrar-btn" onclick="cerrarSyncPanel()">&times;</span>
             <div class="modal-header">
-                <h2>🌐 Sincronización Multi-Dispositivo</h2>
+                <h2>🌐 Sincronización Google Sheets</h2>
                 <div class="sync-status-badge" id="sync-panel-status">
                     <span class="sync-icon">🔄</span>
                     <span>Conectando...</span>
@@ -484,8 +480,8 @@
                     <h3>🔗 Estado de Conexión</h3>
                     <div class="connection-status">
                         <div class="status-item">
-                            <span class="status-label">Firebase:</span>
-                            <span class="status-value" id="firebase-status">Conectando...</span>
+                            <span class="status-label">Google Sheets:</span>
+                            <span class="status-value" id="sheets-status">Conectando...</span>
                         </div>
                         <div class="status-item">
                             <span class="status-label">Última sync:</span>
@@ -499,7 +495,7 @@
                 </div>
 
                 <div class="sync-actions-panel">
-                    <button id="force-sync-btn" class="primary-button" onclick="forzarSincronizacion()">
+                    <button class="primary-button" onclick="forzarSincronizacion()">
                         <span class="button-icon">🔄</span>
                         Sincronizar Ahora
                     </button>
@@ -507,22 +503,30 @@
                         <span class="button-icon">ℹ️</span>
                         Cómo Funciona
                     </button>
-                    <div class="sync-debug-actions" style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button onclick="diagnosticarFirebase()" class="secondary-button small">
-                            🐛 Diagnosticar
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button class="secondary-button small" onclick="diagnosticarGoogleSheets()">
+                            🐛 Diagnosticar Sheets
                         </button>
-                        <button onclick="resetearFirebase()" class="secondary-button small">
-                            🔄 Reiniciar Sync
+                        <button class="secondary-button small" onclick="exportarBackup()">
+                            💾 Exportar Backup
+                        </button>
+                        <button class="secondary-button small" onclick="document.getElementById('import-file').click()">
+                            📥 Importar Backup
                         </button>
                     </div>
                 </div>
 
+                <input type="file" id="import-file" accept=".json" style="display: none;" 
+                       onchange="importarBackup(this.files[0])">
+
                 <div class="sync-tips">
-                    <h4>💡 Tips de Sincronización</h4>
+                    <h4>💡 Sincronización con Google Sheets</h4>
+                    <p>Tu datos se guardan automáticamente en <strong>Google Sheets</strong> para acceso multi-dispositivo.</p>
                     <ul>
-                        <li>Los perfiles se sincronizan automáticamente</li>
+                        <li>Más confiable que Firebase</li>
+                        <li>Gratuito y sin límites</li>
                         <li>Funciona en todos tus dispositivos</li>
-                        <li>Los datos se mantienen seguros en la nube</li>
                     </ul>
                 </div>
             </div>
