@@ -12,7 +12,7 @@ let timeoutCalculo = null;
 let googleSync;
 
 // --- Configuración Google Apps Script ---
-const GOOGLE_SCRIPT_URL = 'https://api.codetabs.com/v1/proxy?quest=https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
+const GOOGLE_SCRIPT_URL = 'https://api.allorigins.win/raw?url=https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
 
 // --- Clase Google Sync CORREGIDA ---
 class GoogleSync {
@@ -86,28 +86,26 @@ class GoogleSync {
     try {
         console.log('📤 Enviando request a Google Script...', params.action);
         
-        // Usar FormData para POST
-        const formData = new URLSearchParams();
+        // Construir URL con parámetros GET (más compatible con proxies)
+        const urlParams = new URLSearchParams();
         Object.keys(params).forEach(key => {
             if (key === 'profiles' && typeof params[key] === 'object') {
-                formData.append(key, JSON.stringify(params[key]));
+                urlParams.append(key, JSON.stringify(params[key]));
             } else {
-                formData.append(key, params[key]);
+                urlParams.append(key, params[key]);
             }
         });
-        formData.append('userId', this.userId);
-
-        // Usar proxy CORS correctamente
-        const targetUrl = 'https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
-        const finalUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl + `?t=${Date.now()}`)}`;
+        urlParams.append('userId', this.userId);
+        
+        const targetUrl = `https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec?${urlParams.toString()}&t=${Date.now()}`;
+        const finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
         
         console.log('🔗 URL final:', finalUrl);
         
         const response = await fetch(finalUrl, {
-            method: 'POST',
-            body: formData,
+            method: 'GET', // Usar GET con proxy
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
             }
         });
 
@@ -1938,5 +1936,6 @@ async function diagnosticarSync() {
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
