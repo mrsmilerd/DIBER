@@ -57,38 +57,50 @@ class GoogleSync {
         return userId;
     }
 
-    async makeRequest(params) {
-        try {
-            const formData = new URLSearchParams();
-            Object.keys(params).forEach(key => {
-                if (typeof params[key] === 'object') {
-                    formData.append(key, JSON.stringify(params[key]));
-                } else {
-                    formData.append(key, params[key]);
-                }
-            });
-            formData.append('userId', this.userId);
-
-            const response = await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+ async makePostRequest(params) {
+    try {
+        console.log('📤 Enviando request a Google Script...', params.action);
+        
+        const formData = new URLSearchParams();
+        Object.keys(params).forEach(key => {
+            if (typeof params[key] === 'object') {
+                formData.append(key, JSON.stringify(params[key]));
+            } else {
+                formData.append(key, params[key]);
             }
+        });
+        formData.append('userId', this.userId);
 
-            const result = await response.json();
-            return result;
-            
-        } catch (error) {
-            console.error('❌ Error en request:', error);
-            throw error;
+        // Agregar timestamp para evitar cache
+        const urlWithTimestamp = `${GOOGLE_SCRIPT_URL}?t=${Date.now()}`;
+        
+        const response = await fetch(urlWithTimestamp, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            // Agregar modo 'cors' para mejor manejo de errores
+            mode: 'cors'
+        });
+
+        console.log('📥 Response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
         }
+
+        const result = await response.json();
+        console.log('✅ Request exitoso:', params.action, result);
+        return result;
+        
+    } catch (error) {
+        console.error('❌ Error en POST request:', error);
+        console.error('URL:', GOOGLE_SCRIPT_URL);
+        console.error('Params:', params);
+        throw error;
     }
+}
 
     async saveProfiles(profiles) {
         if (!this.initialized) {
@@ -1836,5 +1848,49 @@ setTimeout(() => {
         calcularAutomatico();
     }
 }, 1000);
+
+// 🔧 FUNCIÓN DE DIAGNÓSTICO - Agregar al final del archivo
+async function diagnosticarSync() {
+    console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
+    
+    if (!googleSync || !googleSync.initialized) {
+        console.error('❌ Google Sync no inicializado');
+        return;
+    }
+
+    try {
+        // 1. Probar conexión básica
+        console.log('1. Probando conexión básica...');
+        const testResult = await googleSync.makePostRequest({
+            action: 'getSyncStatus'
+        });
+        console.log('✅ Conexión básica OK:', testResult);
+
+        // 2. Probar obtener perfiles
+        console.log('2. Probando obtener perfiles...');
+        const perfiles = await googleSync.loadProfiles();
+        console.log('✅ Obtención de perfiles OK:', perfiles?.length || 0);
+
+        // 3. Probar guardar perfiles
+        console.log('3. Probando guardar perfiles...');
+        const saveResult = await googleSync.saveProfiles(perfiles || []);
+        console.log('✅ Guardado de perfiles OK:', saveResult);
+
+        // 4. Probar sincronización
+        console.log('4. Probando sincronización...');
+        const syncResult = await googleSync.syncProfiles(perfiles || []);
+        console.log('✅ Sincronización OK:', syncResult ? 'Éxito' : 'Falló');
+
+        console.log('🎉 DIAGNÓSTICO COMPLETADO - Todo OK');
+        mostrarStatus('✅ Diagnóstico: Todo funciona correctamente', 'success');
+        
+    } catch (error) {
+        console.error('❌ ERROR EN DIAGNÓSTICO:', error);
+        mostrarError(`❌ Error en diagnóstico: ${error.message}`);
+    }
+}
+
+// Agregar al objeto window para poder ejecutarlo desde la consola
+window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
