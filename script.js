@@ -16,7 +16,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyCf5j5Pu-go6ipUw2EnTO2OnKgvYLzkonY",
     authDomain: "diber-32875.firebaseapp.com",
     projectId: "diber-32875",
-    storageBucket: "diber-32875.appspot.com", // CORREGIDO
+    storageBucket: "diber-32875.firebasestorage.app", // CORREGIDO
     messagingSenderId: "260349079723",
     appId: "1:260349079723:web:babe1cc51e8bb067ba87ee"
 };
@@ -44,38 +44,48 @@ class FirebaseSync {
             // Verificar si Firebase está disponible
             if (typeof firebase === 'undefined') {
                 console.error('❌ Firebase no está cargado en la página');
+                console.error('💡 Verifica que el script de Firebase esté cargado correctamente');
                 this.actualizarUIEstado('error');
                 return false;
             }
 
-            console.log('✅ Firebase está disponible');
+            console.log('✅ Firebase está disponible, versión:', firebase.SDK_VERSION);
 
             // Inicializar Firebase
+            let app;
             if (!firebase.apps.length) {
                 console.log('🚀 Inicializando nueva app de Firebase');
-                firebase.initializeApp(firebaseConfig);
+                app = firebase.initializeApp(firebaseConfig);
             } else {
+                app = firebase.apps[0];
                 console.log('✅ Firebase app ya existe');
             }
             
-            // Configurar Firestore
+            // Configurar Firestore con mejores opciones
             this.db = firebase.firestore();
             
-            // Configuración de Firestore para mejor rendimiento
-            this.db.settings({
-                cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
-                merge: true
-            });
-
+            // Configuración optimizada
+            const settings = {
+                cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+            };
+            
+            await this.db.settings(settings);
             console.log('✅ Firestore configurado');
 
             // Intentar habilitar persistencia offline
             try {
-                await this.db.enablePersistence({ synchronizeTabs: true });
-                console.log('✅ Persistencia offline habilitada');
+                await this.db.enablePersistence({ synchronizeTabs: true })
+                    .catch(err => {
+                        if (err.code === 'failed-precondition') {
+                            console.warn('⚠️ Múltiples pestañas abiertas, persistencia deshabilitada');
+                        } else if (err.code === 'unimplemented') {
+                            console.warn('⚠️ Persistencia no soportada en este navegador');
+                        } else {
+                            console.warn('⚠️ Persistencia no disponible:', err.message);
+                        }
+                    });
             } catch (err) {
-                console.warn('⚠️ Persistencia no disponible:', err.message);
-                // Continuar sin persistencia
+                console.warn('⚠️ Persistencia offline no disponible:', err.message);
             }
             
             this.userId = this.getUserId();
@@ -88,15 +98,18 @@ class FirebaseSync {
             
         } catch (error) {
             console.error('💥 ERROR crítico inicializando Firebase:', error);
+            console.error('Stack:', error.stack);
             this.actualizarUIEstado('error');
             
-            // Reintento automático
+            // Reintento automático mejorado
             if (this.retryCount < this.maxRetries) {
                 this.retryCount++;
-                console.log(`🔄 Reintentando en 3 segundos... (${this.retryCount}/${this.maxRetries})`);
-                setTimeout(() => this.initialize(), 3000);
+                const delay = Math.min(3000 * this.retryCount, 10000); // Backoff exponencial
+                console.log(`🔄 Reintentando en ${delay}ms... (${this.retryCount}/${this.maxRetries})`);
+                setTimeout(() => this.initialize(), delay);
             } else {
                 console.error('❌ Se agotaron los reintentos de Firebase');
+                console.log('💡 Usando modo offline con almacenamiento local');
             }
             return false;
         }
@@ -382,6 +395,79 @@ class FirebaseSync {
     }
 }
 
+// --- Funciones de Diagnóstico ---
+async function diagnosticarFirebase() {
+    console.group('🔍 DIAGNÓSTICO FIREBASE');
+    
+    try {
+        // Verificar si Firebase está cargado
+        console.log('✅ Firebase cargado:', typeof firebase !== 'undefined');
+        
+        if (typeof firebase !== 'undefined') {
+            console.log('✅ Firebase.app disponible:', !!firebase.apps.length);
+            
+            if (firebase.apps.length > 0) {
+                const app = firebase.apps[0];
+                console.log('✅ App name:', app.name);
+                
+                // Verificar Firestore
+                console.log('✅ Firestore disponible:', !!firebase.firestore);
+                
+                if (firebase.firestore) {
+                    const db = firebase.firestore();
+                    console.log('✅ Firestore instance creada');
+                    
+                    // Test simple de conexión
+                    try {
+                        const testDoc = await db.collection('test').doc('connection').get();
+                        console.log('✅ Conexión a Firestore: EXITOSA');
+                    } catch (error) {
+                        console.error('❌ Conexión a Firestore falló:', error.message);
+                    }
+                }
+            }
+        }
+        
+        // Verificar configuración
+        console.log('✅ Config projectId:', firebaseConfig.projectId);
+        
+    } catch (error) {
+        console.error('💥 Error en diagnóstico:', error);
+    }
+    
+    console.groupEnd();
+}
+
+// Función para resetear Firebase (útil para debugging)
+async function resetearFirebase() {
+    console.log('🔄 Reseteando Firebase...');
+    
+    if (firebaseSync) {
+        firebaseSync.stopListening();
+        firebaseSync.initialized = false;
+    }
+    
+    // Cerrar todas las apps de Firebase
+    if (typeof firebase !== 'undefined') {
+        try {
+            await Promise.all(firebase.apps.map(app => app.delete()));
+            console.log('✅ Apps de Firebase cerradas');
+        } catch (error) {
+            console.error('Error cerrando apps:', error);
+        }
+    }
+    
+    // Recrear la instancia
+    firebaseSync = new FirebaseSync();
+    await firebaseSync.initialize();
+    
+    // Recargar datos
+    await cargarDatos();
+    actualizarInterfazPerfiles();
+    
+    mostrarStatus('🔄 Firebase reiniciado', 'info');
+}
+
 // --- Elementos DOM ---
 const elementos = {
     // Pantallas
@@ -552,8 +638,6 @@ async function inicializarApp() {
         }
     }, 3000);
 }
-
-// --- [EL RESTO DEL CÓDIGO SE MANTIENE IGUAL PERO ACTUALIZADO] ---
 
 function configurarEventListeners() {
     console.log('⚡ Configurando event listeners...');
@@ -1713,6 +1797,8 @@ window.eliminarPerfil = eliminarPerfil;
 window.mostrarPanelSync = mostrarPanelSync;
 window.forzarSincronizacion = forzarSincronizacion;
 window.mostrarInfoSync = mostrarInfoSync;
+window.diagnosticarFirebase = diagnosticarFirebase;
+window.resetearFirebase = resetearFirebase;
 
 // --- Event Listeners Globales ---
 window.addEventListener('beforeunload', function(e) {
