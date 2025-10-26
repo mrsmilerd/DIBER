@@ -1,6 +1,6 @@
 // =============================================
 // UBER CALC - Calculadora Inteligente para Conductores
-// Versión con Google Apps Script Sync - COMPLETA
+// Versión con Google Apps Script Sync - COMPLETA Y CORREGIDA
 // =============================================
 
 // --- Variables Globales ---
@@ -14,43 +14,99 @@ let googleSync;
 // --- Configuración Google Apps Script ---
 const GOOGLE_SCRIPT_URL = 'https://corsproxy.io/?https://script.google.com/macros/s/AKfycbwmBuWNYLsSqRTQPckfgAExwbTH9TH4ovn6g5D3nEgtWYOyPSDSI1sA2xia0unC3tPSqg/exec';
 
-// --- Clase Google Sync ---
+// --- Clase Google Sync CORREGIDA ---
 class GoogleSync {
     constructor() {
         this.initialized = false;
         this.userId = null;
         this.syncInProgress = false;
         this.lastSyncTime = null;
+        this.initializing = false;
     }
 
-    // ... otras funciones ...
+    async initialize() {
+        if (this.initialized) {
+            console.log('✅ Google Sync ya estaba inicializado');
+            return true;
+        }
+
+        if (this.initializing) {
+            console.log('⏳ Google Sync ya se está inicializando...');
+            return false;
+        }
+
+        this.initializing = true;
+
+        try {
+            console.log('📡 Inicializando Google Sync...');
+            
+            // 1. Obtener User ID
+            this.userId = this.getUserId();
+            console.log('👤 User ID obtenido:', this.userId);
+            
+            // 2. Verificar que la URL esté configurada
+            if (!GOOGLE_SCRIPT_URL) {
+                throw new Error('URL de Google Script no configurada');
+            }
+            
+            console.log('🔗 URL configurada:', GOOGLE_SCRIPT_URL);
+            
+            this.initialized = true;
+            this.initializing = false;
+            
+            console.log('✅ Google Sync inicializado CORRECTAMENTE');
+            console.log('👤 User ID:', this.userId);
+            
+            this.actualizarUIEstado('connected');
+            return true;
+            
+        } catch (error) {
+            this.initializing = false;
+            console.error('❌ Error inicializando Google Sync:', error);
+            this.actualizarUIEstado('error');
+            return false;
+        }
+    }
+
+    getUserId() {
+        let userId = localStorage.getItem('ubercalc_user_id');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('ubercalc_user_id', userId);
+            console.log('🆕 Nuevo User ID generado:', userId);
+        }
+        return userId;
+    }
 
     async makeRequest(params) {
         if (!this.initialized) {
-            throw new Error('Google Sync no inicializado');
+            throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
         }
 
         try {
             console.log('📤 Enviando request a Google Script...', params.action);
             
-            // Crear URL con parámetros para GET (evita CORS)
-            const urlParams = new URLSearchParams();
+            // Usar FormData para POST
+            const formData = new URLSearchParams();
             Object.keys(params).forEach(key => {
                 if (key === 'profiles' && typeof params[key] === 'object') {
-                    urlParams.append(key, JSON.stringify(params[key]));
+                    formData.append(key, JSON.stringify(params[key]));
                 } else {
-                    urlParams.append(key, params[key]);
+                    formData.append(key, params[key]);
                 }
             });
-            urlParams.append('userId', this.userId);
+            formData.append('userId', this.userId);
+
+            const finalUrl = GOOGLE_SCRIPT_URL + `&t=${Date.now()}`;
             
-            const url = `${GOOGLE_SCRIPT_URL}?${urlParams.toString()}&t=${Date.now()}`;
+            console.log('🔗 URL final:', finalUrl);
             
-            console.log('🔗 URL:', url);
-            
-            const response = await fetch(url, {
-                method: 'GET', // Usar GET para evitar CORS preflight
-                mode: 'cors'
+            const response = await fetch(finalUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
             });
 
             console.log('📥 Response status:', response.status, response.statusText);
@@ -70,73 +126,9 @@ class GoogleSync {
             
         } catch (error) {
             console.error('❌ Error en request:', error);
-            console.error('URL:', GOOGLE_SCRIPT_URL);
-            console.error('Params:', params);
             throw error;
         }
     }
-
-    getUserId() {
-        let userId = localStorage.getItem('ubercalc_user_id');
-        if (!userId) {
-            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('ubercalc_user_id', userId);
-            console.log('🆕 Nuevo User ID generado:', userId);
-        }
-        return userId;
-    }
-
- async makeRequest(params) {
-    if (!this.initialized) {
-        throw new Error('Google Sync no inicializado');
-    }
-
-    try {
-        console.log('📤 Enviando request a Google Script...', params.action);
-        
-        const formData = new URLSearchParams();
-        Object.keys(params).forEach(key => {
-            if (key === 'profiles' && typeof params[key] === 'object') {
-                formData.append(key, JSON.stringify(params[key]));
-            } else {
-                formData.append(key, params[key]);
-            }
-        });
-        formData.append('userId', this.userId);
-
-        // Agregar timestamp para evitar cache
-        const urlWithTimestamp = `${GOOGLE_SCRIPT_URL}?t=${Date.now()}`;
-        
-        const response = await fetch(urlWithTimestamp, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            }
-        });
-
-        console.log('📥 Response status:', response.status, response.statusText);
-        
-        if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        console.log('✅ Request exitoso:', params.action, result);
-        
-        if (result.success === false) {
-            throw new Error(result.error || 'Error del servidor');
-        }
-        
-        return result;
-        
-    } catch (error) {
-        console.error('❌ Error en request:', error);
-        console.error('URL:', GOOGLE_SCRIPT_URL);
-        console.error('Params:', params);
-        throw error;
-    }
-}
 
     async saveProfiles(profiles) {
         if (!this.initialized) {
@@ -1885,7 +1877,7 @@ setTimeout(() => {
     }
 }, 1000);
 
-// 🔧 FUNCIÓN DE DIAGNÓSTICO CORREGIDA
+// --- Función de Diagnóstico CORREGIDA ---
 async function diagnosticarSync() {
     console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
     
@@ -1940,7 +1932,7 @@ async function diagnosticarSync() {
     }
 }
 
-// Agregar al objeto window para poder ejecutarlo desde la consola
+// Agregar diagnóstico al objeto window
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
