@@ -12,7 +12,7 @@ let timeoutCalculo = null;
 let googleSync;
 
 // --- Configuración Google Apps Script ---
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8O285FcLwNvmMOn8VIEIzVF7djFZ3V4glvcop4-_HjIgDCgG0JzBr3alm_qEGiuhoFg/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwmBuWNYLsSqRTQPckfgAExwbTH9TH4ovn6g5D3nEgtWYOyPSDSI1sA2xia0unC3tPSqg/exec';
 
 // --- Clase Google Sync ---
 class GoogleSync {
@@ -57,13 +57,17 @@ class GoogleSync {
         return userId;
     }
 
- async makePostRequest(params) {
+ async makeRequest(params) {
+    if (!this.initialized) {
+        throw new Error('Google Sync no inicializado');
+    }
+
     try {
         console.log('📤 Enviando request a Google Script...', params.action);
         
         const formData = new URLSearchParams();
         Object.keys(params).forEach(key => {
-            if (typeof params[key] === 'object') {
+            if (key === 'profiles' && typeof params[key] === 'object') {
                 formData.append(key, JSON.stringify(params[key]));
             } else {
                 formData.append(key, params[key]);
@@ -79,9 +83,7 @@ class GoogleSync {
             body: formData,
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            // Agregar modo 'cors' para mejor manejo de errores
-            mode: 'cors'
+            }
         });
 
         console.log('📥 Response status:', response.status, response.statusText);
@@ -92,10 +94,15 @@ class GoogleSync {
 
         const result = await response.json();
         console.log('✅ Request exitoso:', params.action, result);
+        
+        if (result.success === false) {
+            throw new Error(result.error || 'Error del servidor');
+        }
+        
         return result;
         
     } catch (error) {
-        console.error('❌ Error en POST request:', error);
+        console.error('❌ Error en request:', error);
         console.error('URL:', GOOGLE_SCRIPT_URL);
         console.error('Params:', params);
         throw error;
