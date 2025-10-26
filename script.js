@@ -12,7 +12,7 @@ let timeoutCalculo = null;
 let googleSync;
 
 // --- Configuración Google Apps Script ---
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
+const GOOGLE_SCRIPT_URL = 'https://corsproxy.io/?https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
 
 // --- Clase Google Sync CORREGIDA ---
 class GoogleSync {
@@ -79,56 +79,58 @@ class GoogleSync {
     }
 
     async makeRequest(params) {
-        if (!this.initialized) {
-            throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
-        }
-
-        try {
-            console.log('📤 Enviando request a Google Script...', params.action);
-            
-            // Usar FormData para POST
-            const formData = new URLSearchParams();
-            Object.keys(params).forEach(key => {
-                if (key === 'profiles' && typeof params[key] === 'object') {
-                    formData.append(key, JSON.stringify(params[key]));
-                } else {
-                    formData.append(key, params[key]);
-                }
-            });
-            formData.append('userId', this.userId);
-
-            const finalUrl = GOOGLE_SCRIPT_URL + `&t=${Date.now()}`;
-            
-            console.log('🔗 URL final:', finalUrl);
-            
-            const response = await fetch(finalUrl, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                }
-            });
-
-            console.log('📥 Response status:', response.status, response.statusText);
-            
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
-            }
-
-            const result = await response.json();
-            console.log('✅ Request exitoso:', params.action, result);
-            
-            if (result.success === false) {
-                throw new Error(result.error || 'Error del servidor');
-            }
-            
-            return result;
-            
-        } catch (error) {
-            console.error('❌ Error en request:', error);
-            throw error;
-        }
+    if (!this.initialized) {
+        throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
     }
+
+    try {
+        console.log('📤 Enviando request a Google Script...', params.action);
+        
+        // Usar FormData para POST
+        const formData = new URLSearchParams();
+        Object.keys(params).forEach(key => {
+            if (key === 'profiles' && typeof params[key] === 'object') {
+                formData.append(key, JSON.stringify(params[key]));
+            } else {
+                formData.append(key, params[key]);
+            }
+        });
+        formData.append('userId', this.userId);
+
+        // Usar proxy CORS correctamente
+        const targetUrl = 'https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
+        const finalUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl + `?t=${Date.now()}`)}`;
+        
+        console.log('🔗 URL final:', finalUrl);
+        
+        const response = await fetch(finalUrl, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+        });
+
+        console.log('📥 Response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Request exitoso:', params.action, result);
+        
+        if (result.success === false) {
+            throw new Error(result.error || 'Error del servidor');
+        }
+        
+        return result;
+        
+    } catch (error) {
+        console.error('❌ Error en request:', error);
+        throw error;
+    }
+}
 
     async saveProfiles(profiles) {
         if (!this.initialized) {
@@ -1936,3 +1938,4 @@ async function diagnosticarSync() {
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
