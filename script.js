@@ -12,7 +12,7 @@ let timeoutCalculo = null;
 let googleSync;
 
 // --- Configuración Google Apps Script ---
-const GOOGLE_SCRIPT_URL = 'https://cors-anywhere.herokuapp.com/https://script.google.com/macros/s/AKfycbwmBuWNYLsSqRTQPckfgAExwbTH9TH4ovn6g5D3nEgtWYOyPSDSI1sA2xia0unC3tPSqg/exec';
+const GOOGLE_SCRIPT_URL = 'https://corsproxy.io/?https://script.google.com/macros/s/AKfycbwmBuWNYLsSqRTQPckfgAExwbTH9TH4ovn6g5D3nEgtWYOyPSDSI1sA2xia0unC3tPSqg/exec';
 
 // --- Clase Google Sync ---
 class GoogleSync {
@@ -23,27 +23,56 @@ class GoogleSync {
         this.lastSyncTime = null;
     }
 
-    async initialize() {
-        if (this.initialized) {
-            console.log('✅ Google Sync ya estaba inicializado');
-            return true;
+    // ... otras funciones ...
+
+    async makeRequest(params) {
+        if (!this.initialized) {
+            throw new Error('Google Sync no inicializado');
         }
 
         try {
-            console.log('📡 Inicializando Google Sync...');
-            this.userId = this.getUserId();
-            this.initialized = true;
+            console.log('📤 Enviando request a Google Script...', params.action);
             
-            console.log('✅ Google Sync inicializado CORRECTAMENTE');
-            console.log('👤 User ID:', this.userId);
+            // Crear URL con parámetros para GET (evita CORS)
+            const urlParams = new URLSearchParams();
+            Object.keys(params).forEach(key => {
+                if (key === 'profiles' && typeof params[key] === 'object') {
+                    urlParams.append(key, JSON.stringify(params[key]));
+                } else {
+                    urlParams.append(key, params[key]);
+                }
+            });
+            urlParams.append('userId', this.userId);
             
-            this.actualizarUIEstado('connected');
-            return true;
+            const url = `${GOOGLE_SCRIPT_URL}?${urlParams.toString()}&t=${Date.now()}`;
+            
+            console.log('🔗 URL:', url);
+            
+            const response = await fetch(url, {
+                method: 'GET', // Usar GET para evitar CORS preflight
+                mode: 'cors'
+            });
+
+            console.log('📥 Response status:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('✅ Request exitoso:', params.action, result);
+            
+            if (result.success === false) {
+                throw new Error(result.error || 'Error del servidor');
+            }
+            
+            return result;
             
         } catch (error) {
-            console.error('❌ Error inicializando Google Sync:', error);
-            this.actualizarUIEstado('error');
-            return false;
+            console.error('❌ Error en request:', error);
+            console.error('URL:', GOOGLE_SCRIPT_URL);
+            console.error('Params:', params);
+            throw error;
         }
     }
 
@@ -1856,35 +1885,49 @@ setTimeout(() => {
     }
 }, 1000);
 
-// 🔧 FUNCIÓN DE DIAGNÓSTICO - Agregar al final del archivo
+// 🔧 FUNCIÓN DE DIAGNÓSTICO CORREGIDA
 async function diagnosticarSync() {
     console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
     
     if (!googleSync || !googleSync.initialized) {
         console.error('❌ Google Sync no inicializado');
+        mostrarStatus('❌ Google Sync no inicializado', 'error');
         return;
     }
 
     try {
         // 1. Probar conexión básica
         console.log('1. Probando conexión básica...');
-        const testResult = await googleSync.makePostRequest({
+        mostrarStatus('1. Probando conexión básica...', 'info');
+        
+        const testResult = await googleSync.makeRequest({
             action: 'getSyncStatus'
         });
         console.log('✅ Conexión básica OK:', testResult);
 
         // 2. Probar obtener perfiles
         console.log('2. Probando obtener perfiles...');
+        mostrarStatus('2. Probando obtener perfiles...', 'info');
+        
         const perfiles = await googleSync.loadProfiles();
         console.log('✅ Obtención de perfiles OK:', perfiles?.length || 0);
 
-        // 3. Probar guardar perfiles
+        // 3. Probar guardar perfiles (solo si hay perfiles)
         console.log('3. Probando guardar perfiles...');
-        const saveResult = await googleSync.saveProfiles(perfiles || []);
+        mostrarStatus('3. Probando guardar perfiles...', 'info');
+        
+        let saveResult = false;
+        if (perfiles && perfiles.length > 0) {
+            saveResult = await googleSync.saveProfiles(perfiles);
+        } else {
+            saveResult = await googleSync.saveProfiles([]);
+        }
         console.log('✅ Guardado de perfiles OK:', saveResult);
 
         // 4. Probar sincronización
         console.log('4. Probando sincronización...');
+        mostrarStatus('4. Probando sincronización...', 'info');
+        
         const syncResult = await googleSync.syncProfiles(perfiles || []);
         console.log('✅ Sincronización OK:', syncResult ? 'Éxito' : 'Falló');
 
