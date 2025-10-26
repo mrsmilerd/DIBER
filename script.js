@@ -12,7 +12,7 @@ let timeoutCalculo = null;
 let googleSync;
 
 // --- Configuración Google Apps Script ---
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwmBuWNYLsSqRTQPckfgAExwbTH9TH4ovn6g5D3nEgtWYOyPSDSI1sA2xia0unC3tPSqg/exec';
+const GOOGLE_SCRIPT_URL = 'https://cors-anywhere.herokuapp.com/https://script.google.com/macros/s/AKfycbwmBuWNYLsSqRTQPckfgAExwbTH9TH4ovn6g5D3nEgtWYOyPSDSI1sA2xia0unC3tPSqg/exec';
 
 // --- Clase Google Sync ---
 class GoogleSync {
