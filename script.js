@@ -1,6 +1,6 @@
 // =============================================
 // UBER CALC - Calculadora Inteligente para Conductores
-// Versión COMPLETA con Google Sheets Sync
+// Versión COMPLETA con Google Sheets Sync FUNCIONANDO
 // =============================================
 
 // --- Variables Globales ---
@@ -15,12 +15,14 @@ let syncManager;
 // REEMPLAZA ESTA URL CON LA URL DE TU GOOGLE APPS SCRIPT
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8O285FcLwNvmMOn8VIEIzVF7djFZ3V4glvcop4-_HjIgDCgG0JzBr3alm_qEGiuhoFg/exec';
 
-// --- Clase Google Sheets Sync ---
+// --- Clase Google Sheets Sync ACTUALIZADA ---
 class GoogleSheetsSync {
     constructor() {
         this.initialized = false;
         this.userId = this.getUserId();
         this.scriptUrl = GOOGLE_SCRIPT_URL;
+        this.retryCount = 0;
+        this.maxRetries = 3;
     }
 
     getUserId() {
@@ -29,8 +31,6 @@ class GoogleSheetsSync {
             userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('ubercalc_user_id', userId);
             console.log('🆕 Nuevo User ID generado:', userId);
-        } else {
-            console.log('📋 User ID existente:', userId);
         }
         return userId;
     }
@@ -42,22 +42,23 @@ class GoogleSheetsSync {
         }
 
         try {
-            console.log('🔥 Iniciando inicialización de Google Sheets...');
+            console.log('🔥 Iniciando Google Sheets Sync...');
             
-            // Test de conexión
+            // Test de conexión simple
             const testUrl = `${this.scriptUrl}?action=test&timestamp=${Date.now()}`;
             console.log('🔗 Probando URL:', testUrl);
             
-            const testResponse = await fetch(testUrl);
-            const testResult = await testResponse.json();
+            const response = await fetch(testUrl);
+            const result = await response.json();
             
-            if (testResult.success) {
+            if (result.success) {
                 this.initialized = true;
+                this.retryCount = 0;
                 console.log('🎉 Google Sheets Sync inicializado CORRECTAMENTE');
                 this.actualizarUIEstado('connected');
                 return true;
             } else {
-                throw new Error(testResult.error || 'Error en test de conexión');
+                throw new Error(result.message || 'Error en test de conexión');
             }
             
         } catch (error) {
@@ -65,10 +66,15 @@ class GoogleSheetsSync {
             this.actualizarUIEstado('error');
             
             // Reintento automático
-            setTimeout(async () => {
-                console.log('🔄 Reintentando conexión Google Sheets...');
-                await this.initialize();
-            }, 3000);
+            if (this.retryCount < this.maxRetries) {
+                this.retryCount++;
+                const delay = Math.min(1000 * Math.pow(2, this.retryCount), 10000);
+                console.log(`🔄 Reintento ${this.retryCount}/${this.maxRetries} en ${delay}ms...`);
+                
+                setTimeout(async () => {
+                    await this.initialize();
+                }, delay);
+            }
             
             return false;
         }
@@ -113,12 +119,11 @@ class GoogleSheetsSync {
                 
                 return true;
             } else {
-                throw new Error(result.error || 'Error del servidor');
+                throw new Error(result.message || 'Error del servidor');
             }
             
         } catch (error) {
             console.error('❌ ERROR guardando en Google Sheets:', error);
-            console.error('Detalles del error:', error.message);
             this.actualizarUIEstado('error');
             return false;
         }
@@ -143,12 +148,11 @@ class GoogleSheetsSync {
                 this.actualizarUIEstado('connected');
                 return result.profiles || [];
             } else {
-                throw new Error(result.error || 'Error cargando datos');
+                throw new Error(result.message || 'Error cargando datos');
             }
             
         } catch (error) {
             console.error('❌ ERROR cargando desde Google Sheets:', error);
-            console.error('Detalles:', error.message);
             this.actualizarUIEstado('error');
             return null;
         }
@@ -159,13 +163,9 @@ class GoogleSheetsSync {
             id: this.userId,
             name: localStorage.getItem('ubercalc_device_name') || this.guessDeviceName(),
             type: this.detectDeviceType(),
-            userAgent: navigator.userAgent.substring(0, 100),
-            lastSync: new Date().toISOString(),
-            platform: navigator.platform,
-            appVersion: '2.0'
+            lastSync: new Date().toISOString()
         };
         
-        console.log('📱 Información del dispositivo:', deviceInfo.name, deviceInfo.type);
         return deviceInfo;
     }
 
@@ -202,12 +202,8 @@ class GoogleSheetsSync {
             const syncIcon = document.getElementById('sync-icon');
             const syncText = document.getElementById('sync-text');
             
-            if (!syncInfo || !syncIcon || !syncText) {
-                console.log('ℹ️ Elementos de UI de sync no encontrados');
-                return;
-            }
+            if (!syncInfo || !syncIcon || !syncText) return;
             
-            // Limpiar clases anteriores
             syncInfo.className = 'sync-info';
             syncInfo.classList.add(estado);
             
@@ -215,25 +211,19 @@ class GoogleSheetsSync {
                 case 'connected':
                     syncIcon.textContent = '✅';
                     syncText.textContent = 'Conectado a Google Sheets';
-                    syncInfo.title = 'Sincronización activa - Todo funciona correctamente';
                     break;
                 case 'syncing':
                     syncIcon.textContent = '🔄';
                     syncText.textContent = 'Sincronizando...';
-                    syncInfo.title = 'Sincronizando datos con Google Sheets';
                     break;
                 case 'error':
                     syncIcon.textContent = '❌';
                     syncText.textContent = 'Error de conexión';
-                    syncInfo.title = 'Problema de conexión con Google Sheets';
                     break;
                 default:
                     syncIcon.textContent = '🌐';
                     syncText.textContent = 'Conectando...';
-                    syncInfo.title = 'Estableciendo conexión con Google Sheets';
             }
-            
-            console.log(`🔄 Estado de Sync actualizado: ${estado}`);
             
         } catch (error) {
             console.error('Error actualizando UI de sync:', error);
@@ -260,102 +250,63 @@ class GoogleSheetsSync {
             return { status: 'error', message: error.message };
         }
     }
-
-    // Método para debug
-    async debugGoogleSheets() {
-        console.group('🔥 DEBUG GOOGLE SHEETS');
-        console.log('✅ Initialized:', this.initialized);
-        console.log('✅ User ID:', this.userId);
-        console.log('✅ Script URL:', this.scriptUrl);
-        
-        if (this.initialized) {
-            const status = await this.getSyncStatus();
-            console.log('✅ Sync Status:', status);
-        }
-        console.groupEnd();
-    }
 }
 
 // --- Elementos DOM ---
 const elementos = {
-    // Pantallas
     perfilScreen: document.getElementById('perfil-screen'),
     configPerfilScreen: document.getElementById('config-perfil-screen'),
     mainScreen: document.getElementById('main-screen'),
-    
-    // Sistema de Pestañas
     tabButtons: document.querySelectorAll('.tab-button'),
     tabContents: document.querySelectorAll('.tab-content'),
-    
-    // Indicadores
     statusIndicator: document.getElementById('status-indicator'),
     statusText: document.getElementById('status-text'),
     autoCalcIndicator: document.getElementById('auto-calc-indicator'),
-    
-    // Formularios
     tarifaInput: document.getElementById('tarifa'),
     minutosInput: document.getElementById('minutos'),
     distanciaInput: document.getElementById('distancia'),
-    
-    // Resultado Rápido
     resultadoRapido: document.getElementById('resultado-rapido'),
     resultadoBadge: document.getElementById('resultado-badge'),
     resultadoEmoji: document.getElementById('resultado-emoji'),
     resultadoTexto: document.getElementById('resultado-texto'),
     metricaMinuto: document.getElementById('metrica-minuto'),
     metricaKm: document.getElementById('metrica-km'),
-    
-    // Botones de Acción
     aceptarViajeBtn: document.getElementById('aceptar-viaje'),
     rechazarViajeBtn: document.getElementById('rechazar-viaje'),
     aceptarViajeTabBtn: document.getElementById('aceptar-viaje-tab'),
     rechazarViajeTabBtn: document.getElementById('rechazar-viaje-tab'),
-    
-    // Modales
     modalFondo: document.getElementById('modalFondo'),
     modalContenido: document.getElementById('modalContenido'),
     modalResultadosDoble: document.getElementById('modalResultadosDoble'),
     modalBadge: document.getElementById('modal-badge'),
     modalEmoji: document.getElementById('modal-emoji'),
     modalTexto: document.getElementById('modal-texto'),
-    
-    // Historial
     historyList: document.getElementById('history-list'),
     clearHistoryBtn: document.getElementById('clear-history'),
     exportarHistorialBtn: document.getElementById('exportar-historial'),
-    
-    // Estadísticas
     statsViajes: document.getElementById('stats-viajes'),
     statsGanancia: document.getElementById('stats-ganancia'),
     statsTiempo: document.getElementById('stats-tiempo'),
     statsRentables: document.getElementById('stats-rentables'),
     statsGananciaHora: document.getElementById('stats-ganancia-hora'),
     statsViajePromedio: document.getElementById('stats-viaje-promedio'),
-    
-    // Perfiles
     perfilesLista: document.getElementById('perfiles-lista'),
     nuevoPerfilBtn: document.getElementById('nuevo-perfil-btn'),
     perfilForm: document.getElementById('perfil-form'),
     volverPerfilesBtn: document.getElementById('volver-perfiles'),
     cancelarPerfilBtn: document.getElementById('cancelar-perfil'),
     cambiarPerfilBtn: document.getElementById('cambiar-perfil'),
-    
-    // Tema
     themeToggle: document.getElementById('theme-toggle'),
-    
-    // Exportación
     exportModal: document.getElementById('exportModal'),
     exportarPdfBtn: document.getElementById('exportar-pdf'),
-    
-    // Sincronización
     syncPanel: document.getElementById('sync-panel')
 };
 
-// --- Inicialización PRINCIPAL MEJORADA ---
+// --- Inicialización PRINCIPAL ---
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOM Cargado - Iniciando UberCalc...');
+    console.log('🚀 Iniciando UberCalc...');
     inicializarApp().catch(error => {
-        console.error('💥 Error crítico en inicialización:', error);
+        console.error('💥 Error en inicialización:', error);
     });
 });
 
@@ -363,61 +314,42 @@ async function inicializarApp() {
     console.log('🎯 Inicializando aplicación...');
     
     try {
-        // 1. Inicializar Google Sheets Sync PRIMERO
-        console.log('🔥 Paso 1: Inicializando Google Sheets Sync...');
+        // 1. Inicializar Google Sheets Sync
+        console.log('🔥 Inicializando Google Sheets Sync...');
         syncManager = new GoogleSheetsSync();
         const syncReady = await syncManager.initialize();
         
         if (syncReady) {
-            console.log('✅ Google Sheets listo - Cargando datos...');
-            
-            // Cargar datos desde Google Sheets
-            console.log('📥 Cargando datos iniciales desde Google Sheets...');
+            console.log('✅ Google Sheets listo');
             await cargarDatos();
-            
         } else {
-            console.warn('⚠️ Google Sheets no disponible - Modo offline');
-            cargarDatos(); // Cargar desde localStorage
+            console.warn('⚠️ Modo offline');
+            cargarDatos();
         }
         
     } catch (error) {
-        console.error('❌ Error en inicialización Google Sheets:', error);
-        cargarDatos(); // Fallback a localStorage
+        console.error('❌ Error en inicialización:', error);
+        cargarDatos();
     }
     
-    // 2. Configuración básica de la app
-    console.log('⚙️ Paso 2: Configurando aplicación...');
+    // Configuración básica
     aplicarTemaGuardado();
     configurarEventListeners();
     actualizarInterfazPerfiles();
     
-    // 3. Decidir qué pantalla mostrar
+    // Decidir pantalla inicial
     if (perfiles.length > 0 && perfilActual) {
-        console.log('🏠 Mostrando pantalla principal - Perfil activo:', perfilActual.nombre);
         mostrarPantalla('main');
         actualizarEstadisticas();
     } else {
-        console.log('👤 Mostrando pantalla de perfiles - Sin perfiles');
         mostrarPantalla('perfil');
     }
     
-    // 4. Actualizar panel de sync
     actualizarPanelSync();
-    
-    console.log('🎉 UberCalc inicializado COMPLETAMENTE');
-    mostrarStatus('✅ Aplicación lista con Google Sheets', 'success');
-    
-    // Debug opcional
-    setTimeout(() => {
-        if (syncManager) {
-            syncManager.debugGoogleSheets();
-        }
-    }, 3000);
+    console.log('🎉 UberCalc inicializado');
 }
 
 function configurarEventListeners() {
-    console.log('⚡ Configurando event listeners...');
-    
     // Sistema de Pestañas
     elementos.tabButtons.forEach(button => {
         button.addEventListener('click', function() {
@@ -458,8 +390,6 @@ function configurarEventListeners() {
     document.getElementById('tipo-medida')?.addEventListener('change', actualizarUnidades);
     document.getElementById('tipo-combustible')?.addEventListener('change', actualizarUnidades);
     document.getElementById('moneda')?.addEventListener('change', actualizarUnidades);
-    
-    console.log('✅ Event listeners configurados');
 }
 
 // --- Sistema de Pestañas ---
@@ -828,7 +758,7 @@ function actualizarEstadisticas() {
     };
 }
 
-// --- Gestión de Perfiles MEJORADA ---
+// --- Gestión de Perfiles ---
 function mostrarConfigPerfil(perfil = null) {
     const form = elementos.perfilForm;
     
@@ -861,7 +791,7 @@ function mostrarConfigPerfil(perfil = null) {
 
 async function guardarPerfil(event) {
     event.preventDefault();
-    console.log('💾 Iniciando guardado de perfil...');
+    console.log('💾 Guardando perfil...');
     
     const perfilId = document.getElementById('perfil-id').value;
     
@@ -893,17 +823,14 @@ async function guardarPerfil(event) {
         const index = perfiles.findIndex(p => p.id === perfilId);
         if (index !== -1) {
             perfiles[index] = perfil;
-            console.log('✅ Perfil actualizado:', perfil.nombre);
         }
     } else {
         perfiles.push(perfil);
-        console.log('✅ Nuevo perfil creado:', perfil.nombre);
     }
     
     // Actualizar perfil actual si es necesario
     if (!perfilActual || perfilId === perfilActual.id) {
         perfilActual = perfil;
-        console.log('🎯 Perfil actual establecido:', perfil.nombre);
     }
     
     // Guardar localmente
@@ -915,14 +842,11 @@ async function guardarPerfil(event) {
         const success = await syncManager.saveProfiles(perfiles);
         
         if (success) {
-            console.log('✅ Sincronización EXITOSA con Google Sheets');
-            mostrarStatus('✅ Perfil guardado y sincronizado en Google Sheets', 'success');
+            mostrarStatus('✅ Perfil guardado y sincronizado', 'success');
         } else {
-            console.warn('⚠️ Sincronización falló, pero perfil guardado localmente');
             mostrarStatus('💾 Perfil guardado (solo local)', 'warning');
         }
     } else {
-        console.log('📱 Google Sheets no disponible - Guardado solo local');
         mostrarStatus('💾 Perfil guardado (almacenamiento local)', 'info');
     }
     
@@ -931,12 +855,7 @@ async function guardarPerfil(event) {
 }
 
 function actualizarInterfazPerfiles() {
-    if (!elementos.perfilesLista) {
-        console.error('❌ Elemento perfiles-lista no encontrado');
-        return;
-    }
-    
-    console.log('🔄 Actualizando interfaz de perfiles. Total:', perfiles.length);
+    if (!elementos.perfilesLista) return;
     
     elementos.perfilesLista.innerHTML = '';
     
@@ -991,7 +910,6 @@ function actualizarInterfazPerfiles() {
                 e.preventDefault();
                 e.stopPropagation();
                 const perfilId = this.getAttribute('data-perfil-id');
-                console.log('🎯 Botón USAR clickeado para perfil:', perfilId);
                 seleccionarPerfil(perfilId);
             });
         }
@@ -1001,7 +919,6 @@ function actualizarInterfazPerfiles() {
                 e.preventDefault();
                 e.stopPropagation();
                 const perfilId = this.getAttribute('data-perfil-id');
-                console.log('✏️ Botón EDITAR clickeado para perfil:', perfilId);
                 editarPerfil(perfilId);
             });
         }
@@ -1011,7 +928,6 @@ function actualizarInterfazPerfiles() {
                 e.preventDefault();
                 e.stopPropagation();
                 const perfilId = this.getAttribute('data-perfil-id');
-                console.log('🗑️ Botón ELIMINAR clickeado para perfil:', perfilId);
                 eliminarPerfil(perfilId);
             });
         }
@@ -1019,57 +935,44 @@ function actualizarInterfazPerfiles() {
         // Clic en el item completo
         perfilItem.addEventListener('click', function(e) {
             if (!e.target.closest('.perfil-acciones')) {
-                console.log('🎯 Clic en item perfil:', perfil.id);
                 seleccionarPerfil(perfil.id);
             }
         });
         
         elementos.perfilesLista.appendChild(perfilItem);
     });
-    
-    console.log('✅ Interfaz de perfiles actualizada correctamente');
 }
 
 async function seleccionarPerfil(perfilId) {
-    console.log('🎯 Intentando seleccionar perfil:', perfilId);
-    
     const perfil = perfiles.find(p => p.id === perfilId);
     if (perfil) {
-        console.log('✅ Perfil encontrado:', perfil.nombre);
         perfilActual = perfil;
         guardarDatos();
         
         // Sincronizar con Google Sheets
         if (syncManager && syncManager.initialized) {
-            console.log('🔥 Sincronizando cambio de perfil con Google Sheets...');
             await syncManager.saveProfiles(perfiles);
         }
         
-        console.log('🔄 Mostrando pantalla principal...');
         mostrarPantalla('main');
         mostrarStatus(`🚗 Perfil "${perfil.nombre}" activado`, 'success');
         actualizarUnidades();
         actualizarEstadisticas();
     } else {
-        console.error('❌ Perfil no encontrado con ID:', perfilId);
         mostrarError('Error: Perfil no encontrado');
     }
 }
 
 function editarPerfil(perfilId) {
-    console.log('✏️ Editando perfil:', perfilId);
     const perfil = perfiles.find(p => p.id === perfilId);
     if (perfil) {
         mostrarConfigPerfil(perfil);
     } else {
-        console.error('❌ Perfil no encontrado para editar:', perfilId);
         mostrarError('Perfil no encontrado');
     }
 }
 
 async function eliminarPerfil(perfilId) {
-    console.log('🗑️ Intentando eliminar perfil:', perfilId);
-    
     if (perfiles.length <= 1) {
         mostrarError('No puedes eliminar el único perfil existente');
         return;
@@ -1081,12 +984,11 @@ async function eliminarPerfil(perfilId) {
         return;
     }
     
-    if (confirm(`¿Estás seguro de que quieres eliminar el perfil "${perfilAEliminar.nombre}"? Esta acción no se puede deshacer.`)) {
+    if (confirm(`¿Estás seguro de que quieres eliminar el perfil "${perfilAEliminar.nombre}"?`)) {
         perfiles = perfiles.filter(p => p.id !== perfilId);
         
         if (perfilActual && perfilActual.id === perfilId) {
             perfilActual = perfiles[0];
-            console.log('🔄 Cambiando a perfil:', perfilActual.nombre);
         }
         
         guardarDatos();
@@ -1098,7 +1000,6 @@ async function eliminarPerfil(perfilId) {
         
         actualizarInterfazPerfiles();
         mostrarStatus('🗑️ Perfil eliminado correctamente', 'success');
-        console.log('✅ Perfil eliminado:', perfilId);
     }
 }
 
@@ -1158,7 +1059,6 @@ function aplicarTemaGuardado() {
 
 // --- Sincronización Google Sheets UI ---
 function mostrarPanelSync() {
-    console.log('🌐 Mostrando panel de sincronización');
     actualizarPanelSync();
     if (elementos.syncPanel) {
         elementos.syncPanel.style.display = 'flex';
@@ -1166,19 +1066,13 @@ function mostrarPanelSync() {
 }
 
 function cerrarSyncPanel() {
-    console.log('❌ Cerrando panel de sincronización');
     if (elementos.syncPanel) {
         elementos.syncPanel.style.display = 'none';
     }
 }
 
 async function actualizarPanelSync() {
-    if (!syncManager) {
-        console.log('❌ Sync Manager no disponible');
-        return;
-    }
-    
-    console.log('🔄 Actualizando panel de sync');
+    if (!syncManager) return;
     
     try {
         const deviceInfo = syncManager.getDeviceInfo();
@@ -1221,7 +1115,7 @@ async function actualizarPanelSync() {
             if (cloudProfilesCount) cloudProfilesCount.textContent = '--';
         }
     } catch (error) {
-        console.error('❌ Error actualizando panel sync:', error);
+        console.error('Error actualizando panel sync:', error);
     }
 }
 
@@ -1231,15 +1125,14 @@ async function forzarSincronizacion() {
         return;
     }
     
-    console.log('🔄 Forzando sincronización...');
-    mostrarStatus('🔄 Sincronizando con Google Sheets...', 'info');
+    mostrarStatus('🔄 Sincronizando...', 'info');
     
     const success = await syncManager.saveProfiles(perfiles);
     if (success) {
-        mostrarStatus('✅ Sincronización completada con Google Sheets', 'success');
+        mostrarStatus('✅ Sincronización completada', 'success');
         actualizarPanelSync();
     } else {
-        mostrarError('❌ Error en la sincronización con Google Sheets');
+        mostrarError('❌ Error en la sincronización');
     }
 }
 
@@ -1250,48 +1143,34 @@ function mostrarInfoSync() {
 1. Tus perfiles se guardan automáticamente en Google Sheets
 2. Todos tus dispositivos acceden a los mismos perfiles
 3. Los cambios se sincronizan automáticamente
-4. Tus datos están seguros en tu cuenta de Google
 
 📱 Dispositivos conectados: Todos los que usen tu misma cuenta de Google
-
-🔧 Método: Google Sheets (Más confiable que Firebase)
 
 💡 Los viajes e historial se mantienen locales en cada dispositivo`);
 }
 
 // --- Funciones de Diagnóstico ---
 async function diagnosticarGoogleSheets() {
-    console.group('🔍 DIAGNÓSTICO GOOGLE SHEETS');
-    
     try {
         if (!syncManager) {
             alert('❌ Sync Manager no inicializado');
             return;
         }
         
-        // Test de conexión
         const testUrl = `${GOOGLE_SCRIPT_URL}?action=test&timestamp=${Date.now()}`;
-        console.log('🔗 Probando URL:', testUrl);
-        
         const response = await fetch(testUrl);
         const result = await response.json();
         
         if (result.success) {
-            console.log('✅ Conexión exitosa:', result);
             alert('✅ Google Sheets Sync funcionando correctamente!\n\n' + 
-                  'Mensaje: ' + result.message + '\n' +
-                  'Timestamp: ' + result.timestamp);
+                  'Mensaje: ' + result.message);
         } else {
-            console.error('❌ Error en test:', result);
             alert('❌ Error en Google Sheets:\n\n' + (result.error || 'Error desconocido'));
         }
         
     } catch (error) {
-        console.error('💥 Error en diagnóstico:', error);
         alert('💥 Error de conexión:\n\n' + error.message);
     }
-    
-    console.groupEnd();
 }
 
 // --- Exportación ---
@@ -1336,9 +1215,7 @@ function exportarBackup() {
         perfilActual: perfilActual,
         historial: historial,
         exportDate: new Date().toISOString(),
-        version: '2.0',
-        totalProfiles: perfiles.length,
-        totalTrips: historial.length
+        version: '2.0'
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1378,12 +1255,11 @@ function importarBackup(file) {
                 actualizarEstadisticas();
                 actualizarHistorial();
                 
-                // Sincronizar con Google Sheets si está disponible
                 if (syncManager && syncManager.initialized) {
                     syncManager.saveProfiles(perfiles);
                 }
                 
-                mostrarStatus(`📥 Backup importado: ${perfiles.length} perfiles, ${historial.length} viajes`, 'success');
+                mostrarStatus(`📥 Backup importado: ${perfiles.length} perfiles`, 'success');
             }
         } catch (error) {
             mostrarError('Error importando backup: ' + error.message);
@@ -1401,28 +1277,16 @@ function generarContenidoPDF() {
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reporte UberCalc</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.4; color: #333; }
         .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
         .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
         .summary-card { padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
-        .summary-card.ingresos { background-color: #e8f5e8; border-color: #4CAF50; }
-        .summary-card.costos { background-color: #ffe8e8; border-color: #f44336; }
-        .summary-card.rendimiento { background-color: #e8f4ff; border-color: #2196F3; }
         table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; font-weight: bold; }
-        .rentable { background-color: #d4edda; }
-        .oportunidad { background-color: #fff3cd; }
-        .no-rentable { background-color: #f8d7da; }
         .footer { text-align: center; margin-top: 30px; color: #666; font-size: 0.9em; }
-        .valor-destacado { font-size: 1.3em; font-weight: bold; margin: 5px 0; }
-        .valor-positivo { color: #4CAF50; }
-        .valor-negativo { color: #f44336; }
-        .desglose-costos { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }
-        @media print { body { margin: 10px; } .summary-grid { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
 <body>
@@ -1430,53 +1294,27 @@ function generarContenidoPDF() {
         <h1>🚗 UberCalc - Reporte Completo</h1>
         <p><strong>Generado el:</strong> ${new Date().toLocaleString('es-DO')}</p>
         <p><strong>Perfil:</strong> ${perfilActual?.nombre || 'No especificado'}</p>
-        <p><strong>Total de registros:</strong> ${historial.length}</p>
     </div>
 
     <div class="summary-grid">
-        <div class="summary-card ingresos">
+        <div class="summary-card">
             <h3>💰 INGRESOS</h3>
-            <div class="valor-destacado valor-positivo">${formatearMoneda(stats.gananciaTotal || 0)}</div>
-            <p><strong>Ganancia Neta:</strong> ${formatearMoneda(stats.gananciaNetaTotal || 0)}</p>
+            <p><strong>Ganancia Total:</strong> ${formatearMoneda(stats.gananciaTotal || 0)}</p>
             <p><strong>Viajes Aceptados:</strong> ${viajesAceptados}</p>
-            <p><strong>Viaje Promedio:</strong> ${formatearMoneda(stats.viajePromedio || 0)}</p>
         </div>
         
-        <div class="summary-card costos">
-            <h3>💸 COSTOS TOTALES</h3>
-            <div class="valor-destacado valor-negativo">${formatearMoneda((stats.costoCombustibleTotal || 0) + (stats.costoMantenimientoTotal || 0) + (stats.costoSeguroTotal || 0))}</div>
-            <p><strong>⛽ Combustible:</strong> ${formatearMoneda(stats.costoCombustibleTotal || 0)}</p>
-            <p><strong>🔧 Mantenimiento:</strong> ${formatearMoneda(stats.costoMantenimientoTotal || 0)}</p>
-            <p><strong>🛡️ Seguro:</strong> ${formatearMoneda(stats.costoSeguroTotal || 0)}</p>
-        </div>
-        
-        <div class="summary-card rendimiento" style="grid-column: 1 / -1;">
+        <div class="summary-card">
             <h3>📊 RENDIMIENTO</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                <div><strong>Ganancia/Hora:</strong><br><span class="valor-destacado valor-positivo">${formatearMoneda(stats.gananciaPorHora || 0)}</span></div>
-                <div><strong>Tiempo Total:</strong><br><span class="valor-destacado">${stats.tiempoTotal || 0} min</span></div>
-                <div><strong>Eficiencia:</strong><br><span class="valor-destacado valor-positivo">${viajesAceptados > 0 ? ((viajesRentables / viajesAceptados) * 100).toFixed(1) : 0}%</span></div>
-            </div>
+            <p><strong>Ganancia/Hora:</strong> ${formatearMoneda(stats.gananciaPorHora || 0)}</p>
+            <p><strong>Viajes Rentables:</strong> ${viajesRentables}</p>
         </div>
     </div>
 
-    <div class="desglose-costos">
-        <h3>📈 RESUMEN FINANCIERO</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div><strong>Ingresos Totales:</strong> ${formatearMoneda(stats.gananciaTotal || 0)}</div>
-            <div><strong>Costos Totales:</strong> ${formatearMoneda((stats.costoCombustibleTotal || 0) + (stats.costoMantenimientoTotal || 0) + (stats.costoSeguroTotal || 0))}</div>
-            <div style="grid-column: 1 / -1; text-align: center; padding: 10px; background: white; border-radius: 5px; margin-top: 10px;">
-                <strong style="color: #f5a623; font-size: 1.2em;">GANANCIA NETA TOTAL: ${formatearMoneda(stats.gananciaNetaTotal || 0)}</strong>
-            </div>
-        </div>
-    </div>
-
-    <h3>📋 DETALLE DE VIAJES (${historial.length} registros)</h3>
+    <h3>📋 DETALLE DE VIAJES</h3>
     <table>
         <thead>
             <tr>
                 <th>Fecha</th><th>Hora</th><th>Ganancia</th><th>Minutos</th><th>Distancia</th>
-                <th>Combustible</th><th>Mantenimiento</th><th>Seguro</th><th>Ganancia Neta</th>
                 <th>Rentabilidad</th><th>Aceptado</th>
             </tr>
         </thead>
@@ -1485,11 +1323,9 @@ function generarContenidoPDF() {
                 const fecha = new Date(item.timestamp).toLocaleDateString();
                 const hora = new Date(item.timestamp).toLocaleTimeString();
                 const distanciaLabel = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
-                return `<tr class="${item.rentabilidad}">
+                return `<tr>
                     <td>${fecha}</td><td>${hora}</td><td>${formatearMoneda(item.tarifa)}</td>
                     <td>${item.minutos}</td><td>${item.distancia} ${distanciaLabel}</td>
-                    <td>${formatearMoneda(item.costoCombustible)}</td><td>${formatearMoneda(item.costoMantenimiento)}</td>
-                    <td>${formatearMoneda(item.costoSeguro)}</td><td>${formatearMoneda(item.gananciaNeta)}</td>
                     <td>${item.texto}</td><td>${item.aceptado ? '✅ Sí' : '❌ No'}</td>
                 </tr>`;
             }).join('')}
@@ -1498,10 +1334,7 @@ function generarContenidoPDF() {
 
     <div class="footer">
         <p>Exportado desde UberCalc - Calculadora Inteligente para Conductores</p>
-        <p>¡Sigue maximizando tus ganancias! 🚗💨</p>
     </div>
-
-    <script>if (window.innerWidth > 768) window.print();</script>
 </body>
 </html>`;
 }
@@ -1520,38 +1353,12 @@ function mostrarPantalla(pantalla) {
     }
 }
 
-function validarFormulario() {
-    const tarifa = elementos.tarifaInput?.value;
-    const minutos = elementos.minutosInput?.value;
-    const distancia = elementos.distanciaInput?.value;
-    
-    if (!tarifa || !minutos || !distancia) {
-        mostrarError('Por favor, completa todos los campos del viaje');
-        return false;
-    }
-    
-    if (parseFloat(tarifa) <= 0 || parseFloat(minutos) <= 0 || parseFloat(distancia) <= 0) {
-        mostrarError('Todos los valores deben ser mayores a 0');
-        return false;
-    }
-    
-    if (!perfilActual) {
-        mostrarError('Debes seleccionar un perfil primero');
-        return false;
-    }
-    
-    return true;
-}
-
 function mostrarError(mensaje) {
     mostrarStatus(mensaje, 'error');
 }
 
 function mostrarStatus(mensaje, tipo = 'info') {
-    if (!elementos.statusIndicator || !elementos.statusText) {
-        console.log('Status:', mensaje);
-        return;
-    }
+    if (!elementos.statusIndicator || !elementos.statusText) return;
     
     elementos.statusText.textContent = mensaje;
     elementos.statusIndicator.className = `status-indicator ${tipo}`;
@@ -1586,34 +1393,26 @@ function formatearMoneda(valor) {
     return `${simbolo}${typeof valor === 'number' ? valor.toFixed(2) : '0.00'}`;
 }
 
-// --- Persistencia de Datos MEJORADA ---
+// --- Persistencia de Datos ---
 async function cargarDatos() {
     try {
-        console.log('📥 Iniciando carga de datos...');
-        
         // 1. Intentar cargar desde Google Sheets
         if (syncManager && syncManager.initialized) {
-            console.log('🔥 Intentando cargar desde Google Sheets...');
             const perfilesRemotos = await syncManager.loadProfiles();
             
-            if (perfilesRemotos !== null) { // null significa error
+            if (perfilesRemotos !== null) {
                 perfiles = perfilesRemotos;
                 if (perfiles.length > 0) {
                     perfilActual = perfiles[0];
-                    historial = []; // Historial se mantiene local
+                    historial = [];
                     console.log(`✅ Datos cargados desde Google Sheets: ${perfiles.length} perfiles`);
-                    guardarDatos(); // Sincronizar localStorage
+                    guardarDatos();
                     return;
-                } else {
-                    console.log('ℹ️ Google Sheets vacío, continuando con localStorage');
                 }
-            } else {
-                console.log('ℹ️ Error cargando de Google Sheets, continuando con localStorage');
             }
         }
         
         // 2. Fallback a localStorage
-        console.log('📱 Cargando desde localStorage...');
         const datosGuardados = localStorage.getItem('uberCalc_data');
         if (datosGuardados) {
             const datos = JSON.parse(datosGuardados);
@@ -1623,21 +1422,17 @@ async function cargarDatos() {
             
             console.log(`✅ Datos cargados desde localStorage: ${perfiles.length} perfiles`);
             
-            // Sincronizar datos locales a Google Sheets si es posible
             if (syncManager && syncManager.initialized && perfiles.length > 0) {
-                console.log('🔄 Sincronizando datos locales con Google Sheets...');
-                await syncManager.saveProfiles(perfiles);
+                syncManager.saveProfiles(perfiles);
             }
         } else {
-            console.log('ℹ️ No hay datos guardados - Inicializando vacío');
             perfiles = [];
             perfilActual = null;
             historial = [];
         }
         
     } catch (error) {
-        console.error('❌ Error crítico cargando datos:', error);
-        // Fallback seguro
+        console.error('❌ Error cargando datos:', error);
         perfiles = [];
         perfilActual = null;
         historial = [];
@@ -1655,7 +1450,6 @@ function guardarDatos() {
     
     try {
         localStorage.setItem('uberCalc_data', JSON.stringify(datos));
-        console.log('💾 Datos guardados en localStorage');
     } catch (error) {
         console.error('❌ Error guardando en localStorage:', error);
     }
@@ -1701,4 +1495,4 @@ setTimeout(() => {
     }
 }, 1000);
 
-console.log('🎉 Script UberCalc con Google Sheets COMPLETO cargado - Listo para usar!');
+console.log('🎉 UberCalc con Google Sheets COMPLETO cargado!');
