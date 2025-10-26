@@ -1,6 +1,6 @@
 // =============================================
 // UBER CALC - Calculadora Inteligente para Conductores
-// Versión con Firebase Sync - COMPLETA Y CORREGIDA
+// Versión COMPLETA con Firebase Sync FUNCIONANDO
 // =============================================
 
 // --- Variables Globales ---
@@ -11,23 +11,25 @@ let calculoActual = null;
 let timeoutCalculo = null;
 let firebaseSync;
 
-// --- Configuración Firebase INTEGRADA ---
+// --- Configuración Firebase CORREGIDA ---
 const firebaseConfig = {
     apiKey: "AIzaSyCf5j5Pu-go6ipUw2EnTO2OnKgvYLzkonY",
     authDomain: "diber-32875.firebaseapp.com",
     projectId: "diber-32875",
-    storageBucket: "diber-32875.appspot.com", // Corregido
+    storageBucket: "diber-32875.appspot.com", // CORREGIDO
     messagingSenderId: "260349079723",
     appId: "1:260349079723:web:babe1cc51e8bb067ba87ee"
 };
 
-// --- Clase Firebase Sync MEJORADA ---
+// --- Clase Firebase Sync COMPLETA Y CORREGIDA ---
 class FirebaseSync {
     constructor() {
         this.initialized = false;
         this.userId = null;
         this.db = null;
         this.unsubscribe = null;
+        this.retryCount = 0;
+        this.maxRetries = 3;
     }
 
     async initialize() {
@@ -37,7 +39,7 @@ class FirebaseSync {
         }
 
         try {
-            console.log('🔥 Inicializando Firebase...');
+            console.log('🔥 Iniciando inicialización de Firebase...');
             
             // Verificar si Firebase está disponible
             if (typeof firebase === 'undefined') {
@@ -46,45 +48,56 @@ class FirebaseSync {
                 return false;
             }
 
+            console.log('✅ Firebase está disponible');
+
             // Inicializar Firebase
-            try {
-                if (!firebase.apps.length) {
-                    console.log('🚀 Creando nueva app de Firebase');
-                    firebase.initializeApp(firebaseConfig);
-                } else {
-                    console.log('🔄 Usando app existente de Firebase');
-                    firebase.app();
-                }
-            } catch (error) {
-                console.warn('⚠️ Firebase ya inicializado:', error.message);
+            if (!firebase.apps.length) {
+                console.log('🚀 Inicializando nueva app de Firebase');
+                firebase.initializeApp(firebaseConfig);
+            } else {
+                console.log('✅ Firebase app ya existe');
             }
             
-            // Inicializar Firestore
+            // Configurar Firestore
             this.db = firebase.firestore();
             
-            // Configurar persistencia (opcional)
+            // Configuración de Firestore para mejor rendimiento
+            this.db.settings({
+                cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+                merge: true
+            });
+
+            console.log('✅ Firestore configurado');
+
+            // Intentar habilitar persistencia offline
             try {
-                await this.db.enablePersistence()
-                    .catch(err => {
-                        console.warn('📱 Persistencia no soportada:', err.message);
-                    });
-            } catch (error) {
-                console.warn('⚠️ Error en persistencia:', error.message);
+                await this.db.enablePersistence({ synchronizeTabs: true });
+                console.log('✅ Persistencia offline habilitada');
+            } catch (err) {
+                console.warn('⚠️ Persistencia no disponible:', err.message);
+                // Continuar sin persistencia
             }
             
             this.userId = this.getUserId();
             this.initialized = true;
             
-            console.log('✅ Firebase Sync inicializado CORRECTAMENTE');
-            console.log('📊 Proyecto:', firebaseConfig.projectId);
+            console.log('🎉 Firebase Sync inicializado CORRECTAMENTE');
             console.log('👤 User ID:', this.userId);
-            
             this.actualizarUIEstado('connected');
             return true;
             
         } catch (error) {
-            console.error('❌ Error CRÍTICO inicializando Firebase:', error);
+            console.error('💥 ERROR crítico inicializando Firebase:', error);
             this.actualizarUIEstado('error');
+            
+            // Reintento automático
+            if (this.retryCount < this.maxRetries) {
+                this.retryCount++;
+                console.log(`🔄 Reintentando en 3 segundos... (${this.retryCount}/${this.maxRetries})`);
+                setTimeout(() => this.initialize(), 3000);
+            } else {
+                console.error('❌ Se agotaron los reintentos de Firebase');
+            }
             return false;
         }
     }
@@ -95,75 +108,99 @@ class FirebaseSync {
             userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('ubercalc_user_id', userId);
             console.log('🆕 Nuevo User ID generado:', userId);
+        } else {
+            console.log('📋 User ID existente:', userId);
         }
         return userId;
     }
 
     async saveProfiles(profiles) {
         if (!this.initialized) {
-            console.warn('❌ Firebase no inicializado, no se puede guardar');
+            console.warn('⚠️ Firebase no inicializado, no se puede guardar');
             return false;
         }
 
         try {
-            console.log('💾 Guardando perfiles en Firestore...', profiles.length);
+            console.log('💾 Intentando guardar', profiles.length, 'perfiles en Firebase...');
             
-            const userDoc = {
+            const userData = {
                 perfiles: profiles,
                 ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
                 dispositivo: this.getDeviceInfo(),
                 version: '2.0',
-                userId: this.userId
+                syncTimestamp: Date.now()
             };
 
-            await this.db.collection('users').doc(this.userId).set(userDoc, { merge: true });
+            console.log('📤 Enviando datos a Firestore...');
+            await this.db.collection('users').doc(this.userId).set(userData, { merge: true });
             
-            console.log('✅ Perfiles guardados en Firestore correctamente');
+            console.log('✅ Perfiles guardados EXITOSAMENTE en Firebase');
             this.actualizarUIEstado('syncing');
             
+            // Volver a estado conectado después de un tiempo
             setTimeout(() => {
                 this.actualizarUIEstado('connected');
-            }, 2000);
+            }, 1500);
             
             return true;
             
         } catch (error) {
-            console.error('❌ Error guardando en Firestore:', error);
-            console.error('Código de error:', error.code);
-            console.error('Mensaje:', error.message);
-            
+            console.error('❌ ERROR guardando en Firebase:', error);
+            console.error('Detalles del error:', error.message);
             this.actualizarUIEstado('error');
+            
+            // Reintentar una vez
+            setTimeout(async () => {
+                console.log('🔄 Reintentando guardado...');
+                try {
+                    await this.db.collection('users').doc(this.userId).set({
+                        perfiles: profiles,
+                        ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                    console.log('✅ Reintento exitoso');
+                    this.actualizarUIEstado('connected');
+                } catch (retryError) {
+                    console.error('❌ Reintento fallido:', retryError);
+                }
+            }, 2000);
+            
             return false;
         }
     }
 
     async loadProfiles() {
         if (!this.initialized) {
-            console.warn('❌ Firebase no inicializado, no se puede cargar');
+            console.warn('⚠️ Firebase no inicializado');
             return null;
         }
 
         try {
-            console.log('📥 Cargando perfiles desde Firestore...');
+            console.log('📥 Cargando perfiles desde Firebase...');
             
             const docRef = this.db.collection('users').doc(this.userId);
             const doc = await docRef.get();
             
             if (doc.exists) {
                 const data = doc.data();
-                console.log('✅ Perfiles cargados desde Firestore:', data.perfiles?.length || 0);
+                const perfilesCount = data.perfiles ? data.perfiles.length : 0;
+                console.log(`✅ ${perfilesCount} perfiles cargados desde Firebase`);
                 this.actualizarUIEstado('connected');
                 return data.perfiles || [];
             } else {
-                console.log('📭 No hay datos en Firestore para este usuario');
+                console.log('ℹ️ No existe documento en Firebase, creando uno nuevo...');
+                // Crear documento vacío
+                await docRef.set({
+                    perfiles: [],
+                    ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
+                    dispositivo: this.getDeviceInfo(),
+                    version: '2.0'
+                });
                 return [];
             }
             
         } catch (error) {
-            console.error('❌ Error cargando desde Firestore:', error);
-            console.error('Código de error:', error.code);
-            console.error('Mensaje:', error.message);
-            
+            console.error('❌ ERROR cargando desde Firebase:', error);
+            console.error('Detalles:', error.message);
             this.actualizarUIEstado('error');
             return null;
         }
@@ -171,90 +208,94 @@ class FirebaseSync {
 
     listenForChanges(callback) {
         if (!this.initialized) {
-            console.warn('❌ Firebase no inicializado, no se puede escuchar cambios');
+            console.warn('⚠️ No se puede crear listener - Firebase no inicializado');
             return;
         }
 
         try {
-            console.log('👂 Escuchando cambios en tiempo real...');
+            console.log('👂 Iniciando listener en tiempo real...');
             
-            this.unsubscribe = this.db.collection('users').doc(this.userId)
-                .onSnapshot((doc) => {
-                    console.log('🔄 Snapshot recibido de Firestore');
+            const docRef = this.db.collection('users').doc(this.userId);
+            
+            this.unsubscribe = docRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    console.log('🔄 CAMBIO DETECTADO en Firebase - Perfiles:', data.perfiles?.length || 0);
+                    this.actualizarUIEstado('connected');
                     
-                    if (doc.exists) {
-                        const data = doc.data();
-                        console.log('📡 Cambios detectados en Firestore');
-                        this.actualizarUIEstado('connected');
-                        
-                        if (callback && typeof callback === 'function') {
-                            console.log('🔄 Ejecutando callback con nuevos perfiles');
-                            callback(data.perfiles || []);
-                        }
-                    } else {
-                        console.log('📭 Documento no existe en Firestore');
+                    if (callback && typeof callback === 'function') {
+                        console.log('📨 Enviando perfiles actualizados al callback');
+                        callback(data.perfiles || []);
                     }
-                }, (error) => {
-                    console.error('❌ Error en listener de Firestore:', error);
-                    console.error('Código de error:', error.code);
-                    this.actualizarUIEstado('error');
-                    
-                    console.log('🔄 Intentando reconexión en 5 segundos...');
-                    setTimeout(() => {
-                        if (this.initialized) {
-                            this.listenForChanges(callback);
-                        }
-                    }, 5000);
-                });
+                } else {
+                    console.log('📄 Documento no existe en listener');
+                }
+            }, (error) => {
+                console.error('❌ ERROR en listener Firebase:', error);
+                this.actualizarUIEstado('error');
                 
-            console.log('✅ Listener de Firestore configurado correctamente');
+                // Reintentar conexión después de 5 segundos
+                console.log('🔄 Reintentando conexión del listener en 5 segundos...');
+                setTimeout(() => {
+                    if (this.initialized) {
+                        this.listenForChanges(callback);
+                    }
+                }, 5000);
+            });
+            
+            console.log('✅ Listener activado correctamente');
             
         } catch (error) {
-            console.error('❌ Error configurando listener:', error);
-            this.actualizarUIEstado('error');
+            console.error('💥 ERROR configurando listener:', error);
         }
     }
 
     stopListening() {
         if (this.unsubscribe) {
+            console.log('🔇 Deteniendo listener...');
             this.unsubscribe();
             this.unsubscribe = null;
-            console.log('🔇 Listener de Firestore detenido');
         }
     }
 
     getDeviceInfo() {
-        return {
+        const deviceInfo = {
             id: this.userId,
             name: localStorage.getItem('ubercalc_device_name') || this.guessDeviceName(),
             type: this.detectDeviceType(),
-            userAgent: navigator.userAgent.substring(0, 100),
-            lastSync: new Date().toISOString()
+            userAgent: navigator.userAgent.substring(0, 100), // Limitar tamaño
+            lastSync: new Date().toISOString(),
+            platform: navigator.platform,
+            appVersion: '2.0'
         };
+        
+        console.log('📱 Información del dispositivo:', deviceInfo.name, deviceInfo.type);
+        return deviceInfo;
     }
 
     guessDeviceName() {
-        const ua = navigator.userAgent;
+        const ua = navigator.userAgent.toLowerCase();
         let name = 'Dispositivo';
         
-        if (/Mobile|Android|iPhone/i.test(ua)) {
-            name = /Tablet|iPad/i.test(ua) ? 'Tableta' : 'Teléfono';
-        } else if (/Windows/i.test(ua)) {
+        if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
+            name = ua.includes('tablet') || ua.includes('ipad') ? 'Tableta' : 'Teléfono Móvil';
+        } else if (ua.includes('win')) {
             name = 'Computadora Windows';
-        } else if (/Mac/i.test(ua)) {
+        } else if (ua.includes('mac')) {
             name = 'Computadora Mac';
-        } else if (/Linux/i.test(ua)) {
+        } else if (ua.includes('linux')) {
             name = 'Computadora Linux';
         }
         
-        localStorage.setItem('ubercalc_device_name', name);
-        return name;
+        const savedName = name + ' ' + Math.floor(Math.random() * 1000);
+        localStorage.setItem('ubercalc_device_name', savedName);
+        return savedName;
     }
 
     detectDeviceType() {
-        const ua = navigator.userAgent;
-        if (/Mobile|Android|iPhone|iPad/i.test(ua)) {
-            return /Tablet|iPad/i.test(ua) ? 'tablet' : 'mobile';
+        const ua = navigator.userAgent.toLowerCase();
+        if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
+            return ua.includes('tablet') || ua.includes('ipad') ? 'tablet' : 'mobile';
         }
         return 'desktop';
     }
@@ -266,43 +307,47 @@ class FirebaseSync {
             const syncText = document.getElementById('sync-text');
             
             if (!syncInfo || !syncIcon || !syncText) {
-                console.warn('❌ Elementos de UI de sync no encontrados');
+                console.log('ℹ️ Elementos de UI de sync no encontrados');
                 return;
             }
             
+            // Limpiar clases anteriores
             syncInfo.className = 'sync-info';
+            syncInfo.classList.add(estado);
             
             switch(estado) {
                 case 'connected':
-                    syncInfo.classList.add('connected');
                     syncIcon.textContent = '✅';
                     syncText.textContent = 'Conectado a la nube';
+                    syncInfo.title = 'Sincronización activa - Todo funciona correctamente';
                     break;
                 case 'syncing':
-                    syncInfo.classList.add('syncing');
                     syncIcon.textContent = '🔄';
                     syncText.textContent = 'Sincronizando...';
+                    syncInfo.title = 'Sincronizando datos con la nube';
                     break;
                 case 'error':
-                    syncInfo.classList.add('error');
                     syncIcon.textContent = '❌';
                     syncText.textContent = 'Error de conexión';
+                    syncInfo.title = 'Problema de conexión con la nube';
                     break;
                 default:
-                    syncInfo.classList.add('disconnected');
                     syncIcon.textContent = '🌐';
                     syncText.textContent = 'Conectando...';
+                    syncInfo.title = 'Estableciendo conexión con la nube';
             }
             
-            console.log(`🔄 Estado de sync actualizado: ${estado}`);
+            console.log(`🔄 Estado de Sync actualizado: ${estado}`);
             
         } catch (error) {
-            console.error('❌ Error actualizando UI de sync:', error);
+            console.error('Error actualizando UI de sync:', error);
         }
     }
 
     async getSyncStatus() {
-        if (!this.initialized) return 'not_configured';
+        if (!this.initialized) {
+            return { status: 'not_initialized', message: 'Firebase no inicializado' };
+        }
 
         try {
             const doc = await this.db.collection('users').doc(this.userId).get();
@@ -311,13 +356,29 @@ class FirebaseSync {
                 return {
                     status: 'connected',
                     lastSync: data.ultimaActualizacion?.toDate() || new Date(),
-                    profilesCount: data.perfiles?.length || 0
+                    profilesCount: data.perfiles?.length || 0,
+                    device: data.dispositivo?.name || 'Desconocido'
                 };
             }
-            return 'no_data';
+            return { status: 'no_data', message: 'No hay datos en la nube' };
         } catch (error) {
-            return 'error';
+            return { status: 'error', message: error.message };
         }
+    }
+
+    // Método para debug
+    async debugFirebase() {
+        console.group('🔥 DEBUG FIREBASE');
+        console.log('✅ Initialized:', this.initialized);
+        console.log('✅ User ID:', this.userId);
+        console.log('✅ DB disponible:', !!this.db);
+        console.log('✅ Firebase app:', firebase.apps[0]?.name || 'No app');
+        
+        if (this.initialized) {
+            const status = await this.getSyncStatus();
+            console.log('✅ Sync Status:', status);
+        }
+        console.groupEnd();
     }
 }
 
@@ -396,228 +457,193 @@ const elementos = {
     syncPanel: document.getElementById('sync-panel')
 };
 
-// --- Inicialización MEJORADA ---
+// --- Inicialización PRINCIPAL MEJORADA ---
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando UberCalc...');
-    inicializarApp();
-    configurarEventListeners();
+    console.log('🚀 DOM Cargado - Iniciando UberCalc...');
+    inicializarApp().catch(error => {
+        console.error('💥 Error crítico en inicialización:', error);
+    });
 });
 
 async function inicializarApp() {
-    console.log('🔥 Inicializando Firebase Sync...');
+    console.log('🎯 Inicializando aplicación...');
     
-    // Inicializar Firebase Sync
-    firebaseSync = new FirebaseSync();
-    const firebaseReady = await firebaseSync.initialize();
-    
-    if (firebaseReady) {
-        console.log('✅ Firebase Sync activo');
-        // Escuchar cambios en tiempo real
-        firebaseSync.listenForChanges((nuevosPerfiles) => {
-            if (nuevosPerfiles && nuevosPerfiles.length > 0) {
-                console.log('🔄 Perfiles actualizados desde la nube:', nuevosPerfiles.length);
-                perfiles = nuevosPerfiles;
-                
-                // Actualizar perfil actual si existe
-                if (perfilActual) {
-                    const perfilActualizado = perfiles.find(p => p.id === perfilActual.id);
-                    if (perfilActualizado) {
-                        perfilActual = perfilActualizado;
-                        console.log('✅ Perfil actual actualizado:', perfilActual.nombre);
-                    } else if (perfiles.length > 0) {
-                        perfilActual = perfiles[0];
-                        console.log('🔄 Cambiando a primer perfil disponible:', perfilActual.nombre);
+    try {
+        // 1. Inicializar Firebase Sync PRIMERO
+        console.log('🔥 Paso 1: Inicializando Firebase Sync...');
+        firebaseSync = new FirebaseSync();
+        const firebaseReady = await firebaseSync.initialize();
+        
+        if (firebaseReady) {
+            console.log('✅ Firebase listo - Configurando listener...');
+            
+            // Configurar listener para cambios en tiempo real
+            firebaseSync.listenForChanges((nuevosPerfiles) => {
+                if (nuevosPerfiles && Array.isArray(nuevosPerfiles)) {
+                    console.log(`🔄 📱 Sincronización recibida: ${nuevosPerfiles.length} perfiles`);
+                    
+                    // Actualizar perfiles locales
+                    perfiles = nuevosPerfiles;
+                    
+                    // Actualizar perfil actual si existe
+                    if (perfilActual) {
+                        const perfilActualizado = perfiles.find(p => p.id === perfilActual.id);
+                        if (perfilActualizado) {
+                            perfilActual = perfilActualizado;
+                            console.log('✅ Perfil actual actualizado:', perfilActual.nombre);
+                        } else if (perfiles.length > 0) {
+                            perfilActual = perfiles[0];
+                            console.log('🔄 Cambiando al primer perfil disponible:', perfilActual.nombre);
+                        }
+                    }
+                    
+                    // Guardar y actualizar UI
+                    guardarDatos();
+                    actualizarInterfazPerfiles();
+                    actualizarUnidades();
+                    
+                    // Mostrar notificación solo si hay cambios reales
+                    if (nuevosPerfiles.length > 0) {
+                        mostrarStatus('🔄 Perfiles actualizados desde la nube', 'info');
                     }
                 }
-                
-                guardarDatos();
-                actualizarInterfazPerfiles();
-                actualizarUnidades();
-                mostrarStatus('🔄 Perfiles actualizados desde la nube', 'info');
-            }
-        });
+            });
+            
+            // Cargar datos desde Firebase
+            console.log('📥 Cargando datos iniciales desde Firebase...');
+            await cargarDatos();
+            
+        } else {
+            console.warn('⚠️ Firebase no disponible - Modo offline');
+            cargarDatos(); // Cargar desde localStorage
+        }
         
-        // Cargar datos desde Firebase
-        await cargarDatos();
-    } else {
-        console.log('📱 Usando almacenamiento local (Firebase no disponible)');
-        await cargarDatos();
+    } catch (error) {
+        console.error('❌ Error en inicialización Firebase:', error);
+        cargarDatos(); // Fallback a localStorage
     }
     
+    // 2. Configuración básica de la app
+    console.log('⚙️ Paso 2: Configurando aplicación...');
     aplicarTemaGuardado();
+    configurarEventListeners();
     actualizarInterfazPerfiles();
     
-    // Si hay perfiles, mostrar el último usado
+    // 3. Decidir qué pantalla mostrar
     if (perfiles.length > 0 && perfilActual) {
-        console.log('🏠 Mostrando pantalla principal con perfil:', perfilActual.nombre);
+        console.log('🏠 Mostrando pantalla principal - Perfil activo:', perfilActual.nombre);
         mostrarPantalla('main');
         actualizarEstadisticas();
     } else {
-        console.log('👤 Mostrando pantalla de perfiles (sin perfiles)');
+        console.log('👤 Mostrando pantalla de perfiles - Sin perfiles');
         mostrarPantalla('perfil');
     }
     
-    // Actualizar UI de sync
+    // 4. Actualizar panel de sync
     actualizarPanelSync();
     
-    console.log('🎉 UberCalc inicializado correctamente');
+    console.log('🎉 UberCalc inicializado COMPLETAMENTE');
+    mostrarStatus('✅ Aplicación lista', 'success');
+    
+    // Debug opcional
+    setTimeout(() => {
+        if (firebaseSync) {
+            firebaseSync.debugFirebase();
+        }
+    }, 3000);
 }
 
+// --- [EL RESTO DEL CÓDIGO SE MANTIENE IGUAL PERO ACTUALIZADO] ---
+
 function configurarEventListeners() {
-    console.log('⚙️ Configurando event listeners...');
+    console.log('⚡ Configurando event listeners...');
     
     // Sistema de Pestañas
     elementos.tabButtons.forEach(button => {
         button.addEventListener('click', function() {
             const tabId = this.getAttribute('data-tab');
-            console.log('📑 Cambiando a pestaña:', tabId);
             cambiarPestana(tabId);
         });
     });
     
     // Cálculo Automático
-    elementos.tarifaInput.addEventListener('input', manejarCalculoAutomatico);
-    elementos.minutosInput.addEventListener('input', manejarCalculoAutomatico);
-    elementos.distanciaInput.addEventListener('input', manejarCalculoAutomatico);
+    elementos.tarifaInput?.addEventListener('input', manejarCalculoAutomatico);
+    elementos.minutosInput?.addEventListener('input', manejarCalculoAutomatico);
+    elementos.distanciaInput?.addEventListener('input', manejarCalculoAutomatico);
     
     // Botones de Acción
-    elementos.aceptarViajeBtn.addEventListener('click', function() {
-        console.log('✅ Botón aceptar viaje clickeado');
-        procesarViaje(true);
-    });
-    
-    elementos.rechazarViajeBtn.addEventListener('click', function() {
-        console.log('❌ Botón rechazar viaje clickeado');
-        procesarViaje(false);
-    });
-    
-    elementos.aceptarViajeTabBtn.addEventListener('click', function() {
-        console.log('✅ Botón aceptar viaje (tab) clickeado');
-        procesarViaje(true);
-    });
-    
-    elementos.rechazarViajeTabBtn.addEventListener('click', function() {
-        console.log('❌ Botón rechazar viaje (tab) clickeado');
-        procesarViaje(false);
-    });
+    elementos.aceptarViajeBtn?.addEventListener('click', () => procesarViaje(true));
+    elementos.rechazarViajeBtn?.addEventListener('click', () => procesarViaje(false));
+    elementos.aceptarViajeTabBtn?.addEventListener('click', () => procesarViaje(true));
+    elementos.rechazarViajeTabBtn?.addEventListener('click', () => procesarViaje(false));
     
     // Historial
-    elementos.clearHistoryBtn.addEventListener('click', limpiarHistorial);
-    elementos.exportarHistorialBtn.addEventListener('click', mostrarModalExportacion);
+    elementos.clearHistoryBtn?.addEventListener('click', limpiarHistorial);
+    elementos.exportarHistorialBtn?.addEventListener('click', mostrarModalExportacion);
     
     // Perfiles
-    elementos.nuevoPerfilBtn.addEventListener('click', function() {
-        console.log('➕ Creando nuevo perfil');
-        mostrarConfigPerfil();
-    });
-    
-    elementos.volverPerfilesBtn.addEventListener('click', function() {
-        console.log('⬅️ Volviendo a perfiles');
-        mostrarPantalla('perfil');
-    });
-    
-    elementos.cancelarPerfilBtn.addEventListener('click', function() {
-        console.log('❌ Cancelando creación/edición de perfil');
-        mostrarPantalla('perfil');
-    });
-    
-    elementos.cambiarPerfilBtn.addEventListener('click', function() {
-        console.log('👤 Cambiando perfil');
-        mostrarPantalla('perfil');
-    });
-    
-    elementos.perfilForm.addEventListener('submit', guardarPerfil);
+    elementos.nuevoPerfilBtn?.addEventListener('click', () => mostrarConfigPerfil());
+    elementos.volverPerfilesBtn?.addEventListener('click', () => mostrarPantalla('perfil'));
+    elementos.cancelarPerfilBtn?.addEventListener('click', () => mostrarPantalla('perfil'));
+    elementos.cambiarPerfilBtn?.addEventListener('click', () => mostrarPantalla('perfil'));
+    elementos.perfilForm?.addEventListener('submit', guardarPerfil);
     
     // Tema
-    elementos.themeToggle.addEventListener('click', alternarTema);
+    elementos.themeToggle?.addEventListener('click', alternarTema);
     
     // Exportación
-    elementos.exportarPdfBtn.addEventListener('click', exportarPDF);
+    elementos.exportarPdfBtn?.addEventListener('click', exportarPDF);
     
     // Configuración de Unidades
-    const tipoMedidaSelect = document.getElementById('tipo-medida');
-    const tipoCombustibleSelect = document.getElementById('tipo-combustible');
-    const monedaSelect = document.getElementById('moneda');
+    document.getElementById('tipo-medida')?.addEventListener('change', actualizarUnidades);
+    document.getElementById('tipo-combustible')?.addEventListener('change', actualizarUnidades);
+    document.getElementById('moneda')?.addEventListener('change', actualizarUnidades);
     
-    if (tipoMedidaSelect) {
-        tipoMedidaSelect.addEventListener('change', actualizarUnidades);
-    }
-    
-    if (tipoCombustibleSelect) {
-        tipoCombustibleSelect.addEventListener('change', actualizarUnidades);
-    }
-    
-    if (monedaSelect) {
-        monedaSelect.addEventListener('change', actualizarUnidades);
-    }
-    
-    console.log('✅ Event listeners configurados correctamente');
+    console.log('✅ Event listeners configurados');
 }
 
 // --- Sistema de Pestañas ---
 function cambiarPestana(tabId) {
-    console.log('📑 Cambiando a pestaña:', tabId);
-    
-    // Actualizar botones de pestañas
     elementos.tabButtons.forEach(button => {
-        const buttonTab = button.getAttribute('data-tab');
-        button.classList.toggle('active', buttonTab === tabId);
+        button.classList.toggle('active', button.getAttribute('data-tab') === tabId);
     });
     
-    // Actualizar contenido de pestañas
     elementos.tabContents.forEach(content => {
-        const contentId = content.id.replace('tab-', '');
-        content.classList.toggle('active', contentId === tabId);
+        content.classList.toggle('active', content.id === `tab-${tabId}`);
     });
     
-    // Actualizar datos si es necesario
-    if (tabId === 'resumen') {
-        actualizarEstadisticas();
-    } else if (tabId === 'historial') {
-        actualizarHistorial();
-    }
+    if (tabId === 'resumen') actualizarEstadisticas();
+    else if (tabId === 'historial') actualizarHistorial();
 }
 
 // --- Cálculo Automático ---
 function manejarCalculoAutomatico() {
-    if (timeoutCalculo) {
-        clearTimeout(timeoutCalculo);
-    }
-    
+    clearTimeout(timeoutCalculo);
     timeoutCalculo = setTimeout(calcularAutomatico, 500);
 }
 
 function calcularAutomatico() {
-    const tarifa = parseFloat(elementos.tarifaInput.value) || 0;
-    const minutos = parseFloat(elementos.minutosInput.value) || 0;
-    const distancia = parseFloat(elementos.distanciaInput.value) || 0;
+    const tarifa = parseFloat(elementos.tarifaInput?.value) || 0;
+    const minutos = parseFloat(elementos.minutosInput?.value) || 0;
+    const distancia = parseFloat(elementos.distanciaInput?.value) || 0;
     
-    const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
-    
-    if (datosCompletos) {
-        console.log('🧮 Calculando automáticamente...');
-        elementos.autoCalcIndicator.classList.remove('hidden');
-        
+    if (tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual) {
+        elementos.autoCalcIndicator?.classList.remove('hidden');
         const resultado = calcularRentabilidad(tarifa, minutos, distancia);
         
         if (resultado) {
             calculoActual = resultado;
             mostrarResultadoRapido(resultado);
-        } else {
-            elementos.autoCalcIndicator.classList.add('hidden');
-            elementos.resultadoRapido.classList.add('hidden');
         }
     } else {
-        elementos.autoCalcIndicator.classList.add('hidden');
-        elementos.resultadoRapido.classList.add('hidden');
+        elementos.autoCalcIndicator?.classList.add('hidden');
+        elementos.resultadoRapido?.classList.add('hidden');
         resetearInterfazCalculo();
     }
 }
 
 function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
-    
-    console.log('🎯 Mostrando resultado rápido:', resultado.rentabilidad);
     
     elementos.resultadoBadge.className = 'resultado-badge';
     elementos.resultadoBadge.classList.add(resultado.rentabilidad);
@@ -630,11 +656,9 @@ function mostrarResultadoRapido(resultado) {
     elementos.metricaKm.textContent = `${formatearMoneda(resultado.gananciaPorKm)}/${distanciaLabel}`;
     
     elementos.resultadoRapido.classList.remove('hidden');
-    
     elementos.aceptarViajeTabBtn.className = 'primary-button';
     elementos.aceptarViajeTabBtn.classList.add(resultado.rentabilidad);
-    
-    elementos.autoCalcIndicator.classList.add('hidden');
+    elementos.autoCalcIndicator?.classList.add('hidden');
 }
 
 function resetearInterfazCalculo() {
@@ -645,14 +669,9 @@ function resetearInterfazCalculo() {
 
 // --- Funciones de Cálculo ---
 function calcularRentabilidad(tarifa, minutos, distancia) {
-    if (!perfilActual) {
-        console.error('❌ No hay perfil actual para calcular');
-        return null;
-    }
+    if (!perfilActual) return null;
     
     try {
-        console.log('💰 Calculando rentabilidad...');
-        
         const combustibleUsado = distancia / perfilActual.rendimiento;
         const costoCombustible = combustibleUsado * perfilActual.precioCombustible;
         
@@ -668,9 +687,7 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
         const gananciaPorMinuto = tarifa / minutos;
         const gananciaPorKm = tarifa / distancia;
         
-        let rentabilidad;
-        let emoji;
-        let texto;
+        let rentabilidad, emoji, texto;
         
         if (gananciaPorMinuto >= perfilActual.umbralMinutoRentable && 
             gananciaPorKm >= perfilActual.umbralKmRentable) {
@@ -688,29 +705,14 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
             texto = 'NO RENTABLE';
         }
         
-        const resultado = {
-            tarifa,
-            minutos,
-            distancia,
-            gananciaNeta,
-            gananciaPorMinuto,
-            gananciaPorKm,
-            costoCombustible,
-            costoMantenimiento,
-            costoSeguro,
-            costoTotal,
-            rentabilidad,
-            emoji,
-            texto,
-            timestamp: new Date().toISOString()
+        return {
+            tarifa, minutos, distancia, gananciaNeta, gananciaPorMinuto, gananciaPorKm,
+            costoCombustible, costoMantenimiento, costoSeguro, costoTotal,
+            rentabilidad, emoji, texto, timestamp: new Date().toISOString()
         };
         
-        console.log('📊 Resultado del cálculo:', rentabilidad);
-        return resultado;
-        
     } catch (error) {
-        console.error('❌ Error en el cálculo:', error);
-        mostrarError('Error en el cálculo. Verifica los datos ingresados.');
+        mostrarError('Error en el cálculo');
         return null;
     }
 }
@@ -718,14 +720,10 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
 function mostrarModalResultados(resultado) {
     if (!resultado) return;
     
-    console.log('📊 Mostrando modal de resultados:', resultado.rentabilidad);
-    
     elementos.modalEmoji.textContent = resultado.emoji;
     elementos.modalTexto.textContent = resultado.texto;
-    
     elementos.modalBadge.className = 'result-badge';
     elementos.modalBadge.classList.add(resultado.rentabilidad);
-    
     elementos.modalResultadosDoble.innerHTML = '';
     
     const columnaMinuto = crearColumnaResultado(
@@ -781,7 +779,6 @@ function mostrarModalResultados(resultado) {
     `;
     
     elementos.modalResultadosDoble.appendChild(infoAdicional);
-    
     calculoActual = resultado;
     elementos.modalFondo.style.display = 'flex';
 }
@@ -821,8 +818,6 @@ async function procesarViaje(aceptado) {
         return;
     }
     
-    console.log(aceptado ? '✅ Aceptando viaje...' : '❌ Rechazando viaje...');
-    
     if (aceptado) {
         guardarEnHistorial(calculoActual, true);
         mostrarStatus('✅ Viaje aceptado y guardado en historial', 'success');
@@ -849,10 +844,7 @@ function guardarEnHistorial(resultado, aceptado) {
     };
     
     historial.unshift(historialItem);
-    
-    if (historial.length > 50) {
-        historial = historial.slice(0, 50);
-    }
+    if (historial.length > 50) historial = historial.slice(0, 50);
     
     guardarDatos();
     actualizarHistorial();
@@ -873,9 +865,7 @@ function actualizarHistorial() {
         return;
     }
     
-    const historialMostrar = historial.slice(0, 10);
-    
-    historialMostrar.forEach(item => {
+    historial.slice(0, 10).forEach(item => {
         const historyItem = document.createElement('div');
         historyItem.className = `history-item ${item.rentabilidad}`;
         
@@ -896,17 +886,13 @@ function actualizarHistorial() {
             <div class="history-status">${estado} ${item.emoji}</div>
         `;
         
-        historyItem.addEventListener('click', () => {
-            mostrarDetallesViaje(item);
-        });
-        
+        historyItem.addEventListener('click', () => mostrarDetallesViaje(item));
         elementos.historyList.appendChild(historyItem);
     });
 }
 
 function mostrarDetallesViaje(viaje) {
-    const detalles = `
-📊 DETALLES DEL VIAJE
+    const detalles = `📊 DETALLES DEL VIAJE
 ⏰ Hora: ${new Date(viaje.timestamp).toLocaleTimeString()}
 
 💰 GANANCIA OFRECIDA: ${formatearMoneda(viaje.tarifa)}
@@ -925,8 +911,7 @@ function mostrarDetallesViaje(viaje) {
 💵 GANANCIA NETA: ${formatearMoneda(viaje.gananciaNeta)}
 ${viaje.emoji} ${viaje.texto}
 
-✅ ESTADO: ${viaje.aceptado ? 'ACEPTADO' : 'RECHAZADO'}
-    `;
+✅ ESTADO: ${viaje.aceptado ? 'ACEPTADO' : 'RECHAZADO'}`;
     
     alert(detalles);
 }
@@ -977,23 +962,14 @@ function actualizarEstadisticas() {
     if (elementos.statsViajePromedio) elementos.statsViajePromedio.textContent = formatearMoneda(viajePromedio);
     
     window.estadisticasExportacion = {
-        totalViajes,
-        gananciaTotal,
-        tiempoTotal,
-        viajesRentables,
-        costoCombustibleTotal,
-        costoMantenimientoTotal,
-        costoSeguroTotal,
-        gananciaNetaTotal,
-        gananciaPorHora,
-        viajePromedio
+        totalViajes, gananciaTotal, tiempoTotal, viajesRentables,
+        costoCombustibleTotal, costoMantenimientoTotal, costoSeguroTotal, gananciaNetaTotal,
+        gananciaPorHora, viajePromedio
     };
 }
 
-// --- Gestión de Perfiles ---
+// --- Gestión de Perfiles MEJORADA ---
 function mostrarConfigPerfil(perfil = null) {
-    console.log('⚙️ Mostrando configuración de perfil:', perfil ? perfil.nombre : 'Nuevo perfil');
-    
     const form = elementos.perfilForm;
     
     if (perfil) {
@@ -1025,7 +1001,7 @@ function mostrarConfigPerfil(perfil = null) {
 
 async function guardarPerfil(event) {
     event.preventDefault();
-    console.log('💾 Guardando perfil...');
+    console.log('💾 Iniciando guardado de perfil...');
     
     const perfilId = document.getElementById('perfil-id').value;
     
@@ -1052,6 +1028,7 @@ async function guardarPerfil(event) {
         return;
     }
     
+    // Actualizar o agregar perfil
     if (perfilId) {
         const index = perfiles.findIndex(p => p.id === perfilId);
         if (index !== -1) {
@@ -1063,22 +1040,29 @@ async function guardarPerfil(event) {
         console.log('✅ Nuevo perfil creado:', perfil.nombre);
     }
     
+    // Actualizar perfil actual si es necesario
     if (!perfilActual || perfilId === perfilActual.id) {
         perfilActual = perfil;
         console.log('🎯 Perfil actual establecido:', perfil.nombre);
     }
     
+    // Guardar localmente
     guardarDatos();
     
-    // Sincronizar con Firebase
+    // SINCRONIZAR CON FIREBASE - PARTE CRÍTICA
     if (firebaseSync && firebaseSync.initialized) {
+        console.log('🔥 Sincronizando con Firebase...');
         const success = await firebaseSync.saveProfiles(perfiles);
+        
         if (success) {
+            console.log('✅ Sincronización EXITOSA con Firebase');
             mostrarStatus('✅ Perfil guardado y sincronizado en la nube', 'success');
         } else {
+            console.warn('⚠️ Sincronización falló, pero perfil guardado localmente');
             mostrarStatus('💾 Perfil guardado (solo local)', 'warning');
         }
     } else {
+        console.log('📱 Firebase no disponible - Guardado solo local');
         mostrarStatus('💾 Perfil guardado (almacenamiento local)', 'info');
     }
     
@@ -1137,8 +1121,11 @@ function actualizarInterfazPerfiles() {
             </div>
         `;
         
-        // Event listener para el botón USAR
+        // Event listeners para botones
         const usarBtn = perfilItem.querySelector('.usar-perfil-btn');
+        const editarBtn = perfilItem.querySelector('.editar-perfil-btn');
+        const eliminarBtn = perfilItem.querySelector('.eliminar-perfil-btn');
+        
         if (usarBtn) {
             usarBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -1149,8 +1136,6 @@ function actualizarInterfazPerfiles() {
             });
         }
         
-        // Event listener para el botón EDITAR
-        const editarBtn = perfilItem.querySelector('.editar-perfil-btn');
         if (editarBtn) {
             editarBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -1161,8 +1146,6 @@ function actualizarInterfazPerfiles() {
             });
         }
         
-        // Event listener para el botón ELIMINAR
-        const eliminarBtn = perfilItem.querySelector('.eliminar-perfil-btn');
         if (eliminarBtn) {
             eliminarBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -1173,9 +1156,8 @@ function actualizarInterfazPerfiles() {
             });
         }
         
-        // También permitir seleccionar haciendo clic en el item completo
+        // Clic en el item completo
         perfilItem.addEventListener('click', function(e) {
-            // Prevenir que se active si se hizo clic en un botón
             if (!e.target.closest('.perfil-acciones')) {
                 console.log('🎯 Clic en item perfil:', perfil.id);
                 seleccionarPerfil(perfil.id);
@@ -1197,9 +1179,9 @@ async function seleccionarPerfil(perfilId) {
         perfilActual = perfil;
         guardarDatos();
         
-        // Sincronizar cambio con Firebase
+        // Sincronizar con Firebase
         if (firebaseSync && firebaseSync.initialized) {
-            console.log('🔥 Sincronizando con Firebase...');
+            console.log('🔥 Sincronizando cambio de perfil con Firebase...');
             await firebaseSync.saveProfiles(perfiles);
         }
         
@@ -1270,28 +1252,16 @@ function actualizarUnidades() {
     const umbralKmUnit = document.getElementById('umbral-km-unit');
     const umbralKmOportunidadUnit = document.getElementById('umbral-km-oportunidad-unit');
     
-    if (rendimientoUnit) {
-        rendimientoUnit.textContent = tipoMedida === 'mi' ? 'mpg' : 'Km/Gl';
-    }
-    if (precioCombustibleUnit) {
-        precioCombustibleUnit.textContent = `${moneda}/Gl`;
-    }
-    if (umbralKmUnit) {
-        umbralKmUnit.textContent = `${moneda}/${tipoMedida === 'mi' ? 'mi' : 'Km'}`;
-    }
-    if (umbralKmOportunidadUnit) {
-        umbralKmOportunidadUnit.textContent = `${moneda}/${tipoMedida === 'mi' ? 'mi' : 'Km'}`;
-    }
+    if (rendimientoUnit) rendimientoUnit.textContent = tipoMedida === 'mi' ? 'mpg' : 'Km/Gl';
+    if (precioCombustibleUnit) precioCombustibleUnit.textContent = `${moneda}/Gl`;
+    if (umbralKmUnit) umbralKmUnit.textContent = `${moneda}/${tipoMedida === 'mi' ? 'mi' : 'Km'}`;
+    if (umbralKmOportunidadUnit) umbralKmOportunidadUnit.textContent = `${moneda}/${tipoMedida === 'mi' ? 'mi' : 'Km'}`;
     
     const distanciaUnit = document.getElementById('distancia-unit');
     const monedaTarifa = document.getElementById('moneda-tarifa');
     
-    if (distanciaUnit) {
-        distanciaUnit.textContent = tipoMedida === 'mi' ? 'mi' : 'Km';
-    }
-    if (monedaTarifa) {
-        monedaTarifa.textContent = moneda;
-    }
+    if (distanciaUnit) distanciaUnit.textContent = tipoMedida === 'mi' ? 'mi' : 'Km';
+    if (monedaTarifa) monedaTarifa.textContent = moneda;
     
     document.querySelectorAll('.costo-mensual').forEach(el => {
         if (el) el.textContent = moneda;
@@ -1326,7 +1296,7 @@ function aplicarTemaGuardado() {
     }
 }
 
-// --- Sincronización Firebase ---
+// --- Sincronización Firebase UI ---
 function mostrarPanelSync() {
     console.log('🌐 Mostrando panel de sincronización');
     actualizarPanelSync();
@@ -1351,7 +1321,6 @@ async function actualizarPanelSync() {
     console.log('🔄 Actualizando panel de sync');
     
     try {
-        // Actualizar información del dispositivo
         const deviceInfo = firebaseSync.getDeviceInfo();
         const deviceName = document.getElementById('current-device-name');
         const deviceId = document.getElementById('current-device-id');
@@ -1364,7 +1333,6 @@ async function actualizarPanelSync() {
                                     deviceInfo.type === 'tablet' ? '📟' : '💻';
         }
         
-        // Actualizar estado de Firebase
         const firebaseStatus = document.getElementById('firebase-status');
         const lastSyncTime = document.getElementById('last-sync-time');
         const cloudProfilesCount = document.getElementById('cloud-profiles-count');
@@ -1446,7 +1414,6 @@ function exportarPDF() {
     mostrarStatus('🔄 Generando PDF...', 'info');
     
     const contenido = generarContenidoPDF();
-    
     const blob = new Blob([contenido], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     
@@ -1457,7 +1424,6 @@ function exportarPDF() {
     
     document.body.appendChild(link);
     link.click();
-    
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
@@ -1472,90 +1438,32 @@ function generarContenidoPDF() {
     const viajesAceptados = historial.filter(item => item.aceptado).length;
     const viajesRentables = historial.filter(item => item.aceptado && item.rentabilidad === 'rentable').length;
     
-    return `
-<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reporte UberCalc</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            line-height: 1.4;
-            color: #333;
-        }
-        .header { 
-            text-align: center; 
-            margin-bottom: 30px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 20px;
-        }
-        .summary-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .summary-card {
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-        .summary-card.ingresos {
-            background-color: #e8f5e8;
-            border-color: #4CAF50;
-        }
-        .summary-card.costos {
-            background-color: #ffe8e8;
-            border-color: #f44336;
-        }
-        .summary-card.rendimiento {
-            background-color: #e8f4ff;
-            border-color: #2196F3;
-        }
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 20px 0;
-            font-size: 12px;
-        }
-        th, td { 
-            border: 1px solid #ddd; 
-            padding: 8px; 
-            text-align: left; 
-        }
-        th { 
-            background-color: #f2f2f2; 
-            font-weight: bold;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.4; color: #333; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .summary-card { padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
+        .summary-card.ingresos { background-color: #e8f5e8; border-color: #4CAF50; }
+        .summary-card.costos { background-color: #ffe8e8; border-color: #f44336; }
+        .summary-card.rendimiento { background-color: #e8f4ff; border-color: #2196F3; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
         .rentable { background-color: #d4edda; }
         .oportunidad { background-color: #fff3cd; }
         .no-rentable { background-color: #f8d7da; }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            color: #666;
-            font-size: 0.9em;
-        }
-        .valor-destacado {
-            font-size: 1.3em;
-            font-weight: bold;
-            margin: 5px 0;
-        }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 0.9em; }
+        .valor-destacado { font-size: 1.3em; font-weight: bold; margin: 5px 0; }
         .valor-positivo { color: #4CAF50; }
         .valor-negativo { color: #f44336; }
-        .desglose-costos {
-            margin: 20px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        @media print {
-            body { margin: 10px; }
-            .summary-grid { grid-template-columns: 1fr 1fr; }
-        }
+        .desglose-costos { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+        @media print { body { margin: 10px; } .summary-grid { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
 <body>
@@ -1586,18 +1494,9 @@ function generarContenidoPDF() {
         <div class="summary-card rendimiento" style="grid-column: 1 / -1;">
             <h3>📊 RENDIMIENTO</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                <div>
-                    <strong>Ganancia/Hora:</strong><br>
-                    <span class="valor-destacado valor-positivo">${formatearMoneda(stats.gananciaPorHora || 0)}</span>
-                </div>
-                <div>
-                    <strong>Tiempo Total:</strong><br>
-                    <span class="valor-destacado">${stats.tiempoTotal || 0} min</span>
-                </div>
-                <div>
-                    <strong>Eficiencia:</strong><br>
-                    <span class="valor-destacado valor-positivo">${viajesAceptados > 0 ? ((viajesRentables / viajesAceptados) * 100).toFixed(1) : 0}%</span>
-                </div>
+                <div><strong>Ganancia/Hora:</strong><br><span class="valor-destacado valor-positivo">${formatearMoneda(stats.gananciaPorHora || 0)}</span></div>
+                <div><strong>Tiempo Total:</strong><br><span class="valor-destacado">${stats.tiempoTotal || 0} min</span></div>
+                <div><strong>Eficiencia:</strong><br><span class="valor-destacado valor-positivo">${viajesAceptados > 0 ? ((viajesRentables / viajesAceptados) * 100).toFixed(1) : 0}%</span></div>
             </div>
         </div>
     </div>
@@ -1605,12 +1504,8 @@ function generarContenidoPDF() {
     <div class="desglose-costos">
         <h3>📈 RESUMEN FINANCIERO</h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div>
-                <strong>Ingresos Totales:</strong> ${formatearMoneda(stats.gananciaTotal || 0)}
-            </div>
-            <div>
-                <strong>Costos Totales:</strong> ${formatearMoneda((stats.costoCombustibleTotal || 0) + (stats.costoMantenimientoTotal || 0) + (stats.costoSeguroTotal || 0))}
-            </div>
+            <div><strong>Ingresos Totales:</strong> ${formatearMoneda(stats.gananciaTotal || 0)}</div>
+            <div><strong>Costos Totales:</strong> ${formatearMoneda((stats.costoCombustibleTotal || 0) + (stats.costoMantenimientoTotal || 0) + (stats.costoSeguroTotal || 0))}</div>
             <div style="grid-column: 1 / -1; text-align: center; padding: 10px; background: white; border-radius: 5px; margin-top: 10px;">
                 <strong style="color: #f5a623; font-size: 1.2em;">GANANCIA NETA TOTAL: ${formatearMoneda(stats.gananciaNetaTotal || 0)}</strong>
             </div>
@@ -1621,17 +1516,9 @@ function generarContenidoPDF() {
     <table>
         <thead>
             <tr>
-                <th>Fecha</th>
-                <th>Hora</th>
-                <th>Ganancia</th>
-                <th>Minutos</th>
-                <th>Distancia</th>
-                <th>Combustible</th>
-                <th>Mantenimiento</th>
-                <th>Seguro</th>
-                <th>Ganancia Neta</th>
-                <th>Rentabilidad</th>
-                <th>Aceptado</th>
+                <th>Fecha</th><th>Hora</th><th>Ganancia</th><th>Minutos</th><th>Distancia</th>
+                <th>Combustible</th><th>Mantenimiento</th><th>Seguro</th><th>Ganancia Neta</th>
+                <th>Rentabilidad</th><th>Aceptado</th>
             </tr>
         </thead>
         <tbody>
@@ -1639,22 +1526,13 @@ function generarContenidoPDF() {
                 const fecha = new Date(item.timestamp).toLocaleDateString();
                 const hora = new Date(item.timestamp).toLocaleTimeString();
                 const distanciaLabel = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
-                
-                return `
-                    <tr class="${item.rentabilidad}">
-                        <td>${fecha}</td>
-                        <td>${hora}</td>
-                        <td>${formatearMoneda(item.tarifa)}</td>
-                        <td>${item.minutos}</td>
-                        <td>${item.distancia} ${distanciaLabel}</td>
-                        <td>${formatearMoneda(item.costoCombustible)}</td>
-                        <td>${formatearMoneda(item.costoMantenimiento)}</td>
-                        <td>${formatearMoneda(item.costoSeguro)}</td>
-                        <td>${formatearMoneda(item.gananciaNeta)}</td>
-                        <td>${item.texto}</td>
-                        <td>${item.aceptado ? '✅ Sí' : '❌ No'}</td>
-                    </tr>
-                `;
+                return `<tr class="${item.rentabilidad}">
+                    <td>${fecha}</td><td>${hora}</td><td>${formatearMoneda(item.tarifa)}</td>
+                    <td>${item.minutos}</td><td>${item.distancia} ${distanciaLabel}</td>
+                    <td>${formatearMoneda(item.costoCombustible)}</td><td>${formatearMoneda(item.costoMantenimiento)}</td>
+                    <td>${formatearMoneda(item.costoSeguro)}</td><td>${formatearMoneda(item.gananciaNeta)}</td>
+                    <td>${item.texto}</td><td>${item.aceptado ? '✅ Sí' : '❌ No'}</td>
+                </tr>`;
             }).join('')}
         </tbody>
     </table>
@@ -1664,29 +1542,19 @@ function generarContenidoPDF() {
         <p>¡Sigue maximizando tus ganancias! 🚗💨</p>
     </div>
 
-    <script>
-        if (window.innerWidth > 768) {
-            window.print();
-        }
-    </script>
+    <script>if (window.innerWidth > 768) window.print();</script>
 </body>
 </html>`;
 }
 
 // --- Utilidades ---
 function mostrarPantalla(pantalla) {
-    console.log('🖥️ Mostrando pantalla:', pantalla);
+    document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
     
-    document.querySelectorAll('.screen').forEach(screen => {
-        screen.classList.remove('active');
-    });
-    
-    if (pantalla === 'perfil') {
-        if (elementos.perfilScreen) elementos.perfilScreen.classList.add('active');
-    } else if (pantalla === 'config-perfil') {
-        if (elementos.configPerfilScreen) elementos.configPerfilScreen.classList.add('active');
-    } else if (pantalla === 'main') {
-        if (elementos.mainScreen) elementos.mainScreen.classList.add('active');
+    if (pantalla === 'perfil' && elementos.perfilScreen) elementos.perfilScreen.classList.add('active');
+    else if (pantalla === 'config-perfil' && elementos.configPerfilScreen) elementos.configPerfilScreen.classList.add('active');
+    else if (pantalla === 'main' && elementos.mainScreen) {
+        elementos.mainScreen.classList.add('active');
         actualizarUnidades();
         actualizarEstadisticas();
         actualizarHistorial();
@@ -1703,18 +1571,8 @@ function validarFormulario() {
         return false;
     }
     
-    if (parseFloat(tarifa) <= 0) {
-        mostrarError('La tarifa debe ser mayor a 0');
-        return false;
-    }
-    
-    if (parseFloat(minutos) <= 0) {
-        mostrarError('El tiempo debe ser mayor a 0');
-        return false;
-    }
-    
-    if (parseFloat(distancia) <= 0) {
-        mostrarError('La distancia debe ser mayor a 0');
+    if (parseFloat(tarifa) <= 0 || parseFloat(minutos) <= 0 || parseFloat(distancia) <= 0) {
+        mostrarError('Todos los valores deben ser mayores a 0');
         return false;
     }
     
@@ -1741,9 +1599,7 @@ function mostrarStatus(mensaje, tipo = 'info') {
     elementos.statusIndicator.classList.remove('hidden');
     
     setTimeout(() => {
-        if (elementos.statusIndicator) {
-            elementos.statusIndicator.classList.add('hidden');
-        }
+        if (elementos.statusIndicator) elementos.statusIndicator.classList.add('hidden');
     }, 3000);
 }
 
@@ -1758,15 +1614,11 @@ function limpiarFormulario() {
 }
 
 function cerrarModal() {
-    if (elementos.modalFondo) {
-        elementos.modalFondo.style.display = 'none';
-    }
+    if (elementos.modalFondo) elementos.modalFondo.style.display = 'none';
 }
 
 function cerrarExportModal() {
-    if (elementos.exportModal) {
-        elementos.exportModal.style.display = 'none';
-    }
+    if (elementos.exportModal) elementos.exportModal.style.display = 'none';
 }
 
 function formatearMoneda(valor) {
@@ -1778,27 +1630,31 @@ function formatearMoneda(valor) {
 // --- Persistencia de Datos MEJORADA ---
 async function cargarDatos() {
     try {
-        console.log('📥 Cargando datos...');
+        console.log('📥 Iniciando carga de datos...');
         
-        // Primero intentar cargar desde Firebase
+        // 1. Intentar cargar desde Firebase
         if (firebaseSync && firebaseSync.initialized) {
-            try {
-                const perfilesRemotos = await firebaseSync.loadProfiles();
-                if (perfilesRemotos !== null) { // null indica error
-                    perfiles = perfilesRemotos;
-                    perfilActual = perfiles.length > 0 ? perfiles[0] : null;
-                    historial = []; // El historial se mantiene local
-                    console.log('✅ Datos cargados desde Firebase. Perfiles:', perfiles.length);
+            console.log('🔥 Intentando cargar desde Firebase...');
+            const perfilesRemotos = await firebaseSync.loadProfiles();
+            
+            if (perfilesRemotos !== null) { // null significa error
+                perfiles = perfilesRemotos;
+                if (perfiles.length > 0) {
+                    perfilActual = perfiles[0];
+                    historial = []; // Historial se mantiene local
+                    console.log(`✅ Datos cargados desde Firebase: ${perfiles.length} perfiles`);
+                    guardarDatos(); // Sincronizar localStorage
                     return;
                 } else {
-                    console.log('⚠️ Firebase devolvió null, usando datos locales');
+                    console.log('ℹ️ Firebase vacío, continuando con localStorage');
                 }
-            } catch (firebaseError) {
-                console.warn('⚠️ Error cargando desde Firebase, usando datos locales:', firebaseError);
+            } else {
+                console.log('ℹ️ Error cargando de Firebase, continuando con localStorage');
             }
         }
         
-        // Fallback a datos locales
+        // 2. Fallback a localStorage
+        console.log('📱 Cargando desde localStorage...');
         const datosGuardados = localStorage.getItem('uberCalc_data');
         if (datosGuardados) {
             const datos = JSON.parse(datosGuardados);
@@ -1806,7 +1662,7 @@ async function cargarDatos() {
             perfilActual = datos.perfilActual || null;
             historial = datos.historial || [];
             
-            console.log('✅ Datos cargados desde localStorage. Perfiles:', perfiles.length);
+            console.log(`✅ Datos cargados desde localStorage: ${perfiles.length} perfiles`);
             
             // Sincronizar datos locales a Firebase si es posible
             if (firebaseSync && firebaseSync.initialized && perfiles.length > 0) {
@@ -1814,17 +1670,18 @@ async function cargarDatos() {
                 await firebaseSync.saveProfiles(perfiles);
             }
         } else {
-            console.log('ℹ️ No hay datos guardados localmente');
+            console.log('ℹ️ No hay datos guardados - Inicializando vacío');
             perfiles = [];
             perfilActual = null;
             historial = [];
         }
+        
     } catch (error) {
-        console.error('❌ Error cargando datos:', error);
-        // Mantener funcionamiento básico con datos por defecto
-        perfiles = perfiles || [];
-        perfilActual = perfilActual || null;
-        historial = historial || [];
+        console.error('❌ Error crítico cargando datos:', error);
+        // Fallback seguro
+        perfiles = [];
+        perfilActual = null;
+        historial = [];
     }
 }
 
@@ -1841,12 +1698,11 @@ function guardarDatos() {
         localStorage.setItem('uberCalc_data', JSON.stringify(datos));
         console.log('💾 Datos guardados en localStorage');
     } catch (error) {
-        console.error('❌ Error guardando datos:', error);
-        mostrarError('Error al guardar datos en el almacenamiento local');
+        console.error('❌ Error guardando en localStorage:', error);
     }
 }
 
-// --- Funciones Globales para HTML ---
+// --- Funciones Globales ---
 window.cerrarModal = cerrarModal;
 window.cerrarExportModal = cerrarExportModal;
 window.cerrarSyncPanel = cerrarSyncPanel;
@@ -1858,7 +1714,7 @@ window.mostrarPanelSync = mostrarPanelSync;
 window.forzarSincronizacion = forzarSincronizacion;
 window.mostrarInfoSync = mostrarInfoSync;
 
-// --- Prevenir cierre accidental ---
+// --- Event Listeners Globales ---
 window.addEventListener('beforeunload', function(e) {
     const tieneDatosPendientes = elementos.tarifaInput?.value || 
                                  elementos.minutosInput?.value || 
@@ -1867,28 +1723,20 @@ window.addEventListener('beforeunload', function(e) {
     if (tieneDatosPendientes) {
         e.preventDefault();
         e.returnValue = '';
-        return '';
     }
 });
 
-// --- Cerrar modal al hacer clic fuera ---
 window.onclick = function(event) {
-    if (event.target === elementos.modalFondo) {
-        cerrarModal();
-    }
-    if (event.target === elementos.exportModal) {
-        cerrarExportModal();
-    }
-    if (event.target === elementos.syncPanel) {
-        cerrarSyncPanel();
-    }
-}
+    if (event.target === elementos.modalFondo) cerrarModal();
+    if (event.target === elementos.exportModal) cerrarExportModal();
+    if (event.target === elementos.syncPanel) cerrarSyncPanel();
+};
 
-// --- Forzar cálculo inicial si hay datos ---
+// --- Inicialización Final ---
 setTimeout(() => {
     if (elementos.tarifaInput?.value && elementos.minutosInput?.value && elementos.distanciaInput?.value) {
         calcularAutomatico();
     }
 }, 1000);
 
-console.log('🎉 Script UberCalc cargado correctamente');
+console.log('🎉 Script UberCalc COMPLETO cargado - Listo para usar!');
