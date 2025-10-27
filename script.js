@@ -1073,12 +1073,18 @@ function actualizarInterfazPerfiles() {
         console.error('❌ Elemento perfiles-lista no encontrado');
         return;
     }
+
+    // ⚠️ CORRECCIÓN DEFENSIVA: Asegurar que 'perfiles' es un Array antes de intentar iterar
+    if (!Array.isArray(perfiles)) {
+        console.error('❌ ERROR CRÍTICO: "perfiles" no es un array. Reinicializando.', perfiles);
+        perfiles = []; // Evitamos el TypeError al inicializar
+    }
     
     console.log('🔄 Actualizando interfaz de perfiles. Total:', perfiles.length);
     
     elementos.perfilesLista.innerHTML = '';
     
-    if (perfiles.length === 0) {
+   if (perfiles.length === 0) {
         elementos.perfilesLista.innerHTML = `
             <div class="perfil-item" style="text-align: center; opacity: 0.7;">
                 <div class="perfil-nombre">No hay perfiles creados</div>
@@ -1389,9 +1395,17 @@ async function forzarSincronizacion() {
     console.log('🔄 Forzando sincronización...');
     mostrarStatus('🔄 Sincronizando con Google Sheets...', 'info');
     
-    const perfilesSincronizados = await googleSync.syncProfiles(perfiles);
-    if (perfilesSincronizados) {
-        perfiles = perfilesSincronizados;
+    const syncResult = await googleSync.syncProfiles(perfiles);
+
+    if (syncResult && syncResult.success) {
+        // 1. ⚠️ CORRECCIÓN CLAVE: Asignamos el array de perfiles fusionados que viene del servidor.
+        //    Si el servidor devuelve {mergedProfiles: [...]}, lo usamos. Si no lo devuelve,
+        //    asumimos que la sincronización fue un PUSH exitoso y usamos el array local 'perfiles'.
+        const newProfiles = syncResult.mergedProfiles || perfiles;
+        
+        // 2. Sobreescribimos la variable global 'perfiles' con los datos limpios
+        perfiles = Array.isArray(newProfiles) ? newProfiles : perfiles;
+
         guardarDatos();
         actualizarInterfazPerfiles();
         mostrarStatus('✅ Sincronización completada', 'success');
@@ -1400,7 +1414,6 @@ async function forzarSincronizacion() {
         mostrarError('❌ Error en la sincronización');
     }
 }
-
 function mostrarInfoSync() {
     alert(`🌐 SINCRONIZACIÓN CON GOOGLE SHEETS
 
@@ -1776,8 +1789,8 @@ async function cargarDatos() {
         if (googleSync && googleSync.initialized) {
             try {
                 const perfilesRemotos = await googleSync.loadProfiles();
-                if (perfilesRemotos !== null) { // null indica error
-                    perfiles = perfilesRemotos;
+                if (perfilesRemotos !== null && perfilesRemotos.profiles) {
+    perfiles = perfilesRemotos.profiles; // ✅ Asigna solo el array [perfil, perfil, ...]
                     perfilActual = perfiles.length > 0 ? perfiles[0] : null;
                     historial = []; // El historial se mantiene local
                     console.log('✅ Datos cargados desde Google Sheets. Perfiles:', perfiles.length);
@@ -1981,6 +1994,7 @@ console.log('✅ Sincronización OK:', syncSuccess ? 'Éxito' : 'Falló');
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
 
