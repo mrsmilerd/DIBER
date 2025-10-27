@@ -1,6 +1,6 @@
 // =============================================
 // UBER CALC - Calculadora Inteligente para Conductores
-// Versión con Google Apps Script Sync - COMPLETA Y CORREGIDA (FIX SINCRONIZACIÓN)
+// Versión con Google Apps Script Sync - COMPLETA Y CORREGIDA
 // =============================================
 
 // --- Variables Globales ---
@@ -11,9 +11,10 @@ let calculoActual = null;
 let timeoutCalculo = null;
 let googleSync;
 
-// --- Configuración Google Apps Script ---
-// Asegúrate de que esta URL sea la correcta
-const GOOGLE_SCRIPT_URL = 'https://api.allorigins.win/raw?url=https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
+// --- Configuración Google Apps Script (CORREGIDO: Eliminamos el proxy externo inestable) ---
+const GOOGLE_SCRIPT_BASE_URL = 'https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
+const LOCAL_SYNC_ENDPOINT = '/api/sync'; 
+const GOOGLE_SCRIPT_URL = LOCAL_SYNC_ENDPOINT;
 
 // --- Clase Google Sync CORREGIDA ---
 class GoogleSync {
@@ -56,6 +57,8 @@ class GoogleSync {
             this.initializing = false;
             
             console.log('✅ Google Sync inicializado CORRECTAMENTE');
+            console.log('👤 User ID:', this.userId);
+            
             this.actualizarUIEstado('connected');
             return true;
             
@@ -77,18 +80,17 @@ class GoogleSync {
         return userId;
     }
 
-    async makeRequest(params) {
+async makeRequest(params) {
         if (!this.initialized) {
             throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
         }
 
         try {
-            console.log('📤 Enviando request a Google Script...', params.action);
+            console.log('📤 Enviando request a Google Script a través de Vercel Proxy...', params.action);
             
-            // Construir URL con parámetros GET
+            // 1. Construir la URL completa del Google Script (Target URL)
             const urlParams = new URLSearchParams();
             Object.keys(params).forEach(key => {
-                // Convertir el objeto 'profiles' a string JSON
                 if (key === 'profiles' && typeof params[key] === 'object') {
                     urlParams.append(key, JSON.stringify(params[key]));
                 } else {
@@ -97,28 +99,34 @@ class GoogleSync {
             });
             urlParams.append('userId', this.userId);
             
-            // Uso del proxy (allorigins.win) para evitar CORS
-            const targetUrl = `https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec?${urlParams.toString()}&t=${Date.now()}`;
-            const finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+            // Usamos la URL base limpia de Google Apps Script
+            const targetUrl = `${GOOGLE_SCRIPT_BASE_URL}?${urlParams.toString()}&t=${Date.now()}`;
             
             console.log('🔗 Target URL de Google Script:', targetUrl);
-            console.log('🔗 Enviando a Vercel Proxy:', '/api/sync (o similar - aquí usamos allorigins)');
-            
-            const response = await fetch(finalUrl, {
-                method: 'GET', // Usar GET con el proxy
+            console.log('🔗 Enviando a Vercel Proxy:', LOCAL_SYNC_ENDPOINT);
+
+            // 2. Llamar al endpoint local de Vercel y pasar la URL de Google Script
+            const response = await fetch(LOCAL_SYNC_ENDPOINT, {
+                method: 'POST', // Usamos POST para enviar la URL en el body
                 headers: {
                     'Content-Type': 'application/json',
-                }
+                },
+                body: JSON.stringify({
+                    targetUrl: targetUrl // Enviamos la URL completa del Google Script
+                })
             });
 
-            console.log('📥 Response status:', response.status);
+            console.log('📥 Response status:', response.status, response.statusText);
             
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Error HTTP: ${response.status} - ${response.statusText}. Detalle: ${errorText.substring(0, 100)}...`);
+                // Si la respuesta no es OK, obtenemos el cuerpo del error (que ya no será HTML)
+                const errorBody = await response.text(); 
+                throw new Error(`Error HTTP en Vercel Proxy: ${response.status} - ${errorBody}`);
             }
 
-            const result = await response.json();
+            // Aquí response.json() SÍ funcionará porque el proxy de Vercel nos devuelve JSON limpio.
+            const result = await response.json(); 
+            
             console.log('✅ Request exitoso:', params.action, result);
             
             if (result.success === false) {
@@ -134,14 +142,29 @@ class GoogleSync {
     }
 
     async saveProfiles(profiles) {
-        if (!this.initialized) return false;
+        if (!this.initialized) {
+            console.warn('❌ Google Sync no inicializado, no se puede guardar');
+            return false;
+        }
+
         try {
             console.log('💾 Guardando perfiles en Google Sheets...', profiles.length);
-            const result = await this.makeRequest({ action: 'saveProfiles', profiles: profiles });
+            
+            const result = await this.makeRequest({
+                action: 'saveProfiles',
+                profiles: profiles
+            });
+            
             this.lastSyncTime = result.lastSync;
             console.log('✅ Perfiles guardados en Google Sheets correctamente');
-            this.actualizarUIEstado('connected');
+            this.actualizarUIEstado('syncing');
+            
+            setTimeout(() => {
+                this.actualizarUIEstado('connected');
+            }, 2000);
+            
             return true;
+            
         } catch (error) {
             console.error('❌ Error guardando en Google Sheets:', error);
             this.actualizarUIEstado('error');
@@ -150,14 +173,23 @@ class GoogleSync {
     }
 
     async loadProfiles() {
-        if (!this.initialized) return null;
+        if (!this.initialized) {
+            console.warn('❌ Google Sync no inicializado, no se puede cargar');
+            return null;
+        }
+
         try {
             console.log('📥 Cargando perfiles desde Google Sheets...');
-            const result = await this.makeRequest({ action: 'getProfiles' });
+            
+            const result = await this.makeRequest({
+                action: 'getProfiles'
+            });
+            
             this.lastSyncTime = result.lastSync;
             console.log('✅ Perfiles cargados desde Google Sheets:', result.profiles.length);
             this.actualizarUIEstado('connected');
             return result.profiles || [];
+            
         } catch (error) {
             console.error('❌ Error cargando desde Google Sheets:', error);
             this.actualizarUIEstado('error');
@@ -166,22 +198,32 @@ class GoogleSync {
     }
 
     async syncProfiles(localProfiles) {
-        if (!this.initialized) return null;
-        if (this.syncInProgress) return null;
+        if (!this.initialized) {
+            console.warn('❌ Google Sync no inicializado');
+            return null;
+        }
+
+        if (this.syncInProgress) {
+            console.log('⏳ Sincronización ya en progreso...');
+            return null;
+        }
 
         this.syncInProgress = true;
+
         try {
             console.log('🔄 Sincronizando perfiles...');
             this.actualizarUIEstado('syncing');
             
-            // STUB: Aquí se enviaría a la función syncProfiles del .gs, que actualmente solo devuelve el mismo array local.
-            const result = await this.makeRequest({ action: 'syncProfiles', profiles: localProfiles });
+            const result = await this.makeRequest({
+                action: 'syncProfiles',
+                profiles: localProfiles
+            });
 
             this.lastSyncTime = result.lastSync;
+            console.log('✅ Sincronización completada:', result.stats);
             this.actualizarUIEstado('connected');
             
-            // Devolvemos los perfiles fusionados (que actualmente son los locales, pero serán los de la nube al implementar la carga)
-            return result.mergedProfiles || []; 
+            return result.profiles;
             
         } catch (error) {
             console.error('❌ Error en sincronización:', error);
@@ -196,7 +238,9 @@ class GoogleSync {
         if (!this.initialized) return 'not_configured';
 
         try {
-            const result = await this.makeRequest({ action: 'getSyncStatus' });
+            const result = await this.makeRequest({
+                action: 'getSyncStatus'
+            });
             
             return {
                 status: result.status,
@@ -213,8 +257,6 @@ class GoogleSync {
             const syncInfo = document.getElementById('sync-info');
             const syncIcon = document.getElementById('sync-icon');
             const syncText = document.getElementById('sync-text');
-            const lastSyncTime = document.getElementById('last-sync-time');
-            const cloudProfilesCount = document.getElementById('cloud-profiles-count');
             
             if (!syncInfo || !syncIcon || !syncText) {
                 console.warn('❌ Elementos de UI de sync no encontrados');
@@ -245,23 +287,46 @@ class GoogleSync {
                     syncText.textContent = 'Conectando...';
             }
             
-            if (this.lastSyncTime && lastSyncTime) {
-                const date = new Date(this.lastSyncTime);
-                lastSyncTime.textContent = date.toLocaleTimeString() + ' ' + date.toLocaleDateString();
-            } else if (lastSyncTime) {
-                lastSyncTime.textContent = '--';
-            }
-            
-            // Actualizar contador de perfiles en la nube al actualizar el estado
-            if (cloudProfilesCount) {
-                cloudProfilesCount.textContent = perfiles.length.toString();
-            }
-
             console.log(`🔄 Estado de sync actualizado: ${estado}`);
             
         } catch (error) {
             console.error('❌ Error actualizando UI de sync:', error);
         }
+    }
+
+    getDeviceInfo() {
+        return {
+            id: this.userId,
+            name: this.guessDeviceName(),
+            type: this.detectDeviceType(),
+            userAgent: navigator.userAgent.substring(0, 100),
+            lastSync: this.lastSyncTime || new Date().toISOString()
+        };
+    }
+
+    guessDeviceName() {
+        const ua = navigator.userAgent;
+        let name = 'Dispositivo';
+        
+        if (/Mobile|Android|iPhone/i.test(ua)) {
+            name = /Tablet|iPad/i.test(ua) ? 'Tableta' : 'Teléfono';
+        } else if (/Windows/i.test(ua)) {
+            name = 'Computadora Windows';
+        } else if (/Mac/i.test(ua)) {
+            name = 'Computadora Mac';
+        } else if (/Linux/i.test(ua)) {
+            name = 'Computadora Linux';
+        }
+        
+        return name;
+    }
+
+    detectDeviceType() {
+        const ua = navigator.userAgent;
+        if (/Mobile|Android|iPhone|iPad/i.test(ua)) {
+            return /Tablet|iPad/i.test(ua) ? 'tablet' : 'mobile';
+        }
+        return 'desktop';
     }
 }
 
@@ -337,8 +402,7 @@ const elementos = {
     exportarPdfBtn: document.getElementById('exportar-pdf'),
     
     // Sincronización
-    syncPanel: document.getElementById('sync-panel'),
-    forceSyncBtn: document.getElementById('force-sync-btn')
+    syncPanel: document.getElementById('sync-panel')
 };
 
 // --- Inicialización MEJORADA ---
@@ -353,10 +417,17 @@ async function inicializarApp() {
     
     // Inicializar Google Sync
     googleSync = new GoogleSync();
-    await googleSync.initialize();
+    const googleReady = await googleSync.initialize();
     
-    // Cargar datos (esta función contiene el FIX de sincronización)
-    await cargarDatos();
+    if (googleReady) {
+        console.log('✅ Google Sync activo');
+        
+        // Cargar datos desde Google Sheets
+        await cargarDatos();
+    } else {
+        console.log('📱 Usando almacenamiento local (Google Sync no disponible)');
+        await cargarDatos();
+    }
     
     aplicarTemaGuardado();
     actualizarInterfazPerfiles();
@@ -376,109 +447,6 @@ async function inicializarApp() {
     
     console.log('🎉 UberCalc con Google Sync inicializado correctamente');
 }
-
-// ===============================================
-// ** FIX CRÍTICO: CARGA Y SINCRONIZACIÓN DE DATOS **
-// ===============================================
-
-/**
- * Guarda los datos del estado global de la aplicación en LocalStorage.
- */
-function guardarDatos() {
-    console.log('💾 Guardando datos localmente...');
-    localStorage.setItem('perfiles', JSON.stringify(perfiles));
-    if (perfilActual) {
-        localStorage.setItem('perfilActualId', perfilActual.id);
-    }
-    localStorage.setItem('historial', JSON.stringify(historial));
-}
-
-/**
- * Carga los datos, dando prioridad a los perfiles de Google Sheets si están disponibles.
- */
-async function cargarDatos() {
-    console.log('📥 Cargando datos...');
-    
-    // 1. Cargar desde Local Storage (base)
-    const perfilesLocal = JSON.parse(localStorage.getItem('perfiles') || '[]');
-    const historialLocal = JSON.parse(localStorage.getItem('historial') || '[]');
-    const perfilActualIdLocal = localStorage.getItem('perfilActualId');
-    
-    // Usar la versión local por defecto
-    perfiles = perfilesLocal;
-    historial = historialLocal;
-    
-    // 2. Intentar cargar y SOBRESCRIBIR desde Google Sheets
-    if (googleSync && googleSync.initialized) {
-        mostrarStatus('🔄 Buscando perfiles en la nube...', 'info');
-        const perfilesNube = await googleSync.loadProfiles();
-        
-        if (perfilesNube && perfilesNube.length > 0) {
-            console.log(`☁️ Perfiles encontrados en la nube: ${perfilesNube.length}. SOBRESCRIBIENDO local...`);
-            // *** CORRECCIÓN CLAVE: Sobrescribir el array global 'perfiles' ***
-            perfiles = perfilesNube; 
-            
-            // Guardar la nueva lista de perfiles en el Local Storage del dispositivo actual.
-            guardarDatos(); 
-            
-            mostrarStatus('✅ Perfiles cargados desde Google Sheets', 'success');
-        } else if (perfilesLocal.length > 0) {
-            // Si la nube está vacía, pero local no, guardar la versión local en la nube (primer sync de este dispositivo)
-            console.log('↗️ Guardando perfiles locales en la nube por primera vez...');
-            await googleSync.saveProfiles(perfilesLocal);
-            mostrarStatus('✅ Perfiles cargados localmente (guardados en nube)', 'success');
-        }
-    }
-    
-    // Asignar el perfil actual basado en la lista FINAL (nube o local)
-    const perfilActualId = localStorage.getItem('perfilActualId');
-    perfilActual = perfiles.find(p => p.id === perfilActualId) || perfiles[0] || null;
-    
-    // Si no hay perfiles, establecer perfil actual a null
-    if (perfiles.length === 0) {
-        perfilActual = null;
-    }
-
-    console.log(`✅ Datos cargados. Perfiles: ${perfiles.length}. Historial: ${historial.length}`);
-}
-
-
-/**
- * Función vinculada al botón 'Sincronizar Ahora'.
- */
-async function forzarSincronizacion() {
-    if (!googleSync || !googleSync.initialized) {
-        mostrarError('Google Sync no está inicializado.');
-        return;
-    }
-    
-    mostrarStatus('🔄 Sincronizando datos con la nube...', 'syncing');
-    
-    try {
-        // 1. Subir la versión actual (Local) a la nube (para subir el perfil recién creado en el PC).
-        const saveSuccess = await googleSync.saveProfiles(perfiles);
-        
-        if (saveSuccess) {
-            // 2. Recargar desde la nube (para traer datos de otros dispositivos como el PC).
-            // Esto llama a cargarDatos(), que sobrescribe los perfiles.
-            await cargarDatos(); 
-            
-            // 3. Actualizar la UI
-            actualizarInterfazPerfiles();
-            actualizarEstadisticas();
-            actualizarPanelSync();
-            
-            mostrarStatus('✅ Sincronización completa y datos actualizados', 'success');
-        } else {
-            throw new Error('Falló el guardado en la nube.');
-        }
-
-    } catch (error) {
-        console.error('❌ Error en forzarSincronizacion:', error);
-        mostrarError('❌ Error al sincronizar: ' + error.message);
-    }
-}
-// ===============================================
 
 function configurarEventListeners() {
     console.log('⚙️ Configurando event listeners...');
@@ -545,11 +513,6 @@ function configurarEventListeners() {
     
     elementos.perfilForm.addEventListener('submit', guardarPerfil);
     
-    // Botón de sincronización manual
-    if (elementos.forceSyncBtn) {
-        elementos.forceSyncBtn.addEventListener('click', forzarSincronizacion);
-    }
-    
     // Tema
     elementos.themeToggle.addEventListener('click', alternarTema);
     
@@ -597,8 +560,6 @@ function cambiarPestana(tabId) {
         actualizarEstadisticas();
     } else if (tabId === 'historial') {
         actualizarHistorial();
-    } else if (tabId === 'sync') {
-        actualizarPanelSync();
     }
 }
 
@@ -980,16 +941,15 @@ function actualizarEstadisticas() {
     );
     
     const totalViajes = viajesHoy.length;
-    const gananciaTotal = viajesHoy.reduce((sum, item) => sum + item.tarifa, 0); 
+    const gananciaTotal = viajesHoy.reduce((sum, item) => sum + item.tarifa, 0);
     const tiempoTotal = viajesHoy.reduce((sum, item) => sum + item.minutos, 0);
     const viajesRentables = viajesHoy.filter(item => item.rentabilidad === 'rentable').length;
     
-    // Costos totales del día (para la sección de estadísticas)
     const costoCombustibleTotal = viajesHoy.reduce((sum, item) => sum + item.costoCombustible, 0);
     const costoMantenimientoTotal = viajesHoy.reduce((sum, item) => sum + item.costoMantenimiento, 0);
     const costoSeguroTotal = viajesHoy.reduce((sum, item) => sum + item.costoSeguro, 0);
     const gananciaNetaTotal = viajesHoy.reduce((sum, item) => sum + item.gananciaNeta, 0);
-
+    
     if (elementos.statsViajes) elementos.statsViajes.textContent = totalViajes;
     if (elementos.statsGanancia) elementos.statsGanancia.textContent = formatearMoneda(gananciaTotal);
     if (elementos.statsTiempo) elementos.statsTiempo.textContent = `${tiempoTotal}min`;
@@ -1000,7 +960,7 @@ function actualizarEstadisticas() {
     
     if (elementos.statsGananciaHora) elementos.statsGananciaHora.textContent = formatearMoneda(gananciaPorHora);
     if (elementos.statsViajePromedio) elementos.statsViajePromedio.textContent = formatearMoneda(viajePromedio);
-
+    
     window.estadisticasExportacion = {
         totalViajes,
         gananciaTotal,
@@ -1018,6 +978,7 @@ function actualizarEstadisticas() {
 // --- Gestión de Perfiles ---
 function mostrarConfigPerfil(perfil = null) {
     console.log('⚙️ Mostrando configuración de perfil:', perfil ? perfil.nombre : 'Nuevo perfil');
+    
     const form = elementos.perfilForm;
     
     if (perfil) {
@@ -1052,6 +1013,7 @@ async function guardarPerfil(event) {
     console.log('💾 Guardando perfil...');
     
     const perfilId = document.getElementById('perfil-id').value;
+    
     const perfil = {
         id: perfilId || 'perfil_' + Date.now(),
         nombre: document.getElementById('nombre-perfil').value,
@@ -1068,6 +1030,7 @@ async function guardarPerfil(event) {
         costoMantenimiento: parseFloat(document.getElementById('costo-mantenimiento').value) || 0,
         fechaCreacion: perfilId ? perfiles.find(p => p.id === perfilId)?.fechaCreacion || new Date().toISOString() : new Date().toISOString(),
         fechaActualizacion: new Date().toISOString(),
+        // Campo para sincronización
         lastModified: Date.now()
     };
     
@@ -1092,9 +1055,9 @@ async function guardarPerfil(event) {
         console.log('🎯 Perfil actual establecido:', perfil.nombre);
     }
     
-    guardarDatos(); 
+    guardarDatos();
     
-    // Sincronizar con Google Sheets (para que el PC suba el perfil a la nube)
+    // Sincronizar con Google Sheets
     if (googleSync && googleSync.initialized) {
         const success = await googleSync.saveProfiles(perfiles);
         if (success) {
@@ -1117,6 +1080,7 @@ function actualizarInterfazPerfiles() {
     }
     
     console.log('🔄 Actualizando interfaz de perfiles. Total:', perfiles.length);
+    
     elementos.perfilesLista.innerHTML = '';
     
     if (perfiles.length === 0) {
@@ -1146,13 +1110,16 @@ function actualizarInterfazPerfiles() {
             </div>
             <div class="perfil-acciones">
                 <button class="secondary-button small usar-perfil-btn" data-perfil-id="${perfil.id}">
-                    <span class="button-icon">🚗</span> Usar 
+                    <span class="button-icon">🚗</span>
+                    Usar
                 </button>
                 <button class="secondary-button small editar-perfil-btn" data-perfil-id="${perfil.id}">
-                    <span class="button-icon">✏️</span> Editar 
+                    <span class="button-icon">✏️</span>
+                    Editar
                 </button>
                 <button class="secondary-button small eliminar-perfil-btn" data-perfil-id="${perfil.id}">
-                    <span class="button-icon">🗑️</span> Eliminar 
+                    <span class="button-icon">🗑️</span>
+                    Eliminar
                 </button>
             </div>
         `;
@@ -1210,13 +1177,12 @@ function actualizarInterfazPerfiles() {
 
 async function seleccionarPerfil(perfilId) {
     console.log('🎯 Intentando seleccionar perfil:', perfilId);
-    const perfil = perfiles.find(p => p.id === perfilId);
     
+    const perfil = perfiles.find(p => p.id === perfilId);
     if (perfil) {
         console.log('✅ Perfil encontrado:', perfil.nombre);
         perfilActual = perfil;
-        
-        guardarDatos(); 
+        guardarDatos();
         
         // Sincronizar cambio con Google Sheets
         if (googleSync && googleSync.initialized) {
@@ -1272,241 +1238,716 @@ async function eliminarPerfil(perfilId) {
         
         // Sincronizar con Google Sheets
         if (googleSync && googleSync.initialized) {
-            const success = await googleSync.saveProfiles(perfiles);
-            if (success) {
-                mostrarStatus('✅ Perfil eliminado y sincronizado', 'success');
-            } else {
-                mostrarStatus('🗑️ Perfil eliminado (solo local)', 'warning');
-            }
-        } else {
-            mostrarStatus('🗑️ Perfil eliminado (almacenamiento local)', 'info');
+            await googleSync.saveProfiles(perfiles);
         }
         
         actualizarInterfazPerfiles();
-        actualizarEstadisticas();
+        mostrarStatus('🗑️ Perfil eliminado correctamente', 'success');
+        console.log('✅ Perfil eliminado:', perfilId);
     }
 }
 
-// --- Funciones de Utilidad ---
-function mostrarPantalla(screenId) {
-    console.log('🖥️ Cambiando a pantalla:', screenId);
+function actualizarUnidades() {
+    const tipoMedida = document.getElementById('tipo-medida')?.value || perfilActual?.tipoMedida || 'km';
+    const tipoCombustible = document.getElementById('tipo-combustible')?.value || perfilActual?.tipoCombustible || 'glp';
+    const moneda = document.getElementById('moneda')?.value || perfilActual?.moneda || 'DOP';
     
-    const screens = [elementos.perfilScreen, elementos.configPerfilScreen, elementos.mainScreen];
+    const rendimientoUnit = document.getElementById('rendimiento-unit');
+    const precioCombustibleUnit = document.getElementById('precio-combustible-unit');
+    const umbralKmUnit = document.getElementById('umbral-km-unit');
+    const umbralKmOportunidadUnit = document.getElementById('umbral-km-oportunidad-unit');
     
-    screens.forEach(screen => {
-        if (screen) {
-            const id = screen.id.replace('-screen', '');
-            screen.classList.toggle('active', id === screenId);
-        }
+    if (rendimientoUnit) {
+        rendimientoUnit.textContent = tipoMedida === 'mi' ? 'mpg' : 'Km/Gl';
+    }
+    if (precioCombustibleUnit) {
+        precioCombustibleUnit.textContent = `${moneda}/Gl`;
+    }
+    if (umbralKmUnit) {
+        umbralKmUnit.textContent = `${moneda}/${tipoMedida === 'mi' ? 'mi' : 'Km'}`;
+    }
+    if (umbralKmOportunidadUnit) {
+        umbralKmOportunidadUnit.textContent = `${moneda}/${tipoMedida === 'mi' ? 'mi' : 'Km'}`;
+    }
+    
+    const distanciaUnit = document.getElementById('distancia-unit');
+    const monedaTarifa = document.getElementById('moneda-tarifa');
+    
+    if (distanciaUnit) {
+        distanciaUnit.textContent = tipoMedida === 'mi' ? 'mi' : 'Km';
+    }
+    if (monedaTarifa) {
+        monedaTarifa.textContent = moneda;
+    }
+    
+    document.querySelectorAll('.costo-mensual').forEach(el => {
+        if (el) el.textContent = moneda;
     });
     
-    // Si cambiamos a la pantalla principal, cambiamos a la pestaña de cálculo
-    if (screenId === 'main') {
-        cambiarPestana('calculo');
+    document.querySelectorAll('.umbral-minuto').forEach(el => {
+        if (el) el.textContent = `${moneda}/min`;
+    });
+}
+
+// --- Gestión de Tema ---
+function alternarTema() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('uberCalc_theme', newTheme);
+    
+    const themeIcon = elementos.themeToggle?.querySelector('.theme-icon');
+    if (themeIcon) {
+        themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
     }
 }
 
-function mostrarStatus(message, type = 'info') {
-    const statusBox = elementos.statusIndicator;
-    const statusText = elementos.statusText;
+function aplicarTemaGuardado() {
+    const savedTheme = localStorage.getItem('uberCalc_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
     
-    if (!statusBox || !statusText) return;
-    
-    statusText.textContent = message;
-    statusBox.className = 'status-box';
-    statusBox.classList.add(type);
-    statusBox.style.display = 'flex';
-    
-    // Ocultar después de 5 segundos (a menos que sea error)
-    if (type !== 'error') {
-        setTimeout(() => {
-            statusBox.style.display = 'none';
-        }, 5000);
+    const themeIcon = elementos.themeToggle?.querySelector('.theme-icon');
+    if (themeIcon) {
+        themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
     }
 }
 
-function mostrarError(message) {
-    mostrarStatus(message, 'error');
+// --- Sincronización Google Sheets ---
+function mostrarPanelSync() {
+    console.log('🌐 Mostrando panel de sincronización');
+    actualizarPanelSync();
+    if (elementos.syncPanel) {
+        elementos.syncPanel.style.display = 'flex';
+    }
+}
+
+function cerrarSyncPanel() {
+    console.log('❌ Cerrando panel de sincronización');
+    if (elementos.syncPanel) {
+        elementos.syncPanel.style.display = 'none';
+    }
+}
+
+async function actualizarPanelSync() {
+    if (!googleSync) {
+        console.log('❌ Google Sync no disponible');
+        return;
+    }
+    
+    console.log('🔄 Actualizando panel de sync');
+    
+    try {
+        // Actualizar información del dispositivo
+        const deviceInfo = googleSync.getDeviceInfo();
+        const deviceName = document.getElementById('current-device-name');
+        const deviceId = document.getElementById('current-device-id');
+        const deviceIcon = document.getElementById('current-device-icon');
+        
+        if (deviceName) deviceName.textContent = deviceInfo.name;
+        if (deviceId) deviceId.textContent = `ID: ${deviceInfo.id.substring(0, 8)}...`;
+        if (deviceIcon) {
+            deviceIcon.textContent = deviceInfo.type === 'mobile' ? '📱' : 
+                                    deviceInfo.type === 'tablet' ? '📟' : '💻';
+        }
+        
+        // Actualizar estado de Google Sync
+        const firebaseStatus = document.getElementById('firebase-status');
+        const lastSyncTime = document.getElementById('last-sync-time');
+        const cloudProfilesCount = document.getElementById('cloud-profiles-count');
+        
+        if (googleSync.initialized) {
+            if (firebaseStatus) {
+                firebaseStatus.textContent = 'Conectado';
+                firebaseStatus.style.color = 'var(--success-green)';
+            }
+            
+            const syncStatus = await googleSync.getSyncStatus();
+            if (syncStatus.status === 'connected') {
+                if (lastSyncTime) {
+                    lastSyncTime.textContent = syncStatus.lastSync ? 
+                        new Date(syncStatus.lastSync).toLocaleTimeString() : '--';
+                }
+                if (cloudProfilesCount) {
+                    cloudProfilesCount.textContent = syncStatus.profilesCount;
+                }
+            }
+        } else {
+            if (firebaseStatus) {
+                firebaseStatus.textContent = 'Desconectado';
+                firebaseStatus.style.color = 'var(--error-red)';
+            }
+            if (lastSyncTime) lastSyncTime.textContent = '--';
+            if (cloudProfilesCount) cloudProfilesCount.textContent = '--';
+        }
+    } catch (error) {
+        console.error('❌ Error actualizando panel sync:', error);
+    }
+}
+
+async function forzarSincronizacion() {
+    if (!googleSync || !googleSync.initialized) {
+        mostrarError('Google Sync no está configurado');
+        return;
+    }
+    
+    console.log('🔄 Forzando sincronización...');
+    mostrarStatus('🔄 Sincronizando con Google Sheets...', 'info');
+    
+    const perfilesSincronizados = await googleSync.syncProfiles(perfiles);
+    if (perfilesSincronizados) {
+        perfiles = perfilesSincronizados;
+        guardarDatos();
+        actualizarInterfazPerfiles();
+        mostrarStatus('✅ Sincronización completada', 'success');
+        actualizarPanelSync();
+    } else {
+        mostrarError('❌ Error en la sincronización');
+    }
+}
+
+function mostrarInfoSync() {
+    alert(`🌐 SINCRONIZACIÓN CON GOOGLE SHEETS
+
+✅ Cómo funciona:
+1. Tus perfiles se guardan automáticamente en Google Sheets
+2. Todos tus dispositivos acceden a los mismos perfiles
+3. Los cambios se sincronizan automáticamente
+4. Tus datos están seguros en tu cuenta de Google
+
+📱 Dispositivos conectados: Todos los que usen tu misma cuenta
+
+💡 Características:
+• Sincronización en tiempo real
+• Resolución automática de conflictos
+• Respaldo seguro en la nube
+• Totalmente gratuito
+
+🔒 Tus datos son privados y solo tú puedes acceder a ellos`);
+}
+
+// --- Exportación ---
+function mostrarModalExportacion() {
+    if (historial.length === 0) {
+        mostrarError('No hay datos en el historial para exportar');
+        return;
+    }
+    
+    actualizarEstadisticas();
+    if (elementos.exportModal) {
+        elementos.exportModal.style.display = 'flex';
+    }
+}
+
+function exportarPDF() {
+    mostrarStatus('🔄 Generando PDF...', 'info');
+    
+    const contenido = generarContenidoPDF();
+    
+    const blob = new Blob([contenido], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `UberCalc_Reporte_${new Date().toISOString().split('T')[0]}.html`;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    setTimeout(() => {
+        mostrarStatus('📄 PDF generado correctamente', 'success');
+        cerrarExportModal();
+    }, 1000);
+}
+
+function generarContenidoPDF() {
+    const stats = window.estadisticasExportacion || {};
+    const viajesAceptados = historial.filter(item => item.aceptado).length;
+    const viajesRentables = historial.filter(item => item.aceptado && item.rentabilidad === 'rentable').length;
+    
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte UberCalc</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            line-height: 1.4;
+            color: #333;
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .summary-card.ingresos {
+            background-color: #e8f5e8;
+            border-color: #4CAF50;
+        }
+        .summary-card.costos {
+            background-color: #ffe8e8;
+            border-color: #f44336;
+        }
+        .summary-card.rendimiento {
+            background-color: #e8f4ff;
+            border-color: #2196F3;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left; 
+        }
+        th { 
+            background-color: #f2f2f2; 
+            font-weight: bold;
+        }
+        .rentable { background-color: #d4edda; }
+        .oportunidad { background-color: #fff3cd; }
+        .no-rentable { background-color: #f8d7da; }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .valor-destacado {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .valor-positivo { color: #4CAF50; }
+        .valor-negativo { color: #f44336; }
+        .desglose-costos {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        @media print {
+            body { margin: 10px; }
+            .summary-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚗 UberCalc - Reporte Completo</h1>
+        <p><strong>Generado el:</strong> ${new Date().toLocaleString('es-DO')}</p>
+        <p><strong>Perfil:</strong> ${perfilActual?.nombre || 'No especificado'}</p>
+        <p><strong>Total de registros:</strong> ${historial.length}</p>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card ingresos">
+            <h3>💰 INGRESOS</h3>
+            <div class="valor-destacado valor-positivo">${formatearMoneda(stats.gananciaTotal || 0)}</div>
+            <p><strong>Ganancia Neta:</strong> ${formatearMoneda(stats.gananciaNetaTotal || 0)}</p>
+            <p><strong>Viajes Aceptados:</strong> ${viajesAceptados}</p>
+            <p><strong>Viaje Promedio:</strong> ${formatearMoneda(stats.viajePromedio || 0)}</p>
+        </div>
+        
+        <div class="summary-card costos">
+            <h3>💸 COSTOS TOTALES</h3>
+            <div class="valor-destacado valor-negativo">${formatearMoneda((stats.costoCombustibleTotal || 0) + (stats.costoMantenimientoTotal || 0) + (stats.costoSeguroTotal || 0))}</div>
+            <p><strong>⛽ Combustible:</strong> ${formatearMoneda(stats.costoCombustibleTotal || 0)}</p>
+            <p><strong>🔧 Mantenimiento:</strong> ${formatearMoneda(stats.costoMantenimientoTotal || 0)}</p>
+            <p><strong>🛡️ Seguro:</strong> ${formatearMoneda(stats.costoSeguroTotal || 0)}</p>
+        </div>
+        
+        <div class="summary-card rendimiento" style="grid-column: 1 / -1;">
+            <h3>📊 RENDIMIENTO</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div>
+                    <strong>Ganancia/Hora:</strong><br>
+                    <span class="valor-destacado valor-positivo">${formatearMoneda(stats.gananciaPorHora || 0)}</span>
+                </div>
+                <div>
+                    <strong>Tiempo Total:</strong><br>
+                    <span class="valor-destacado">${stats.tiempoTotal || 0} min</span>
+                </div>
+                <div>
+                    <strong>Eficiencia:</strong><br>
+                    <span class="valor-destacado valor-positivo">${viajesAceptados > 0 ? ((viajesRentables / viajesAceptados) * 100).toFixed(1) : 0}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="desglose-costos">
+        <h3>📈 RESUMEN FINANCIERO</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <strong>Ingresos Totales:</strong> ${formatearMoneda(stats.gananciaTotal || 0)}
+            </div>
+            <div>
+                <strong>Costos Totales:</strong> ${formatearMoneda((stats.costoCombustibleTotal || 0) + (stats.costoMantenimientoTotal || 0) + (stats.costoSeguroTotal || 0))}
+            </div>
+            <div style="grid-column: 1 / -1; text-align: center; padding: 10px; background: white; border-radius: 5px; margin-top: 10px;">
+                <strong style="color: #f5a623; font-size: 1.2em;">GANANCIA NETA TOTAL: ${formatearMoneda(stats.gananciaNetaTotal || 0)}</strong>
+            </div>
+        </div>
+    </div>
+
+    <h3>📋 DETALLE DE VIAJES (${historial.length} registros)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Ganancia</th>
+                <th>Minutos</th>
+                <th>Distancia</th>
+                <th>Combustible</th>
+                <th>Mantenimiento</th>
+                <th>Seguro</th>
+                <th>Ganancia Neta</th>
+                <th>Rentabilidad</th>
+                <th>Aceptado</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${historial.map(item => {
+                const fecha = new Date(item.timestamp).toLocaleDateString();
+                const hora = new Date(item.timestamp).toLocaleTimeString();
+                const distanciaLabel = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
+                
+                return `
+                    <tr class="${item.rentabilidad}">
+                        <td>${fecha}</td>
+                        <td>${hora}</td>
+                        <td>${formatearMoneda(item.tarifa)}</td>
+                        <td>${item.minutos}</td>
+                        <td>${item.distancia} ${distanciaLabel}</td>
+                        <td>${formatearMoneda(item.costoCombustible)}</td>
+                        <td>${formatearMoneda(item.costoMantenimiento)}</td>
+                        <td>${formatearMoneda(item.costoSeguro)}</td>
+                        <td>${formatearMoneda(item.gananciaNeta)}</td>
+                        <td>${item.texto}</td>
+                        <td>${item.aceptado ? '✅ Sí' : '❌ No'}</td>
+                    </tr>
+                `;
+            }).join('')}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>Exportado desde UberCalc - Calculadora Inteligente para Conductores</p>
+        <p>¡Sigue maximizando tus ganancias! 🚗💨</p>
+    </div>
+
+    <script>
+        if (window.innerWidth > 768) {
+            window.print();
+        }
+    </script>
+</body>
+</html>`;
+}
+
+// --- Utilidades ---
+function mostrarPantalla(pantalla) {
+    console.log('🖥️ Mostrando pantalla:', pantalla);
+    
+    document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+    });
+    
+    if (pantalla === 'perfil') {
+        if (elementos.perfilScreen) elementos.perfilScreen.classList.add('active');
+    } else if (pantalla === 'config-perfil') {
+        if (elementos.configPerfilScreen) elementos.configPerfilScreen.classList.add('active');
+    } else if (pantalla === 'main') {
+        if (elementos.mainScreen) elementos.mainScreen.classList.add('active');
+        actualizarUnidades();
+        actualizarEstadisticas();
+        actualizarHistorial();
+    }
+}
+
+function validarFormulario() {
+    const tarifa = elementos.tarifaInput?.value;
+    const minutos = elementos.minutosInput?.value;
+    const distancia = elementos.distanciaInput?.value;
+    
+    if (!tarifa || !minutos || !distancia) {
+        mostrarError('Por favor, completa todos los campos del viaje');
+        return false;
+    }
+    
+    if (parseFloat(tarifa) <= 0) {
+        mostrarError('La tarifa debe ser mayor a 0');
+        return false;
+    }
+    
+    if (parseFloat(minutos) <= 0) {
+        mostrarError('El tiempo debe ser mayor a 0');
+        return false;
+    }
+    
+    if (parseFloat(distancia) <= 0) {
+        mostrarError('La distancia debe ser mayor a 0');
+        return false;
+    }
+    
+    if (!perfilActual) {
+        mostrarError('Debes seleccionar un perfil primero');
+        return false;
+    }
+    
+    return true;
+}
+
+function mostrarError(mensaje) {
+    mostrarStatus(mensaje, 'error');
+}
+
+function mostrarStatus(mensaje, tipo = 'info') {
+    if (!elementos.statusIndicator || !elementos.statusText) {
+        console.log('Status:', mensaje);
+        return;
+    }
+    
+    elementos.statusText.textContent = mensaje;
+    elementos.statusIndicator.className = `status-indicator ${tipo}`;
+    elementos.statusIndicator.classList.remove('hidden');
+    
+    setTimeout(() => {
+        if (elementos.statusIndicator) {
+            elementos.statusIndicator.classList.add('hidden');
+        }
+    }, 3000);
+}
+
+function limpiarFormulario() {
+    if (elementos.tarifaInput) elementos.tarifaInput.value = '';
+    if (elementos.minutosInput) elementos.minutosInput.value = '';
+    if (elementos.distanciaInput) elementos.distanciaInput.value = '';
+    if (elementos.autoCalcIndicator) elementos.autoCalcIndicator.classList.add('hidden');
+    if (elementos.resultadoRapido) elementos.resultadoRapido.classList.add('hidden');
+    resetearInterfazCalculo();
+    calculoActual = null;
 }
 
 function cerrarModal() {
     if (elementos.modalFondo) {
         elementos.modalFondo.style.display = 'none';
     }
-    limpiarFormulario();
 }
 
-function limpiarFormulario() {
-    elementos.tarifaInput.value = '';
-    elementos.minutosInput.value = '';
-    elementos.distanciaInput.value = '';
-    elementos.resultadoRapido.classList.add('hidden');
-    elementos.autoCalcIndicator.classList.add('hidden');
-    calculoActual = null;
-    resetearInterfazCalculo();
+function cerrarExportModal() {
+    if (elementos.exportModal) {
+        elementos.exportModal.style.display = 'none';
+    }
 }
 
 function formatearMoneda(valor) {
-    if (!perfilActual) return `$${valor.toFixed(2)}`;
-    
-    return new Intl.NumberFormat('es-DO', {
-        style: 'currency',
-        currency: perfilActual.moneda,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(valor);
+    const moneda = perfilActual?.moneda || 'DOP';
+    const simbolo = moneda === 'USD' ? '$' : 'RD$';
+    return `${simbolo}${typeof valor === 'number' ? valor.toFixed(2) : '0.00'}`;
 }
 
-function actualizarUnidades() {
-    if (!perfilActual) {
-        console.warn('❌ No hay perfil actual para actualizar unidades');
-        return;
-    }
-    
-    // Actualizar unidades en el formulario de configuración
-    const tipoMedida = perfilActual.tipoMedida;
-    const tipoCombustible = perfilActual.tipoCombustible;
-    
-    const distanciaLabel = document.querySelector('label[for="distancia"]');
-    if (distanciaLabel) {
-        distanciaLabel.textContent = `Distancia (${tipoMedida === 'mi' ? 'millas' : 'km'})`;
-    }
-    
-    const rendimientoLabel = document.querySelector('label[for="rendimiento"]');
-    if (rendimientoLabel) {
-        rendimientoLabel.textContent = `Rendimiento (${tipoMedida === 'mi' ? 'mpg' : 'Km/Gal'})`;
-    }
-    
-    const umbralKmLabel = document.querySelector('label[for="umbral-km-rentable"]');
-    if (umbralKmLabel) {
-        umbralKmLabel.textContent = `Umbral Km Rentable (${perfilActual.moneda}/${tipoMedida === 'mi' ? 'mi' : 'km'})`;
-    }
-
-    // Actualizar símbolos de moneda
-    const monedaInputs = document.querySelectorAll('.moneda-simbolo');
-    monedaInputs.forEach(input => {
-        input.textContent = formatearMoneda(0).replace('0,00', '');
-    });
-    
-    // Esto asegura que la IU se refresque con el perfil correcto
-    actualizarInterfazPerfiles();
-    actualizarEstadisticas();
-    calcularAutomatico(); // Recalcular con nuevas unidades
-}
-
-function aplicarTemaGuardado() {
-    const temaGuardado = localStorage.getItem('theme') || 'light';
-    document.body.setAttribute('data-theme', temaGuardado);
-    elementos.themeToggle.textContent = temaGuardado === 'dark' ? '☀️' : '🌙';
-}
-
-function alternarTema() {
-    const temaActual = document.body.getAttribute('data-theme');
-    const nuevoTema = temaActual === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', nuevoTema);
-    localStorage.setItem('theme', nuevoTema);
-    elementos.themeToggle.textContent = nuevoTema === 'dark' ? '☀️' : '🌙';
-}
-
-async function actualizarPanelSync() {
-    if (!googleSync || !googleSync.initialized) {
-        document.getElementById('sync-text').textContent = 'No configurado';
-        document.getElementById('sync-icon').textContent = '⚠️';
-        document.getElementById('last-sync-time').textContent = '--';
-        document.getElementById('cloud-profiles-count').textContent = perfiles.length.toString();
-        return;
-    }
-
+// --- Persistencia de Datos MEJORADA ---
+async function cargarDatos() {
     try {
-        const statusData = await googleSync.getSyncStatus();
+        console.log('📥 Cargando datos...');
         
-        document.getElementById('cloud-profiles-count').textContent = perfiles.length.toString();
-        googleSync.actualizarUIEstado(statusData.status);
+        // Primero intentar cargar desde Google Sheets
+        if (googleSync && googleSync.initialized) {
+            try {
+                const perfilesRemotos = await googleSync.loadProfiles();
+                if (perfilesRemotos !== null) { // null indica error
+                    perfiles = perfilesRemotos;
+                    perfilActual = perfiles.length > 0 ? perfiles[0] : null;
+                    historial = []; // El historial se mantiene local
+                    console.log('✅ Datos cargados desde Google Sheets. Perfiles:', perfiles.length);
+                    return;
+                } else {
+                    console.log('⚠️ Google Sheets devolvió null, usando datos locales');
+                }
+            } catch (googleError) {
+                console.warn('⚠️ Error cargando desde Google Sheets, usando datos locales:', googleError);
+            }
+        }
+        
+        // Fallback a datos locales
+        const datosGuardados = localStorage.getItem('uberCalc_data');
+        if (datosGuardados) {
+            const datos = JSON.parse(datosGuardados);
+            perfiles = datos.perfiles || [];
+            perfilActual = datos.perfilActual || null;
+            historial = datos.historial || [];
+            
+            console.log('✅ Datos cargados desde localStorage. Perfiles:', perfiles.length);
+            
+            // Sincronizar datos locales a Google Sheets si es posible
+            if (googleSync && googleSync.initialized && perfiles.length > 0) {
+                console.log('🔄 Sincronizando datos locales con Google Sheets...');
+                await googleSync.saveProfiles(perfiles);
+            }
+        } else {
+            console.log('ℹ️ No hay datos guardados localmente');
+            perfiles = [];
+            perfilActual = null;
+            historial = [];
+        }
     } catch (error) {
-        googleSync.actualizarUIEstado('error');
+        console.error('❌ Error cargando datos:', error);
+        // Mantener funcionamiento básico con datos por defecto
+        perfiles = perfiles || [];
+        perfilActual = perfilActual || null;
+        historial = historial || [];
     }
 }
 
-function mostrarInfoSync() {
-    const mensaje = `
-        ℹ️ CÓMO FUNCIONA LA SINCRONIZACIÓN
-        
-        1. Guardado (PC/Móvil): Cada vez que creas o editas un perfil, este se guarda en tu Google Sheet automáticamente.
-        
-        2. Carga (Móvil/iPad): Al iniciar la aplicación en otro dispositivo, o al presionar "Sincronizar Ahora", se descargan los perfiles de la nube y se sobrescriben los perfiles locales.
-        
-        3. ID de Usuario: Tu dispositivo tiene un ID único (User ID: ${googleSync?.userId || 'No disponible'}) para identificar tu fila en la hoja de cálculo.
-    `;
-    alert(mensaje);
+function guardarDatos() {
+    const datos = {
+        perfiles,
+        perfilActual,
+        historial,
+        version: '2.0-google-sync',
+        ultimaActualizacion: new Date().toISOString()
+    };
+    
+    try {
+        localStorage.setItem('uberCalc_data', JSON.stringify(datos));
+        console.log('💾 Datos guardados en localStorage');
+    } catch (error) {
+        console.error('❌ Error guardando datos:', error);
+        mostrarError('Error al guardar datos en el almacenamiento local');
+    }
 }
 
-// --- Funciones de Exportación (Stubs para completar el código) ---
-function mostrarModalExportacion() {
-    if (historial.length === 0) {
-        mostrarError('No hay historial para exportar.');
+// --- Funciones Globales para HTML ---
+window.cerrarModal = cerrarModal;
+window.cerrarExportModal = cerrarExportModal;
+window.cerrarSyncPanel = cerrarSyncPanel;
+window.mostrarConfigPerfil = mostrarConfigPerfil;
+window.seleccionarPerfil = seleccionarPerfil;
+window.editarPerfil = editarPerfil;
+window.eliminarPerfil = eliminarPerfil;
+window.mostrarPanelSync = mostrarPanelSync;
+window.forzarSincronizacion = forzarSincronizacion;
+window.mostrarInfoSync = mostrarInfoSync;
+
+// --- Prevenir cierre accidental ---
+window.addEventListener('beforeunload', function(e) {
+    const tieneDatosPendientes = elementos.tarifaInput?.value || 
+                                 elementos.minutosInput?.value || 
+                                 elementos.distanciaInput?.value;
+    
+    if (tieneDatosPendientes) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+    }
+});
+
+// --- Cerrar modal al hacer clic fuera ---
+window.onclick = function(event) {
+    if (event.target === elementos.modalFondo) {
+        cerrarModal();
+    }
+    if (event.target === elementos.exportModal) {
+        cerrarExportModal();
+    }
+    if (event.target === elementos.syncPanel) {
+        cerrarSyncPanel();
+    }
+}
+
+// --- Forzar cálculo inicial si hay datos ---
+setTimeout(() => {
+    if (elementos.tarifaInput?.value && elementos.minutosInput?.value && elementos.distanciaInput?.value) {
+        calcularAutomatico();
+    }
+}, 1000);
+
+// --- Función de Diagnóstico CORREGIDA ---
+async function diagnosticarSync() {
+    console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
+    
+    if (!googleSync || !googleSync.initialized) {
+        console.error('❌ Google Sync no inicializado');
+        mostrarStatus('❌ Google Sync no inicializado', 'error');
         return;
     }
-    elementos.exportModal.style.display = 'flex';
-}
-
-function exportarPDF() {
-    alert('Función de Exportar PDF no implementada aún.');
-    elementos.exportModal.style.display = 'none';
-}
-
-function diagnosticarSync() {
-    // Implementación del diagnóstico para tu uso
-    console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
-    googleSync = new GoogleSync();
 
     try {
         // 1. Probar conexión básica
         console.log('1. Probando conexión básica...');
-        googleSync.getSyncStatus().then(status => {
-            console.log('✅ Conexión básica OK:', status);
-            
-            // 2. Probar obtener perfiles
-            console.log('2. Probando obtener perfiles...');
-            googleSync.loadProfiles().then(perfiles => {
-                console.log('✅ Obtención de perfiles OK:', perfiles?.length || 0);
-
-                // 3. Probar guardar perfiles (solo si hay perfiles)
-                console.log('3. Probando guardar perfiles...');
-                const perfilesToSave = perfiles?.length > 0 ? perfiles : [{id: 'temp', nombre: 'Test'}];
-                googleSync.saveProfiles(perfilesToSave).then(saveResult => {
-                    console.log('✅ Guardado de perfiles OK:', saveResult);
-
-                    // 4. Probar sincronización
-                    console.log('4. Probando sincronización...');
-                    googleSync.syncProfiles(perfilesToSave).then(syncResult => {
-                        console.log('✅ Sincronización OK:', syncResult ? 'Éxito' : 'Falló (puede ser un stub)');
-                        console.log('🎉 DIAGNÓSTICO COMPLETADO - Todo OK');
-                        mostrarStatus('✅ Diagnóstico: Todo funciona correctamente', 'success');
-                    }).catch(error => {
-                        console.error('❌ ERROR en Sincronización:', error);
-                        mostrarError(`❌ Error en sincronización: ${error.message}`);
-                    });
-                }).catch(error => {
-                    console.error('❌ ERROR en Guardado:', error);
-                    mostrarError(`❌ Error en guardado: ${error.message}`);
-                });
-            }).catch(error => {
-                console.error('❌ ERROR en Obtención de perfiles:', error);
-                mostrarError(`❌ Error en obtener perfiles: ${error.message}`);
-            });
-        }).catch(error => {
-            console.error('❌ ERROR en Conexión Básica:', error);
-            mostrarError(`❌ Error en conexión básica: ${error.message}`);
+        mostrarStatus('1. Probando conexión básica...', 'info');
+        
+        const testResult = await googleSync.makeRequest({
+            action: 'getSyncStatus'
         });
+        console.log('✅ Conexión básica OK:', testResult);
+
+        // 2. Probar obtener perfiles
+        console.log('2. Probando obtener perfiles...');
+        mostrarStatus('2. Probando obtener perfiles...', 'info');
+        
+        const perfiles = await googleSync.loadProfiles();
+        console.log('✅ Obtención de perfiles OK:', perfiles?.length || 0);
+
+        // 3. Probar guardar perfiles (solo si hay perfiles)
+        console.log('3. Probando guardar perfiles...');
+        mostrarStatus('3. Probando guardar perfiles...', 'info');
+        
+        let saveResult = false;
+        if (perfiles && perfiles.length > 0) {
+            saveResult = await googleSync.saveProfiles(perfiles);
+        } else {
+            saveResult = await googleSync.saveProfiles([]);
+        }
+        console.log('✅ Guardado de perfiles OK:', saveResult);
+
+        // 4. Probar sincronización
+        console.log('4. Probando sincronización...');
+        mostrarStatus('4. Probando sincronización...', 'info');
+        
+        const syncResult = await googleSync.syncProfiles(perfiles || []);
+        console.log('✅ Sincronización OK:', syncResult ? 'Éxito' : 'Falló');
+
+        console.log('🎉 DIAGNÓSTICO COMPLETADO - Todo OK');
+        mostrarStatus('✅ Diagnóstico: Todo funciona correctamente', 'success');
         
     } catch (error) {
-        console.error('❌ ERROR CRÍTICO EN DIAGNÓSTICO:', error);
-        mostrarError(`❌ Error crítico: ${error.message}`);
+        console.error('❌ ERROR EN DIAGNÓSTICO:', error);
+        mostrarError(`❌ Error en diagnóstico: ${error.message}`);
     }
 }
 
-
-window.forzarSincronizacion = forzarSincronizacion;
-window.cerrarModal = cerrarModal;
-window.mostrarInfoSync = mostrarInfoSync;
+// Agregar diagnóstico al objeto window
 window.diagnosticarSync = diagnosticarSync;
+
+console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
+
+
+
