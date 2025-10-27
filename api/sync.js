@@ -1,8 +1,7 @@
 // api/sync.js
 
-// 1. Importación estática de 'node-fetch' (requiere que el paquete esté instalado con npm)
-// Nota: Para compatibilidad con CommonJS en algunos entornos Vercel/Node.js, se usa require.
-const fetch = require('node-fetch');
+// 1. Usa la sintaxis de importación moderna para Node.js (requiere que node-fetch esté instalado)
+import fetch from 'node-fetch'; // <--- CAMBIO CLAVE
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -10,7 +9,6 @@ export default async function handler(request, response) {
     }
 
     try {
-        // 1. Extraer la URL de Google Script que te envió el frontend
         const { targetUrl } = request.body;
         
         if (!targetUrl) {
@@ -18,8 +16,7 @@ export default async function handler(request, response) {
         }
         
         // 2. Realizar la solicitud al Google Apps Script desde el servidor de Vercel
-        // Usamos la importación corregida (fetch)
-        const gasResponse = await fetch(targetUrl, {
+        const gasResponse = await fetch(targetUrl, { // <--- 'fetch' funciona sin require()
             method: 'GET', 
         });
 
@@ -43,7 +40,6 @@ export default async function handler(request, response) {
 
     } catch (error) {
         console.error('Vercel Proxy Error:', error);
-        // Si hay otro error, devolvemos un mensaje de error interno
         return response.status(500).json({ error: 'Internal Server Error in Vercel Proxy.', details: error.message });
     }
 }
