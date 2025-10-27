@@ -12,6 +12,90 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
 <body>
+    <!-- Modal de Código de Usuario (SE MUESTRA AL PRINCIPIO) -->
+    <div id="user-code-modal" class="modal-fondo" style="display: flex;">
+        <div class="modal-contenido" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>🔄 Sincronización Multi-Dispositivo</h2>
+            </div>
+            
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">🔄</div>
+                    <h3 style="margin: 0 0 10px 0; color: var(--text-primary);">Conectar Dispositivos</h3>
+                    <p style="color: var(--text-secondary); margin: 0;">
+                        Usa el mismo código en todos tus dispositivos para sincronizar tus perfiles
+                    </p>
+                </div>
+                
+                <div style="margin: 25px 0;">
+                    <label for="user-code-input" style="display: block; margin-bottom: 10px; font-weight: bold; color: var(--text-primary);">
+                        Tu Código de Sincronización:
+                    </label>
+                    <input type="text" id="user-code-input" 
+                           placeholder="Ej: ABC123" 
+                           style="width: 100%; 
+                                  padding: 15px; 
+                                  font-size: 18px; 
+                                  text-align: center; 
+                                  letter-spacing: 3px;
+                                  border: 2px solid var(--border-color);
+                                  border-radius: 10px;
+                                  background: var(--card-bg);
+                                  color: var(--text-primary);
+                                  text-transform: uppercase;"
+                           maxlength="6">
+                    <div style="text-align: center; margin-top: 10px;">
+                        <button onclick="generateUserCode()" 
+                                style="padding: 8px 16px; 
+                                       background: transparent; 
+                                       color: var(--primary-color); 
+                                       border: 1px solid var(--primary-color);
+                                       border-radius: 20px;
+                                       cursor: pointer;
+                                       font-size: 14px;">
+                            ✨ Generar Código Nuevo
+                        </button>
+                    </div>
+                </div>
+                
+                <div style="background: var(--light-grey); padding: 15px; border-radius: 10px; margin: 20px 0;">
+                    <p style="margin: 0; font-size: 14px; color: var(--text-secondary); text-align: center;">
+                        💡 <strong>Instrucción importante:</strong><br>
+                        Usa el <strong>MISMO código</strong> en tu PC, móvil y tablet para ver tus perfiles sincronizados
+                    </p>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="setUserCode()" 
+                            style="flex: 1; 
+                                   padding: 15px; 
+                                   background: var(--primary-color); 
+                                   color: white; 
+                                   border: none; 
+                                   border-radius: 10px;
+                                   font-size: 16px;
+                                   font-weight: bold;
+                                   cursor: pointer;">
+                        🚀 Conectar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Banner de Código de Usuario (se muestra en la app) -->
+    <div id="user-code-banner" class="sync-status-bar" style="display: none;">
+        <div class="sync-info">
+            <span class="sync-icon">🔗</span>
+            <span class="sync-text" id="user-code-display">Código: CARGANDO...</span>
+        </div>
+        <button class="sync-details-btn" onclick="showUserCodeModal()">
+            <span class="button-icon">🔄</span>
+            Cambiar Código
+        </button>
+    </div>
+
     <!-- Pantalla de Selección de Perfil -->
     <div id="perfil-screen" class="screen active">
         <div class="container">
@@ -222,6 +306,18 @@
                 <div class="logo-container">
                     <img src="logo_b.png" alt="Logo UberCalc" class="app-logo">
                 </div>
+            </div>
+
+            <!-- Banner de Código de Usuario -->
+            <div id="user-code-banner-main" class="sync-status-bar" style="display: none;">
+                <div class="sync-info">
+                    <span class="sync-icon">🔗</span>
+                    <span class="sync-text" id="user-code-display-main">Código: CARGANDO...</span>
+                </div>
+                <button class="sync-details-btn" onclick="showUserCodeModal()">
+                    <span class="button-icon">🔄</span>
+                    Cambiar Código
+                </button>
             </div>
 
             <!-- Barra de Estado de Sync -->
@@ -507,105 +603,73 @@
                         <span class="button-icon">ℹ️</span>
                         Cómo Funciona
                     </button>
+                    <button class="secondary-button" onclick="showUserCodeModal()">
+                        <span class="button-icon">🔑</span>
+                        Cambiar Código
+                    </button>
                 </div>
 
                 <div class="sync-tips">
                     <h4>💡 Tips de Sincronización</h4>
                     <ul>
-                        <li>Los perfiles se sincronizan automáticamente</li>
-                        <li>Funciona en todos tus dispositivos</li>
-                        <li>Los datos se mantienen seguros en la nube</li>
+                        <li>Los perfiles se sincronizan automáticamente entre dispositivos</li>
+                        <li>Usa el MISMO código en todos tus dispositivos</li>
+                        <li>Los datos se mantienen seguros en Google Sheets</li>
+                        <li>Funciona sin conexión con respaldo local</li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
 
-<!-- Modal de Código de Usuario -->
-<div id="user-code-modal" class="modal-fondo" style="display: flex;">
-    <div class="modal-contenido" style="max-width: 500px;">
-        <div class="modal-header">
-            <h2>🔄 Sincronización Multi-Dispositivo</h2>
-        </div>
-        
-        <div class="modal-body">
-            <div style="text-align: center; margin-bottom: 30px;">
-                <div style="font-size: 48px; margin-bottom: 15px;">🔄</div>
-                <h3 style="margin: 0 0 10px 0; color: var(--text-primary);">Conectar Dispositivos</h3>
-                <p style="color: var(--text-secondary); margin: 0;">
-                    Usa el mismo código en todos tus dispositivos para sincronizar tus perfiles
-                </p>
-            </div>
-            
-            <div style="margin: 25px 0;">
-                <label for="user-code-input" style="display: block; margin-bottom: 10px; font-weight: bold; color: var(--text-primary);">
-                    Tu Código de Sincronización:
-                </label>
-                <input type="text" id="user-code-input" 
-                       placeholder="Ej: ABC123" 
-                       style="width: 100%; 
-                              padding: 15px; 
-                              font-size: 18px; 
-                              text-align: center; 
-                              letter-spacing: 3px;
-                              border: 2px solid var(--border-color);
-                              border-radius: 10px;
-                              background: var(--card-bg);
-                              color: var(--text-primary);
-                              text-transform: uppercase;"
-                       maxlength="6">
-                <div style="text-align: center; margin-top: 10px;">
-                    <button onclick="generateUserCode()" 
-                            style="padding: 8px 16px; 
-                                   background: transparent; 
-                                   color: var(--primary-color); 
-                                   border: 1px solid var(--primary-color);
-                                   border-radius: 20px;
-                                   cursor: pointer;
-                                   font-size: 14px;">
-                        ✨ Generar Código Nuevo
-                    </button>
-                </div>
-            </div>
-            
-            <div style="background: var(--light-grey); padding: 15px; border-radius: 10px; margin: 20px 0;">
-                <p style="margin: 0; font-size: 14px; color: var(--text-secondary); text-align: center;">
-                    💡 <strong>Instrucción importante:</strong><br>
-                    Usa el <strong>MISMO código</strong> en tu PC, móvil y tablet para ver tus perfiles sincronizados
-                </p>
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button onclick="setUserCode()" 
-                        style="flex: 1; 
-                               padding: 15px; 
-                               background: var(--primary-color); 
-                               color: white; 
-                               border: none; 
-                               border-radius: 10px;
-                               font-size: 16px;
-                               font-weight: bold;
-                               cursor: pointer;">
-                    🚀 Conectar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Banner de Código de Usuario (se muestra en la app) -->
-<div id="user-code-banner" class="sync-status-bar" style="display: none;">
-    <div class="sync-info">
-        <span class="sync-icon">🔗</span>
-        <span class="sync-text" id="user-code-display">Código: CARGANDO...</span>
-    </div>
-    <button class="sync-details-btn" onclick="showUserCodeModal()">
-        <span class="button-icon">🔄</span>
-        Cambiar Código
-    </button>
-</div>
-
     <!-- Scripts -->
     <script src="script.js"></script> 
+    
+    <!-- Estilos adicionales para el sistema de código -->
+    <style>
+        /* Estilos para el modal de código de usuario */
+        #user-code-modal .modal-contenido {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        #user-code-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+        
+        #user-code-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin: 10px 0;
+            padding: 10px 15px;
+        }
+        
+        #user-code-banner .sync-info {
+            color: white;
+        }
+        
+        #user-code-banner .sync-details-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        #user-code-banner .sync-details-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* Asegurar que los modales tengan buen z-index */
+        .modal-fondo {
+            z-index: 10000;
+        }
+        
+        #user-code-modal {
+            z-index: 10001;
+        }
+    </style>
 </body>
 </html>
