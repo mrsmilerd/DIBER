@@ -1985,9 +1985,3 @@ async function diagnosticarSync() {
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
-
-
-
-
-
-
