@@ -1,8 +1,9 @@
 // api/sync.js
 
-// Esta es la Vercel Serverless Function que resolverá el problema de CORS y el error de JSON.
+// 1. Importación estática de 'node-fetch' (requiere que el paquete esté instalado con npm)
+// Nota: Para compatibilidad con CommonJS en algunos entornos Vercel/Node.js, se usa require.
+const fetch = require('node-fetch');
 
-// Para entornos de Vercel, node-fetch se puede importar dinámicamente.
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
         return response.status(405).json({ error: 'Method Not Allowed' });
@@ -17,17 +18,15 @@ export default async function handler(request, response) {
         }
         
         // 2. Realizar la solicitud al Google Apps Script desde el servidor de Vercel
-        const fetch = (await import('node-fetch')).default;
+        // Usamos la importación corregida (fetch)
         const gasResponse = await fetch(targetUrl, {
             method: 'GET', 
-            // Vercel Server actúa como un intermediario seguro
         });
 
         // 3. Obtener el texto de la respuesta del Google Script
         const gasText = await gasResponse.text();
 
         if (!gasResponse.ok) {
-            // Si el Google Script devuelve un error, lo pasamos al cliente
             console.error('GAS Error Response:', gasText);
             return response.status(gasResponse.status).send(gasText);
         }
@@ -38,13 +37,13 @@ export default async function handler(request, response) {
             response.setHeader('Content-Type', 'application/json');
             return response.status(200).json(gasJson);
         } catch (jsonError) {
-            // Si el GAS devolvió algo que no es JSON (el error original)
             console.error('GAS returned non-JSON data:', gasText);
             return response.status(500).json({ error: 'Google Apps Script did not return valid JSON.', rawResponse: gasText.substring(0, 100) + '...' });
         }
 
     } catch (error) {
         console.error('Vercel Proxy Error:', error);
+        // Si hay otro error, devolvemos un mensaje de error interno
         return response.status(500).json({ error: 'Internal Server Error in Vercel Proxy.', details: error.message });
     }
 }
