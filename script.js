@@ -197,42 +197,32 @@ async makeRequest(params) {
         }
     }
 
-    async syncProfiles(localProfiles) {
-        if (!this.initialized) {
-            console.warn('❌ Google Sync no inicializado');
-            return null;
-        }
+    async syncProfiles(profiles) {
+    if (!this.initialized) return { success: false, message: 'Sync no inicializado.' };
 
-        if (this.syncInProgress) {
-            console.log('⏳ Sincronización ya en progreso...');
-            return null;
-        }
+    this.syncInProgress = true;
+    this.updateSyncStatus('syncing');
 
-        this.syncInProgress = true;
-
-        try {
-            console.log('🔄 Sincronizando perfiles...');
-            this.actualizarUIEstado('syncing');
+    try {
+        const profilesJson = JSON.stringify(profiles);
+// **IMPORTANTE:** El servidor está devolviendo un resultado. 
+        // Debemos asegurarnos de que la función retorne ese resultado.
+        const result = await this.request('syncProfiles', { profiles: profilesJson }); 
+        
+        this.updateSyncStatus('connected');
+        console.log('✅ Sincronización completada:', result);
             
-            const result = await this.makeRequest({
-                action: 'syncProfiles',
-                profiles: localProfiles
-            });
+// Devolvemos el resultado completo del servidor
+        return result; 
 
-            this.lastSyncTime = result.lastSync;
-            console.log('✅ Sincronización completada:', result.stats);
-            this.actualizarUIEstado('connected');
-            
-            return result.profiles;
-            
-        } catch (error) {
-            console.error('❌ Error en sincronización:', error);
-            this.actualizarUIEstado('error');
-            return null;
-        } finally {
-            this.syncInProgress = false;
-        }
+    } catch (error) {
+        console.error('❌ Error en syncProfiles:', error);
+        this.updateSyncStatus('error');
+        return { success: false, message: error.message };
+    } finally {
+        this.syncInProgress = false;
     }
+}
 
     async getSyncStatus() {
         if (!this.initialized) return 'not_configured';
@@ -1985,4 +1975,5 @@ async function diagnosticarSync() {
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
