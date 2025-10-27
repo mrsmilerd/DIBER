@@ -1959,8 +1959,6 @@ function diagnosticarSync() {
     if (!googleSync || !googleSync.initialize) {
         mostrarError('Google Sync no está inicializado. Ejecutando inicialización forzada...');
         googleSync = new GoogleSync();
-        // Llamar a initialize sin await porque diagnosticarSync no es async, 
-        // pero diagnosticoAsincrono verificará la inicialización.
         googleSync.initialize(); 
     }
     
@@ -1968,7 +1966,7 @@ function diagnosticarSync() {
     diagnosticoAsincrono();
 }
 
-// CRÍTICO: Esta función DEBE ser async para poder usar await.
+// LÍNEA CRÍTICA CORREGIDA: ¡DEBE ser async!
 async function diagnosticoAsincrono() {
     try {
         mostrarStatus('1. Probando conexión básica...', 'info');
@@ -1990,7 +1988,6 @@ async function diagnosticoAsincrono() {
         if (perfiles && perfiles.length > 0) {
             saveResult = await googleSync.saveProfiles(perfiles);
         } else {
-            // Guardar un perfil vacío si no hay nada
             saveResult = await googleSync.saveProfiles([]); 
         }
         console.log('✅ Guardado de perfiles OK:', saveResult);
@@ -2020,6 +2017,7 @@ window.mostrarInfoSync = mostrarInfoSync;
 window.alternarTema = alternarTema; // Si se llama desde HTML
 window.diagnosticarSync = diagnosticarSync; // <-- ¡Esta es la línea que faltaba!
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
 
