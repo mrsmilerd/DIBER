@@ -1947,33 +1947,34 @@ setTimeout(() => {
     }
 }, 1000);
 
+// ===============================================
+// ** CORRECCIÓN SINTAXIS: DIAGNÓSTICO **
+// (Reemplazar la función diagnosticarSync y diagnosticoAsincrono existentes)
+// ===============================================
+
 function diagnosticarSync() {
-    // Implementación del diagnóstico para tu uso
     console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
     
+    // Verificamos si googleSync está inicializado, si no, intentamos forzarlo.
     if (!googleSync || !googleSync.initialize) {
         mostrarError('Google Sync no está inicializado. Ejecutando inicialización forzada...');
         googleSync = new GoogleSync();
-        googleSync.initialize();
+        // Llamar a initialize sin await porque diagnosticarSync no es async, 
+        // pero diagnosticoAsincrono verificará la inicialización.
+        googleSync.initialize(); 
     }
     
-    mostrarStatus('1. Probando conexión básica...', 'info');
-
-    try {
-        // Ejecutar las pruebas asíncronas
-        diagnosticoAsincrono();
-        
-    } catch (error) {
-        console.error('❌ ERROR CRÍTICO EN DIAGNÓSTICO:', error);
-        mostrarError(`❌ Error crítico en diagnóstico: ${error.message}`);
-    }
+    // Ejecutamos la función asíncrona que contiene los "await"
+    diagnosticoAsincrono();
 }
 
-// Función auxiliar para manejar las promesas
+// CRÍTICO: Esta función DEBE ser async para poder usar await.
 async function diagnosticoAsincrono() {
     try {
+        mostrarStatus('1. Probando conexión básica...', 'info');
+        
         // 1. Probar conexión básica
-        const statusData = await googleSync.getSyncStatus();
+        const statusData = await googleSync.getSyncStatus(); 
         console.log('✅ Conexión básica OK:', statusData);
         mostrarStatus('2. Probando obtener perfiles...', 'info');
         
@@ -1981,7 +1982,7 @@ async function diagnosticoAsincrono() {
         const perfiles = await googleSync.loadProfiles();
         console.log('✅ Obtención de perfiles OK:', perfiles?.length || 0);
 
-        // 3. Probar guardar perfiles (solo si hay perfiles)
+        // 3. Probar guardar perfiles 
         console.log('3. Probando guardar perfiles...');
         mostrarStatus('3. Probando guardar perfiles...', 'info');
         
@@ -2009,7 +2010,6 @@ async function diagnosticoAsincrono() {
         mostrarError(`❌ Error en diagnóstico: ${error.message}`);
     }
 }
-
 // --- Exposición Global de Funciones ---
 // Asegura que las funciones de utilidad sean accesibles desde el HTML y la Consola.
 
@@ -2020,6 +2020,7 @@ window.mostrarInfoSync = mostrarInfoSync;
 window.alternarTema = alternarTema; // Si se llama desde HTML
 window.diagnosticarSync = diagnosticarSync; // <-- ¡Esta es la línea que faltaba!
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
 
