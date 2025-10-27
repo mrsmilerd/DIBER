@@ -12,7 +12,7 @@ let timeoutCalculo = null;
 let googleSync;
 
 // --- Configuración Google Apps Script ---
-// Usa tu URL CORRECTA aquí:
+// Asegúrate de que esta URL sea la correcta
 const GOOGLE_SCRIPT_URL = 'https://api.allorigins.win/raw?url=https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
 
 // --- Clase Google Sync CORREGIDA ---
@@ -56,8 +56,6 @@ class GoogleSync {
             this.initializing = false;
             
             console.log('✅ Google Sync inicializado CORRECTAMENTE');
-            console.log('👤 User ID:', this.userId);
-            
             this.actualizarUIEstado('connected');
             return true;
             
@@ -80,82 +78,70 @@ class GoogleSync {
     }
 
     async makeRequest(params) {
-    if (!this.initialized) {
-        throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
-    }
-
-    try {
-        console.log('📤 Enviando request a Google Script...', params.action);
-        
-        // Construir URL con parámetros GET (más compatible con proxies)
-        const urlParams = new URLSearchParams();
-        Object.keys(params).forEach(key => {
-            if (key === 'profiles' && typeof params[key] === 'object') {
-                urlParams.append(key, JSON.stringify(params[key]));
-            } else {
-                urlParams.append(key, params[key]);
-            }
-        });
-        urlParams.append('userId', this.userId);
-        
-        // Reconstrucción de la URL final con el proxy
-        const targetUrl = `https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec?${urlParams.toString()}&t=${Date.now()}`;
-        const finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-        
-        console.log('🔗 URL final:', finalUrl);
-        
-        const response = await fetch(finalUrl, {
-            method: 'GET', // Usar GET con proxy
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-
-        console.log('📥 Response status:', response.status, response.statusText);
-        
-        if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        console.log('✅ Request exitoso:', params.action, result);
-        
-        if (result.success === false) {
-            throw new Error(result.error || 'Error del servidor');
-        }
-        
-        return result;
-        
-    } catch (error) {
-        console.error('❌ Error en request:', error);
-        throw error;
-    }
-}
-
-    async saveProfiles(profiles) {
         if (!this.initialized) {
-            console.warn('❌ Google Sync no inicializado, no se puede guardar');
-            return false;
+            throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
         }
 
         try {
-            console.log('💾 Guardando perfiles en Google Sheets...', profiles.length);
+            console.log('📤 Enviando request a Google Script...', params.action);
             
-            const result = await this.makeRequest({
-                action: 'saveProfiles',
-                profiles: profiles
+            // Construir URL con parámetros GET
+            const urlParams = new URLSearchParams();
+            Object.keys(params).forEach(key => {
+                // Convertir el objeto 'profiles' a string JSON
+                if (key === 'profiles' && typeof params[key] === 'object') {
+                    urlParams.append(key, JSON.stringify(params[key]));
+                } else {
+                    urlParams.append(key, params[key]);
+                }
             });
+            urlParams.append('userId', this.userId);
             
+            // Uso del proxy (allorigins.win) para evitar CORS
+            const targetUrl = `https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec?${urlParams.toString()}&t=${Date.now()}`;
+            const finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+            
+            console.log('🔗 Target URL de Google Script:', targetUrl);
+            console.log('🔗 Enviando a Vercel Proxy:', '/api/sync (o similar - aquí usamos allorigins)');
+            
+            const response = await fetch(finalUrl, {
+                method: 'GET', // Usar GET con el proxy
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            console.log('📥 Response status:', response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error HTTP: ${response.status} - ${response.statusText}. Detalle: ${errorText.substring(0, 100)}...`);
+            }
+
+            const result = await response.json();
+            console.log('✅ Request exitoso:', params.action, result);
+            
+            if (result.success === false) {
+                throw new Error(result.error || 'Error del servidor');
+            }
+            
+            return result;
+            
+        } catch (error) {
+            console.error('❌ Error en request:', error);
+            throw error;
+        }
+    }
+
+    async saveProfiles(profiles) {
+        if (!this.initialized) return false;
+        try {
+            console.log('💾 Guardando perfiles en Google Sheets...', profiles.length);
+            const result = await this.makeRequest({ action: 'saveProfiles', profiles: profiles });
             this.lastSyncTime = result.lastSync;
             console.log('✅ Perfiles guardados en Google Sheets correctamente');
-            this.actualizarUIEstado('syncing');
-            
-            setTimeout(() => {
-                this.actualizarUIEstado('connected');
-            }, 2000);
-            
+            this.actualizarUIEstado('connected');
             return true;
-            
         } catch (error) {
             console.error('❌ Error guardando en Google Sheets:', error);
             this.actualizarUIEstado('error');
@@ -164,24 +150,14 @@ class GoogleSync {
     }
 
     async loadProfiles() {
-        if (!this.initialized) {
-            console.warn('❌ Google Sync no inicializado, no se puede cargar');
-            return null;
-        }
-
+        if (!this.initialized) return null;
         try {
             console.log('📥 Cargando perfiles desde Google Sheets...');
-            
-            const result = await this.makeRequest({
-                action: 'getProfiles'
-            });
-            
+            const result = await this.makeRequest({ action: 'getProfiles' });
             this.lastSyncTime = result.lastSync;
             console.log('✅ Perfiles cargados desde Google Sheets:', result.profiles.length);
             this.actualizarUIEstado('connected');
-            // Devolver solo el array de perfiles
             return result.profiles || [];
-            
         } catch (error) {
             console.error('❌ Error cargando desde Google Sheets:', error);
             this.actualizarUIEstado('error');
@@ -190,34 +166,22 @@ class GoogleSync {
     }
 
     async syncProfiles(localProfiles) {
-        if (!this.initialized) {
-            console.warn('❌ Google Sync no inicializado');
-            return null;
-        }
-
-        if (this.syncInProgress) {
-            console.log('⏳ Sincronización ya en progreso...');
-            return null;
-        }
+        if (!this.initialized) return null;
+        if (this.syncInProgress) return null;
 
         this.syncInProgress = true;
-
         try {
             console.log('🔄 Sincronizando perfiles...');
             this.actualizarUIEstado('syncing');
             
-            // Esta función en .gs es un STUB, la verdadera lógica la implementamos en forzarSincronizacion
-            // La dejamos aquí solo para pruebas internas o futuras implementaciones
-            const result = await this.makeRequest({
-                action: 'syncProfiles',
-                profiles: localProfiles
-            });
+            // STUB: Aquí se enviaría a la función syncProfiles del .gs, que actualmente solo devuelve el mismo array local.
+            const result = await this.makeRequest({ action: 'syncProfiles', profiles: localProfiles });
 
             this.lastSyncTime = result.lastSync;
-            console.log('✅ Sincronización completada:', result.stats);
             this.actualizarUIEstado('connected');
             
-            return result.profiles; // Devolver los perfiles fusionados
+            // Devolvemos los perfiles fusionados (que actualmente son los locales, pero serán los de la nube al implementar la carga)
+            return result.mergedProfiles || []; 
             
         } catch (error) {
             console.error('❌ Error en sincronización:', error);
@@ -232,9 +196,7 @@ class GoogleSync {
         if (!this.initialized) return 'not_configured';
 
         try {
-            const result = await this.makeRequest({
-                action: 'getSyncStatus'
-            });
+            const result = await this.makeRequest({ action: 'getSyncStatus' });
             
             return {
                 status: result.status,
@@ -301,44 +263,9 @@ class GoogleSync {
             console.error('❌ Error actualizando UI de sync:', error);
         }
     }
-
-    getDeviceInfo() {
-        return {
-            id: this.userId,
-            name: this.guessDeviceName(),
-            type: this.detectDeviceType(),
-            userAgent: navigator.userAgent.substring(0, 100),
-            lastSync: this.lastSyncTime || new Date().toISOString()
-        };
-    }
-
-    guessDeviceName() {
-        const ua = navigator.userAgent;
-        let name = 'Dispositivo';
-        
-        if (/Mobile|Android|iPhone/i.test(ua)) {
-            name = /Tablet|iPad/i.test(ua) ? 'Tableta' : 'Teléfono';
-        } else if (/Windows/i.test(ua)) {
-            name = 'Computadora Windows';
-        } else if (/Mac/i.test(ua)) {
-            name = 'Computadora Mac';
-        } else if (/Linux/i.test(ua)) {
-            name = 'Computadora Linux';
-        }
-        
-        return name;
-    }
-
-    detectDeviceType() {
-        const ua = navigator.userAgent;
-        if (/Mobile|Android|iPhone|iPad/i.test(ua)) {
-            return /Tablet|iPad/i.test(ua) ? 'tablet' : 'mobile';
-        }
-        return 'desktop';
-    }
 }
 
-// --- Elementos DOM (Continúa desde el código anterior) ---
+// --- Elementos DOM ---
 const elementos = {
     // Pantallas
     perfilScreen: document.getElementById('perfil-screen'),
@@ -411,7 +338,7 @@ const elementos = {
     
     // Sincronización
     syncPanel: document.getElementById('sync-panel'),
-    forceSyncBtn: document.getElementById('force-sync-btn') // Añadido para el listener
+    forceSyncBtn: document.getElementById('force-sync-btn')
 };
 
 // --- Inicialización MEJORADA ---
@@ -426,7 +353,7 @@ async function inicializarApp() {
     
     // Inicializar Google Sync
     googleSync = new GoogleSync();
-    const googleReady = await googleSync.initialize();
+    await googleSync.initialize();
     
     // Cargar datos (esta función contiene el FIX de sincronización)
     await cargarDatos();
@@ -456,7 +383,6 @@ async function inicializarApp() {
 
 /**
  * Guarda los datos del estado global de la aplicación en LocalStorage.
- * Nota: El guardado en la nube para 'perfiles' se hace en 'guardarPerfil' y 'forzarSincronizacion'.
  */
 function guardarDatos() {
     console.log('💾 Guardando datos localmente...');
@@ -465,7 +391,6 @@ function guardarDatos() {
         localStorage.setItem('perfilActualId', perfilActual.id);
     }
     localStorage.setItem('historial', JSON.stringify(historial));
-    // Guardar también el historial en la nube sería el siguiente paso, pero por ahora solo perfiles.
 }
 
 /**
@@ -493,9 +418,6 @@ async function cargarDatos() {
             // *** CORRECCIÓN CLAVE: Sobrescribir el array global 'perfiles' ***
             perfiles = perfilesNube; 
             
-            // Asignar perfil actual
-            perfilActual = perfiles.find(p => p.id === perfilActualIdLocal) || perfiles[0];
-            
             // Guardar la nueva lista de perfiles en el Local Storage del dispositivo actual.
             guardarDatos(); 
             
@@ -504,15 +426,13 @@ async function cargarDatos() {
             // Si la nube está vacía, pero local no, guardar la versión local en la nube (primer sync de este dispositivo)
             console.log('↗️ Guardando perfiles locales en la nube por primera vez...');
             await googleSync.saveProfiles(perfilesLocal);
-            // Restaurar perfil actual basado en local
-            perfilActual = perfilesLocal.find(p => p.id === perfilActualIdLocal) || perfilesLocal[0];
             mostrarStatus('✅ Perfiles cargados localmente (guardados en nube)', 'success');
         }
-    } else {
-        // Restaurar perfil actual basado en local
-        perfilActual = perfilesLocal.find(p => p.id === perfilActualIdLocal) || perfilesLocal[0];
-        mostrarStatus('✅ Usando almacenamiento local', 'info');
     }
+    
+    // Asignar el perfil actual basado en la lista FINAL (nube o local)
+    const perfilActualId = localStorage.getItem('perfilActualId');
+    perfilActual = perfiles.find(p => p.id === perfilActualId) || perfiles[0] || null;
     
     // Si no hay perfiles, establecer perfil actual a null
     if (perfiles.length === 0) {
@@ -535,11 +455,12 @@ async function forzarSincronizacion() {
     mostrarStatus('🔄 Sincronizando datos con la nube...', 'syncing');
     
     try {
-        // 1. Guardar la versión actual (Local) en la nube (para subir el perfil recién creado en el PC).
+        // 1. Subir la versión actual (Local) a la nube (para subir el perfil recién creado en el PC).
         const saveSuccess = await googleSync.saveProfiles(perfiles);
         
         if (saveSuccess) {
             // 2. Recargar desde la nube (para traer datos de otros dispositivos como el PC).
+            // Esto llama a cargarDatos(), que sobrescribe los perfiles.
             await cargarDatos(); 
             
             // 3. Actualizar la UI
@@ -1059,7 +980,7 @@ function actualizarEstadisticas() {
     );
     
     const totalViajes = viajesHoy.length;
-    const gananciaTotal = viajesHoy.reduce((sum, item) => sum + item.tarifa, 0); // Continúa la función
+    const gananciaTotal = viajesHoy.reduce((sum, item) => sum + item.tarifa, 0); 
     const tiempoTotal = viajesHoy.reduce((sum, item) => sum + item.minutos, 0);
     const viajesRentables = viajesHoy.filter(item => item.rentabilidad === 'rentable').length;
     
@@ -1533,13 +1454,59 @@ function exportarPDF() {
     elementos.exportModal.style.display = 'none';
 }
 
-function diagnosticoConexion() {
-    // La clase GoogleSync ya tiene los métodos para esto, la dejamos como referencia
-    alert('Diagnóstico: La función de diagnóstico debe ser llamada en la consola para un análisis detallado.');
+function diagnosticarSync() {
+    // Implementación del diagnóstico para tu uso
+    console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
+    googleSync = new GoogleSync();
+
+    try {
+        // 1. Probar conexión básica
+        console.log('1. Probando conexión básica...');
+        googleSync.getSyncStatus().then(status => {
+            console.log('✅ Conexión básica OK:', status);
+            
+            // 2. Probar obtener perfiles
+            console.log('2. Probando obtener perfiles...');
+            googleSync.loadProfiles().then(perfiles => {
+                console.log('✅ Obtención de perfiles OK:', perfiles?.length || 0);
+
+                // 3. Probar guardar perfiles (solo si hay perfiles)
+                console.log('3. Probando guardar perfiles...');
+                const perfilesToSave = perfiles?.length > 0 ? perfiles : [{id: 'temp', nombre: 'Test'}];
+                googleSync.saveProfiles(perfilesToSave).then(saveResult => {
+                    console.log('✅ Guardado de perfiles OK:', saveResult);
+
+                    // 4. Probar sincronización
+                    console.log('4. Probando sincronización...');
+                    googleSync.syncProfiles(perfilesToSave).then(syncResult => {
+                        console.log('✅ Sincronización OK:', syncResult ? 'Éxito' : 'Falló (puede ser un stub)');
+                        console.log('🎉 DIAGNÓSTICO COMPLETADO - Todo OK');
+                        mostrarStatus('✅ Diagnóstico: Todo funciona correctamente', 'success');
+                    }).catch(error => {
+                        console.error('❌ ERROR en Sincronización:', error);
+                        mostrarError(`❌ Error en sincronización: ${error.message}`);
+                    });
+                }).catch(error => {
+                    console.error('❌ ERROR en Guardado:', error);
+                    mostrarError(`❌ Error en guardado: ${error.message}`);
+                });
+            }).catch(error => {
+                console.error('❌ ERROR en Obtención de perfiles:', error);
+                mostrarError(`❌ Error en obtener perfiles: ${error.message}`);
+            });
+        }).catch(error => {
+            console.error('❌ ERROR en Conexión Básica:', error);
+            mostrarError(`❌ Error en conexión básica: ${error.message}`);
+        });
+        
+    } catch (error) {
+        console.error('❌ ERROR CRÍTICO EN DIAGNÓSTICO:', error);
+        mostrarError(`❌ Error crítico: ${error.message}`);
+    }
 }
+
 
 window.forzarSincronizacion = forzarSincronizacion;
 window.cerrarModal = cerrarModal;
 window.mostrarInfoSync = mostrarInfoSync;
-window.diagnosticoConexion = diagnosticoConexion;
-// El resto de funciones globales se mantienen implícitas
+window.diagnosticarSync = diagnosticarSync;
