@@ -1941,12 +1941,44 @@ async function diagnosticarSync() {
         console.error('❌ ERROR EN DIAGNÓSTICO:', error);
         mostrarError(`❌ Error en diagnóstico: ${error.message}`);
     }
+
+    /**
+ * Función central para guardar los perfiles locales y forzar la sincronización remota (PUSH).
+ * * Se DEBE llamar cada vez que el array global 'perfiles' se modifica 
+ * (crear, editar o eliminar un perfil).
+ */
+async function guardarYForzarSincronizacion() {
+    console.log('🔄 Iniciando guardado local y sincronización remota...');
+    mostrarStatus('Guardando cambios y sincronizando...', 'info');
+
+    try {
+        // Asegúrate de que la variable global 'perfiles' contenga la lista actualizada.
+        // 1. Sincronizar los perfiles actuales (PUSH al servidor)
+        const syncResult = await googleSync.syncProfiles(perfiles);
+        
+        if (syncResult && syncResult.success) {
+            console.log('✅ Sincronización remota exitosa.');
+            // Actualizar la interfaz/mostrar estado, etc.
+            mostrarStatus('✅ Cambios guardados y sincronizados', 'success');
+            return true;
+        } else {
+            console.error('❌ Fallo en la sincronización remota.', syncResult?.message);
+            mostrarError(`❌ Error al sincronizar: ${syncResult?.message || 'Fallo desconocido'}`);
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error en guardarYForzarSincronizacion:', error);
+        mostrarError(`❌ Error al guardar y sincronizar: ${error.message}`);
+        return false;
+    }
 }
 
 // Agregar diagnóstico al objeto window
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
 
