@@ -73,7 +73,7 @@ function generateUserCode() {
     showTempMessage('¡Código generado! Anótalo para usarlo en otros dispositivos', 'success');
 }
 
-unction setUserCode() {
+function setUserCode() {
     const input = document.getElementById('user-code-input');
     let code = input.value.trim().toUpperCase();
     
@@ -132,6 +132,7 @@ function hideUserCodeModal() {
     const modal = document.getElementById('user-code-modal');
     if (modal) {
         modal.style.display = 'none';
+        console.log('✅ Modal de código ocultado');
     }
 }
 
@@ -2122,4 +2123,5 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
