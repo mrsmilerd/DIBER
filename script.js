@@ -1960,7 +1960,10 @@ async function diagnosticarSync() {
         mostrarStatus('4. Probando sincronización...', 'info');
         
         const syncResult = await googleSync.syncProfiles(perfiles || []);
-        console.log('✅ Sincronización OK:', syncResult ? 'Éxito' : 'Falló');
+
+// EVALUACIÓN CORREGIDA: Verifica que el resultado exista Y que tenga 'success: true'
+const syncSuccess = syncResult && syncResult.success; 
+console.log('✅ Sincronización OK:', syncSuccess ? 'Éxito' : 'Falló');
 
         console.log('🎉 DIAGNÓSTICO COMPLETADO - Todo OK');
         mostrarStatus('✅ Diagnóstico: Todo funciona correctamente', 'success');
@@ -1975,5 +1978,6 @@ async function diagnosticarSync() {
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
