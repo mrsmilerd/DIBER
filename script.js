@@ -11,6 +11,137 @@ let calculoActual = null;
 let timeoutCalculo = null;
 let googleSync;
 
+// --- NUEVO: Sistema de Código de Usuario ---
+let userCodeSystem = {
+    userId: null,
+    userCode: null,
+    initialized: false
+};
+
+// =============================================
+// SISTEMA DE CÓDIGO DE USUARIO - MULTIDISPOSITIVO
+// =============================================
+
+async function initializeUserCodeSystem() {
+    console.log('🔐 Inicializando sistema de código de usuario...');
+    
+    // Verificar si ya hay un código guardado
+    const savedCode = localStorage.getItem('ubercalc_user_code');
+    
+    if (savedCode) {
+        userCodeSystem.userCode = savedCode;
+        userCodeSystem.userId = 'user_' + savedCode;
+        userCodeSystem.initialized = true;
+        
+        console.log('✅ Código de usuario cargado:', userCodeSystem.userCode);
+        hideUserCodeModal();
+        showUserCodeBanner();
+        
+    } else {
+        console.log('🆕 No hay código de usuario, mostrando modal...');
+        showUserCodeModal();
+    }
+    
+    return userCodeSystem.initialized;
+}
+
+function generateUserCode() {
+    // Generar código fácil de recordar: 3 letras + 3 números
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Sin I,O para evitar confusión
+    const numbers = '23456789'; // Sin 0,1 para evitar confusión
+    
+    let code = '';
+    
+    // 3 letras
+    for (let i = 0; i < 3; i++) {
+        code += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    
+    // 3 números
+    for (let i = 0; i < 3; i++) {
+        code += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    }
+    
+    document.getElementById('user-code-input').value = code;
+    
+    // Mostrar mensaje temporal
+    showTempMessage('¡Código generado! Anótalo para usarlo en otros dispositivos', 'success');
+}
+
+function setUserCode() {
+    const input = document.getElementById('user-code-input');
+    let code = input.value.trim().toUpperCase();
+    
+    // Validar formato (3 letras + 3 números)
+    const codeRegex = /^[A-Z]{3}[2-9]{3}$/;
+    
+    if (!code) {
+        showTempMessage('Por favor ingresa un código', 'error');
+        input.focus();
+        return;
+    }
+    
+    if (!codeRegex.test(code)) {
+        showTempMessage('Formato inválido. Debe ser 3 letras + 3 números (ej: ABC123)', 'error');
+        input.focus();
+        return;
+    }
+    
+    userCodeSystem.userCode = code;
+    userCodeSystem.userId = 'user_' + code;
+    userCodeSystem.initialized = true;
+    
+    // Guardar en localStorage
+    localStorage.setItem('ubercalc_user_code', code);
+    
+    console.log('✅ Código de usuario establecido:', code);
+    showTempMessage('¡Código configurado correctamente!', 'success');
+    
+    // Ocultar modal y mostrar banner
+    hideUserCodeModal();
+    showUserCodeBanner();
+    
+    // Recargar la app para aplicar el nuevo userId
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+}
+
+function showUserCodeModal() {
+    const modal = document.getElementById('user-code-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function hideUserCodeModal() {
+    const modal = document.getElementById('user-code-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function showUserCodeBanner() {
+    const banner = document.getElementById('user-code-banner');
+    const display = document.getElementById('user-code-display');
+    
+    if (banner && display && userCodeSystem.userCode) {
+        display.textContent = `Código: ${userCodeSystem.userCode}`;
+        banner.style.display = 'flex';
+    }
+}
+
+function showUserCodeModal() {
+    // Esta función muestra el modal para cambiar el código
+    showUserCodeModal();
+}
+
+// Función auxiliar para mensajes temporales
+function showTempMessage(message, type = 'info') {
+    // Usar tu sistema existente de mostrarStatus
+    mostrarStatus(message, type);
+}
+
 // --- Configuración Google Apps Script (CORREGIDO: Eliminamos el proxy externo inestable) ---
 const GOOGLE_SCRIPT_BASE_URL = 'https://script.google.com/macros/s/AKfycbzhDlVDb6B4nLnpgVuaPNk7hq6Srs5zGW2iqd4uiKnmBaLpk0_fyAUypNpwaoYJs0lZiQ/exec';
 const LOCAL_SYNC_ENDPOINT = '/api/sync'; 
@@ -70,15 +201,22 @@ class GoogleSync {
         }
     }
 
-    getUserId() {
-        let userId = localStorage.getItem('ubercalc_user_id');
-        if (!userId) {
-            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('ubercalc_user_id', userId);
-            console.log('🆕 Nuevo User ID generado:', userId);
-        }
-        return userId;
+   getUserId() {
+    // Usar el userId del sistema de código en lugar de generar uno aleatorio
+    if (userCodeSystem.initialized && userCodeSystem.userId) {
+        console.log('🔗 Usando userId del sistema de código:', userCodeSystem.userId);
+        return userCodeSystem.userId;
     }
+    
+    // Fallback al sistema antiguo solo si es necesario
+    let userId = localStorage.getItem('ubercalc_user_id');
+    if (!userId) {
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('ubercalc_user_id', userId);
+        console.log('🆕 Nuevo User ID generado (fallback):', userId);
+    }
+    return userId;
+}
 
 async makeRequest(params) {
         if (!this.initialized) {
@@ -405,10 +543,11 @@ document.addEventListener('DOMContentLoaded', function() {
     configurarEventListeners();
 });
 
-async function inicializarApp() {
-    console.log('📡 Inicializando Google Sync...');
+// 1. PRIMERO: Inicializar sistema de código de usuario
+    await initializeUserCodeSystem();
     
-    // Inicializar Google Sync
+    // 2. LUEGO: Inicializar Google Sync con el userId del código
+    console.log('📡 Inicializando Google Sync...');
     googleSync = new GoogleSync();
     const googleReady = await googleSync.initialize();
     
@@ -438,9 +577,8 @@ async function inicializarApp() {
     // Actualizar UI de sync
     actualizarPanelSync();
     
-    console.log('🎉 UberCalc con Google Sync inicializado correctamente');
+    console.log('🎉 UberCalc con Sistema de Código inicializado correctamente');
 }
-
 function configurarEventListeners() {
     console.log('⚙️ Configurando event listeners...');
     
@@ -1339,20 +1477,29 @@ async function actualizarPanelSync() {
     console.log('🔄 Actualizando panel de sync');
     
     try {
-        // Actualizar información del dispositivo
+        // Actualizar información del dispositivo CON CÓDIGO DE USUARIO
         const deviceInfo = googleSync.getDeviceInfo();
         const deviceName = document.getElementById('current-device-name');
         const deviceId = document.getElementById('current-device-id');
         const deviceIcon = document.getElementById('current-device-icon');
         
         if (deviceName) deviceName.textContent = deviceInfo.name;
-        if (deviceId) deviceId.textContent = `ID: ${deviceInfo.id.substring(0, 8)}...`;
+        
+        // Mostrar el código de usuario en lugar del ID técnico
+        if (deviceId) {
+            if (userCodeSystem.userCode) {
+                deviceId.textContent = `Código: ${userCodeSystem.userCode}`;
+            } else {
+                deviceId.textContent = `ID: ${deviceInfo.id.substring(0, 8)}...`;
+            }
+        }
+        
         if (deviceIcon) {
             deviceIcon.textContent = deviceInfo.type === 'mobile' ? '📱' : 
                                     deviceInfo.type === 'tablet' ? '📟' : '💻';
         }
         
-        // Actualizar estado de Google Sync
+        // ... el resto del código permanece igual
         const firebaseStatus = document.getElementById('firebase-status');
         const lastSyncTime = document.getElementById('last-sync-time');
         const cloudProfilesCount = document.getElementById('cloud-profiles-count');
@@ -1993,11 +2140,9 @@ console.log('✅ Sincronización OK:', syncSuccess ? 'Éxito' : 'Falló');
 // Agregar diagnóstico al objeto window
 window.diagnosticarSync = diagnosticarSync;
 
+// Función global para cambiar código de usuario
+window.mostrarConfigCodigo = function() {
+    showUserCodeModal();
+};
+
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
-
-
-
-
-
-
-
