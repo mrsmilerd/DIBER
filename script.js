@@ -1,6 +1,6 @@
 // =============================================
 // UBER CALC - Calculadora Inteligente para Conductores
-// Versión con Google Apps Script Sync - COMPLETA Y CORREGIDA
+// Versión con Sistema de Código de Usuario para Multi-Dispositivo
 // =============================================
 
 // --- Variables Globales ---
@@ -11,12 +11,17 @@ let calculoActual = null;
 let timeoutCalculo = null;
 let googleSync;
 
-// --- NUEVO: Sistema de Código de Usuario ---
+// --- Sistema de Código de Usuario ---
 let userCodeSystem = {
     userId: null,
     userCode: null,
     initialized: false
 };
+
+// --- Configuración Google Apps Script ---
+const GOOGLE_SCRIPT_BASE_URL = 'https://script.google.com/macros/s/AKfycbzhDlVDb6B4nLnpgVuaPNk7hq6Srs5zGW2iqd4uiKnmBaLpk0_fyAUypNpwaoYJs0lZiQ/exec';
+const LOCAL_SYNC_ENDPOINT = '/api/sync'; 
+const GOOGLE_SCRIPT_URL = LOCAL_SYNC_ENDPOINT;
 
 // =============================================
 // SISTEMA DE CÓDIGO DE USUARIO - MULTIDISPOSITIVO
@@ -131,23 +136,14 @@ function showUserCodeBanner() {
     }
 }
 
-function showUserCodeModal() {
-    // Esta función muestra el modal para cambiar el código
-    showUserCodeModal();
-}
-
-// Función auxiliar para mensajes temporales
 function showTempMessage(message, type = 'info') {
-    // Usar tu sistema existente de mostrarStatus
     mostrarStatus(message, type);
 }
 
-// --- Configuración Google Apps Script (CORREGIDO: Eliminamos el proxy externo inestable) ---
-const GOOGLE_SCRIPT_BASE_URL = 'https://script.google.com/macros/s/AKfycbzhDlVDb6B4nLnpgVuaPNk7hq6Srs5zGW2iqd4uiKnmBaLpk0_fyAUypNpwaoYJs0lZiQ/exec';
-const LOCAL_SYNC_ENDPOINT = '/api/sync'; 
-const GOOGLE_SCRIPT_URL = LOCAL_SYNC_ENDPOINT;
+// =============================================
+// CLASE GOOGLE SYNC (MODIFICADA PARA USAR CÓDIGO DE USUARIO)
+// =============================================
 
-// --- Clase Google Sync CORREGIDA ---
 class GoogleSync {
     constructor() {
         this.initialized = false;
@@ -173,7 +169,7 @@ class GoogleSync {
         try {
             console.log('📡 Inicializando Google Sync...');
             
-            // 1. Obtener User ID
+            // 1. Obtener User ID del sistema de código
             this.userId = this.getUserId();
             console.log('👤 User ID obtenido:', this.userId);
             
@@ -201,24 +197,24 @@ class GoogleSync {
         }
     }
 
-   getUserId() {
-    // Usar el userId del sistema de código en lugar de generar uno aleatorio
-    if (userCodeSystem.initialized && userCodeSystem.userId) {
-        console.log('🔗 Usando userId del sistema de código:', userCodeSystem.userId);
-        return userCodeSystem.userId;
+    getUserId() {
+        // Usar el userId del sistema de código en lugar de generar uno aleatorio
+        if (userCodeSystem.initialized && userCodeSystem.userId) {
+            console.log('🔗 Usando userId del sistema de código:', userCodeSystem.userId);
+            return userCodeSystem.userId;
+        }
+        
+        // Fallback al sistema antiguo solo si es necesario
+        let userId = localStorage.getItem('ubercalc_user_id');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('ubercalc_user_id', userId);
+            console.log('🆕 Nuevo User ID generado (fallback):', userId);
+        }
+        return userId;
     }
-    
-    // Fallback al sistema antiguo solo si es necesario
-    let userId = localStorage.getItem('ubercalc_user_id');
-    if (!userId) {
-        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('ubercalc_user_id', userId);
-        console.log('🆕 Nuevo User ID generado (fallback):', userId);
-    }
-    return userId;
-}
 
-async makeRequest(params) {
+    async makeRequest(params) {
         if (!this.initialized) {
             throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
         }
@@ -336,35 +332,33 @@ async makeRequest(params) {
     }
 
     async syncProfiles(profiles) {
-    if (!this.initialized) return { success: false, message: 'Sync no inicializado.' };
+        if (!this.initialized) return { success: false, message: 'Sync no inicializado.' };
 
-    this.syncInProgress = true;
-    this.actualizarUIEstado('syncing'); // ⬅️ CORRECCIÓN 1: Usar actualizarUIEstado
+        this.syncInProgress = true;
+        this.actualizarUIEstado('syncing');
 
-    try {
-        const profilesJson = JSON.stringify(profiles);
-        
-        // **IMPORTANTE:** El servidor está devolviendo un resultado. 
-        // Debemos asegurarnos de que la función retorne ese resultado.
-        const result = await this.makeRequest({ // ⬅️ CORRECCIÓN 2: Usar makeRequest y envolver en objeto
-            action: 'syncProfiles',
-            profiles: profiles
-        });
-        
-        this.actualizarUIEstado('connected'); // ⬅️ CORRECCIÓN 1
-        console.log('✅ Sincronización completada:', result);
+        try {
+            const profilesJson = JSON.stringify(profiles);
             
-        // Devolvemos el resultado completo del servidor
-        return result; 
+            const result = await this.makeRequest({
+                action: 'syncProfiles',
+                profiles: profiles
+            });
+            
+            this.actualizarUIEstado('connected');
+            console.log('✅ Sincronización completada:', result);
+                
+            return result;
 
-    } catch (error) {
-        console.error('❌ Error en syncProfiles:', error);
-        this.actualizarUIEstado('error'); // ⬅️ CORRECCIÓN 1
-        return { success: false, message: error.message };
-    } finally {
-        this.syncInProgress = false;
+        } catch (error) {
+            console.error('❌ Error en syncProfiles:', error);
+            this.actualizarUIEstado('error');
+            return { success: false, message: error.message };
+        } finally {
+            this.syncInProgress = false;
+        }
     }
-}
+
     async getSyncStatus() {
         if (!this.initialized) return 'not_configured';
 
@@ -538,12 +532,15 @@ const elementos = {
 
 // --- Inicialización MEJORADA ---
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando UberCalc con Google Sync...');
+    console.log('🚀 Inicializando UberCalc con Sistema de Código...');
     inicializarApp();
     configurarEventListeners();
 });
 
-// 1. PRIMERO: Inicializar sistema de código de usuario
+async function inicializarApp() {
+    console.log('📡 Inicializando UberCalc con Sistema de Código...');
+    
+    // 1. PRIMERO: Inicializar sistema de código de usuario
     await initializeUserCodeSystem();
     
     // 2. LUEGO: Inicializar Google Sync con el userId del código
@@ -579,6 +576,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('🎉 UberCalc con Sistema de Código inicializado correctamente');
 }
+
 function configurarEventListeners() {
     console.log('⚙️ Configurando event listeners...');
     
@@ -1161,7 +1159,6 @@ async function guardarPerfil(event) {
         costoMantenimiento: parseFloat(document.getElementById('costo-mantenimiento').value) || 0,
         fechaCreacion: perfilId ? perfiles.find(p => p.id === perfilId)?.fechaCreacion || new Date().toISOString() : new Date().toISOString(),
         fechaActualizacion: new Date().toISOString(),
-        // Campo para sincronización
         lastModified: Date.now()
     };
     
@@ -1186,12 +1183,10 @@ async function guardarPerfil(event) {
         console.log('🎯 Perfil actual establecido:', perfil.nombre);
     }
 
-    // ... Tu lógica anterior para crear el objeto 'perfil' y actualizar el array 'perfiles'
-    
     // 1. Guardar localmente
     guardarDatos();
 
-    // 2. Sincronizar con el servidor de forma centralizada (¡LA SOLUCIÓN!)
+    // 2. Sincronizar con el servidor de forma centralizada
     await guardarYForzarSincronizacion();
 
     // Si el perfil es nuevo o el actual, lo seleccionamos y mostramos la pantalla principal
@@ -1203,8 +1198,7 @@ async function guardarPerfil(event) {
     } else {
         mostrarPantalla('perfil');
     }
-    
-} // Fin de guardarPerfil
+}
 
 function actualizarInterfazPerfiles() {
     if (!elementos.perfilesLista) {
@@ -1212,10 +1206,9 @@ function actualizarInterfazPerfiles() {
         return;
     }
 
-    // ⚠️ CORRECCIÓN DEFENSIVA: Asegurar que 'perfiles' es un Array antes de intentar iterar
     if (!Array.isArray(perfiles)) {
         console.error('❌ ERROR CRÍTICO: "perfiles" no es un array. Reinicializando.', perfiles);
-        perfiles = []; // Evitamos el TypeError al inicializar
+        perfiles = [];
     }
     
     console.log('🔄 Actualizando interfaz de perfiles. Total:', perfiles.length);
@@ -1263,7 +1256,6 @@ function actualizarInterfazPerfiles() {
             </div>
         `;
         
-        // Event listener para el botón USAR
         const usarBtn = perfilItem.querySelector('.usar-perfil-btn');
         if (usarBtn) {
             usarBtn.addEventListener('click', function(e) {
@@ -1275,7 +1267,6 @@ function actualizarInterfazPerfiles() {
             });
         }
         
-        // Event listener para el botón EDITAR
         const editarBtn = perfilItem.querySelector('.editar-perfil-btn');
         if (editarBtn) {
             editarBtn.addEventListener('click', function(e) {
@@ -1287,7 +1278,6 @@ function actualizarInterfazPerfiles() {
             });
         }
         
-        // Event listener para el botón ELIMINAR
         const eliminarBtn = perfilItem.querySelector('.eliminar-perfil-btn');
         if (eliminarBtn) {
             eliminarBtn.addEventListener('click', function(e) {
@@ -1299,9 +1289,7 @@ function actualizarInterfazPerfiles() {
             });
         }
         
-        // También permitir seleccionar haciendo clic en el item completo
         perfilItem.addEventListener('click', function(e) {
-            // Prevenir que se active si se hizo clic en un botón
             if (!e.target.closest('.perfil-acciones')) {
                 console.log('🎯 Clic en item perfil:', perfil.id);
                 seleccionarPerfil(perfil.id);
@@ -1323,7 +1311,6 @@ async function seleccionarPerfil(perfilId) {
         perfilActual = perfil;
         guardarDatos();
         
-        // Sincronizar cambio con Google Sheets
         if (googleSync && googleSync.initialized) {
             console.log('📡 Sincronizando con Google Sheets...');
             await googleSync.saveProfiles(perfiles);
@@ -1375,7 +1362,6 @@ async function eliminarPerfil(perfilId) {
         
         guardarDatos();
         
-        // Sincronizar con Google Sheets
         if (googleSync && googleSync.initialized) {
             await googleSync.saveProfiles(perfiles);
         }
@@ -1477,7 +1463,6 @@ async function actualizarPanelSync() {
     console.log('🔄 Actualizando panel de sync');
     
     try {
-        // Actualizar información del dispositivo CON CÓDIGO DE USUARIO
         const deviceInfo = googleSync.getDeviceInfo();
         const deviceName = document.getElementById('current-device-name');
         const deviceId = document.getElementById('current-device-id');
@@ -1485,7 +1470,6 @@ async function actualizarPanelSync() {
         
         if (deviceName) deviceName.textContent = deviceInfo.name;
         
-        // Mostrar el código de usuario en lugar del ID técnico
         if (deviceId) {
             if (userCodeSystem.userCode) {
                 deviceId.textContent = `Código: ${userCodeSystem.userCode}`;
@@ -1499,7 +1483,6 @@ async function actualizarPanelSync() {
                                     deviceInfo.type === 'tablet' ? '📟' : '💻';
         }
         
-        // ... el resto del código permanece igual
         const firebaseStatus = document.getElementById('firebase-status');
         const lastSyncTime = document.getElementById('last-sync-time');
         const cloudProfilesCount = document.getElementById('cloud-profiles-count');
@@ -1545,12 +1528,7 @@ async function forzarSincronizacion() {
     const syncResult = await googleSync.syncProfiles(perfiles);
 
     if (syncResult && syncResult.success) {
-        // 1. ⚠️ CORRECCIÓN CLAVE: Asignamos el array de perfiles fusionados que viene del servidor.
-        //    Si el servidor devuelve {mergedProfiles: [...]}, lo usamos. Si no lo devuelve,
-        //    asumimos que la sincronización fue un PUSH exitoso y usamos el array local 'perfiles'.
         const newProfiles = syncResult.mergedProfiles || perfiles;
-        
-        // 2. Sobreescribimos la variable global 'perfiles' con los datos limpios
         perfiles = Array.isArray(newProfiles) ? newProfiles : perfiles;
 
         guardarDatos();
@@ -1561,6 +1539,7 @@ async function forzarSincronizacion() {
         mostrarError('❌ Error en la sincronización');
     }
 }
+
 function mostrarInfoSync() {
     alert(`🌐 SINCRONIZACIÓN CON GOOGLE SHEETS
 
@@ -1932,14 +1911,13 @@ async function cargarDatos() {
     try {
         console.log('📥 Cargando datos...');
         
-        // Primero intentar cargar desde Google Sheets
         if (googleSync && googleSync.initialized) {
             try {
                 const perfilesRemotos = await googleSync.loadProfiles();
                 if (perfilesRemotos !== null && perfilesRemotos.profiles) {
-    perfiles = perfilesRemotos.profiles; // ✅ Asigna solo el array [perfil, perfil, ...]
+                    perfiles = perfilesRemotos.profiles;
                     perfilActual = perfiles.length > 0 ? perfiles[0] : null;
-                    historial = []; // El historial se mantiene local
+                    historial = [];
                     console.log('✅ Datos cargados desde Google Sheets. Perfiles:', perfiles.length);
                     return;
                 } else {
@@ -1950,7 +1928,6 @@ async function cargarDatos() {
             }
         }
         
-        // Fallback a datos locales
         const datosGuardados = localStorage.getItem('uberCalc_data');
         if (datosGuardados) {
             const datos = JSON.parse(datosGuardados);
@@ -1960,7 +1937,6 @@ async function cargarDatos() {
             
             console.log('✅ Datos cargados desde localStorage. Perfiles:', perfiles.length);
             
-            // Sincronizar datos locales a Google Sheets si es posible
             if (googleSync && googleSync.initialized && perfiles.length > 0) {
                 console.log('🔄 Sincronizando datos locales con Google Sheets...');
                 await googleSync.saveProfiles(perfiles);
@@ -1973,7 +1949,6 @@ async function cargarDatos() {
         }
     } catch (error) {
         console.error('❌ Error cargando datos:', error);
-        // Mantener funcionamiento básico con datos por defecto
         perfiles = perfiles || [];
         perfilActual = perfilActual || null;
         historial = historial || [];
@@ -1998,6 +1973,89 @@ function guardarDatos() {
     }
 }
 
+// --- Función de Sincronización Centralizada ---
+async function guardarYForzarSincronizacion() {
+    if (!googleSync || !googleSync.initialized) {
+        console.warn('⚠️ Google Sync no inicializado o no disponible. Solo se guardará localmente.');
+        mostrarStatus('⚠️ Solo guardado local. La sincronización en la nube falló.', 'warning');
+        return false;
+    }
+    
+    console.log('🔄 Iniciando sincronización remota de perfiles (PUSH)...');
+    mostrarStatus('Guardando cambios y sincronizando...', 'info');
+
+    try {
+        const syncResult = await googleSync.syncProfiles(perfiles);
+        
+        if (syncResult && typeof syncResult === 'object') {
+            console.log('✅ Sincronización remota exitosa.');
+            mostrarStatus('✅ Cambios guardados y sincronizados', 'success');
+            return true;
+        } else {
+            console.error('❌ Fallo en la sincronización remota.', syncResult);
+            mostrarError(`❌ Error al sincronizar: Fallo de servidor o red.`);
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error en guardarYForzarSincronizacion:', error);
+        mostrarError(`❌ Error al guardar y sincronizar: ${error.message}`);
+        return false;
+    }
+}
+
+// --- Función de Diagnóstico ---
+async function diagnosticarSync() {
+    console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
+    
+    if (!googleSync || !googleSync.initialized) {
+        console.error('❌ Google Sync no inicializado');
+        mostrarStatus('❌ Google Sync no inicializado', 'error');
+        return;
+    }
+
+    try {
+        console.log('1. Probando conexión básica...');
+        mostrarStatus('1. Probando conexión básica...', 'info');
+        
+        const testResult = await googleSync.makeRequest({
+            action: 'getSyncStatus'
+        });
+        console.log('✅ Conexión básica OK:', testResult);
+
+        console.log('2. Probando obtener perfiles...');
+        mostrarStatus('2. Probando obtener perfiles...', 'info');
+        
+        const perfiles = await googleSync.loadProfiles();
+        console.log('✅ Obtención de perfiles OK:', perfiles?.length || 0);
+
+        console.log('3. Probando guardar perfiles...');
+        mostrarStatus('3. Probando guardar perfiles...', 'info');
+        
+        let saveResult = false;
+        if (perfiles && perfiles.length > 0) {
+            saveResult = await googleSync.saveProfiles(perfiles);
+        } else {
+            saveResult = await googleSync.saveProfiles([]);
+        }
+        console.log('✅ Guardado de perfiles OK:', saveResult);
+
+        console.log('4. Probando sincronización...');
+        mostrarStatus('4. Probando sincronización...', 'info');
+        
+        const syncResult = await googleSync.syncProfiles(perfiles || []);
+        const syncSuccess = syncResult && syncResult.success;
+        console.log('✅ Sincronización OK:', syncSuccess ? 'Éxito' : 'Falló');
+
+        console.log('🎉 DIAGNÓSTICO COMPLETADO - Todo OK');
+        mostrarStatus('✅ Diagnóstico: Todo funciona correctamente', 'success');
+        
+    } catch (error) {
+        console.error('❌ ERROR EN DIAGNÓSTICO:', error);
+        mostrarError(`❌ Error en diagnóstico: ${error.message}`);
+    }
+}
+
 // --- Funciones Globales para HTML ---
 window.cerrarModal = cerrarModal;
 window.cerrarExportModal = cerrarExportModal;
@@ -2009,6 +2067,12 @@ window.eliminarPerfil = eliminarPerfil;
 window.mostrarPanelSync = mostrarPanelSync;
 window.forzarSincronizacion = forzarSincronizacion;
 window.mostrarInfoSync = mostrarInfoSync;
+window.diagnosticarSync = diagnosticarSync;
+
+// Nuevas funciones globales para el sistema de código
+window.generateUserCode = generateUserCode;
+window.setUserCode = setUserCode;
+window.showUserCodeModal = showUserCodeModal;
 
 // --- Prevenir cierre accidental ---
 window.addEventListener('beforeunload', function(e) {
@@ -2043,106 +2107,4 @@ setTimeout(() => {
     }
 }, 1000);
 
-/**
- * Función central para guardar los perfiles locales y forzar la sincronización remota (PUSH).
- * * Se DEBE llamar cada vez que el array global 'perfiles' se modifica 
- * (crear, editar o eliminar un perfil).
- */
-async function guardarYForzarSincronizacion() {
-    if (!googleSync || !googleSync.initialized) {
-        console.warn('⚠️ Google Sync no inicializado o no disponible. Solo se guardará localmente.');
-        mostrarStatus('⚠️ Solo guardado local. La sincronización en la nube falló.', 'warning');
-        return false;
-    }
-    
-    console.log('🔄 Iniciando sincronización remota de perfiles (PUSH)...');
-    mostrarStatus('Guardando cambios y sincronizando...', 'info');
-
-    try {
-        // Usamos syncProfiles para enviar el array global 'perfiles' al servidor.
-        const syncResult = await googleSync.syncProfiles(perfiles);
-        
-        if (syncResult && typeof syncResult === 'object') {
-            console.log('✅ Sincronización remota exitosa.');
-            mostrarStatus('✅ Cambios guardados y sincronizados', 'success');
-            return true;
-        } else {
-            console.error('❌ Fallo en la sincronización remota.', syncResult);
-            mostrarError(`❌ Error al sincronizar: Fallo de servidor o red.`);
-            return false;
-        }
-        
-    } catch (error) {
-        console.error('❌ Error en guardarYForzarSincronizacion:', error);
-        mostrarError(`❌ Error al guardar y sincronizar: ${error.message}`);
-        return false;
-    }
-}
-
-// --- Función de Diagnóstico CORREGIDA ---
-async function diagnosticarSync() {
-    console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
-    
-    if (!googleSync || !googleSync.initialized) {
-        console.error('❌ Google Sync no inicializado');
-        mostrarStatus('❌ Google Sync no inicializado', 'error');
-        return;
-    }
-
-    try {
-        // 1. Probar conexión básica
-        console.log('1. Probando conexión básica...');
-        mostrarStatus('1. Probando conexión básica...', 'info');
-        
-        const testResult = await googleSync.makeRequest({
-            action: 'getSyncStatus'
-        });
-        console.log('✅ Conexión básica OK:', testResult);
-
-        // 2. Probar obtener perfiles
-        console.log('2. Probando obtener perfiles...');
-        mostrarStatus('2. Probando obtener perfiles...', 'info');
-        
-        const perfiles = await googleSync.loadProfiles();
-        console.log('✅ Obtención de perfiles OK:', perfiles?.length || 0);
-
-        // 3. Probar guardar perfiles (solo si hay perfiles)
-        console.log('3. Probando guardar perfiles...');
-        mostrarStatus('3. Probando guardar perfiles...', 'info');
-        
-        let saveResult = false;
-        if (perfiles && perfiles.length > 0) {
-            saveResult = await googleSync.saveProfiles(perfiles);
-        } else {
-            saveResult = await googleSync.saveProfiles([]);
-        }
-        console.log('✅ Guardado de perfiles OK:', saveResult);
-
-        // 4. Probar sincronización
-        console.log('4. Probando sincronización...');
-        mostrarStatus('4. Probando sincronización...', 'info');
-        
-        const syncResult = await googleSync.syncProfiles(perfiles || []);
-
-// EVALUACIÓN CORREGIDA: Verifica que el resultado exista Y que tenga 'success: true'
-const syncSuccess = syncResult && syncResult.success; 
-console.log('✅ Sincronización OK:', syncSuccess ? 'Éxito' : 'Falló');
-
-        console.log('🎉 DIAGNÓSTICO COMPLETADO - Todo OK');
-        mostrarStatus('✅ Diagnóstico: Todo funciona correctamente', 'success');
-        
-    } catch (error) {
-        console.error('❌ ERROR EN DIAGNÓSTICO:', error);
-        mostrarError(`❌ Error en diagnóstico: ${error.message}`);
-    }
-}
-
-// Agregar diagnóstico al objeto window
-window.diagnosticarSync = diagnosticarSync;
-
-// Función global para cambiar código de usuario
-window.mostrarConfigCodigo = function() {
-    showUserCodeModal();
-};
-
-console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
