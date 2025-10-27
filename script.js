@@ -1382,22 +1382,27 @@ async function actualizarPanelSync() {
 
 async function forzarSincronizacion() {
     if (!googleSync || !googleSync.initialized) {
-        mostrarError('Google Sync no está configurado');
+        mostrarError('Google Sync no está inicializado.');
         return;
     }
     
-    console.log('🔄 Forzando sincronización...');
-    mostrarStatus('🔄 Sincronizando con Google Sheets...', 'info');
+    mostrarStatus('🔄 Sincronizando datos con la nube...', 'syncing');
     
-    const perfilesSincronizados = await googleSync.syncProfiles(perfiles);
-    if (perfilesSincronizados) {
-        perfiles = perfilesSincronizados;
-        guardarDatos();
-        actualizarInterfazPerfiles();
-        mostrarStatus('✅ Sincronización completada', 'success');
-        actualizarPanelSync();
-    } else {
-        mostrarError('❌ Error en la sincronización');
+    try {
+        // Usa await
+        const saveSuccess = await googleSync.saveProfiles(perfiles);
+        
+        if (saveSuccess) {
+            // Usa await
+            await cargarDatos(); 
+            
+            // ... resto del código
+        } else {
+            throw new Error('Falló el guardado en la nube.');
+        }
+
+    } catch (error) {
+        // ...
     }
 }
 
@@ -2012,4 +2017,5 @@ window.forzarSincronizacion = forzarSincronizacion;
 window.cerrarModal = cerrarModal;
 window.mostrarInfoSync = mostrarInfoSync;
 window.diagnosticarSync = diagnosticarSync; // <-- ¡La exposición que elimina el ReferenceError!
+
 
