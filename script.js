@@ -24,7 +24,7 @@ const LOCAL_SYNC_ENDPOINT = '/api/sync';
 const GOOGLE_SCRIPT_URL = LOCAL_SYNC_ENDPOINT;
 
 // =============================================
-// SISTEMA DE CÓDIGO DE USUARIO - MULTIDISPOSITIVO
+// SISTEMA DE CÓDIGO DE USUARIO - MULTIDISPOSITIVO (VERSIÓN CORREGIDA)
 // =============================================
 
 async function initializeUserCodeSystem() {
@@ -52,8 +52,8 @@ async function initializeUserCodeSystem() {
 
 function generateUserCode() {
     // Generar código fácil de recordar: 3 letras + 3 números
-    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Sin I,O para evitar confusión
-    const numbers = '23456789'; // Sin 0,1 para evitar confusión
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const numbers = '23456789';
     
     let code = '';
     
@@ -69,8 +69,8 @@ function generateUserCode() {
     
     document.getElementById('user-code-input').value = code;
     
-    // Mostrar mensaje temporal
-    showTempMessage('¡Código generado! Anótalo para usarlo en otros dispositivos', 'success');
+    // Mostrar mensaje
+    mostrarStatus('¡Código generado! Anótalo para otros dispositivos', 'success');
 }
 
 function setUserCode() {
@@ -81,13 +81,13 @@ function setUserCode() {
     const codeRegex = /^[A-Z]{3}[2-9]{3}$/;
     
     if (!code) {
-        showTempMessage('Por favor ingresa un código', 'error');
+        mostrarStatus('Por favor ingresa un código', 'error');
         input.focus();
         return;
     }
     
     if (!codeRegex.test(code)) {
-        showTempMessage('Formato inválido. Debe ser 3 letras + 3 números (ej: ABC123)', 'error');
+        mostrarStatus('Formato inválido. Use 3 letras + 3 números (ej: ABC123)', 'error');
         input.focus();
         return;
     }
@@ -100,31 +100,23 @@ function setUserCode() {
     localStorage.setItem('ubercalc_user_code', code);
     
     console.log('✅ Código de usuario establecido:', code);
-    showTempMessage('¡Código configurado correctamente!', 'success');
+    mostrarStatus('¡Código configurado correctamente!', 'success');
     
     // Ocultar modal y mostrar banner
     hideUserCodeModal();
     showUserCodeBanner();
     
-    // Inicializar Google Sync con el nuevo código
-    setTimeout(async () => {
-        if (!googleSync) {
-            googleSync = new GoogleSync();
-            await googleSync.initialize();
-        }
-        
-        // Recargar datos con el nuevo userId
-        await cargarDatos();
-        actualizarInterfazPerfiles();
-        
-        console.log('🔄 App reiniciada con nuevo código de usuario');
-    }, 500);
+    // Reiniciar la app con el nuevo código
+    setTimeout(() => {
+        location.reload();
+    }, 1500);
 }
 
 function showUserCodeModal() {
     const modal = document.getElementById('user-code-modal');
     if (modal) {
         modal.style.display = 'flex';
+        console.log('✅ Modal de código mostrado');
     }
 }
 
@@ -2123,5 +2115,6 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
