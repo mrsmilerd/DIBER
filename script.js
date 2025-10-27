@@ -12,7 +12,7 @@ let timeoutCalculo = null;
 let googleSync;
 
 // --- Configuración Google Apps Script (CORREGIDO: Eliminamos el proxy externo inestable) ---
-const GOOGLE_SCRIPT_BASE_URL = 'https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
+const GOOGLE_SCRIPT_BASE_URL = 'https://script.google.com/macros/s/AKfycbzhDlVDb6B4nLnpgVuaPNk7hq6Srs5zGW2iqd4uiKnmBaLpk0_fyAUypNpwaoYJs0lZiQ/exec';
 const LOCAL_SYNC_ENDPOINT = '/api/sync'; 
 const GOOGLE_SCRIPT_URL = LOCAL_SYNC_ENDPOINT;
 
@@ -1994,6 +1994,7 @@ console.log('✅ Sincronización OK:', syncSuccess ? 'Éxito' : 'Falló');
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
 
