@@ -201,29 +201,32 @@ async makeRequest(params) {
     if (!this.initialized) return { success: false, message: 'Sync no inicializado.' };
 
     this.syncInProgress = true;
-    this.updateSyncStatus('syncing');
+    this.actualizarUIEstado('syncing'); // ⬅️ CORRECCIÓN 1: Usar actualizarUIEstado
 
     try {
         const profilesJson = JSON.stringify(profiles);
-// **IMPORTANTE:** El servidor está devolviendo un resultado. 
-        // Debemos asegurarnos de que la función retorne ese resultado.
-        const result = await this.request('syncProfiles', { profiles: profilesJson }); 
         
-        this.updateSyncStatus('connected');
+        // **IMPORTANTE:** El servidor está devolviendo un resultado. 
+        // Debemos asegurarnos de que la función retorne ese resultado.
+        const result = await this.makeRequest({ // ⬅️ CORRECCIÓN 2: Usar makeRequest y envolver en objeto
+            action: 'syncProfiles',
+            profiles: profiles
+        });
+        
+        this.actualizarUIEstado('connected'); // ⬅️ CORRECCIÓN 1
         console.log('✅ Sincronización completada:', result);
             
-// Devolvemos el resultado completo del servidor
+        // Devolvemos el resultado completo del servidor
         return result; 
 
     } catch (error) {
         console.error('❌ Error en syncProfiles:', error);
-        this.updateSyncStatus('error');
+        this.actualizarUIEstado('error'); // ⬅️ CORRECCIÓN 1
         return { success: false, message: error.message };
     } finally {
         this.syncInProgress = false;
     }
 }
-
     async getSyncStatus() {
         if (!this.initialized) return 'not_configured';
 
@@ -1978,6 +1981,7 @@ console.log('✅ Sincronización OK:', syncSuccess ? 'Éxito' : 'Falló');
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
 
