@@ -74,7 +74,15 @@ function generateUserCode() {
 }
 
 function setUserCode() {
+    console.log('🔄 Intentando establecer código de usuario...');
+    
     const input = document.getElementById('user-code-input');
+    if (!input) {
+        console.error('❌ No se encontró el input de código');
+        mostrarStatus('Error: No se puede encontrar el campo de código', 'error');
+        return;
+    }
+    
     let code = input.value.trim().toUpperCase();
     
     // Validar formato (3 letras + 3 números)
@@ -102,14 +110,19 @@ function setUserCode() {
     console.log('✅ Código de usuario establecido:', code);
     mostrarStatus('¡Código configurado correctamente!', 'success');
     
-    // Ocultar modal y mostrar banner
+    // Ocultar modal PRIMERO
     hideUserCodeModal();
-    showUserCodeBanner();
     
-    // Reiniciar la app con el nuevo código
+    // Mostrar banner DESPUÉS
     setTimeout(() => {
+        showUserCodeBanner();
+    }, 100);
+    
+    // Recargar después de un breve delay para que el usuario vea el mensaje
+    setTimeout(() => {
+        console.log('🔄 Recargando aplicación con nuevo código...');
         location.reload();
-    }, 1500);
+    }, 2000);
 }
 
 function showUserCodeModal() {
@@ -121,10 +134,31 @@ function showUserCodeModal() {
 }
 
 function hideUserCodeModal() {
+    console.log('🔄 Ejecutando hideUserCodeModal()...');
+    
     const modal = document.getElementById('user-code-modal');
     if (modal) {
+        console.log('✅ Modal encontrado, aplicando métodos de ocultación...');
+        
+        // Método 1: Usar classList para agregar clase hidden
+        modal.classList.add('hidden');
+        console.log('   - Clase "hidden" agregada');
+        
+        // Método 2: Establecer display none directamente
         modal.style.display = 'none';
-        console.log('✅ Modal de código ocultado');
+        console.log('   - display: none aplicado');
+        
+        // Método 3: Remover atributo style que pueda tener display:flex
+        modal.removeAttribute('style');
+        console.log('   - atributo style removido');
+        
+        // Método 4: Aplicar estilos CSS directamente
+        modal.style.cssText = 'display: none !important; visibility: hidden !important;';
+        console.log('   - cssText aplicado');
+        
+        console.log('🎉 Todos los métodos de ocultación aplicados');
+    } else {
+        console.error('❌ No se encontró el modal de código');
     }
 }
 
@@ -147,6 +181,27 @@ function showUserCodeBanner() {
     console.log('✅ Banner de código mostrado:', userCodeSystem.userCode);
 }
 
+function debugUserCodeModal() {
+    const modal = document.getElementById('user-code-modal');
+    console.log('🔍 DEBUG Modal de código:');
+    console.log(' - Elemento encontrado:', !!modal);
+    if (modal) {
+        console.log(' - display CSS:', modal.style.display);
+        console.log(' - inline style:', modal.getAttribute('style'));
+        console.log(' - computed display:', window.getComputedStyle(modal).display);
+    }
+    
+    // Probar ocultar modal
+    hideUserCodeModal();
+    
+    // Verificar después de ocultar
+    setTimeout(() => {
+        const modalAfter = document.getElementById('user-code-modal');
+        console.log('🔍 DESPUÉS de hideUserCodeModal:');
+        console.log(' - display CSS:', modalAfter.style.display);
+        console.log(' - computed display:', window.getComputedStyle(modalAfter).display);
+    }, 100);
+}
 // =============================================
 // CLASE GOOGLE SYNC (MODIFICADA PARA USAR CÓDIGO DE USUARIO)
 // =============================================
@@ -2080,6 +2135,7 @@ window.diagnosticarSync = diagnosticarSync;
 window.generateUserCode = generateUserCode;
 window.setUserCode = setUserCode;
 window.showUserCodeModal = showUserCodeModal;
+window.debugUserCodeModal = debugUserCodeModal;
 
 // --- Prevenir cierre accidental ---
 window.addEventListener('beforeunload', function(e) {
@@ -2115,6 +2171,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
