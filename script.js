@@ -11,8 +11,10 @@ let calculoActual = null;
 let timeoutCalculo = null;
 let googleSync;
 
-// --- Configuración Google Apps Script ---
-const GOOGLE_SCRIPT_URL = 'https://api.allorigins.win/raw?url=https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
+// --- Configuración Google Apps Script (CORREGIDO: Eliminamos el proxy externo inestable) ---
+const GOOGLE_SCRIPT_BASE_URL = 'https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec';
+const LOCAL_SYNC_ENDPOINT = '/api/sync'; 
+const GOOGLE_SCRIPT_URL = LOCAL_SYNC_ENDPOINT;
 
 // --- Clase Google Sync CORREGIDA ---
 class GoogleSync {
@@ -78,57 +80,66 @@ class GoogleSync {
         return userId;
     }
 
-    async makeRequest(params) {
-    if (!this.initialized) {
-        throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
-    }
-
-    try {
-        console.log('📤 Enviando request a Google Script...', params.action);
-        
-        // Construir URL con parámetros GET (más compatible con proxies)
-        const urlParams = new URLSearchParams();
-        Object.keys(params).forEach(key => {
-            if (key === 'profiles' && typeof params[key] === 'object') {
-                urlParams.append(key, JSON.stringify(params[key]));
-            } else {
-                urlParams.append(key, params[key]);
-            }
-        });
-        urlParams.append('userId', this.userId);
-        
-        const targetUrl = `https://script.google.com/macros/s/AKfycbzaqlVI14pvR1XQF0hrSRJuP8praHIEdqa9k3cGpzf9gf9ur0V81kWPNwOR7BCNHVaGgw/exec?${urlParams.toString()}&t=${Date.now()}`;
-        const finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-        
-        console.log('🔗 URL final:', finalUrl);
-        
-        const response = await fetch(finalUrl, {
-            method: 'GET', // Usar GET con proxy
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-
-        console.log('📥 Response status:', response.status, response.statusText);
-        
-        if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+async makeRequest(params) {
+        if (!this.initialized) {
+            throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
         }
 
-        const result = await response.json();
-        console.log('✅ Request exitoso:', params.action, result);
-        
-        if (result.success === false) {
-            throw new Error(result.error || 'Error del servidor');
+        try {
+            console.log('📤 Enviando request a Google Script a través de Vercel Proxy...', params.action);
+            
+            // 1. Construir la URL completa del Google Script (Target URL)
+            const urlParams = new URLSearchParams();
+            Object.keys(params).forEach(key => {
+                if (key === 'profiles' && typeof params[key] === 'object') {
+                    urlParams.append(key, JSON.stringify(params[key]));
+                } else {
+                    urlParams.append(key, params[key]);
+                }
+            });
+            urlParams.append('userId', this.userId);
+            
+            // Usamos la URL base limpia de Google Apps Script
+            const targetUrl = `${GOOGLE_SCRIPT_BASE_URL}?${urlParams.toString()}&t=${Date.now()}`;
+            
+            console.log('🔗 Target URL de Google Script:', targetUrl);
+            console.log('🔗 Enviando a Vercel Proxy:', LOCAL_SYNC_ENDPOINT);
+
+            // 2. Llamar al endpoint local de Vercel y pasar la URL de Google Script
+            const response = await fetch(LOCAL_SYNC_ENDPOINT, {
+                method: 'POST', // Usamos POST para enviar la URL en el body
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    targetUrl: targetUrl // Enviamos la URL completa del Google Script
+                })
+            });
+
+            console.log('📥 Response status:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                // Si la respuesta no es OK, obtenemos el cuerpo del error (que ya no será HTML)
+                const errorBody = await response.text(); 
+                throw new Error(`Error HTTP en Vercel Proxy: ${response.status} - ${errorBody}`);
+            }
+
+            // Aquí response.json() SÍ funcionará porque el proxy de Vercel nos devuelve JSON limpio.
+            const result = await response.json(); 
+            
+            console.log('✅ Request exitoso:', params.action, result);
+            
+            if (result.success === false) {
+                throw new Error(result.error || 'Error del servidor');
+            }
+            
+            return result;
+            
+        } catch (error) {
+            console.error('❌ Error en request:', error);
+            throw error;
         }
-        
-        return result;
-        
-    } catch (error) {
-        console.error('❌ Error en request:', error);
-        throw error;
     }
-}
 
     async saveProfiles(profiles) {
         if (!this.initialized) {
@@ -1936,6 +1947,7 @@ async function diagnosticarSync() {
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
 
