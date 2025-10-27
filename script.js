@@ -412,22 +412,18 @@ document.addEventListener('DOMContentLoaded', function() {
     configurarEventListeners();
 });
 
+// CRÍTICO: Debe ser ASYNC
 async function inicializarApp() {
     console.log('📡 Inicializando Google Sync...');
     
     // Inicializar Google Sync
     googleSync = new GoogleSync();
-    const googleReady = await googleSync.initialize();
+    // Aquí se necesita 'await' para esperar la inicialización
+    await googleSync.initialize(); 
     
-    if (googleReady) {
-        console.log('✅ Google Sync activo');
-        
-        // Cargar datos desde Google Sheets
-        await cargarDatos();
-    } else {
-        console.log('📱 Usando almacenamiento local (Google Sync no disponible)');
-        await cargarDatos();
-    }
+    // Cargar datos (esta función contiene el FIX de sincronización)
+    // Aquí se necesita 'await' para esperar la carga
+    await cargarDatos();
     
     aplicarTemaGuardado();
     actualizarInterfazPerfiles();
@@ -447,7 +443,6 @@ async function inicializarApp() {
     
     console.log('🎉 UberCalc con Google Sync inicializado correctamente');
 }
-
 function configurarEventListeners() {
     console.log('⚙️ Configurando event listeners...');
     
@@ -2017,3 +2012,4 @@ window.forzarSincronizacion = forzarSincronizacion;
 window.cerrarModal = cerrarModal;
 window.mostrarInfoSync = mostrarInfoSync;
 window.diagnosticarSync = diagnosticarSync; // <-- ¡La exposición que elimina el ReferenceError!
+
