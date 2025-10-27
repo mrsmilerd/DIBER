@@ -670,7 +670,21 @@
         #user-code-modal {
             z-index: 10001;
         }
+        
+    /* Estilos para ocultar el modal */
+    .hidden {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    
+    /* Asegurar que el modal se oculte */
+    #user-code-modal {
+        transition: all 0.3s ease;
+    }
     </style>
 </body>
 </html>
+
 
