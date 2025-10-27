@@ -1945,30 +1945,37 @@ setTimeout(() => {
     }
 }, 1000);
 
-// --- Función de Diagnóstico CORREGIDA ---
-async function diagnosticarSync() {
+function diagnosticarSync() {
+    // Implementación del diagnóstico para tu uso
     console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
     
-    if (!googleSync || !googleSync.initialized) {
-        console.error('❌ Google Sync no inicializado');
-        mostrarStatus('❌ Google Sync no inicializado', 'error');
-        return;
+    if (!googleSync || !googleSync.initialize) {
+        mostrarError('Google Sync no está inicializado. Ejecutando inicialización forzada...');
+        googleSync = new GoogleSync();
+        googleSync.initialize();
     }
+    
+    mostrarStatus('1. Probando conexión básica...', 'info');
 
     try {
-        // 1. Probar conexión básica
-        console.log('1. Probando conexión básica...');
-        mostrarStatus('1. Probando conexión básica...', 'info');
+        // Ejecutar las pruebas asíncronas
+        diagnosticoAsincrono();
         
-        const testResult = await googleSync.makeRequest({
-            action: 'getSyncStatus'
-        });
-        console.log('✅ Conexión básica OK:', testResult);
+    } catch (error) {
+        console.error('❌ ERROR CRÍTICO EN DIAGNÓSTICO:', error);
+        mostrarError(`❌ Error crítico en diagnóstico: ${error.message}`);
+    }
+}
 
-        // 2. Probar obtener perfiles
-        console.log('2. Probando obtener perfiles...');
+// Función auxiliar para manejar las promesas
+async function diagnosticoAsincrono() {
+    try {
+        // 1. Probar conexión básica
+        const statusData = await googleSync.getSyncStatus();
+        console.log('✅ Conexión básica OK:', statusData);
         mostrarStatus('2. Probando obtener perfiles...', 'info');
         
+        // 2. Probar obtener perfiles
         const perfiles = await googleSync.loadProfiles();
         console.log('✅ Obtención de perfiles OK:', perfiles?.length || 0);
 
@@ -1980,7 +1987,8 @@ async function diagnosticarSync() {
         if (perfiles && perfiles.length > 0) {
             saveResult = await googleSync.saveProfiles(perfiles);
         } else {
-            saveResult = await googleSync.saveProfiles([]);
+            // Guardar un perfil vacío si no hay nada
+            saveResult = await googleSync.saveProfiles([]); 
         }
         console.log('✅ Guardado de perfiles OK:', saveResult);
 
@@ -2004,6 +2012,7 @@ async function diagnosticarSync() {
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
 
