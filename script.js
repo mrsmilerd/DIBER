@@ -2009,9 +2009,14 @@ async function diagnosticoAsincrono() {
 }
 
 // Agregar diagnóstico al objeto window
-window.diagnosticarSync = diagnosticarSync;
+// --- Exposición Global de Funciones ---
+window.forzarSincronizacion = forzarSincronizacion;
+window.cerrarModal = cerrarModal;
+window.mostrarInfoSync = mostrarInfoSync;
+window.diagnosticarSync = diagnosticarSync; // <-- ¡Esta es la línea clave!
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
 
