@@ -1,7 +1,7 @@
 // api/sync.js
 
-// 1. Usa la sintaxis de importación moderna para Node.js (requiere que node-fetch esté instalado)
-import fetch from 'node-fetch'; // <--- CAMBIO CLAVE
+// Usa la sintaxis de importación de módulo ES
+import fetch from 'node-fetch'; // <--- Correcto para type: "module"
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -43,3 +43,4 @@ export default async function handler(request, response) {
         return response.status(500).json({ error: 'Internal Server Error in Vercel Proxy.', details: error.message });
     }
 }
+
