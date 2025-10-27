@@ -1979,9 +1979,10 @@ async function diagnosticarSync() {
         console.error('❌ ERROR EN DIAGNÓSTICO:', error);
         mostrarError(`❌ Error en diagnóstico: ${error.message}`);
     }
-
+}
 
 // Agregar diagnóstico al objeto window
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
