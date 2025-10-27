@@ -2010,14 +2010,17 @@ async function diagnosticoAsincrono() {
     }
 }
 
-// Agregar diagnóstico al objeto window
 // --- Exposición Global de Funciones ---
+// Asegura que las funciones de utilidad sean accesibles desde el HTML y la Consola.
+
+// (Añade o corrige las siguientes líneas al final del script)
 window.forzarSincronizacion = forzarSincronizacion;
 window.cerrarModal = cerrarModal;
 window.mostrarInfoSync = mostrarInfoSync;
-window.diagnosticarSync = diagnosticarSync; // <-- ¡Esta es la línea clave!
-
+window.alternarTema = alternarTema; // Si se llama desde HTML
+window.diagnosticarSync = diagnosticarSync; // <-- ¡Esta es la línea que faltaba!
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
 
