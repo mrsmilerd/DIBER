@@ -73,7 +73,7 @@ function generateUserCode() {
     showTempMessage('¡Código generado! Anótalo para usarlo en otros dispositivos', 'success');
 }
 
-function setUserCode() {
+unction setUserCode() {
     const input = document.getElementById('user-code-input');
     let code = input.value.trim().toUpperCase();
     
@@ -106,10 +106,19 @@ function setUserCode() {
     hideUserCodeModal();
     showUserCodeBanner();
     
-    // Recargar la app para aplicar el nuevo userId
-    setTimeout(() => {
-        location.reload();
-    }, 1000);
+    // Inicializar Google Sync con el nuevo código
+    setTimeout(async () => {
+        if (!googleSync) {
+            googleSync = new GoogleSync();
+            await googleSync.initialize();
+        }
+        
+        // Recargar datos con el nuevo userId
+        await cargarDatos();
+        actualizarInterfazPerfiles();
+        
+        console.log('🔄 App reiniciada con nuevo código de usuario');
+    }, 500);
 }
 
 function showUserCodeModal() {
@@ -128,16 +137,21 @@ function hideUserCodeModal() {
 
 function showUserCodeBanner() {
     const banner = document.getElementById('user-code-banner');
+    const bannerMain = document.getElementById('user-code-banner-main');
     const display = document.getElementById('user-code-display');
+    const displayMain = document.getElementById('user-code-display-main');
     
     if (banner && display && userCodeSystem.userCode) {
         display.textContent = `Código: ${userCodeSystem.userCode}`;
         banner.style.display = 'flex';
     }
-}
-
-function showTempMessage(message, type = 'info') {
-    mostrarStatus(message, type);
+    
+    if (bannerMain && displayMain && userCodeSystem.userCode) {
+        displayMain.textContent = `Código: ${userCodeSystem.userCode}`;
+        bannerMain.style.display = 'flex';
+    }
+    
+    console.log('✅ Banner de código mostrado:', userCodeSystem.userCode);
 }
 
 // =============================================
@@ -2108,3 +2122,4 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
