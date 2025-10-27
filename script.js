@@ -1054,24 +1054,26 @@ async function guardarPerfil(event) {
         perfilActual = perfil;
         console.log('🎯 Perfil actual establecido:', perfil.nombre);
     }
+
+    // ... Tu lógica anterior para crear el objeto 'perfil' y actualizar el array 'perfiles'
     
+    // 1. Guardar localmente
     guardarDatos();
-    
-    // Sincronizar con Google Sheets
-    if (googleSync && googleSync.initialized) {
-        const success = await googleSync.saveProfiles(perfiles);
-        if (success) {
-            mostrarStatus('✅ Perfil guardado y sincronizado en Google Sheets', 'success');
-        } else {
-            mostrarStatus('💾 Perfil guardado (solo local)', 'warning');
-        }
+
+    // 2. Sincronizar con el servidor de forma centralizada (¡LA SOLUCIÓN!)
+    await guardarYForzarSincronizacion();
+
+    // Si el perfil es nuevo o el actual, lo seleccionamos y mostramos la pantalla principal
+    if (!perfilActual || perfilId === perfilActual.id) {
+        perfilActual = perfil;
+        mostrarPantalla('main');
+        actualizarEstadisticas();
+        mostrarStatus(`Perfil "${perfil.nombre}" seleccionado`, 'success');
     } else {
-        mostrarStatus('💾 Perfil guardado (almacenamiento local)', 'info');
+        mostrarPantalla('perfil');
     }
     
-    actualizarInterfazPerfiles();
-    mostrarPantalla('perfil');
-}
+} // Fin de guardarPerfil
 
 function actualizarInterfazPerfiles() {
     if (!elementos.perfilesLista) {
@@ -1888,6 +1890,42 @@ setTimeout(() => {
     }
 }, 1000);
 
+/**
+ * Función central para guardar los perfiles locales y forzar la sincronización remota (PUSH).
+ * * Se DEBE llamar cada vez que el array global 'perfiles' se modifica 
+ * (crear, editar o eliminar un perfil).
+ */
+async function guardarYForzarSincronizacion() {
+    if (!googleSync || !googleSync.initialized) {
+        console.warn('⚠️ Google Sync no inicializado o no disponible. Solo se guardará localmente.');
+        mostrarStatus('⚠️ Solo guardado local. La sincronización en la nube falló.', 'warning');
+        return false;
+    }
+    
+    console.log('🔄 Iniciando sincronización remota de perfiles (PUSH)...');
+    mostrarStatus('Guardando cambios y sincronizando...', 'info');
+
+    try {
+        // Usamos syncProfiles para enviar el array global 'perfiles' al servidor.
+        const syncResult = await googleSync.syncProfiles(perfiles);
+        
+        if (syncResult && typeof syncResult === 'object') {
+            console.log('✅ Sincronización remota exitosa.');
+            mostrarStatus('✅ Cambios guardados y sincronizados', 'success');
+            return true;
+        } else {
+            console.error('❌ Fallo en la sincronización remota.', syncResult);
+            mostrarError(`❌ Error al sincronizar: Fallo de servidor o red.`);
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error en guardarYForzarSincronizacion:', error);
+        mostrarError(`❌ Error al guardar y sincronizar: ${error.message}`);
+        return false;
+    }
+}
+
 // --- Función de Diagnóstico CORREGIDA ---
 async function diagnosticarSync() {
     console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
@@ -1942,42 +1980,12 @@ async function diagnosticarSync() {
         mostrarError(`❌ Error en diagnóstico: ${error.message}`);
     }
 
-    /**
- * Función central para guardar los perfiles locales y forzar la sincronización remota (PUSH).
- * * Se DEBE llamar cada vez que el array global 'perfiles' se modifica 
- * (crear, editar o eliminar un perfil).
- */
-async function guardarYForzarSincronizacion() {
-    console.log('🔄 Iniciando guardado local y sincronización remota...');
-    mostrarStatus('Guardando cambios y sincronizando...', 'info');
-
-    try {
-        // Asegúrate de que la variable global 'perfiles' contenga la lista actualizada.
-        // 1. Sincronizar los perfiles actuales (PUSH al servidor)
-        const syncResult = await googleSync.syncProfiles(perfiles);
-        
-        if (syncResult && syncResult.success) {
-            console.log('✅ Sincronización remota exitosa.');
-            // Actualizar la interfaz/mostrar estado, etc.
-            mostrarStatus('✅ Cambios guardados y sincronizados', 'success');
-            return true;
-        } else {
-            console.error('❌ Fallo en la sincronización remota.', syncResult?.message);
-            mostrarError(`❌ Error al sincronizar: ${syncResult?.message || 'Fallo desconocido'}`);
-            return false;
-        }
-        
-    } catch (error) {
-        console.error('❌ Error en guardarYForzarSincronizacion:', error);
-        mostrarError(`❌ Error al guardar y sincronizar: ${error.message}`);
-        return false;
-    }
-}
 
 // Agregar diagnóstico al objeto window
 window.diagnosticarSync = diagnosticarSync;
 
 console.log('🎉 Script UberCalc con Google Sync cargado correctamente');
+
 
 
 
