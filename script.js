@@ -39,11 +39,16 @@ async function initializeUserCodeSystem() {
         userCodeSystem.initialized = true;
         
         console.log('✅ Código de usuario cargado:', userCodeSystem.userCode);
+        
+        // IMPORTANTE: Ocultar el modal aunque haya código
         hideUserCodeModal();
         showUserCodeBanner();
         
+        console.log('🔄 Código existe, continuando con inicialización...');
+        
     } else {
         console.log('🆕 No hay código de usuario, mostrando modal...');
+        // MOSTRAR el modal si no hay código
         showUserCodeModal();
     }
     
@@ -2073,26 +2078,40 @@ function formatearMoneda(valor) {
 // --- Persistencia de Datos MEJORADA ---
 async function cargarDatos() {
     try {
-        console.log('📥 Cargando datos...');
+        console.log('📥 CARGANDO DATOS - Iniciando...');
         
+        // 1. PRIMERO intentar cargar desde Google Sheets
         if (googleSync && googleSync.initialized) {
+            console.log('🔄 Intentando cargar desde Google Sheets...');
+            
             try {
                 const perfilesRemotos = await googleSync.loadProfiles();
+                console.log('📊 Respuesta de Google Sheets:', perfilesRemotos);
+                
                 if (perfilesRemotos !== null && perfilesRemotos.profiles) {
+                    // ✅ USAR los datos de Google Sheets
                     perfiles = perfilesRemotos.profiles;
                     perfilActual = perfiles.length > 0 ? perfiles[0] : null;
-                    historial = [];
+                    historial = []; // El historial se mantiene local
+                    
                     console.log('✅ Datos cargados desde Google Sheets. Perfiles:', perfiles.length);
-                    return;
+                    
+                    // Guardar localmente como backup
+                    guardarDatos();
+                    
+                    return; // Salir, ya tenemos datos
                 } else {
-                    console.log('⚠️ Google Sheets devolvió null, usando datos locales');
+                    console.log('⚠️ Google Sheets devolvió null o sin perfiles');
                 }
             } catch (googleError) {
-                console.warn('⚠️ Error cargando desde Google Sheets, usando datos locales:', googleError);
+                console.error('❌ Error cargando desde Google Sheets:', googleError);
             }
         }
         
+        // 2. FALLBACK: Cargar desde localStorage
+        console.log('📱 Usando datos locales (fallback)...');
         const datosGuardados = localStorage.getItem('uberCalc_data');
+        
         if (datosGuardados) {
             const datos = JSON.parse(datosGuardados);
             perfiles = datos.perfiles || [];
@@ -2101,9 +2120,17 @@ async function cargarDatos() {
             
             console.log('✅ Datos cargados desde localStorage. Perfiles:', perfiles.length);
             
+            // 3. SI hay datos locales, sincronizarlos con Google Sheets
             if (googleSync && googleSync.initialized && perfiles.length > 0) {
                 console.log('🔄 Sincronizando datos locales con Google Sheets...');
-                await googleSync.saveProfiles(perfiles);
+                setTimeout(async () => {
+                    try {
+                        await googleSync.saveProfiles(perfiles);
+                        console.log('✅ Datos locales sincronizados con Google Sheets');
+                    } catch (syncError) {
+                        console.error('❌ Error sincronizando:', syncError);
+                    }
+                }, 2000);
             }
         } else {
             console.log('ℹ️ No hay datos guardados localmente');
@@ -2111,8 +2138,10 @@ async function cargarDatos() {
             perfilActual = null;
             historial = [];
         }
+        
     } catch (error) {
-        console.error('❌ Error cargando datos:', error);
+        console.error('❌ Error crítico cargando datos:', error);
+        // Mantener funcionamiento básico
         perfiles = perfiles || [];
         perfilActual = perfilActual || null;
         historial = historial || [];
@@ -2135,6 +2164,30 @@ function guardarDatos() {
         console.error('❌ Error guardando datos:', error);
         mostrarError('Error al guardar datos en el almacenamiento local');
     }
+}
+
+function cambiarUsuario() {
+    console.log('🔄 Cambiando usuario...');
+    
+    // 1. Limpiar código actual
+    localStorage.removeItem('ubercalc_user_code');
+    localStorage.removeItem('uberCalc_data');
+    
+    // 2. Resetear sistema
+    userCodeSystem.userCode = null;
+    userCodeSystem.userId = null;
+    userCodeSystem.initialized = false;
+    
+    // 3. Mostrar modal de código
+    showUserCodeModal();
+    
+    // 4. Ocultar banners
+    const banner = document.getElementById('user-code-banner');
+    const bannerMain = document.getElementById('user-code-banner-main');
+    if (banner) banner.style.display = 'none';
+    if (bannerMain) bannerMain.style.display = 'none';
+    
+    console.log('✅ Sistema reiniciado, mostrando modal de código...');
 }
 
 // --- Función de Sincronización Centralizada ---
@@ -2239,6 +2292,7 @@ window.setUserCode = setUserCode;
 window.showUserCodeModal = showUserCodeModal;
 window.debugUserCodeModal = debugUserCodeModal;
 window.pruebaDirectaGoogleSheets = pruebaDirectaGoogleSheets;
+window.cambiarUsuario = cambiarUsuario;
 
 // --- Prevenir cierre accidental ---
 window.addEventListener('beforeunload', function(e) {
@@ -2274,6 +2328,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
