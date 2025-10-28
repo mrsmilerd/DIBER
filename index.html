@@ -12,77 +12,76 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
 <body>
-    <!-- Modal de Código de Usuario MEJORADO -->
-<div id="user-code-modal" class="modal-fondo">
-    <div class="modal-contenido" style="max-width: 500px; background: white; color: #333;">
-        <div class="modal-header" style="text-align: center; padding: 20px; border-bottom: 2px solid #007cba;">
-            <h2 style="margin: 0; color: #333;">🔄 Conectar Dispositivos</h2>
-            <p style="color: #666; margin: 10px 0 0 0;">Usa el MISMO código en todos tus dispositivos</p>
-        </div>
-        
-        <div class="modal-body" style="padding: 20px;">
-            <!-- Indicador de estado -->
-            <div id="code-status" style="display: none; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;"></div>
+    <!-- Modal de Código de Usuario (NUEVO de 3.1) -->
+    <div id="user-code-modal" class="modal-fondo">
+        <div class="modal-contenido" style="max-width: 500px; background: white; color: #333;">
+            <div class="modal-header" style="text-align: center; padding: 20px; border-bottom: 2px solid #007cba;">
+                <h2 style="margin: 0; color: #333;">🔄 Conectar Dispositivos</h2>
+                <p style="color: #666; margin: 10px 0 0 0;">Usa el MISMO código en todos tus dispositivos</p>
+            </div>
             
-            <div style="margin: 20px 0;">
-                <label for="user-code-input" style="display: block; margin-bottom: 10px; font-weight: bold; color: #333;">
-                    🔑 Tu Código de Sincronización:
-                </label>
-                <input type="text" id="user-code-input" 
-                       placeholder="Ej: ABC123 - Escribe aquí tu código"
-                       style="width: 100%; 
-                              padding: 15px; 
-                              font-size: 18px; 
-                              text-align: center; 
-                              letter-spacing: 2px;
-                              border: 2px solid #ddd;
-                              border-radius: 10px;
-                              background: #f9f9f9;
-                              color: #333;
-                              text-transform: uppercase;"
-                       maxlength="6">
-                <div style="text-align: center; margin-top: 10px;">
-                    <button onclick="generateUserCode()" 
-                            style="padding: 8px 16px; 
-                                   background: transparent; 
-                                   color: #007cba; 
-                                   border: 1px solid #007cba;
-                                   border-radius: 20px;
-                                   cursor: pointer;
-                                   font-size: 14px;">
-                        ✨ Generar Código Automático
+            <div class="modal-body" style="padding: 20px;">
+                <div id="code-status" style="display: none; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;"></div>
+                
+                <div style="margin: 20px 0;">
+                    <label for="user-code-input" style="display: block; margin-bottom: 10px; font-weight: bold; color: #333;">
+                        🔑 Tu Código de Sincronización:
+                    </label>
+                    <input type="text" id="user-code-input" 
+                           placeholder="Ej: ABC123 - Escribe aquí tu código"
+                           style="width: 100%; 
+                                  padding: 15px; 
+                                  font-size: 18px; 
+                                  text-align: center; 
+                                  letter-spacing: 2px;
+                                  border: 2px solid #ddd;
+                                  border-radius: 10px;
+                                  background: #f9f9f9;
+                                  color: #333;
+                                  text-transform: uppercase;"
+                           maxlength="6">
+                    <div style="text-align: center; margin-top: 10px;">
+                        <button onclick="generateUserCode()" 
+                                style="padding: 8px 16px; 
+                                       background: transparent; 
+                                       color: #007cba; 
+                                       border: 1px solid #007cba;
+                                       border-radius: 20px;
+                                       cursor: pointer;
+                                       font-size: 14px;">
+                            ✨ Generar Código Automático
+                        </button>
+                    </div>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0; font-size: 14px; color: #856404; text-align: center;">
+                        ⚠️ <strong>Importante:</strong> 
+                        <br>• Escribe un código o genera uno automático
+                        <br>• Usa el <strong>MISMO código</strong> en PC, móvil y tablet
+                        <br>• Ejemplos: ABC123, PC123, MOV456
+                    </p>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="setUserCode()" 
+                            style="flex: 1; 
+                                   padding: 15px; 
+                                   background: #007cba; 
+                                   color: white; 
+                                   border: none; 
+                                   border-radius: 10px;
+                                   font-size: 16px;
+                                   font-weight: bold;
+                                   cursor: pointer;">
+                        🚀 Conectar con este Código
                     </button>
                 </div>
             </div>
-            
-            <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                <p style="margin: 0; font-size: 14px; color: #856404; text-align: center;">
-                    ⚠️ <strong>Importante:</strong> 
-                    <br>• Escribe un código o genera uno automático
-                    <br>• Usa el <strong>MISMO código</strong> en PC, móvil y tablet
-                    <br>• Ejemplos: ABC123, PC123, MOV456
-                </p>
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button onclick="setUserCode()" 
-                        style="flex: 1; 
-                               padding: 15px; 
-                               background: #007cba; 
-                               color: white; 
-                               border: none; 
-                               border-radius: 10px;
-                               font-size: 16px;
-                               font-weight: bold;
-                               cursor: pointer;">
-                    🚀 Conectar con este Código
-                </button>
-            </div>
         </div>
     </div>
-</div>
 
-    <!-- Banner de Código de Usuario (se muestra en la app) -->
+    <!-- Banner de Código de Usuario (NUEVO de 3.1) -->
     <div id="user-code-banner" class="sync-status-bar" style="display: none;">
         <div class="sync-info">
             <span class="sync-icon">🔗</span>
@@ -94,7 +93,7 @@
         </button>
     </div>
 
-    <!-- Pantalla de Selección de Perfil -->
+    <!-- Pantalla de Selección de Perfil (DE 3.0) -->
     <div id="perfil-screen" class="screen active">
         <div class="container">
             <div class="logo-container">
@@ -111,17 +110,11 @@
                     <span class="button-icon">➕</span>
                     Crear Nuevo Perfil
                 </button>
-
-                <!-- Info de Sync -->
-                <div class="sync-info-small" id="sync-perfil-info">
-                    <span class="sync-icon">🌐</span>
-                    <span class="sync-text">Sincronización activa</span>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- Pantalla de Creación/Edición de Perfil -->
+    <!-- Pantalla de Creación/Edición de Perfil (DE 3.0) -->
     <div id="config-perfil-screen" class="screen">
         <div class="container">
             <div class="screen-header">
@@ -288,10 +281,10 @@
         </div>
     </div>
 
-    <!-- Pantalla Principal de Cálculos -->
+    <!-- Pantalla Principal de Cálculos (DE 3.0) -->
     <div id="main-screen" class="screen">
         <div class="container">
-            <!-- Header Mejorado -->
+            <!-- Header Mejorado (DE 3.0) -->
             <div class="app-header">
                 <div class="header-actions">
                     <button id="cambiar-perfil" class="secondary-button small" title="Cambiar perfil">
@@ -306,7 +299,7 @@
                 </div>
             </div>
 
-            <!-- Banner de Código de Usuario -->
+            <!-- Banner de Código de Usuario (NUEVO de 3.1) -->
             <div id="user-code-banner-main" class="sync-status-bar" style="display: none;">
                 <div class="sync-info">
                     <span class="sync-icon">🔗</span>
@@ -318,7 +311,7 @@
                 </button>
             </div>
 
-            <!-- Barra de Estado de Sync -->
+            <!-- Barra de Estado de Sync (NUEVO de 3.1) -->
             <div class="sync-status-bar">
                 <div class="sync-info" id="sync-info">
                     <span class="sync-icon" id="sync-icon">🌐</span>
@@ -330,12 +323,12 @@
                 </button>
             </div>
 
-            <!-- Indicador de Estado -->
+            <!-- Indicador de Estado (DE 3.0) -->
             <div id="status-indicator" class="status-indicator hidden">
                 <span id="status-text">Calculando...</span>
             </div>
 
-            <!-- Sistema de Pestañas -->
+            <!-- Sistema de Pestañas (DE 3.0) -->
             <div class="tabs-container">
                 <div class="tabs-header">
                     <button class="tab-button active" data-tab="calcular">
@@ -352,9 +345,9 @@
                     </button>
                 </div>
 
-                <!-- Contenido de Pestañas -->
+                <!-- Contenido de Pestañas (DE 3.0) -->
                 <div class="tab-content active" id="tab-calcular">
-                    <!-- Formulario Principal -->
+                    <!-- Formulario Principal (DE 3.0) -->
                     <div class="form-section">
                         <h2 class="section-title centered">📊 Datos del Viaje</h2>
                         
@@ -394,7 +387,7 @@
                             <span class="error-message" id="distancia-error"></span>
                         </div>
 
-                        <!-- Indicador de Cálculo Automático -->
+                        <!-- Indicador de Cálculo Automático (DE 3.0) -->
                         <div id="auto-calc-indicator" class="auto-calc-indicator hidden">
                             <div class="auto-calc-content">
                                 <span class="auto-calc-icon">🔄</span>
@@ -402,7 +395,7 @@
                             </div>
                         </div>
 
-                        <!-- Resultado Rápido -->
+                        <!-- Resultado Rápido (DE 3.0) -->
                         <div id="resultado-rapido" class="resultado-rapido hidden">
                             <div class="resultado-header">
                                 <h3>🎯 Resultado Instantáneo</h3>
@@ -425,7 +418,7 @@
                             </div>
                         </div>
 
-                        <!-- Botones de Acción -->
+                        <!-- Botones de Acción (DE 3.0) -->
                         <div class="action-buttons">
                             <button id="rechazar-viaje-tab" class="secondary-button">
                                 <span class="button-icon">❌</span>
@@ -440,7 +433,7 @@
                 </div>
 
                 <div class="tab-content" id="tab-resumen">
-                    <!-- Estadísticas del Día -->
+                    <!-- Estadísticas del Día (DE 3.0) -->
                     <div class="estadisticas-container">
                         <h3>📈 Estadísticas del Día</h3>
                         <div class="estadisticas-grid">
@@ -463,7 +456,7 @@
                         </div>
                     </div>
 
-                    <!-- Rendimiento -->
+                    <!-- Rendimiento (DE 3.0) -->
                     <div class="rendimiento-container">
                         <h3>🎯 Rendimiento</h3>
                         <div class="rendimiento-grid">
@@ -480,7 +473,7 @@
                 </div>
 
                 <div class="tab-content" id="tab-historial">
-                    <!-- Historial de Cálculos -->
+                    <!-- Historial de Cálculos (DE 3.0) -->
                     <div class="history-section">
                         <div id="history-list" class="history-list">
                             <!-- Los cálculos aparecerán aquí -->
@@ -499,7 +492,7 @@
         </div>
     </div>
 
-    <!-- Modal de Resultados Mejorado -->
+    <!-- Modal de Resultados Mejorado (DE 3.0) -->
     <div id="modalFondo" class="modal-fondo">
         <div id="modalContenido" class="modal-contenido">
             <span class="cerrar-btn" onclick="cerrarModal()">&times;</span>
@@ -531,7 +524,7 @@
         </div>
     </div>
 
-    <!-- Modal de Exportación Mejorado -->
+    <!-- Modal de Exportación Mejorado (DE 3.0) -->
     <div id="exportModal" class="modal-fondo">
         <div class="modal-contenido">
             <span class="cerrar-btn" onclick="cerrarExportModal()">&times;</span>
@@ -550,7 +543,7 @@
         </div>
     </div>
 
-    <!-- Panel de Sincronización Firebase -->
+    <!-- Panel de Sincronización Firebase (NUEVO de 3.1) -->
     <div id="sync-panel" class="modal-fondo">
         <div class="modal-contenido">
             <span class="cerrar-btn" onclick="cerrarSyncPanel()">&times;</span>
@@ -602,44 +595,26 @@
                         Sincronizar Ahora
                     </button>
                     
-<button class="secondary-button" onclick="forzarSincronizacionCompleta()">
-                    <span class="button-icon">🔄</span>
-                    Sincronización Completa
-                </button>
-                
-                <button class="secondary-button" onclick="mostrarInfoSync()">
-                    <span class="button-icon">ℹ️</span>
-                    Cómo Funciona
-                </button>
-                
-                <button class="secondary-button" onclick="showUserCodeModal()">
-                    <span class="button-icon">🔑</span>
-                    Cambiar Código
-                </button>
-                
-                <button class="secondary-button" onclick="diagnosticarSync()">
-                    <span class="button-icon">🔧</span>
-                    Diagnóstico
-                </button>
-                
-                <button class="secondary-button" onclick="cambiarUsuario()">
-                    <span class="button-icon">🔄</span>
-                    Cambiar Usuario
-                </button>
-            </div>
+                    <button class="secondary-button" onclick="forzarSincronizacionCompleta()">
+                        <span class="button-icon">🔄</span>
+                        Sincronización Completa
+                    </button>
                     
                     <button class="secondary-button" onclick="mostrarInfoSync()">
                         <span class="button-icon">ℹ️</span>
                         Cómo Funciona
                     </button>
+                    
                     <button class="secondary-button" onclick="showUserCodeModal()">
                         <span class="button-icon">🔑</span>
                         Cambiar Código
                     </button>
+                    
                     <button class="secondary-button" onclick="diagnosticarSync()">
                         <span class="button-icon">🔧</span>
                         Diagnóstico
                     </button>
+                    
                     <button class="secondary-button" onclick="cambiarUsuario()">
                         <span class="button-icon">🔄</span>
                         Cambiar Usuario
@@ -660,202 +635,6 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="script.js"></script> 
-    
-    <!-- Estilos adicionales para el sistema de código -->
-    <style>
-        /* Estilos para el modal de código de usuario */
-        #user-code-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        #user-code-modal.active {
-            display: flex !important;
-        }
-        
-        #user-code-modal.hidden {
-            display: none !important;
-        }
-        
-        .modal-contenido {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            max-width: 500px;
-            width: 90%;
-            margin: 20px;
-        }
-        
-        #user-code-input:focus {
-            outline: none;
-            border-color: #007cba;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-        }
-        
-        #user-code-banner {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            margin: 10px 0;
-            padding: 10px 15px;
-        }
-        
-        #user-code-banner .sync-info {
-            color: white;
-        }
-        
-        #user-code-banner .sync-details-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-        
-        #user-code-banner .sync-details-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        /* Asegurar que los modales tengan buen z-index */
-        .modal-fondo {
-            z-index: 10000;
-        }
-        
-        #user-code-modal {
-            z-index: 10001;
-        }
-        
-        /* Estilos para el botón Conectar */
-        #user-code-modal button {
-            background: #007cba !important;
-            color: white !important;
-            border: none !important;
-            padding: 15px !important;
-            border-radius: 10px !important;
-            font-size: 16px !important;
-            font-weight: bold !important;
-            cursor: pointer !important;
-            width: 100% !important;
-        }
-        
-        #user-code-modal button:hover {
-            background: #005a87 !important;
-        }
-
-        /* Estilos para el panel de sincronización */
-        .sync-panel-content {
-            padding: 20px;
-        }
-
-        .sync-info-section,
-        .sync-status-section {
-            margin-bottom: 25px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #007cba;
-        }
-
-        .device-info-current {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .device-icon {
-            font-size: 24px;
-        }
-
-        .device-details {
-            flex: 1;
-        }
-
-        .device-id {
-            font-size: 12px;
-            color: #666;
-            display: block;
-            margin-top: 5px;
-        }
-
-        .connection-status {
-            display: grid;
-            gap: 10px;
-        }
-
-        .status-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .status-item:last-child {
-            border-bottom: none;
-        }
-
-        .status-label {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .status-value {
-            color: #007cba;
-            font-weight: 500;
-        }
-
-        .sync-actions-panel {
-            display: grid;
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .sync-tips {
-            background: #fff3cd;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #ffc107;
-        }
-
-        .sync-tips h4 {
-            margin: 0 0 10px 0;
-            color: #856404;
-        }
-
-        .sync-tips ul {
-            margin: 0;
-            padding-left: 20px;
-            color: #856404;
-        }
-
-        .sync-tips li {
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .sync-status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 15px;
-            background: #e7f3ff;
-            border-radius: 20px;
-            color: #007cba;
-            font-weight: 500;
-        }
-    </style>
+    <script src="script.js"></script>
 </body>
 </html>
-
