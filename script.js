@@ -357,7 +357,7 @@ function debugUserCodeModal() {
  * * NOTA: Reubicada en esta posición para asegurar que actualizarSelectorPerfiles() esté definida.
  */
 function cambiarUsuario() {
-    console.log('🔄 Iniciando cambio de usuario. Limpiando sesión...');
+    console.log('🔄 Iniciando cambio de usuario. Limpiando sesión y memoria...');
     
     // 1. Limpiar código y ID de usuario en LocalStorage
     localStorage.removeItem('ubercalc_user_code'); 
@@ -369,13 +369,14 @@ function cambiarUsuario() {
     userCodeSystem.userId = null;
     userCodeSystem.initialized = false;
     
-    // 3. Reiniciar los arrays de datos en memoria (¡CRÍTICO!)
+    // 3. Reiniciar los arrays de datos en memoria (¡ESTO ES LO QUE SOLUCIONA TU PROBLEMA!)
     perfiles = [];
     perfilActual = null;
     historial = [];
     
-    // 4. Resetear la interfaz (la función actualizarSelectorPerfiles ya estará definida aquí)
-    actualizarSelectorPerfiles(); // Borra perfiles del desplegable
+    // 4. Resetear la interfaz y el selector de perfiles
+    // Nota: Esta línea ahora no dará error porque está ubicada correctamente.
+    actualizarSelectorPerfiles(); 
     
     // 5. Ocultar banners 
     const banner = document.getElementById('user-code-banner');
@@ -386,7 +387,7 @@ function cambiarUsuario() {
     // 6. Mostrar el modal de código para la nueva entrada
     showUserCodeModal(); 
     
-    console.log('✅ Sesión reiniciada. El nuevo código forzará una carga de datos limpia.');
+    console.log('✅ Sesión reiniciada. Los datos anteriores se borraron de la memoria.');
 }
 
 // =============================================
@@ -2539,6 +2540,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
