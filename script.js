@@ -2540,6 +2540,7 @@ window.showUserCodeModal = showUserCodeModal;
 window.debugUserCodeModal = debugUserCodeModal;
 window.pruebaDirectaGoogleSheets = pruebaDirectaGoogleSheets;
 window.cambiarUsuario = cambiarUsuario;
+window.reiniciarGoogleSync = reiniciarGoogleSync;
 
 // =============================================
 // FUNCIÓN DE CONTROL DE SESIÓN (UBICACIÓN FINAL Y SEGURA)
@@ -2610,6 +2611,27 @@ function verificarEstadoSync() {
     console.log('- guardarDatos definido:', typeof guardarDatos);
 }
 
+function reiniciarGoogleSync() {
+    console.log('🔄 Reiniciando Google Sync completamente...');
+    
+    // Destruir instancia existente
+    googleSync = null;
+    
+    // Crear nueva instancia
+    googleSync = new GoogleSync();
+    
+    // Forzar inicialización
+    googleSync.initialize().then(success => {
+        if (success) {
+            console.log('✅ Google Sync reinicializado correctamente');
+            mostrarStatus('Google Sync reinicializado', 'success');
+        } else {
+            console.error('❌ No se pudo reinicializar Google Sync');
+            mostrarStatus('Error reinicializando Google Sync', 'error');
+        }
+    });
+}
+
 // --- Prevenir cierre accidental ---
 window.addEventListener('beforeunload', function(e) {
     const tieneDatosPendientes = elementos.tarifaInput?.value || 
@@ -2644,6 +2666,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
