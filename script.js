@@ -27,31 +27,27 @@ const GOOGLE_SCRIPT_URL = LOCAL_SYNC_ENDPOINT;
 // PERSISTENCIA DE DATOS (NUEVAS FUNCIONES CRÍTICAS PARA LA SINCRONIZACIÓN)
 // =============================================
 
-/**
- * Guarda los arrays 'perfiles' e 'historial' en LocalStorage y los sincroniza con Google Sheets (Nube).
- * Es fundamental para el funcionamiento multi-dispositivo.
- */
-async function guardarDatos() {  // ✅ AÑADIR 'async' AQUÍ
+async function guardarDatos() {
     console.log('💾 Guardando datos en local storage...');
     
     // Guardar en LocalStorage (Caché y fallback)
-   localStorage.setItem('ubercalc_perfiles', JSON.stringify(perfiles));
-    localStorage.setItem('ubercalc_historial', JSON.stringify(historial)); // ¡Historial local OK!
+    localStorage.setItem('ubercalc_perfiles', JSON.stringify(perfiles));
+    localStorage.setItem('ubercalc_historial', JSON.stringify(historial));
     if (perfilActual) {
         localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
     }
 
-    // Sincronizar con Google Sheets (AÑADIR HISTORIAL)
+    // Sincronizar con Google Sheets
     if (window.googleSync && googleSync.initialized) {
         console.log('☁️ Sincronizando datos con Google Sheets...');
         
         try {
             // 1. Sincronizar Perfiles
-            await googleSync.saveProfiles(perfiles);  // ✅ AÑADIR 'await' AQUÍ
+            await googleSync.saveProfiles(perfiles);
             console.log('✅ Perfiles guardados en la nube');
             
-            // 2. Sincronizar Historial (¡NUEVO!)
-            await googleSync.saveHistory(historial);  // ✅ AÑADIR 'await' AQUÍ
+            // 2. Sincronizar Historial
+            await googleSync.saveHistory(historial);
             console.log('✅ Historial guardado en la nube');
             
         } catch (error) {
@@ -2558,25 +2554,21 @@ window.cambiarUsuario = cambiarUsuario;
 function cambiarUsuario() {
     console.log('🔄 Iniciando cambio de usuario. Limpiando sesión COMPLETA...');
     
-    if (confirm('¿Estás seguro de que quieres cambiar de usuario? Se perderán todos los datos locales no sincronizados.')) {
+    if (confirm('¿Estás seguro de que quieres cambiar de usuario? Se perderán TODOS los datos locales y se creará una sesión completamente nueva.')) {
         
-        // 1. Limpiar TODO en LocalStorage
-        localStorage.removeItem('ubercalc_user_code');
-        localStorage.removeItem('ubercalc_user_id');
-        localStorage.removeItem('ubercalc_perfiles');
-        localStorage.removeItem('ubercalc_historial');
-        localStorage.removeItem('ubercalc_perfil_actual_id');
-        localStorage.removeItem('uberCalc_data');
+        // 1. Limpiar ABSOLUTAMENTE TODO en LocalStorage
+        localStorage.clear(); // ⚠️ ESTO LIMPIA TODO
         
         // 2. Resetear el estado del sistema de código
         userCodeSystem.userCode = null;
         userCodeSystem.userId = null;
         userCodeSystem.initialized = false;
         
-        // 3. Reiniciar Google Sync
+        // 3. Reiniciar Google Sync COMPLETAMENTE
         if (googleSync) {
             googleSync.initialized = false;
             googleSync.userId = null;
+            googleSync = null; // ⚠️ ELIMINAR LA INSTANCIA
         }
         
         // 4. Limpiar datos en memoria
@@ -2594,20 +2586,28 @@ function cambiarUsuario() {
         if (banner) banner.style.display = 'none';
         if (bannerMain) bannerMain.style.display = 'none';
         
-        // 7. Mostrar pantalla de perfiles (vacía)
-        mostrarPantalla('perfil');
-        actualizarInterfazPerfiles();
-        
-        // 8. Mostrar modal de código NUEVO
+        // 7. RECARGAR LA PÁGINA COMPLETAMENTE
+        console.log('🔄 Recargando página para nueva sesión...');
         setTimeout(() => {
-            showUserCodeModal();
-            console.log('✅ Sesión completamente reiniciada. Listo para nuevo código.');
-            mostrarStatus('Sesión reiniciada. Ingresa un nuevo código.', 'info');
+            location.reload(true); // ⚠️ RECARGAR FORZOSAMENTE
         }, 500);
         
     } else {
         console.log('❌ Cambio de usuario cancelado');
     }
+}
+
+function verificarEstadoSync() {
+    console.log('🔍 DIAGNÓSTICO COMPLETO:');
+    console.log('- userCodeSystem:', userCodeSystem);
+    console.log('- googleSync:', googleSync);
+    console.log('- googleSync.initialized:', googleSync?.initialized);
+    console.log('- googleSync.userId:', googleSync?.userId);
+    console.log('- perfiles.length:', perfiles.length);
+    console.log('- historial.length:', historial.length);
+    
+    // Verificar si hay funciones duplicadas
+    console.log('- guardarDatos definido:', typeof guardarDatos);
 }
 
 // --- Prevenir cierre accidental ---
@@ -2644,6 +2644,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
