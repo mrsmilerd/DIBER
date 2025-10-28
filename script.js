@@ -914,27 +914,22 @@ function configurarEventListeners() {
     elementos.exportarHistorialBtn.addEventListener('click', mostrarModalExportacion);
     
     // Perfiles
-    elementos.nuevoPerfilBtn.addEventListener('click', function() {
-        console.log('➕ Creando nuevo perfil');
-        mostrarConfigPerfil();
-    });
-    
-    elementos.volverPerfilesBtn.addEventListener('click', function() {
-        console.log('⬅️ Volviendo a perfiles');
-        mostrarPantalla('perfil');
-    });
-    
-    elementos.cancelarPerfilBtn.addEventListener('click', function() {
-        console.log('❌ Cancelando creación/edición de perfil');
-        mostrarPantalla('perfil');
-    });
-    
-    elementos.cambiarPerfilBtn.addEventListener('click', function() {
-        console.log('👤 Cambiando perfil');
-        mostrarPantalla('perfil');
-    });
-    
-    elementos.perfilForm.addEventListener('submit', guardarPerfil);
+   elementos.nuevoPerfilBtn.addEventListener('click', function() {
+    console.log('➕ Creando nuevo perfil');
+    mostrarConfigPerfil(); // Sin parámetros = nuevo perfil
+});
+
+elementos.volverPerfilesBtn.addEventListener('click', function() {
+    console.log('⬅️ Volviendo a perfiles');
+    mostrarPantalla('perfil');
+});
+
+elementos.cancelarPerfilBtn.addEventListener('click', function() {
+    console.log('❌ Cancelando creación/edición de perfil');
+    mostrarPantalla('perfil');
+});
+
+elementos.perfilForm.addEventListener('submit', guardarPerfil);
     
     // Tema
     elementos.themeToggle.addEventListener('click', alternarTema);
@@ -1214,28 +1209,50 @@ function actualizarInterfazPerfiles() {
 function mostrarConfigPerfil(perfilExistente = null) {
     console.log('⚙️ Mostrando configuración de perfil');
     
+    // Resetear formulario
     elementos.perfilForm.reset();
     
     if (perfilExistente) {
         // Modo edición
         document.getElementById('perfil-id').value = perfilExistente.id;
-        document.getElementById('perfil-nombre').value = perfilExistente.nombre;
-        document.getElementById('perfil-vehiculo').value = perfilExistente.vehiculo || '';
-        document.getElementById('tipo-combustible').value = perfilExistente.tipoCombustible || 'gasolina';
-        document.getElementById('costo-operacional').value = perfilExistente.costoOperacional || '';
+        document.getElementById('nombre-perfil').value = perfilExistente.nombre;
         document.getElementById('tipo-medida').value = perfilExistente.tipoMedida || 'km';
-        document.getElementById('moneda').value = perfilExistente.moneda || 'USD';
+        document.getElementById('tipo-combustible').value = perfilExistente.tipoCombustible || 'glp';
+        document.getElementById('rendimiento').value = perfilExistente.rendimiento || '';
+        document.getElementById('precio-combustible').value = perfilExistente.precioCombustible || '';
+        document.getElementById('moneda').value = perfilExistente.moneda || 'DOP';
+        document.getElementById('umbral-minuto-rentable').value = perfilExistente.umbralMinutoRentable || '6.00';
+        document.getElementById('umbral-km-rentable').value = perfilExistente.umbralKmRentable || '25.00';
+        document.getElementById('umbral-minuto-oportunidad').value = perfilExistente.umbralMinutoOportunidad || '5.00';
+        document.getElementById('umbral-km-oportunidad').value = perfilExistente.umbralKmOportunidad || '23.00';
+        document.getElementById('costo-seguro').value = perfilExistente.costoSeguro || '0';
+        document.getElementById('costo-mantenimiento').value = perfilExistente.costoMantenimiento || '0';
         
-        document.querySelector('#config-perfil-screen h2').textContent = 'Editar Perfil';
-        document.querySelector('#perfil-form button[type="submit"]').textContent = 'Actualizar Perfil';
+        // Actualizar título
+        document.querySelector('#config-perfil-screen h2').textContent = '✏️ Editar Perfil';
     } else {
-        // Modo creación
+        // Modo creación - limpiar ID
         document.getElementById('perfil-id').value = '';
-        document.querySelector('#config-perfil-screen h2').textContent = 'Nuevo Perfil';
-        document.querySelector('#perfil-form button[type="submit"]').textContent = 'Crear Perfil';
+        
+        // Establecer valores por defecto
+        document.getElementById('umbral-minuto-rentable').value = '6.00';
+        document.getElementById('umbral-km-rentable').value = '25.00';
+        document.getElementById('umbral-minuto-oportunidad').value = '5.00';
+        document.getElementById('umbral-km-oportunidad').value = '23.00';
+        document.getElementById('costo-seguro').value = '0';
+        document.getElementById('costo-mantenimiento').value = '0';
+        
+        // Actualizar título
+        document.querySelector('#config-perfil-screen h2').textContent = '➕ Crear Nuevo Perfil';
     }
     
+    // Actualizar unidades según la configuración
+    actualizarUnidades();
+    
+    // Mostrar la pantalla de configuración
     mostrarPantalla('config-perfil');
+    
+    console.log('✅ Pantalla de configuración de perfil mostrada');
 }
 
 function guardarPerfil(event) {
@@ -1533,21 +1550,21 @@ function mostrarPantalla(pantalla) {
     console.log('🖥️ Mostrando pantalla:', pantalla);
     
     // Ocultar todas las pantallas
-    if (elementos.perfilScreen) elementos.perfilScreen.classList.add('hidden');
-    if (elementos.configPerfilScreen) elementos.configPerfilScreen.classList.add('hidden');
-    if (elementos.mainScreen) elementos.mainScreen.classList.add('hidden');
+    document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+    });
     
     // Mostrar pantalla seleccionada
     switch(pantalla) {
         case 'perfil':
-            if (elementos.perfilScreen) elementos.perfilScreen.classList.remove('hidden');
+            if (elementos.perfilScreen) elementos.perfilScreen.classList.add('active');
             actualizarInterfazPerfiles();
             break;
         case 'config-perfil':
-            if (elementos.configPerfilScreen) elementos.configPerfilScreen.classList.remove('hidden');
+            if (elementos.configPerfilScreen) elementos.configPerfilScreen.classList.add('active');
             break;
         case 'main':
-            if (elementos.mainScreen) elementos.mainScreen.classList.remove('hidden');
+            if (elementos.mainScreen) elementos.mainScreen.classList.add('active');
             if (perfilActual) {
                 document.getElementById('perfil-actual-nombre').textContent = perfilActual.nombre;
             }
@@ -1691,3 +1708,4 @@ window.addEventListener('click', function(event) {
 });
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
