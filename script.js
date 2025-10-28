@@ -279,8 +279,8 @@ async function guardarDatos() {
         localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
     }
 
-    // Sincronizar con Firebase - VERIFICACIÓN CORREGIDA
-    if (firebaseSync && firebaseSync.initialized) {
+    // Sincronizar con Firebase - VERIFICACIÓN MEJORADA
+    if (firebaseSync && firebaseSync.initialized === true) {
         console.log('☁️ Sincronizando datos con Firebase...');
         
         try {
@@ -298,11 +298,18 @@ async function guardarDatos() {
 
     } else {
         console.warn('⚠️ Firebase Sync no inicializado o no disponible. Solo se guarda en local.');
-        console.log('🔍 Estado de Firebase Sync:', {
-            firebaseSync: !!firebaseSync,
+        console.log('🔍 Estado detallado de Firebase Sync:', {
+            firebaseSyncExists: !!firebaseSync,
             initialized: firebaseSync?.initialized,
-            userId: firebaseSync?.userId
+            userId: firebaseSync?.userId,
+            userCodeSystem: userCodeSystem.initialized
         });
+        
+        // Intentar reinicializar Firebase Sync si es necesario
+        if (userCodeSystem.initialized && (!firebaseSync || !firebaseSync.initialized)) {
+            console.log('🔄 Intentando reinicializar Firebase Sync...');
+            await initializeFirebaseSyncWithRetry();
+        }
     }
 }
 
@@ -491,9 +498,18 @@ function setUserCode() {
     console.log('✅ UserID:', userCodeSystem.userId);
     
     // Ocultar modal después de éxito
-    setTimeout(() => {
+    setTimeout(async () => {
         hideUserCodeModal();
         showUserCodeBanner();
+        
+        // INICIALIZAR FIREBASE SYNC PARA EL NUEVO USUARIO
+        console.log('🔄 Inicializando Firebase Sync para el nuevo usuario...');
+        const firebaseReady = await initializeFirebaseSyncWithRetry();
+        
+        if (firebaseReady) {
+            console.log('✅ Firebase Sync inicializado para nuevo usuario');
+            await cargarDatos(); // Cargar datos existentes si los hay
+        }
         
         // Para nuevos usuarios, mostrar pantalla de perfiles
         const esNuevoUsuario = perfiles.length === 0;
@@ -503,13 +519,9 @@ function setUserCode() {
             mostrarPantalla('perfil');
             mostrarStatus(`¡Bienvenido! Crea tu primer perfil para comenzar`, 'success');
         } else {
-            console.log('🔄 Usuario existente, continuando con la app...');
-            // Recargar la aplicación para usuarios existentes
-            setTimeout(() => {
-                console.log('🔄 Recargando aplicación con nuevo código...');
-                mostrarStatus(`¡Conectado con código: ${code}! Sincronizando...`, 'success');
-                location.reload();
-            }, 1000);
+            console.log('🔄 Usuario existente, mostrando pantalla principal...');
+            mostrarPantalla('main');
+            mostrarStatus(`¡Bienvenido de vuelta!`, 'success');
         }
         
     }, 1500);
@@ -1020,13 +1032,15 @@ async function inicializarApp() {
             return; // Salir aquí si no hay código
         }
         
-        // 2. LUEGO: Inicializar Firebase Sync con reintentos
+        // 2. LUEGO: Inicializar Firebase Sync con reintentos - PARA TODOS LOS USUARIOS
+        console.log('🔄 Inicializando Firebase Sync para el usuario...');
         const firebaseReady = await initializeFirebaseSyncWithRetry();
         
         if (firebaseReady) {
+            console.log('✅ Firebase Sync inicializado, cargando datos...');
             await cargarDatos();
         } else {
-            console.log('📱 Usando almacenamiento local');
+            console.log('📱 Firebase Sync no disponible, usando almacenamiento local');
             await cargarDatos();
         }
         
@@ -1535,23 +1549,43 @@ function guardarPerfil(event) {
     
     const formData = new FormData(elementos.perfilForm);
     const perfilId = formData.get('perfil-id') || 'perfil_' + Date.now();
-    const nombre = formData.get('perfil-nombre');
-    const vehiculo = formData.get('perfil-vehiculo');
-    const tipoCombustible = formData.get('tipo-combustible');
-    const costoOperacional = parseFloat(formData.get('costo-operacional')) || 0;
-    const tipoMedida = formData.get('tipo-medida');
-    const moneda = formData.get('moneda');
+    
+    // OBTENER VALORES CORRECTAMENTE - CORREGIDO
+    const nombre = document.getElementById('nombre-perfil').value;
+    const tipoMedida = document.getElementById('tipo-medida').value;
+    const tipoCombustible = document.getElementById('tipo-combustible').value;
+    const rendimiento = parseFloat(document.getElementById('rendimiento').value) || 0;
+    const precioCombustible = parseFloat(document.getElementById('precio-combustible').value) || 0;
+    const moneda = document.getElementById('moneda').value;
+    const umbralMinutoRentable = parseFloat(document.getElementById('umbral-minuto-rentable').value) || 0;
+    const umbralKmRentable = parseFloat(document.getElementById('umbral-km-rentable').value) || 0;
+    const umbralMinutoOportunidad = parseFloat(document.getElementById('umbral-minuto-oportunidad').value) || 0;
+    const umbralKmOportunidad = parseFloat(document.getElementById('umbral-km-oportunidad').value) || 0;
+    const costoSeguro = parseFloat(document.getElementById('costo-seguro').value) || 0;
+    const costoMantenimiento = parseFloat(document.getElementById('costo-mantenimiento').value) || 0;
+    
+    // VALIDAR CAMPOS REQUERIDOS
+    if (!nombre || !tipoMedida || !tipoCombustible || rendimiento <= 0 || precioCombustible <= 0) {
+        mostrarError('Por favor, completa todos los campos requeridos con valores válidos.');
+        return;
+    }
     
     const perfilData = {
         id: perfilId,
-        nombre,
-        vehiculo,
-        tipoCombustible,
-        costoOperacional,
-        tipoMedida,
-        moneda,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        nombre: nombre,
+        tipoMedida: tipoMedida,
+        tipoCombustible: tipoCombustible,
+        rendimiento: rendimiento,
+        precioCombustible: precioCombustible,
+        moneda: moneda,
+        umbralMinutoRentable: umbralMinutoRentable,
+        umbralKmRentable: umbralKmRentable,
+        umbralMinutoOportunidad: umbralMinutoOportunidad,
+        umbralKmOportunidad: umbralKmOportunidad,
+        costoSeguro: costoSeguro,
+        costoMantenimiento: costoMantenimiento,
+        fechaCreacion: new Date().toISOString(),
+        fechaActualizacion: new Date().toISOString()
     };
     
     const perfilExistenteIndex = perfiles.findIndex(p => p.id === perfilId);
@@ -1573,13 +1607,14 @@ function guardarPerfil(event) {
     if (!perfilActual || perfiles.length === 1) {
         perfilActual = perfilData;
         localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
+        console.log('✅ Perfil establecido como actual:', perfilActual.nombre);
     }
     
     guardarDatos();
     actualizarInterfazPerfiles();
     mostrarPantalla('perfil');
     
-    mostrarStatus('Perfil guardado correctamente', 'success');
+    mostrarStatus(`Perfil "${perfilData.nombre}" guardado correctamente`, 'success');
 }
 
 function seleccionarPerfil(perfilId) {
@@ -2232,6 +2267,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
