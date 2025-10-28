@@ -56,7 +56,8 @@ async function initializeUserCodeSystem() {
 }
 
 function generateUserCode() {
-    // Generar código fácil de recordar: 3 letras + 3 números
+    console.log('🎲 Generando código válido...');
+    
     const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
     const numbers = '23456789';
     
@@ -67,21 +68,40 @@ function generateUserCode() {
         code += letters.charAt(Math.floor(Math.random() * letters.length));
     }
     
-    // 3 números
+    // 3 números  
     for (let i = 0; i < 3; i++) {
         code += numbers.charAt(Math.floor(Math.random() * numbers.length));
     }
     
-    document.getElementById('user-code-input').value = code;
+    console.log('✅ Código generado:', code);
     
-    // Mostrar mensaje
-    mostrarStatus('¡Código generado! Anótalo para otros dispositivos', 'success');
+    const input = document.getElementById('user-code-input');
+    input.value = code;
+    
+    // Auto-seleccionar y enfocar
+    input.focus();
+    input.select();
+    
+    // Mostrar mensaje de éxito
+    const statusDiv = document.getElementById('code-status');
+    if (statusDiv) {
+        statusDiv.style.display = 'block';
+        statusDiv.textContent = '✅ Código generado! Haz clic en "Conectar"';
+        statusDiv.style.background = '#d4edda';
+        statusDiv.style.color = '#155724';
+    }
+    
+    input.style.borderColor = '#28a745';
+    
+    mostrarStatus('¡Código generado! Haz clic en "Conectar"', 'success');
 }
 
 function setUserCode() {
     console.log('🔄 Intentando establecer código de usuario...');
     
     const input = document.getElementById('user-code-input');
+    const statusDiv = document.getElementById('code-status');
+    
     if (!input) {
         console.error('❌ No se encontró el input de código');
         mostrarStatus('Error: No se puede encontrar el campo de código', 'error');
@@ -89,21 +109,41 @@ function setUserCode() {
     }
     
     let code = input.value.trim().toUpperCase();
+    console.log('📝 Código ingresado:', code);
     
-    // Validar formato (3 letras + 3 números)
-    const codeRegex = /^[A-Z]{3}[2-9]{3}$/;
+    // Mostrar estado en el modal
+    function showCodeStatus(message, type) {
+        if (statusDiv) {
+            statusDiv.style.display = 'block';
+            statusDiv.textContent = message;
+            statusDiv.style.background = type === 'error' ? '#f8d7da' : '#d4edda';
+            statusDiv.style.color = type === 'error' ? '#721c24' : '#155724';
+            statusDiv.style.border = type === 'error' ? '1px solid #f5c6cb' : '1px solid #c3e6cb';
+        }
+    }
+    
+    // VALIDACIÓN
+    const codeRegex = /^[A-Z0-9]{3,6}$/;
     
     if (!code) {
-        mostrarStatus('Por favor ingresa un código', 'error');
+        showCodeStatus('❌ Por favor escribe un código o genera uno automático', 'error');
         input.focus();
+        input.style.borderColor = '#dc3545';
         return;
     }
     
     if (!codeRegex.test(code)) {
-        mostrarStatus('Formato inválido. Use 3 letras + 3 números (ej: ABC123)', 'error');
+        showCodeStatus('❌ Formato inválido. Usa 3-6 letras/números (ej: ABC123)', 'error');
         input.focus();
+        input.style.borderColor = '#dc3545';
         return;
     }
+    
+    // ✅ CÓDIGO VÁLIDO
+    showCodeStatus('✅ Código válido! Conectando...', 'success');
+    input.style.borderColor = '#28a745';
+    
+    console.log('✅ Código válido, estableciendo...');
     
     userCodeSystem.userCode = code;
     userCodeSystem.userId = 'user_' + code;
@@ -113,21 +153,21 @@ function setUserCode() {
     localStorage.setItem('ubercalc_user_code', code);
     
     console.log('✅ Código de usuario establecido:', code);
-    mostrarStatus('¡Código configurado correctamente!', 'success');
+    console.log('✅ UserID:', userCodeSystem.userId);
     
-    // Ocultar modal PRIMERO
-    hideUserCodeModal();
-    
-    // Mostrar banner DESPUÉS
+    // Ocultar modal después de éxito
     setTimeout(() => {
+        hideUserCodeModal();
         showUserCodeBanner();
-    }, 100);
-    
-    // Recargar después de un breve delay para que el usuario vea el mensaje
-    setTimeout(() => {
-        console.log('🔄 Recargando aplicación con nuevo código...');
-        location.reload();
-    }, 2000);
+        
+        // Recargar la aplicación
+        setTimeout(() => {
+            console.log('🔄 Recargando aplicación con nuevo código...');
+            mostrarStatus(`¡Conectado con código: ${code}! Sincronizando...`, 'success');
+            location.reload();
+        }, 1000);
+        
+    }, 1500);
 }
 
 function showUserCodeModal() {
@@ -649,6 +689,18 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Inicializando UberCalc con Sistema de Código...');
     inicializarApp();
     configurarEventListeners();
+});
+
+// Agregar event listener para Enter
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('user-code-input');
+    if (input) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                setUserCode();
+            }
+        });
+    }
 });
 
 async function inicializarApp() {
@@ -2328,6 +2380,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
