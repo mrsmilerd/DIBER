@@ -838,32 +838,38 @@ class FirebaseSync {
     }
 
     async getSyncStatus() {
-        if (!this.initialized) return 'not_configured';
+    if (!this.initialized) return 'not_configured';
 
-        try {
-            const userDocRef = this.db.collection('users').doc(this.userId);
-            const doc = await userDocRef.get();
-            
-            if (doc.exists) {
-                const data = doc.data();
-                return {
-                    status: 'connected',
-                    lastSync: data.lastSync?.toDate().toISOString() || this.lastSyncTime,
-                    profilesCount: data.profiles?.length || 0,
-                    historyCount: data.history?.length || 0
-                };
-            } else {
-                return {
-                    status: 'no_data',
-                    lastSync: null,
-                    profilesCount: 0,
-                    historyCount: 0
-                };
-            }
-        } catch (error) {
-            return 'error';
+    try {
+        const userDocRef = this.db.collection('users').doc(this.userId);
+        const doc = await userDocRef.get();
+        
+        if (doc.exists) {
+            const data = doc.data();
+            return {
+                status: 'connected',
+                lastSync: data.lastSync?.toDate?.()?.toISOString() || data.lastSync || this.lastSyncTime,
+                profilesCount: data.profiles?.length || 0,
+                historyCount: data.history?.length || 0
+            };
+        } else {
+            return {
+                status: 'no_data',
+                lastSync: null,
+                profilesCount: 0,
+                historyCount: 0
+            };
         }
+    } catch (error) {
+        console.error('❌ Error obteniendo estado de sync:', error);
+        return {
+            status: 'error',
+            lastSync: null,
+            profilesCount: 0,
+            historyCount: 0
+        };
     }
+}
 
     // Escuchar cambios en tiempo real
     listenForChanges(callback) {
@@ -1959,37 +1965,140 @@ function mostrarStatus(mensaje, tipo = 'info') {
 }
 
 // --- Sincronización ---
-function actualizarPanelSync() {
+async function actualizarPanelSync() {
     console.log('🔄 Actualizando panel de sincronización');
     
-    if (!firebaseSync || !firebaseSync.initialized) {
+    if (!firebaseSync) {
         console.log('📱 Firebase Sync no disponible');
+        actualizarPanelSyncUI('disconnected');
         return;
     }
     
-    // Actualizar información de sincronización
-    firebaseSync.getSyncStatus().then(status => {
-        console.log('📊 Estado de sync:', status);
+    try {
+        // Actualizar información del dispositivo
+        const deviceInfo = firebaseSync.getDeviceInfo();
+        const deviceName = document.getElementById('current-device-name');
+        const deviceId = document.getElementById('current-device-id');
+        const deviceIcon = document.getElementById('current-device-icon');
         
-        const syncInfo = document.getElementById('sync-info');
-        if (syncInfo) {
-            if (status === 'connected' || (typeof status === 'object' && status.status === 'connected')) {
-                syncInfo.innerHTML = `
-                    <span id="sync-icon">✅</span>
-                    <span id="sync-text">Conectado a Firebase</span>
-                `;
-                syncInfo.className = 'sync-info connected';
+        if (deviceName) deviceName.textContent = deviceInfo.name;
+        
+        if (deviceId) {
+            if (userCodeSystem.userCode) {
+                deviceId.textContent = `Código: ${userCodeSystem.userCode}`;
             } else {
-                syncInfo.innerHTML = `
-                    <span id="sync-icon">❌</span>
-                    <span id="sync-text">Sin conexión</span>
-                `;
-                syncInfo.className = 'sync-info error';
+                deviceId.textContent = `ID: ${deviceInfo.id.substring(0, 8)}...`;
             }
         }
-    }).catch(error => {
-        console.error('❌ Error obteniendo estado de sync:', error);
-    });
+        
+        if (deviceIcon) {
+            deviceIcon.textContent = deviceInfo.type === 'mobile' ? '📱' : 
+                                    deviceInfo.type === 'tablet' ? '📟' : '💻';
+        }
+        
+        // Obtener estado de sincronización
+        const syncStatus = await firebaseSync.getSyncStatus();
+        console.log('📊 Estado de sync para panel:', syncStatus);
+        
+        // Actualizar estado de Firebase
+        const firebaseStatus = document.getElementById('firebase-status');
+        const lastSyncTime = document.getElementById('last-sync-time');
+        const cloudProfilesCount = document.getElementById('cloud-profiles-count');
+        const cloudHistoryCount = document.getElementById('cloud-history-count');
+        
+        if (firebaseSync.initialized) {
+            if (firebaseStatus) {
+                firebaseStatus.textContent = 'Conectado';
+                firebaseStatus.style.color = 'var(--success-green)';
+            }
+            
+            if (lastSyncTime) {
+                if (syncStatus.lastSync) {
+                    const lastSyncDate = new Date(syncStatus.lastSync);
+                    lastSyncTime.textContent = lastSyncDate.toLocaleTimeString();
+                } else if (firebaseSync.lastSyncTime) {
+                    const lastSyncDate = new Date(firebaseSync.lastSyncTime);
+                    lastSyncTime.textContent = lastSyncDate.toLocaleTimeString();
+                } else {
+                    lastSyncTime.textContent = 'Nunca';
+                }
+            }
+            
+            if (cloudProfilesCount) {
+                cloudProfilesCount.textContent = syncStatus.profilesCount || '0';
+            }
+            
+            if (cloudHistoryCount) {
+                cloudHistoryCount.textContent = syncStatus.historyCount || '0';
+            }
+            
+            // Actualizar badge del panel
+            const syncPanelStatus = document.getElementById('sync-panel-status');
+            if (syncPanelStatus) {
+                syncPanelStatus.innerHTML = '<span class="sync-icon">✅</span><span>Conectado</span>';
+                syncPanelStatus.style.background = '#d4edda';
+                syncPanelStatus.style.color = '#155724';
+            }
+            
+        } else {
+            actualizarPanelSyncUI('error');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error actualizando panel sync:', error);
+        actualizarPanelSyncUI('error');
+    }
+}
+
+function actualizarPanelSyncUI(estado) {
+    const firebaseStatus = document.getElementById('firebase-status');
+    const lastSyncTime = document.getElementById('last-sync-time');
+    const cloudProfilesCount = document.getElementById('cloud-profiles-count');
+    const cloudHistoryCount = document.getElementById('cloud-history-count');
+    const syncPanelStatus = document.getElementById('sync-panel-status');
+    
+    switch(estado) {
+        case 'connected':
+            if (firebaseStatus) {
+                firebaseStatus.textContent = 'Conectado';
+                firebaseStatus.style.color = 'var(--success-green)';
+            }
+            if (syncPanelStatus) {
+                syncPanelStatus.innerHTML = '<span class="sync-icon">✅</span><span>Conectado</span>';
+                syncPanelStatus.style.background = '#d4edda';
+                syncPanelStatus.style.color = '#155724';
+            }
+            break;
+            
+        case 'error':
+            if (firebaseStatus) {
+                firebaseStatus.textContent = 'Error';
+                firebaseStatus.style.color = 'var(--error-red)';
+            }
+            if (lastSyncTime) lastSyncTime.textContent = '--';
+            if (cloudProfilesCount) cloudProfilesCount.textContent = '--';
+            if (cloudHistoryCount) cloudHistoryCount.textContent = '--';
+            if (syncPanelStatus) {
+                syncPanelStatus.innerHTML = '<span class="sync-icon">❌</span><span>Error</span>';
+                syncPanelStatus.style.background = '#f8d7da';
+                syncPanelStatus.style.color = '#721c24';
+            }
+            break;
+            
+        default: // disconnected
+            if (firebaseStatus) {
+                firebaseStatus.textContent = 'Desconectado';
+                firebaseStatus.style.color = 'var(--error-red)';
+            }
+            if (lastSyncTime) lastSyncTime.textContent = '--';
+            if (cloudProfilesCount) cloudProfilesCount.textContent = '--';
+            if (cloudHistoryCount) cloudHistoryCount.textContent = '--';
+            if (syncPanelStatus) {
+                syncPanelStatus.innerHTML = '<span class="sync-icon">🌐</span><span>Conectando...</span>';
+                syncPanelStatus.style.background = '#e2e3e5';
+                syncPanelStatus.style.color = '#383d41';
+            }
+    }
 }
 
 // --- Utilidades Adicionales ---
@@ -2055,9 +2164,12 @@ window.cambiarPestana = cambiarPestana;
 // FUNCIONES DE SINCRONIZACIÓN (AÑADIR ESTAS)
 // =============================================
 
-function mostrarPanelSync() {
+async function mostrarPanelSync() {
     console.log('🌐 Mostrando panel de sincronización');
-    actualizarPanelSync();
+    
+    // Forzar actualización antes de mostrar
+    await actualizarPanelSync();
+    
     if (elementos.syncPanel) {
         elementos.syncPanel.style.display = 'flex';
     }
@@ -2267,6 +2379,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
