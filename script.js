@@ -492,10 +492,17 @@ function setUserCode() {
             console.log('🔄 Inicializando Firebase Sync para el nuevo usuario...');
             const firebaseReady = await initializeFirebaseSyncWithRetry();
             
-            if (firebaseReady) {
-                console.log('✅ Firebase Sync inicializado para nuevo usuario');
-                await cargarDatos();
-            }
+           if (firebaseReady) {
+    console.log('✅ Firebase Sync inicializado, cargando datos existentes...');
+    await cargarDatos(); // carga desde Firebase si hay algo
+
+    if (perfiles.length === 0) {
+        mostrarPantalla('config-perfil'); // no hay perfiles, crea uno
+        mostrarStatus('Crea tu primer perfil para comenzar', 'info');
+    } else {
+        mostrarPantalla('perfil');
+    }
+}
             
             // LÓGICA SIMPLIFICADA: SIEMPRE mostrar pantalla de perfiles para nuevos códigos
             console.log('👤 NUEVO USUARIO, mostrando pantalla de perfiles...');
@@ -1146,10 +1153,11 @@ async function inicializarApp() {
         
         // 4. DECIDIR qué pantalla mostrar - LÓGICA SIMPLIFICADA
         // SIEMPRE mostrar pantalla de perfiles si no hay perfiles
-        if (perfiles.length === 0) {
-            console.log('👤 Sin perfiles, mostrando pantalla de perfiles...');
-            mostrarPantalla('perfil');
-            mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
+        if (!perfiles || perfiles.length === 0) {
+    console.log('👤 Sin perfiles, mostrando pantalla de creación de perfil...');
+    mostrarPantalla('config-perfil'); // 🔁 antes era 'perfil'
+    mostrarStatus('👋 ¡Crea tu primer perfil para comenzar!', 'info');
+    return; // evita que siga al main
         } else if (perfilActual) {
             console.log('🏠 Mostrando pantalla principal con perfil:', perfilActual.nombre);
             mostrarPantalla('main');
@@ -1451,6 +1459,8 @@ function procesarViaje(aceptado) {
     
     // Limpiar formulario
     limpiarFormulario();
+
+    guardarDatos();
 }
 
 function mostrarResultadoModal(resultado) {
@@ -2559,6 +2569,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
