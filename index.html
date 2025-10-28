@@ -8,398 +8,47 @@
     <link rel="icon" href="logo_b.png" type="image/png">
     
     <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script><!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UberCalc - Calculadora Inteligente para Conductores</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="logo_b.png" type="image/png">
-    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
 <body>
-    
-    <div id="user-code-modal" class="modal-fondo">
-        <div class="modal-contenido modal-minimal-sync">
-            <div class="modal-header">
-                <h2 style="margin: 0;">🔄 Conectar Dispositivos</h2>
-                <p style="margin: 10px 0 0 0;">Usa el MISMO código en todos tus dispositivos</p>
-            </div>
-            <div class="modal-body">
-                <div id="code-status" style="display: none;"></div>
-                <div class="input-group">
-                    <label for="user-code-input">🔑 Tu Código de Sincronización:</label>
-                    <input type="text" id="user-code-input" 
-                           placeholder="Ej: ABC123 - Escribe aquí tu código"
-                           class="user-code-input-style"
-                           maxlength="6">
-                    <div class="code-generator-container">
-                        <button onclick="generateUserCode()" 
-                                class="secondary-button-outline">
-                            ✨ Generar Código Automático
-                        </button>
-                    </div>
-                </div>
-                <div class="sync-tip-box">
-                    <p>
-                        ⚠️ <strong>Importante:</strong> 
-                        <br>• Escribe un código o genera uno automático
-                        <br>• Usa el <strong>MISMO código</strong> en PC, móvil y tablet
-                    </p>
-                </div>
-                <div class="button-group-row">
-                    <button onclick="setUserCode()" 
-                            class="primary-button-full">
-                        🚀 Conectar con este Código
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="perfil-screen" class="screen active">
-        <div class="container container-center">
-            <div class="perfil-section">
-                <h2>👤 Seleccionar Perfil</h2>
-                <p class="description-text">Elige tu perfil para comenzar a calcular o crea uno nuevo.</p>
-                
-                <div id="perfiles-lista" class="perfiles-lista">
-                    </div>
-                
-                <button id="nuevo-perfil-btn" class="primary-button primary-button-full">
-                    <span class="button-icon">➕</span>
-                    Crear Nuevo Perfil
-                </button>
-                
-                <div class="sync-info-small" id="sync-perfil-info" onclick="showUserCodeModal()">
-                    <span class="sync-icon">🌐</span>
-                    <span class="sync-text">Configurar Sincronización</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="config-perfil-screen" class="screen">
-        <div class="container container-scroll">
-            <div class="screen-header">
-                <button id="volver-perfiles" class="back-button secondary-button-icon">
-                    <span class="button-icon">⬅️</span>
-                </button>
-                <h2>⚙️ Configurar Perfil</h2>
-            </div>
-
-            <form id="perfil-form" class="perfil-form">
-                <input type="hidden" id="perfil-id">
-                
-                <div class="input-group">
-                    <label for="nombre-perfil">👤 Nombre del Perfil<span class="required">*</span></label>
-                    <input type="text" id="nombre-perfil" required placeholder="Ej: Mi Perfil Principal">
-                </div>
-
-                <div class="form-section card-section">
-                    <h3>🚗 Configuración del Vehículo</h3>
-                    <div class="input-group">
-                        <label for="tipo-medida">📏 Sistema de Medida<span class="required">*</span></label>
-                        <select id="tipo-medida" required><option value="km">Kilómetros (Km)</option><option value="mi">Millas (Mi)</option></select>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="tipo-combustible">⛽ Tipo de Combustible<span class="required">*</span></label>
-                        <select id="tipo-combustible" required><option value="glp">Gas Licuado de Petróleo (GLP)</option><option value="gas">Gasolina (GSL)</option></select>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="rendimiento">🎯 Rendimiento del Vehículo<span class="required">*</span></label>
-                        <div class="input-with-unit">
-                            <input type="number" id="rendimiento" min="1" step="0.1" required placeholder="22.0" inputmode="decimal">
-                            <span id="rendimiento-unit" class="input-unit">Km/Gl</span>
-                        </div>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="precio-combustible">💰 Precio del Combustible<span class="required">*</span></label>
-                        <div class="input-with-unit">
-                            <input type="number" id="precio-combustible" min="0" step="0.01" required placeholder="137.20" inputmode="decimal">
-                            <span id="precio-combustible-unit" class="input-unit">DOP/Gl</span>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="form-section card-section">
-                    <h3>💰 Configuración de Rentabilidad</h3>
-                    <div class="input-group">
-                        <label for="moneda">💵 Moneda<span class="required">*</span></label>
-                        <select id="moneda" required><option value="DOP">Peso Dominicano (DOP)</option><option value="USD">Dólar Americano (USD)</option></select>
-                    </div>
-
-                    <div class="config-grid">
-                        <div class="input-group">
-                            <label for="umbral-minuto-rentable">✅ Rentable - Por Minuto<span class="required">*</span></label>
-                            <div class="input-with-unit">
-                                <input type="number" id="umbral-minuto-rentable" min="0" step="0.01" required placeholder="10.00" inputmode="decimal">
-                                <span id="umbral-minuto-unit" class="input-unit">DOP/min</span>
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="umbral-distancia-rentable">✅ Rentable - Por Distancia<span class="required">*</span></label>
-                            <div class="input-with-unit">
-                                <input type="number" id="umbral-distancia-rentable" min="0" step="0.01" required placeholder="20.00" inputmode="decimal">
-                                <span id="umbral-distancia-unit" class="input-unit">DOP/km</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="porcentaje-ganancia">📊 Porcentaje de Ganancia (Operador)<span class="required">*</span></label>
-                        <div class="input-with-unit">
-                            <input type="number" id="porcentaje-ganancia" min="0" max="100" step="1" required placeholder="45" inputmode="numeric">
-                            <span class="input-unit">%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="perfil-actions">
-                    <button type="button" id="cancelar-perfil" class="secondary-button">
-                        <span class="button-icon">❌</span> Cancelar
-                    </button>
-                    <button type="submit" class="primary-button">
-                        <span class="button-icon">💾</span> Guardar Perfil
-                    </button>
-                </div>
-            </form>
-
-            <div id="delete-section" class="delete-section hidden">
-                <hr>
-                <p>Zona de peligro: Esta acción no se puede deshacer.</p>
-                <button id="eliminar-perfil-btn" class="danger-button">
-                    <span class="button-icon">🗑️</span> Eliminar Perfil
-                </button>
-            </div>
-            
-            <div class="spacer-bottom-nav"></div>
-        </div>
-    </div>
-    
-    <div id="main-screen" class="screen">
-        <div class="container container-scroll">
-            
-            <header class="main-header">
-                <div class="profile-summary">
-                    <div class="profile-avatar" id="profile-avatar-initials" onclick="mostrarConfigPerfil(perfilActual.id)">C</div>
-                    <div class="profile-text-group">
-                        <span class="profile-name-label">Perfil Activo:</span>
-                        <strong id="perfil-actual-nombre">Cargando...</strong>
-                    </div>
-                </div>
-                
-                <div class="sync-status-indicator" id="sync-status-indicator" onclick="mostrarPanelSync()">
-                    <div id="status-icon"></div>
-                    <span id="status-text">Desconectado</span>
-                </div>
-            </header>
-            
-            <div class="tabs-content">
-                
-                <div id="tab-calcular" class="tab-content active">
-                    
-                    <div id="auto-calc-indicator" class="auto-calc-indicator hidden">
-                        <div class="auto-calc-content">
-                            <span class="auto-calc-icon">⚙️</span>
-                            <span class="auto-calc-text">Cálculo Automático Activo...</span>
-                        </div>
-                    </div>
-                    
-                    <form id="calculator-form" class="calculator-form card-section">
-                        <h3 class="card-title">Datos del Viaje</h3>
-                        <div class="input-group">
-                            <label for="tarifa">💰 Tarifa Bruta del Viaje<span class="required">*</span></label>
-                            <div class="input-with-unit">
-                                <input type="number" id="tarifa" min="0" step="0.01" required placeholder="0.00" inputmode="decimal">
-                                <span id="tarifa-unit" class="input-unit">DOP</span>
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="minutos">⏱️ Tiempo Estimado<span class="required">*</span></label>
-                            <div class="input-with-unit">
-                                <input type="number" id="minutos" min="1" step="1" required placeholder="15" inputmode="numeric">
-                                <span class="input-unit">Minutos</span>
-                            </div>
-                        </div>
-                        
-                        <div class="input-group">
-                            <label for="distancia">🛣️ Distancia Estimada<span class="required">*</span></label>
-                            <div class="input-with-unit">
-                                <input type="number" id="distancia" min="0.1" step="0.1" required placeholder="5.5" inputmode="decimal">
-                                <span id="distancia-unit" class="input-unit">Km</span>
-                            </div>
-                        </div>
-                    </form>
-                    
-                    <div id="resultado-rapido" class="resultado-rapido card-section hidden">
-                        <h3 class="card-title">Análisis de Rentabilidad</h3>
-                        <div class="resultado-badge" id="resultado-badge">
-                            <span class="resultado-emoji" id="resultado-emoji"></span>
-                            <span class="resultado-texto" id="resultado-texto"></span>
-                        </div>
-                        <div class="resultado-metricas">
-                            <div class="metrica-item">
-                                <span class="metrica-label">Ganancia/Minuto</span>
-                                <strong class="metrica-value" id="metrica-minuto">0.00/min</strong>
-                            </div>
-                            <div class="metrica-item">
-                                <span class="metrica-label">Ganancia/Distancia</span>
-                                <strong class="metrica-value" id="metrica-km">0.00/km</strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="button-group-column">
-                        <button id="aceptar-viaje" class="primary-button-full" disabled>
-                            <span class="button-icon">✅</span> Aceptar y Guardar Viaje
-                        </button>
-                        <button id="rechazar-viaje" class="danger-button-outline-full" disabled>
-                            <span class="button-icon">❌</span> Rechazar Viaje (No Guardar)
-                        </button>
-                    </div>
-                    
-                    <div class="spacer-bottom-nav"></div>
-                </div>
-                
-                <div id="tab-historial" class="tab-content">
-                    <h3 class="content-title">📜 Historial de Viajes</h3>
-                    
-                    <div id="history-list" class="history-list">
-                        </div>
-                    
-                    <div class="history-actions button-group-column card-section">
-                        <button id="exportar-historial" class="secondary-button-full" onclick="showExportModal()">
-                            <span class="button-icon">📤</span> Exportar
-                        </button>
-                        <button id="clear-history" class="danger-button-outline-full">
-                            <span class="button-icon">🗑️</span> Limpiar Historial
-                        </button>
-                    </div>
-                    <div class="spacer-bottom-nav"></div>
-                </div>
-
-                <div id="tab-resumen" class="tab-content">
-                    <h3 class="content-title">📈 Resumen General</h3>
-                    
-                    <div class="estadisticas-grid">
-                        <div class="stat-card stat-total">
-                            <span class="stat-label">Viajes Totales</span>
-                            <strong class="stat-value" id="stats-viajes">0</strong>
-                        </div>
-                        <div class="stat-card stat-money">
-                            <span class="stat-label">Ganancia Neta Total</span>
-                            <strong class="stat-value" id="stats-ganancia">0.00</strong>
-                        </div>
-                        <div class="stat-card stat-time">
-                            <span class="stat-label">Tiempo Total (Minutos)</span>
-                            <strong class="stat-value" id="stats-tiempo">0m</strong>
-                        </div>
-                        <div class="stat-card stat-success">
-                            <span class="stat-label">Viajes Rentables</span>
-                            <strong class="stat-value" id="stats-rentables">0%</strong>
-                        </div>
-                        <div class="stat-card stat-hourly">
-                            <span class="stat-label">Ganancia Promedio/Hora</span>
-                            <strong class="stat-value" id="stats-ganancia-hora">0.00/h</strong>
-                        </div>
-                        <div class="stat-card stat-avg">
-                            <span class="stat-label">Ganancia Promedio/Viaje</span>
-                            <strong class="stat-value" id="stats-viaje-promedio">0.00</strong>
-                        </div>
-                    </div>
-                    <div class="spacer-bottom-nav"></div>
-                </div>
-
-            </div>
-            
-        </div>
-    </div>
-    
-    <div class="tabs-header bottom-nav-bar">
-        <button class="tab-button active" data-tab="calcular" onclick="cambiarPestana('calcular')">
-            <span class="tab-icon">🔢</span>
-            <span class="tab-text">Calcular</span>
-        </button>
-        <button class="tab-button" data-tab="historial" onclick="cambiarPestana('historial')">
-            <span class="tab-icon">📜</span>
-            <span class="tab-text">Historial</span>
-        </button>
-        <button class="tab-button" data-tab="resumen" onclick="cambiarPestana('resumen')">
-            <span class="tab-icon">📈</span>
-            <span class="tab-text">Resumen</span>
-        </button>
-    </div>
-
-    <div id="modalFondo" class="modal-fondo" style="display: none;">
-        <div id="modalContenido" class="modal-contenido">
-            <button class="modal-close-btn" onclick="cerrarModal()"><span class="button-icon">✖️</span></button>
-        </div>
-    </div>
-    
-    <div id="exportModal" class="modal-fondo" style="display: none;">
-        <div class="modal-contenido">
-            <button class="modal-close-btn" onclick="cerrarExportModal()"><span class="button-icon">✖️</span></button>
-        </div>
-    </div>
-    
-    <div id="sync-panel" class="modal-fondo sync-panel" style="display: none;">
-        <div class="modal-contenido modal-panel">
-            <button class="modal-close-btn" onclick="cerrarSyncPanel()"><span class="button-icon">✖️</span></button>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-    <script src="export.js"></script>
-</body>
-</html>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-</head>
-<body class="mobile-optimized">
     <!-- Modal de Código de Usuario MEJORADO -->
     <div id="user-code-modal" class="modal-fondo">
-        <div class="mobile-modal">
-            <div class="mobile-modal-content">
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0 0 10px 0; color: var(--text-primary);">🔗 Conectar</h2>
-                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.9em;">Usa el mismo código en todos tus dispositivos</p>
-                </div>
-                
+        <div class="modal-contenido" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>🔗 Conectar Dispositivos</h2>
+                <p class="small-info">Usa el MISMO código en todos tus dispositivos</p>
+            </div>
+            
+            <div class="modal-body">
                 <div id="code-status" style="display: none; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; background: var(--light-grey);"></div>
                 
                 <div style="margin: 20px 0;">
+                    <label for="user-code-input" style="display: block; margin-bottom: 10px; font-weight: bold;">
+                        🔑 Tu Código:
+                    </label>
                     <input type="text" id="user-code-input" 
                            placeholder="Ej: ABC123"
                            style="width: 100%; 
-                                  padding: 16px; 
-                                  font-size: 18px; 
+                                  padding: 15px; 
+                                  font-size: 16px; 
                                   text-align: center; 
-                                  letter-spacing: 2px;
                                   border: 2px solid var(--border-color);
-                                  border-radius: 12px;
+                                  border-radius: 10px;
                                   background: var(--card-bg);
                                   color: var(--text-primary);
                                   text-transform: uppercase;"
                            maxlength="6">
                     <div style="text-align: center; margin-top: 10px;">
                         <button onclick="generateUserCode()" class="secondary-button small">
-                            ✨ Generar Código
+                            ✨ Generar Código Automático
                         </button>
                     </div>
                 </div>
                 
-                <div style="background: var(--warning-orange); background: rgba(255, 193, 7, 0.1); padding: 12px; border-radius: 10px; margin: 15px 0; border-left: 4px solid var(--warning-orange);">
-                    <p style="margin: 0; font-size: 0.8em; color: var(--text-secondary); text-align: center;">
-                        ⚠️ <strong>Usa el MISMO código</strong> en PC, móvil y tablet
+                <div style="background: rgba(255, 193, 7, 0.1); padding: 12px; border-radius: 10px; margin: 15px 0; border-left: 4px solid var(--warning-orange);">
+                    <p style="margin: 0; font-size: 0.85em; color: var(--text-secondary); text-align: center;">
+                        ⚠️ <strong>Importante:</strong> Usa el MISMO código en PC, móvil y tablet
                     </p>
                 </div>
                 
@@ -412,125 +61,150 @@
         </div>
     </div>
 
-    <!-- Banner de Código de Usuario Minimalista -->
-    <div id="user-code-banner" class="sync-status-bar essential" style="display: none; margin: 10px 0; padding: 10px 15px;">
+    <!-- Banner de Código de Usuario -->
+    <div id="user-code-banner" class="sync-status-bar" style="display: none;">
         <div class="sync-info">
             <span class="sync-icon">🔗</span>
-            <span class="sync-text" id="user-code-display" style="font-size: 0.9em;">Código: ...</span>
+            <span class="sync-text" id="user-code-display">Código: CARGANDO...</span>
         </div>
-        <button class="sync-details-btn" onclick="showUserCodeModal()" style="padding: 6px 12px; font-size: 0.8em;">
+        <button class="sync-details-btn" onclick="showUserCodeModal()">
+            <span class="button-icon">🔄</span>
             Cambiar
         </button>
     </div>
 
-    <!-- Pantalla de Selección de Perfil - Mobile -->
-    <div id="perfil-screen" class="screen active ultra-minimal">
+    <!-- Pantalla de Selección de Perfil -->
+    <div id="perfil-screen" class="screen active">
         <div class="container">
-            <div class="mobile-header">
-                <img src="logo_b.png" alt="UberCalc" class="app-logo">
-                <h2 style="margin: 0; font-size: 1.2em; color: var(--text-primary);">👤 Perfiles</h2>
+            <div class="logo-container">
+                <img src="logo_b.png" alt="Logo UberCalc" class="app-logo">
             </div>
 
-            <div id="perfiles-lista" class="perfiles-lista-mobile">
-                <!-- Los perfiles se cargarán aquí -->
+            <div class="perfil-section">
+                <h2>👤 Seleccionar Perfil</h2>
+                <div id="perfiles-lista" class="perfiles-lista">
+                    <!-- Los perfiles se cargarán aquí -->
+                </div>
+                
+                <button id="nuevo-perfil-btn" class="primary-button">
+                    <span class="button-icon">➕</span>
+                    Crear Nuevo Perfil
+                </button>
             </div>
-            
-            <button id="nuevo-perfil-btn" class="primary-button" style="margin-top: 20px;">
-                <span class="button-icon">➕</span>
-                Nuevo Perfil
-            </button>
         </div>
     </div>
 
-    <!-- Pantalla de Configuración de Perfil - Mobile -->
-    <div id="config-perfil-screen" class="screen ultra-minimal">
+    <!-- Pantalla de Configuración de Perfil -->
+    <div id="config-perfil-screen" class="screen">
         <div class="container">
-            <div class="mobile-header">
-                <button id="volver-perfiles" class="back-button" style="padding: 8px 12px; font-size: 0.9em;">
+            <div class="screen-header">
+                <button id="volver-perfiles" class="back-button">
                     <span class="button-icon">⬅️</span>
                     Volver
                 </button>
-                <h2 style="margin: 0; font-size: 1.2em;" id="config-perfil-title">⚙️ Perfil</h2>
+                <h2>⚙️ Configurar Perfil</h2>
             </div>
 
-            <form id="perfil-form" class="perfil-form-mobile">
+            <form id="perfil-form" class="perfil-form">
                 <input type="hidden" id="perfil-id">
                 
-                <div class="mobile-input-group">
-                    <label for="nombre-perfil">👤 Nombre del Perfil</label>
-                    <input type="text" id="nombre-perfil" class="mobile-input" required placeholder="Ej: Mi Auto Principal">
+                <div class="input-group">
+                    <label for="nombre-perfil">
+                        👤 Nombre del Perfil
+                        <span class="required">*</span>
+                    </label>
+                    <input type="text" id="nombre-perfil" required placeholder="Ej: Mi Perfil Principal">
                 </div>
 
-                <div class="config-section-mobile">
-                    <h3>🚗 Vehículo</h3>
+                <div class="form-section">
+                    <h3>🚗 Configuración del Vehículo</h3>
                     
-                    <div class="mobile-input-group">
-                        <label for="tipo-medida">📏 Sistema</label>
-                        <select id="tipo-medida" class="mobile-input" required>
+                    <div class="input-group">
+                        <label for="tipo-medida">
+                            📏 Sistema de Medida
+                            <span class="required">*</span>
+                        </label>
+                        <select id="tipo-medida" required>
                             <option value="km">Kilómetros (Km)</option>
                             <option value="mi">Millas (Mi)</option>
                         </select>
                     </div>
 
-                    <div class="mobile-input-group">
-                        <label for="tipo-combustible">⛽ Combustible</label>
-                        <select id="tipo-combustible" class="mobile-input" required>
+                    <div class="input-group">
+                        <label for="tipo-combustible">
+                            ⛽ Tipo de Combustible
+                            <span class="required">*</span>
+                        </label>
+                        <select id="tipo-combustible" required>
                             <option value="glp">GLP</option>
                             <option value="gas">Gasolina</option>
                         </select>
                     </div>
 
-                    <div class="mobile-input-group">
-                        <label for="rendimiento">🎯 Rendimiento</label>
-                        <div class="input-with-unit-mobile">
-                            <input type="number" id="rendimiento" class="mobile-input" min="1" step="0.1" required placeholder="22.0" inputmode="decimal">
-                            <span id="rendimiento-unit" class="input-unit-mobile">Km/Gl</span>
+                    <div class="input-group">
+                        <label for="rendimiento">
+                            🎯 Rendimiento
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-with-unit">
+                            <input type="number" id="rendimiento" min="1" step="0.1" required placeholder="22.0" inputmode="decimal">
+                            <span id="rendimiento-unit" class="input-unit">Km/Gl</span>
                         </div>
                     </div>
 
-                    <div class="mobile-input-group">
-                        <label for="precio-combustible">💰 Precio</label>
-                        <div class="input-with-unit-mobile">
-                            <input type="number" id="precio-combustible" class="mobile-input" min="0" step="0.01" required placeholder="137.20" inputmode="decimal">
-                            <span id="precio-combustible-unit" class="input-unit-mobile">DOP/Gl</span>
+                    <div class="input-group">
+                        <label for="precio-combustible">
+                            💰 Precio
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-with-unit">
+                            <input type="number" id="precio-combustible" min="0" step="0.01" required placeholder="137.20" inputmode="decimal">
+                            <span id="precio-combustible-unit" class="input-unit">DOP/Gl</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="config-section-mobile">
-                    <h3>💡 Rentabilidad</h3>
+                <div class="form-section">
+                    <h3>💰 Rentabilidad</h3>
                     
-                    <div class="mobile-input-group">
-                        <label for="moneda">💵 Moneda</label>
-                        <select id="moneda" class="mobile-input" required>
+                    <div class="input-group">
+                        <label for="moneda">
+                            💵 Moneda
+                            <span class="required">*</span>
+                        </label>
+                        <select id="moneda" required>
                             <option value="DOP">DOP $</option>
                             <option value="USD">USD $</option>
                         </select>
                     </div>
 
-                    <div class="config-grid-mobile">
-                        <div class="mobile-input-group">
-                            <label for="umbral-minuto-rentable">✅ Por Minuto</label>
-                            <div class="input-with-unit-mobile">
-                                <input type="number" id="umbral-minuto-rentable" class="mobile-input" min="0" step="0.01" required value="6.00" inputmode="decimal">
-                                <span class="input-unit-mobile umbral-minuto">$/min</span>
+                    <div class="config-grid">
+                        <div class="input-group">
+                            <label for="umbral-minuto-rentable">
+                                ✅ Por Minuto
+                            </label>
+                            <div class="input-with-unit">
+                                <input type="number" id="umbral-minuto-rentable" min="0" step="0.01" required value="6.00" inputmode="decimal">
+                                <span class="input-unit umbral-minuto">$/min</span>
                             </div>
                         </div>
 
-                        <div class="mobile-input-group">
-                            <label for="umbral-km-rentable">✅ Por Km</label>
-                            <div class="input-with-unit-mobile">
-                                <input type="number" id="umbral-km-rentable" class="mobile-input" min="0" step="0.01" required value="25.00" inputmode="decimal">
-                                <span id="umbral-km-unit" class="input-unit-mobile">$/Km</span>
+                        <div class="input-group">
+                            <label for="umbral-km-rentable">
+                                ✅ Por Km
+                            </label>
+                            <div class="input-with-unit">
+                                <input type="number" id="umbral-km-rentable" min="0" step="0.01" required value="25.00" inputmode="decimal">
+                                <span id="umbral-km-unit" class="input-unit">$/Km</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="action-buttons-mobile">
+                <div class="action-buttons">
                     <button type="submit" class="primary-button">
                         <span class="button-icon">💾</span>
-                        Guardar
+                        Guardar Perfil
                     </button>
                     <button type="button" id="cancelar-perfil" class="secondary-button">
                         <span class="button-icon">❌</span>
@@ -541,177 +215,204 @@
         </div>
     </div>
 
-    <!-- Pantalla Principal - Diseño Móvil Minimalista -->
-    <div id="main-screen" class="screen ultra-minimal">
+    <!-- Pantalla Principal - VERSIÓN MÓVIL OPTIMIZADA -->
+    <div id="main-screen" class="screen">
         <div class="container">
             <!-- Header Minimalista -->
-            <div class="mobile-header">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <img src="logo_b.png" alt="UberCalc" class="app-logo">
-                    <div>
-                        <div style="font-weight: 600; font-size: 0.9em; color: var(--text-primary);">UberCalc</div>
-                        <div style="font-size: 0.7em; color: var(--text-secondary);" id="perfil-actual-nombre">Cargando...</div>
-                    </div>
-                </div>
-                <div class="mobile-header-actions">
-                    <button id="cambiar-perfil" class="floating-btn secondary" title="Cambiar perfil">👤</button>
-                    <button id="theme-toggle" class="floating-btn secondary" title="Cambiar tema">🌙</button>
-                </div>
-            </div>
-
-            <!-- Tabs Minimalistas -->
-            <div class="mobile-tabs">
-                <button class="mobile-tab active" data-tab="calcular">
-                    <span class="tab-icon">🧮</span>
-                    <span class="tab-text">Calcular</span>
-                </button>
-                <button class="mobile-tab" data-tab="resumen">
-                    <span class="tab-icon">📊</span>
-                    <span class="tab-text">Stats</span>
-                </button>
-                <button class="mobile-tab" data-tab="historial">
-                    <span class="tab-icon">📋</span>
-                    <span class="tab-text">Historial</span>
-                </button>
-            </div>
-
-            <!-- Contenido de Pestañas -->
-            <div class="tab-content active" id="tab-calcular">
-                <div class="mobile-form">
-                    <div class="mobile-input-group">
-                        <label for="tarifa">💰 Ganancia</label>
-                        <div class="input-with-unit-mobile">
-                            <input type="number" id="tarifa" class="mobile-input" min="0" step="0.01" placeholder="350.00" required inputmode="decimal">
-                            <span id="moneda-tarifa" class="input-unit-mobile">DOP</span>
-                        </div>
-                    </div>
-
-                    <div class="mobile-input-group">
-                        <label for="minutos">⏱️ Minutos</label>
-                        <input type="number" id="minutos" class="mobile-input" min="1" step="1" placeholder="25" required inputmode="numeric">
-                    </div>
-
-                    <div class="mobile-input-group">
-                        <label for="distancia">🛣️ Distancia</label>
-                        <div class="input-with-unit-mobile">
-                            <input type="number" id="distancia" class="mobile-input" min="0" step="0.1" placeholder="8.5" required inputmode="decimal">
-                            <span id="distancia-unit" class="input-unit-mobile">Km</span>
-                        </div>
-                    </div>
-
-                    <!-- Resultado Rápido Móvil -->
-                    <div id="resultado-rapido" class="mobile-result hidden">
-                        <div class="result-badge-mini" id="resultado-badge">
-                            <span id="resultado-emoji">✅</span>
-                            <span id="resultado-texto">RENTABLE</span>
-                        </div>
-                        <div class="mobile-stats">
-                            <div class="stat-item">
-                                <span class="stat-value" id="metrica-minuto">--</span>
-                                <span class="stat-label">por minuto</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-value" id="metrica-km">--</span>
-                                <span class="stat-label">por km</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-content" id="tab-resumen">
-                <!-- Estadísticas Móvil -->
-                <div class="mobile-stats-container">
-                    <h3 style="margin: 0 0 15px 0; font-size: 1.1em; text-align: center;">📈 Hoy</h3>
-                    <div class="mobile-stats">
-                        <div class="stat-item">
-                            <span class="stat-value" id="stats-viajes">0</span>
-                            <span class="stat-label">Viajes</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="stats-ganancia">0</span>
-                            <span class="stat-label">Ganancia</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="stats-tiempo">0</span>
-                            <span class="stat-label">Minutos</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="stats-rentables">0</span>
-                            <span class="stat-label">Rentables</span>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 20px; background: var(--light-grey); padding: 15px; border-radius: 10px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="color: var(--text-secondary); font-size: 0.9em;">Ganancia/hora:</span>
-                            <span style="font-weight: 600; color: var(--text-primary);" id="stats-ganancia-hora">$0</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--text-secondary); font-size: 0.9em;">Viaje promedio:</span>
-                            <span style="font-weight: 600; color: var(--text-primary);" id="stats-viaje-promedio">$0</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-content" id="tab-historial">
-                <!-- Historial Móvil -->
-                <div id="history-list" class="history-list-mobile">
-                    <!-- Los cálculos aparecerán aquí -->
-                </div>
-                <div class="history-actions-mobile">
-                    <button id="exportar-historial" class="secondary-button small">
-                        📤 Exportar
+            <div class="app-header">
+                <div class="header-actions">
+                    <button id="cambiar-perfil" class="secondary-button small" title="Cambiar perfil">
+                        <span class="button-icon">👤</span>
                     </button>
-                    <button id="clear-history" class="secondary-button small">
-                        🗑️ Limpiar
+                    <button id="theme-toggle" class="theme-toggle" title="Cambiar tema">
+                        <span class="theme-icon">🌙</span>
                     </button>
                 </div>
+                <div class="logo-container">
+                    <img src="logo_b.png" alt="Logo UberCalc" class="app-logo">
+                </div>
             </div>
-        </div>
 
-        <!-- Botones Flotantes Móviles -->
-        <div class="floating-actions">
-            <button id="rechazar-viaje-tab" class="floating-btn secondary">
-                ❌
-            </button>
-            <button id="aceptar-viaje-tab" class="floating-btn primary">
-                ✅
-            </button>
+            <!-- Perfil Actual -->
+            <div style="text-align: center; margin: 10px 0; padding: 10px; background: var(--light-grey); border-radius: 8px;">
+                <div style="font-size: 0.9em; color: var(--text-secondary);">Perfil activo:</div>
+                <div style="font-weight: 600; color: var(--text-primary);" id="perfil-actual-nombre">Cargando...</div>
+            </div>
+
+            <!-- Sistema de Pestañas Optimizado para Móvil -->
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-button active" data-tab="calcular">
+                        <span class="tab-icon">🧮</span>
+                        <span class="tab-text">CALCULAR</span>
+                    </button>
+                    <button class="tab-button" data-tab="resumen">
+                        <span class="tab-icon">📊</span>
+                        <span class="tab-text">ESTADÍSTICAS</span>
+                    </button>
+                    <button class="tab-button" data-tab="historial">
+                        <span class="tab-icon">📋</span>
+                        <span class="tab-text">HISTORIAL</span>
+                    </button>
+                </div>
+
+                <!-- Contenido de Pestañas -->
+                <div class="tab-content active" id="tab-calcular">
+                    <!-- Formulario Principal Optimizado -->
+                    <div class="form-section">
+                        <h2 class="section-title centered">📊 Calcular Viaje</h2>
+                        
+                        <div class="input-group">
+                            <label for="tarifa">
+                                💰 Ganancia
+                            </label>
+                            <div class="input-with-unit">
+                                <input type="number" id="tarifa" min="0" step="0.01" placeholder="350.00" required inputmode="decimal">
+                                <span id="moneda-tarifa" class="input-unit">DOP</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="minutos">
+                                ⏱️ Minutos
+                            </label>
+                            <input type="number" id="minutos" min="1" step="1" placeholder="25" required inputmode="numeric">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="distancia">
+                                🛣️ Distancia
+                            </label>
+                            <div class="input-with-unit">
+                                <input type="number" id="distancia" min="0" step="0.1" placeholder="8.5" required inputmode="decimal">
+                                <span id="distancia-unit" class="input-unit">Km</span>
+                            </div>
+                        </div>
+
+                        <!-- Resultado Rápido -->
+                        <div id="resultado-rapido" class="resultado-rapido hidden">
+                            <div class="resultado-content">
+                                <div class="resultado-badge" id="resultado-badge">
+                                    <span id="resultado-emoji">✅</span>
+                                    <span id="resultado-texto">RENTABLE</span>
+                                </div>
+                                <div class="resultado-metricas">
+                                    <div class="metrica-rapida">
+                                        <span class="metrica-label">Por minuto:</span>
+                                        <span id="metrica-minuto" class="metrica-valor">--</span>
+                                    </div>
+                                    <div class="metrica-rapida">
+                                        <span class="metrica-label">Por km:</span>
+                                        <span id="metrica-km" class="metrica-valor">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción Principales -->
+                        <div class="action-buttons" style="margin-top: 25px;">
+                            <button id="rechazar-viaje-tab" class="secondary-button">
+                                <span class="button-icon">❌</span>
+                                Rechazar
+                            </button>
+                            <button id="aceptar-viaje-tab" class="primary-button">
+                                <span class="button-icon">✅</span>
+                                Aceptar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-resumen">
+                    <!-- Estadísticas Simplificadas -->
+                    <div class="estadisticas-container">
+                        <h3>📈 Hoy</h3>
+                        <div class="estadisticas-grid">
+                            <div class="estadistica-item">
+                                <span class="estadistica-valor" id="stats-viajes">0</span>
+                                <span class="estadistica-label">Viajes</span>
+                            </div>
+                            <div class="estadistica-item">
+                                <span class="estadistica-valor" id="stats-ganancia">0</span>
+                                <span class="estadistica-label">Ganancia</span>
+                            </div>
+                            <div class="estadistica-item">
+                                <span class="estadistica-valor" id="stats-tiempo">0</span>
+                                <span class="estadistica-label">Minutos</span>
+                            </div>
+                            <div class="estadistica-item">
+                                <span class="estadistica-valor" id="stats-rentables">0</span>
+                                <span class="estadistica-label">Rentables</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rendimiento Simplificado -->
+                    <div class="rendimiento-container">
+                        <h3>🎯 Rendimiento</h3>
+                        <div class="rendimiento-grid">
+                            <div class="rendimiento-item">
+                                <span class="rendimiento-label">Ganancia/hora:</span>
+                                <span class="rendimiento-valor" id="stats-ganancia-hora">$0</span>
+                            </div>
+                            <div class="rendimiento-item">
+                                <span class="rendimiento-label">Viaje promedio:</span>
+                                <span class="rendimiento-valor" id="stats-viaje-promedio">$0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-historial">
+                    <!-- Historial de Viajes -->
+                    <div class="history-section">
+                        <div id="history-list" class="history-list">
+                            <!-- Los cálculos aparecerán aquí -->
+                        </div>
+                        <div class="history-actions">
+                            <button id="clear-history" class="secondary-button small">
+                                🗑️ Limpiar Historial
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Modal de Resultados Móvil -->
+    <!-- Modal de Resultados -->
     <div id="modalFondo" class="modal-fondo">
-        <div class="mobile-modal">
-            <div class="mobile-modal-content" style="text-align: center;">
-                <h2 style="margin: 0 0 15px 0; color: var(--text-primary);">📊 Resultado</h2>
-                
-                <div id="modal-badge" class="result-badge-mini" style="margin-bottom: 20px;">
+        <div id="modalContenido" class="modal-contenido">
+            <span class="cerrar-btn" onclick="cerrarModal()">&times;</span>
+            
+            <div class="modal-header">
+                <h2>📊 Resultado</h2>
+                <div id="modal-badge" class="result-badge">
                     <span id="modal-emoji">✅</span>
                     <span id="modal-texto">RENTABLE</span>
                 </div>
+            </div>
 
-                <div class="mobile-stats" style="margin-bottom: 20px;">
-                    <div class="stat-item">
-                        <span class="stat-value" id="modal-por-minuto">--</span>
-                        <span class="stat-label">por minuto</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value" id="modal-por-km">--</span>
-                        <span class="stat-label">por km</span>
-                    </div>
+            <div class="modal-resultados-doble">
+                <div class="resultado-columna">
+                    <h3>⏱️ Por Minuto</h3>
+                    <div class="resultado-valor" id="modal-por-minuto">--</div>
+                    <div class="resultado-comparacion">$/minuto</div>
                 </div>
+                <div class="resultado-columna">
+                    <h3>🛣️ Por Km</h3>
+                    <div class="resultado-valor" id="modal-por-km">--</div>
+                    <div class="resultado-comparacion">$/km</div>
+                </div>
+            </div>
 
-                <div class="modal-actions-mobile">
-                    <button id="rechazar-viaje" class="secondary-button" style="flex: 1;">
-                        ❌ Rechazar
-                    </button>
-                    <button id="aceptar-viaje" class="primary-button" style="flex: 1;">
-                        ✅ Aceptar
-                    </button>
-                </div>
+            <div class="modal-actions">
+                <button id="rechazar-viaje" class="secondary-button">
+                    ❌ Rechazar Viaje
+                </button>
+                <button id="aceptar-viaje" class="primary-button">
+                    ✅ Aceptar Viaje
+                </button>
             </div>
         </div>
     </div>
@@ -720,4 +421,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
