@@ -322,7 +322,7 @@
             <div class="sync-status-bar">
                 <div class="sync-info" id="sync-info">
                     <span class="sync-icon" id="sync-icon">🌐</span>
-                    <span class="sync-text" id="sync-text">Conectando a la nube...</span>
+                    <span class="sync-text" id="sync-text">Conectando a Firebase...</span>
                 </div>
                 <button class="sync-details-btn" onclick="mostrarPanelSync()">
                     <span class="button-icon">📱</span>
@@ -589,6 +589,10 @@
                             <span class="status-label">Perfiles en nube:</span>
                             <span class="status-value" id="cloud-profiles-count">--</span>
                         </div>
+                        <div class="status-item">
+                            <span class="status-label">Historial en nube:</span>
+                            <span class="status-value" id="cloud-history-count">--</span>
+                        </div>
                     </div>
                 </div>
 
@@ -605,10 +609,14 @@
                         <span class="button-icon">🔑</span>
                         Cambiar Código
                     </button>
+                    <button class="secondary-button" onclick="diagnosticarSync()">
+                        <span class="button-icon">🔧</span>
+                        Diagnóstico
+                    </button>
                     <button class="secondary-button" onclick="cambiarUsuario()">
-    <span class="button-icon">🔄</span>
-    Cambiar Usuario
-</button>
+                        <span class="button-icon">🔄</span>
+                        Cambiar Usuario
+                    </button>
                 </div>
 
                 <div class="sync-tips">
@@ -616,8 +624,9 @@
                     <ul>
                         <li>Los perfiles se sincronizan automáticamente entre dispositivos</li>
                         <li>Usa el MISMO código en todos tus dispositivos</li>
-                        <li>Los datos se mantienen seguros en Google Sheets</li>
+                        <li>Los datos se mantienen seguros en Firebase</li>
                         <li>Funciona sin conexión con respaldo local</li>
+                        <li>Sincronización en tiempo real</li>
                     </ul>
                 </div>
             </div>
@@ -713,8 +722,112 @@
         #user-code-modal button:hover {
             background: #005a87 !important;
         }
+
+        /* Estilos para el panel de sincronización */
+        .sync-panel-content {
+            padding: 20px;
+        }
+
+        .sync-info-section,
+        .sync-status-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #007cba;
+        }
+
+        .device-info-current {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .device-icon {
+            font-size: 24px;
+        }
+
+        .device-details {
+            flex: 1;
+        }
+
+        .device-id {
+            font-size: 12px;
+            color: #666;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .connection-status {
+            display: grid;
+            gap: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-value {
+            color: #007cba;
+            font-weight: 500;
+        }
+
+        .sync-actions-panel {
+            display: grid;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .sync-tips {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .sync-tips h4 {
+            margin: 0 0 10px 0;
+            color: #856404;
+        }
+
+        .sync-tips ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #856404;
+        }
+
+        .sync-tips li {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .sync-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: #e7f3ff;
+            border-radius: 20px;
+            color: #007cba;
+            font-weight: 500;
+        }
     </style>
 </body>
 </html>
-
-
