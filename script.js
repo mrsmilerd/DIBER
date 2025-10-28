@@ -279,7 +279,7 @@ async function guardarDatos() {
         localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
     }
 
-    // Sincronizar con Firebase - VERIFICACIÓN MEJORADA
+    // Sincronizar con Firebase
     if (firebaseSync && firebaseSync.initialized === true) {
         console.log('☁️ Sincronizando datos con Firebase...');
         
@@ -292,24 +292,15 @@ async function guardarDatos() {
             await firebaseSync.saveHistory(historial);
             console.log('✅ Historial guardado en Firebase');
             
+            // 3. Actualizar última sincronización
+            firebaseSync.lastSyncTime = new Date().toISOString();
+            
         } catch (error) {
             console.warn('⚠️ Error al sincronizar datos:', error);
         }
 
     } else {
         console.warn('⚠️ Firebase Sync no inicializado o no disponible. Solo se guarda en local.');
-        console.log('🔍 Estado detallado de Firebase Sync:', {
-            firebaseSyncExists: !!firebaseSync,
-            initialized: firebaseSync?.initialized,
-            userId: firebaseSync?.userId,
-            userCodeSystem: userCodeSystem.initialized
-        });
-        
-        // Intentar reinicializar Firebase Sync si es necesario
-        if (userCodeSystem.initialized && (!firebaseSync || !firebaseSync.initialized)) {
-            console.log('🔄 Intentando reinicializar Firebase Sync...');
-            await initializeFirebaseSyncWithRetry();
-        }
     }
 }
 
@@ -511,21 +502,32 @@ function setUserCode() {
             await cargarDatos(); // Cargar datos existentes si los hay
         }
         
-        // Para nuevos usuarios, mostrar pantalla de perfiles
-        const esNuevoUsuario = perfiles.length === 0;
+        // VERIFICAR SI HAY PERFILES - LÓGICA MEJORADA
+        const tienePerfiles = perfiles && perfiles.length > 0;
+        const tienePerfilActual = perfilActual !== null;
         
-        if (esNuevoUsuario) {
-            console.log('👤 Nuevo usuario, mostrando pantalla de perfiles...');
-            mostrarPantalla('perfil');
-            mostrarStatus(`¡Bienvenido! Crea tu primer perfil para comenzar`, 'success');
-        } else {
+        console.log('🔍 Estado después de cargar datos:', {
+            tienePerfiles,
+            tienePerfilActual,
+            perfilesCount: perfiles.length,
+            perfilActual: perfilActual ? perfilActual.nombre : 'null'
+        });
+        
+        if (tienePerfiles && tienePerfilActual) {
+            // Usuario existente con datos - ir a pantalla principal
             console.log('🔄 Usuario existente, mostrando pantalla principal...');
             mostrarPantalla('main');
             mostrarStatus(`¡Bienvenido de vuelta!`, 'success');
+        } else {
+            // Nuevo usuario o sin perfiles - ir a crear perfil
+            console.log('👤 Nuevo usuario o sin perfiles, mostrando pantalla de perfiles...');
+            mostrarPantalla('perfil');
+            mostrarStatus(`¡Bienvenido! Crea tu primer perfil para comenzar`, 'success');
         }
         
     }, 1500);
 }
+
 
 function showUserCodeModal() {
     const modal = document.getElementById('user-code-modal');
@@ -872,7 +874,7 @@ class FirebaseSync {
 }
 
     // Escuchar cambios en tiempo real
-    listenForChanges(callback) {
+ listenForChanges(callback) {
         if (!this.initialized) {
             console.warn('❌ Firebase Sync no inicializado, no se puede escuchar cambios');
             return null;
@@ -880,18 +882,73 @@ class FirebaseSync {
 
         try {
             const userDocRef = this.db.collection('users').doc(this.userId);
+            console.log('👂 Escuchando cambios en tiempo real para:', this.userId);
+            
             return userDocRef.onSnapshot((doc) => {
                 if (doc.exists) {
                     const data = doc.data();
-                    console.log('🔄 Cambios detectados en Firebase');
+                    console.log('🔄 Cambios detectados en Firebase:', {
+                        perfiles: data.profiles?.length || 0,
+                        historial: data.history?.length || 0
+                    });
+                    
+                    // Ejecutar callback con los nuevos datos
                     callback(data);
                 }
             }, (error) => {
                 console.error('❌ Error escuchando cambios:', error);
             });
+            
         } catch (error) {
             console.error('❌ Error configurando listener:', error);
             return null;
+        }
+    }
+
+    // Sincronizar datos desde Firebase (para usar cuando se detecten cambios)
+    async syncFromFirebase() {
+        if (!this.initialized) {
+            console.warn('❌ Firebase Sync no inicializado');
+            return false;
+        }
+
+        try {
+            console.log('🔄 Sincronizando datos desde Firebase...');
+            
+            // Cargar perfiles
+            const cloudProfiles = await this.loadProfiles();
+            if (cloudProfiles && cloudProfiles.length > 0) {
+                console.log('✅ Perfiles sincronizados desde Firebase:', cloudProfiles.length);
+                perfiles = cloudProfiles;
+            }
+            
+            // Cargar historial
+            const cloudHistory = await this.loadHistory();
+            if (cloudHistory && cloudHistory.length > 0) {
+                console.log('✅ Historial sincronizado desde Firebase:', cloudHistory.length);
+                historial = cloudHistory;
+            }
+            
+            // Actualizar perfil actual si es necesario
+            if (perfiles.length > 0 && !perfilActual) {
+                perfilActual = perfiles[0];
+                localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
+            }
+            
+            // Guardar localmente
+            guardarDatos();
+            
+            // Actualizar interfaz
+            actualizarInterfazPerfiles();
+            actualizarHistorial();
+            actualizarEstadisticas();
+            
+            console.log('✅ Sincronización desde Firebase completada');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error en syncFromFirebase:', error);
+            return false;
         }
     }
     
@@ -1038,13 +1095,34 @@ async function inicializarApp() {
             return; // Salir aquí si no hay código
         }
         
-        // 2. LUEGO: Inicializar Firebase Sync con reintentos - PARA TODOS LOS USUARIOS
+        // 2. LUEGO: Inicializar Firebase Sync con reintentos
         console.log('🔄 Inicializando Firebase Sync para el usuario...');
         const firebaseReady = await initializeFirebaseSyncWithRetry();
         
         if (firebaseReady) {
             console.log('✅ Firebase Sync inicializado, cargando datos...');
             await cargarDatos();
+            
+            // 3. INICIAR ESCUCHA EN TIEMPO REAL - NUEVO
+            console.log('👂 Iniciando escucha en tiempo real...');
+            firebaseSync.listenForChanges((data) => {
+                console.log('🔄 Datos actualizados desde otro dispositivo');
+                // Sincronizar los datos recibidos
+                if (data.profiles) {
+                    perfiles = data.profiles;
+                }
+                if (data.history) {
+                    historial = data.history;
+                }
+                
+                // Actualizar interfaz
+                actualizarInterfazPerfiles();
+                actualizarHistorial();
+                actualizarEstadisticas();
+                
+                mostrarStatus('Datos actualizados desde otro dispositivo', 'info');
+            });
+            
         } else {
             console.log('📱 Firebase Sync no disponible, usando almacenamiento local');
             await cargarDatos();
@@ -1052,7 +1130,7 @@ async function inicializarApp() {
         
         aplicarTemaGuardado();
         
-        // 3. VERIFICAR que tenemos un perfil actual válido
+        // 4. VERIFICAR que tenemos un perfil actual válido
         if (!perfilActual && perfiles.length > 0) {
             console.log('🔄 Estableciendo primer perfil como actual...');
             perfilActual = perfiles[0];
@@ -1061,7 +1139,7 @@ async function inicializarApp() {
         
         actualizarInterfazPerfiles();
         
-        // 4. DECIDIR qué pantalla mostrar - MEJORADO
+        // 5. DECIDIR qué pantalla mostrar
         if (perfiles.length > 0 && perfilActual) {
             console.log('🏠 Mostrando pantalla principal con perfil:', perfilActual.nombre);
             mostrarPantalla('main');
@@ -2331,43 +2409,50 @@ function cambiarUsuario() {
     
     if (confirm('¿Estás seguro de que quieres cambiar de usuario? Se crearán nuevos datos locales para el nuevo código.')) {
         
-        // 1. Limpiar datos específicos de la app, NO TODO
+        // 1. Cerrar todos los modales abiertos primero
+        cerrarModal();
+        cerrarExportModal();
+        cerrarSyncPanel();
+        
+        // 2. Limpiar datos específicos de la app
         localStorage.removeItem('ubercalc_perfiles');
         localStorage.removeItem('ubercalc_historial');
         localStorage.removeItem('ubercalc_perfil_actual_id');
-        localStorage.removeItem('ubercalc_user_code'); // Esto es importante
+        localStorage.removeItem('ubercalc_user_code');
         localStorage.removeItem('ubercalc_user_id');
         
-        // 2. Resetear el estado del sistema de código
+        // 3. Resetear el estado del sistema de código
         userCodeSystem.userCode = null;
         userCodeSystem.userId = null;
         userCodeSystem.initialized = false;
         
-        // 3. Reiniciar Firebase Sync COMPLETAMENTE
+        // 4. Reiniciar Firebase Sync COMPLETAMENTE
         if (firebaseSync) {
             firebaseSync.initialized = false;
             firebaseSync.userId = null;
             firebaseSync = null;
         }
         
-        // 4. Limpiar datos en memoria
+        // 5. Limpiar datos en memoria
         perfiles = [];
         perfilActual = null;
         historial = [];
         calculoActual = null;
         
-        // 5. Limpiar formularios
+        // 6. Limpiar formularios
         limpiarFormulario();
         
-        // 6. Ocultar banners
+        // 7. Ocultar banners
         const banner = document.getElementById('user-code-banner');
         const bannerMain = document.getElementById('user-code-banner-main');
         if (banner) banner.style.display = 'none';
         if (bannerMain) bannerMain.style.display = 'none';
         
-        // 7. MOSTRAR MODAL DE CÓDIGO en lugar de recargar
+        // 8. MOSTRAR MODAL DE CÓDIGO automáticamente
         console.log('🔄 Mostrando modal para nuevo código...');
-        showUserCodeModal();
+        setTimeout(() => {
+            showUserCodeModal();
+        }, 500);
         
     } else {
         console.log('❌ Cambio de usuario cancelado');
@@ -2379,6 +2464,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
