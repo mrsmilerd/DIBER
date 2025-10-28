@@ -2350,36 +2350,6 @@ async function cargarDatos() {
     console.log(`✅ Carga de datos finalizada. Perfiles: ${perfiles.length}, Historial: ${historial.length}`);
 }
 
-async function guardarDatos() {  // ✅ AÑADIR 'async' AQUÍ
-    console.log('💾 Guardando datos en local storage...');
-    // Guardar en LocalStorage (Caché y fallback)
-    localStorage.setItem('ubercalc_perfiles', JSON.stringify(perfiles));
-    localStorage.setItem('ubercalc_historial', JSON.stringify(historial));
-    if (perfilActual) {
-        localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
-    }
-
-    // Sincronizar perfiles con Google Sheets (Paso CRÍTICO para el multi-dispositivo)
-    if (googleSync && googleSync.initialized) {
-        console.log('☁️ Sincronizando perfiles con Google Sheets...');
-        
-        try {
-            // Usamos saveProfiles, que envía los datos bajo el userId asociado al código
-            await googleSync.saveProfiles(perfiles);  // ✅ AÑADIR 'await' AQUÍ
-            console.log('✅ Perfiles guardados en la nube');
-            
-            // Sincronizar historial también
-            await googleSync.saveHistory(historial);  // ✅ AÑADIR 'await' AQUÍ
-            console.log('✅ Historial guardado en la nube');
-            
-        } catch (error) {
-            console.warn('⚠️ Error al guardar datos en la nube:', error);
-        }
-    } else {
-        console.warn('⚠️ Google Sync no inicializado. Solo se guarda en local.');
-    }
-}
-
 // --- Función de Sincronización Centralizada ---
 async function guardarYForzarSincronizacion() {
     if (!googleSync || !googleSync.initialized) {
@@ -2631,6 +2601,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
