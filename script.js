@@ -1543,11 +1543,11 @@ async function guardarPerfil(event) {
     if (index > -1) {
         // Actualizar perfil existente
         perfiles[index] = perfil;
-        mostrarNotificacion('Perfil actualizado correctamente.', 'success');
+        mostrarStatus('Perfil actualizado correctamente.', 'success');
     } else {
         // Crear nuevo perfil
         perfiles.push(perfil);
-        mostrarNotificacion('Nuevo perfil creado correctamente.', 'success');
+        mostrarStatus('Nuevo perfil creado correctamente.', 'success');
     }
     
     // --- 3. Sincronización (¡El paso clave!) ---
@@ -2601,6 +2601,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
