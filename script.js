@@ -347,50 +347,6 @@ function debugUserCodeModal() {
 }
 
 // =============================================
-// FUNCIÓN DE CONTROL DE SESIÓN (NUEVA UBICACIÓN)
-// =============================================
-
-/**
- * Inicia el proceso de cambio de usuario:
- * 1. Limpia el código, ID y datos de la sesión actual (perfiles/historial) de la memoria y LocalStorage.
- * 2. Muestra el modal para que el usuario ingrese un código nuevo o existente.
- * * NOTA: Reubicada en esta posición para asegurar que actualizarSelectorPerfiles() esté definida.
- */
-function cambiarUsuario() {
-    console.log('🔄 Iniciando cambio de usuario. Limpiando sesión y memoria...');
-    
-    // 1. Limpiar código y ID de usuario en LocalStorage
-    localStorage.removeItem('ubercalc_user_code'); 
-    localStorage.removeItem('ubercalc_user_id');
-    localStorage.removeItem('uberCalc_data');
-    
-    // 2. Resetear el estado del sistema de sincronización en memoria
-    userCodeSystem.userCode = null;
-    userCodeSystem.userId = null;
-    userCodeSystem.initialized = false;
-    
-    // 3. Reiniciar los arrays de datos en memoria (¡ESTO ES LO QUE SOLUCIONA TU PROBLEMA!)
-    perfiles = [];
-    perfilActual = null;
-    historial = [];
-    
-    // 4. Resetear la interfaz y el selector de perfiles
-    // Nota: Esta línea ahora no dará error porque está ubicada correctamente.
-    actualizarSelectorPerfiles(); 
-    
-    // 5. Ocultar banners 
-    const banner = document.getElementById('user-code-banner');
-    const bannerMain = document.getElementById('user-code-banner-main');
-    if (banner) banner.style.display = 'none';
-    if (bannerMain) bannerMain.style.display = 'none';
-    
-    // 6. Mostrar el modal de código para la nueva entrada
-    showUserCodeModal(); 
-    
-    console.log('✅ Sesión reiniciada. Los datos anteriores se borraron de la memoria.');
-}
-
-// =============================================
 // CLASE GOOGLE SYNC (MODIFICADA PARA USAR CÓDIGO DE USUARIO)
 // =============================================
 
@@ -2506,6 +2462,56 @@ window.debugUserCodeModal = debugUserCodeModal;
 window.pruebaDirectaGoogleSheets = pruebaDirectaGoogleSheets;
 window.cambiarUsuario = cambiarUsuario;
 
+// =============================================
+// FUNCIÓN DE CONTROL DE SESIÓN (UBICACIÓN FINAL Y SEGURA)
+// =============================================
+
+/**
+ * Inicia el proceso de cambio de usuario:
+ * 1. Limpia el código, ID y datos de la sesión actual (perfiles/historial) de la memoria y LocalStorage.
+ * 2. Muestra el modal para que el usuario ingrese un código nuevo o existente.
+ * * NOTA: Esta ubicación es crítica, ya que todas las funciones de UI (ej. actualizarSelectorPerfiles) ya han sido definidas.
+ */
+function cambiarUsuario() {
+    console.log('🔄 Iniciando cambio de usuario. Limpiando sesión y memoria...');
+    
+    // 1. Limpiar código y ID de usuario en LocalStorage
+    localStorage.removeItem('ubercalc_user_code'); 
+    localStorage.removeItem('ubercalc_user_id');
+    localStorage.removeItem('uberCalc_data');
+    
+    // 2. Resetear el estado del sistema de sincronización en memoria
+    userCodeSystem.userCode = null;
+    userCodeSystem.userId = null;
+    userCodeSystem.initialized = false;
+    
+    // 3. Reiniciar los arrays de datos en memoria (Mantiene la solución al problema de sobrescritura)
+    perfiles = [];
+    perfilActual = null;
+    historial = [];
+    
+    // 4. Resetear la interfaz (ahora esta función estará definida)
+    actualizarSelectorPerfiles(); 
+    
+    // 5. Ocultar banners 
+    const banner = document.getElementById('user-code-banner');
+    const bannerMain = document.getElementById('user-code-banner-main');
+    if (banner) banner.style.display = 'none';
+    if (bannerMain) bannerMain.style.display = 'none';
+    
+    // 6. Mostrar el modal de código para la nueva entrada
+    showUserCodeModal(); 
+    
+    console.log('✅ Sesión reiniciada. Los datos anteriores se borraron de la memoria.');
+}
+
+// ... Y justo después de esto, debería seguir esta sección en tu código:
+
+// Nuevas funciones globales para el sistema de código
+// window.generateUserCode = generateUserCode;
+// ... (y todas las demás llamadas a window.funcion = funcion)
+// window.cambiarUsuario = cambiarUsuario; // Asegúrate de que esta línea esté presente
+
 // --- Prevenir cierre accidental ---
 window.addEventListener('beforeunload', function(e) {
     const tieneDatosPendientes = elementos.tarifaInput?.value || 
@@ -2540,6 +2546,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
