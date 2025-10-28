@@ -752,6 +752,7 @@ class FirebaseSync {
     return false;
 }
 
+         try {
 const historyRef = this.db
   .collection('users')
   .doc(this.userId)
@@ -2588,6 +2589,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
