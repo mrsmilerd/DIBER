@@ -276,7 +276,7 @@ class GoogleSync {
         return userId;
     }
 
-    async makeRequest(params) {
+async makeRequest(params) {
     if (!this.initialized) {
         throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
     }
@@ -300,16 +300,16 @@ class GoogleSync {
         const targetUrl = `${GOOGLE_SCRIPT_BASE_URL}?${urlParams.toString()}`;
         
         console.log('🔗 Target URL de Google Script:', targetUrl);
-        console.log('🔗 Enviando a Vercel Proxy:', LOCAL_SYNC_ENDPOINT);
+        console.log('🔗 Enviando a Vercel Proxy:', '/api/sync');
 
-        // 2. Llamar al endpoint local de Vercel y pasar la URL de Google Script
-        const response = await fetch(LOCAL_SYNC_ENDPOINT, {
+        // 2. Llamar al endpoint de Vercel
+        const response = await fetch('/api/sync', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                targetUrl: targetUrl // Enviamos la URL completa del Google Script
+                targetUrl: targetUrl
             })
         });
 
@@ -2274,6 +2274,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
