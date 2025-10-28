@@ -111,18 +111,23 @@ async function cargarDatos() {
         historial = localHistorialString ? JSON.parse(localHistorialString) : [];
     }
     
-    // 3. Establecer perfil actual
+    // 3. Establecer perfil actual - CORREGIDO
     const lastProfileId = localStorage.getItem('ubercalc_perfil_actual_id');
+    console.log('🔍 Buscando perfil actual. Last ID:', lastProfileId, 'Perfiles disponibles:', perfiles.length);
+    
     if (perfiles.length > 0) {
         perfilActual = perfiles.find(p => p.id === lastProfileId) || perfiles[0];
+        console.log('✅ Perfil actual establecido:', perfilActual?.nombre);
+        
         if (perfilActual) {
             localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
         }
     } else {
         perfilActual = null;
+        console.log('❌ No hay perfiles disponibles');
     }
     
-    console.log(`✅ Carga de datos finalizada. Perfiles: ${perfiles.length}, Historial: ${historial.length}`);
+    console.log(`✅ Carga de datos finalizada. Perfiles: ${perfiles.length}, Historial: ${historial.length}, PerfilActual: ${perfilActual ? perfilActual.nombre : 'null'}`);
 }
 
 async function initializeUserCodeSystem() {
@@ -853,15 +858,21 @@ async function inicializarApp() {
     }
     
     aplicarTemaGuardado();
+
+if (perfiles.length === 0) {
+        console.log('🆕 No hay perfiles, creando uno por defecto...');
+        crearPerfilPorDefecto();
+    }
+    
     actualizarInterfazPerfiles();
     
-    // Si hay perfiles, mostrar el último usado
-    if (perfiles.length > 0 && perfilActual) {
+    // CORREGIDO: Verificar correctamente si hay perfiles y perfilActual
+     if (perfiles.length > 0 && perfilActual) {
         console.log('🏠 Mostrando pantalla principal con perfil:', perfilActual.nombre);
         mostrarPantalla('main');
         actualizarEstadisticas();
     } else {
-        console.log('👤 Mostrando pantalla de perfiles (sin perfiles)');
+        console.log('👤 Mostrando pantalla de perfiles (sin perfiles o perfilActual es null)');
         mostrarPantalla('perfil');
     }
     
@@ -1190,11 +1201,15 @@ function actualizarInterfazPerfiles() {
     perfiles.forEach(perfil => {
         const perfilElement = document.createElement('div');
         perfilElement.className = `perfil-item ${perfil.id === perfilActual?.id ? 'active' : ''}`;
+        
+        const unidadRendimiento = perfil.tipoMedida === 'mi' ? 'mpg' : 'Km/Gl';
+        const detalles = `${perfil.rendimiento} ${unidadRendimiento} • ${perfil.moneda}`;
+        
         perfilElement.innerHTML = `
             <div class="perfil-info">
                 <h3>${perfil.nombre}</h3>
-                <p>${perfil.vehiculo || 'Sin vehículo'} • ${perfil.tipoCombustible || 'N/A'}</p>
-                <p class="small">Costo operacional: ${perfil.moneda || '$'}${perfil.costoOperacional || 0}/hora</p>
+                <p>${detalles}</p>
+                <p class="small">${perfil.tipoCombustible.toUpperCase()}</p>
             </div>
             <div class="perfil-actions">
                 <button class="btn-icon" onclick="editarPerfil('${perfil.id}')">✏️</button>
@@ -1204,6 +1219,37 @@ function actualizarInterfazPerfiles() {
         `;
         elementos.perfilesLista.appendChild(perfilElement);
     });
+}
+
+function crearPerfilPorDefecto() {
+    console.log('🆕 Creando perfil por defecto...');
+    
+    const perfilDefault = {
+        id: 'perfil_default_' + Date.now(),
+        nombre: 'Mi Perfil Principal',
+        tipoMedida: 'km',
+        tipoCombustible: 'glp',
+        rendimiento: 22.0,
+        precioCombustible: 137.20,
+        moneda: 'DOP',
+        umbralMinutoRentable: 6.00,
+        umbralKmRentable: 25.00,
+        umbralMinutoOportunidad: 5.00,
+        umbralKmOportunidad: 23.00,
+        costoSeguro: 0,
+        costoMantenimiento: 0,
+        fechaCreacion: new Date().toISOString(),
+        fechaActualizacion: new Date().toISOString()
+    };
+    
+    perfiles.push(perfilDefault);
+    perfilActual = perfilDefault;
+    
+    guardarDatos();
+    actualizarInterfazPerfiles();
+    
+    console.log('✅ Perfil por defecto creado:', perfilDefault.nombre);
+    return perfilDefault;
 }
 
 function mostrarConfigPerfil(perfilExistente = null) {
@@ -1565,8 +1611,12 @@ function mostrarPantalla(pantalla) {
             break;
         case 'main':
             if (elementos.mainScreen) elementos.mainScreen.classList.add('active');
+            // SOLUCIÓN: Verificar que perfilActual existe antes de intentar usarlo
             if (perfilActual) {
-                document.getElementById('perfil-actual-nombre').textContent = perfilActual.nombre;
+                const perfilNombreElement = document.getElementById('perfil-actual-nombre');
+                if (perfilNombreElement) {
+                    perfilNombreElement.textContent = perfilActual.nombre;
+                }
             }
             break;
     }
@@ -1708,4 +1758,5 @@ window.addEventListener('click', function(event) {
 });
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
