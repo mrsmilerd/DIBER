@@ -12,77 +12,75 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
 <body>
-    <!-- Modal de Código de Usuario (SE MUESTRA AL PRINCIPIO) -->
-    <div id="user-code-modal" class="modal-fondo">
-        <div class="modal-contenido" style="max-width: 500px; background: white; color: #333;">
-            <div class="modal-header" style="text-align: center; padding: 20px;">
-                <h2 style="margin: 0; color: #333;">🔄 Sincronización Multi-Dispositivo</h2>
-            </div>
+    <!-- Modal de Código de Usuario MEJORADO -->
+<div id="user-code-modal" class="modal-fondo">
+    <div class="modal-contenido" style="max-width: 500px; background: white; color: #333;">
+        <div class="modal-header" style="text-align: center; padding: 20px; border-bottom: 2px solid #007cba;">
+            <h2 style="margin: 0; color: #333;">🔄 Conectar Dispositivos</h2>
+            <p style="color: #666; margin: 10px 0 0 0;">Usa el MISMO código en todos tus dispositivos</p>
+        </div>
+        
+        <div class="modal-body" style="padding: 20px;">
+            <!-- Indicador de estado -->
+            <div id="code-status" style="display: none; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;"></div>
             
-            <div class="modal-body" style="padding: 0 20px 20px;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <div style="font-size: 48px; margin-bottom: 15px;">🔄</div>
-                    <h3 style="margin: 0 0 10px 0; color: #333;">Conectar Dispositivos</h3>
-                    <p style="color: #666; margin: 0;">
-                        Usa el mismo código en todos tus dispositivos para sincronizar tus perfiles
-                    </p>
-                </div>
-                
-                <div style="margin: 25px 0;">
-                    <label for="user-code-input" style="display: block; margin-bottom: 10px; font-weight: bold; color: #333;">
-                        Tu Código de Sincronización:
-                    </label>
-                    <input type="text" id="user-code-input" 
-                           placeholder="Ej: ABC123" 
-                           style="width: 100%; 
-                                  padding: 15px; 
-                                  font-size: 18px; 
-                                  text-align: center; 
-                                  letter-spacing: 3px;
-                                  border: 2px solid #ddd;
-                                  border-radius: 10px;
-                                  background: #f9f9f9;
-                                  color: #333;
-                                  text-transform: uppercase;"
-                           maxlength="6">
-                    <div style="text-align: center; margin-top: 10px;">
-                        <button onclick="generateUserCode()" 
-                                style="padding: 8px 16px; 
-                                       background: transparent; 
-                                       color: #007cba; 
-                                       border: 1px solid #007cba;
-                                       border-radius: 20px;
-                                       cursor: pointer;
-                                       font-size: 14px;">
-                            ✨ Generar Código Nuevo
-                        </button>
-                    </div>
-                </div>
-                
-                <div style="background: #f0f8ff; padding: 15px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #007cba;">
-                    <p style="margin: 0; font-size: 14px; color: #666; text-align: center;">
-                        💡 <strong>Instrucción importante:</strong><br>
-                        Usa el <strong style="color: #007cba;">MISMO código</strong> en tu PC, móvil y tablet para ver tus perfiles sincronizados
-                    </p>
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="setUserCode()" 
-                            style="flex: 1; 
-                                   padding: 15px; 
-                                   background: #007cba; 
-                                   color: white; 
-                                   border: none; 
-                                   border-radius: 10px;
-                                   font-size: 16px;
-                                   font-weight: bold;
-                                   cursor: pointer;">
-                        🚀 Conectar
+            <div style="margin: 20px 0;">
+                <label for="user-code-input" style="display: block; margin-bottom: 10px; font-weight: bold; color: #333;">
+                    🔑 Tu Código de Sincronización:
+                </label>
+                <input type="text" id="user-code-input" 
+                       placeholder="Ej: ABC123 - Escribe aquí tu código"
+                       style="width: 100%; 
+                              padding: 15px; 
+                              font-size: 18px; 
+                              text-align: center; 
+                              letter-spacing: 2px;
+                              border: 2px solid #ddd;
+                              border-radius: 10px;
+                              background: #f9f9f9;
+                              color: #333;
+                              text-transform: uppercase;"
+                       maxlength="6">
+                <div style="text-align: center; margin-top: 10px;">
+                    <button onclick="generateUserCode()" 
+                            style="padding: 8px 16px; 
+                                   background: transparent; 
+                                   color: #007cba; 
+                                   border: 1px solid #007cba;
+                                   border-radius: 20px;
+                                   cursor: pointer;
+                                   font-size: 14px;">
+                        ✨ Generar Código Automático
                     </button>
                 </div>
             </div>
+            
+            <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                <p style="margin: 0; font-size: 14px; color: #856404; text-align: center;">
+                    ⚠️ <strong>Importante:</strong> 
+                    <br>• Escribe un código o genera uno automático
+                    <br>• Usa el <strong>MISMO código</strong> en PC, móvil y tablet
+                    <br>• Ejemplos: ABC123, PC123, MOV456
+                </p>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="setUserCode()" 
+                        style="flex: 1; 
+                               padding: 15px; 
+                               background: #007cba; 
+                               color: white; 
+                               border: none; 
+                               border-radius: 10px;
+                               font-size: 16px;
+                               font-weight: bold;
+                               cursor: pointer;">
+                    🚀 Conectar con este Código
+                </button>
+            </div>
         </div>
     </div>
+</div>
 
     <!-- Banner de Código de Usuario (se muestra en la app) -->
     <div id="user-code-banner" class="sync-status-bar" style="display: none;">
@@ -718,4 +716,5 @@
     </style>
 </body>
 </html>
+
 
