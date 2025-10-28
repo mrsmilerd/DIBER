@@ -350,6 +350,53 @@ function debugUserCodeModal() {
 // CLASE GOOGLE SYNC (MODIFICADA PARA USAR CÓDIGO DE USUARIO)
 // =============================================
 
+async saveHistory(history) {
+    if (!this.initialized) {
+        console.warn('❌ Google Sync no inicializado, no se puede guardar historial');
+        return false;
+    }
+
+    try {
+        console.log('💾 Guardando historial en Google Sheets...', history.length);
+        
+        const result = await this.makeRequest({
+            action: 'saveHistory',
+            history: history
+        });
+        
+        this.lastSyncTime = result.lastSync;
+        console.log('✅ Historial guardado en Google Sheets correctamente');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error guardando historial en Google Sheets:', error);
+        return false;
+    }
+}
+
+async loadHistory() {
+    if (!this.initialized) {
+        console.warn('❌ Google Sync no inicializado, no se puede cargar historial');
+        return null;
+    }
+
+    try {
+        console.log('📥 Cargando historial desde Google Sheets...');
+        
+        const result = await this.makeRequest({
+            action: 'getHistory'
+        });
+        
+        this.lastSyncTime = result.lastSync;
+        console.log('✅ Historial cargado desde Google Sheets:', result.history?.length || 0);
+        return result.history || [];
+        
+    } catch (error) {
+        console.error('❌ Error cargando historial desde Google Sheets:', error);
+        return null;
+    }
+}
+
 class GoogleSync {
     constructor() {
         this.initialized = false;
@@ -1520,7 +1567,7 @@ async function guardarPerfil(event) {
         perfilActual = perfil;
     }
     
-    actualizarSelectorPerfiles();
+    actualizarInterfazPerfiles();
     if (perfilActual && perfil.id === perfilActual.id) {
         cargarPerfilEnInterfaz(perfilActual); // Asegura que la interfaz muestre los datos actualizados
     }
@@ -2241,32 +2288,26 @@ function formatearMoneda(valor) {
 async function cargarDatos() {
     console.log('🔄 Cargando datos (local y nube)...');
     let cloudPerfiles = null;
+    let cloudHistorial = null;
 
-    // 1. Intentar cargar desde la nube (PRIORIDAD AL CÓDIGO DE USUARIO)
-    if (googleSync && googleSync.initialized) {
+    // 1. Intentar cargar desde la nube (PRIORIDAD)
+    if (window.googleSync && googleSync.initialized) {
         try {
             console.log('☁️ Intentando cargar perfiles desde la nube...');
-            // Obtener perfiles de Google Sheets (asociados al User ID del código)
             cloudPerfiles = await googleSync.loadProfiles(); 
             
             if (cloudPerfiles && cloudPerfiles.length > 0) {
                 console.log('✅ Perfiles cargados de la nube:', cloudPerfiles.length);
-                perfiles = cloudPerfiles; // SOBREESCRIBIR con datos de la nube
-            } else if (userCodeSystem.initialized) {
-                // Caso: Usuario conectado con un código, pero la nube no tiene datos para ese código.
-                // Esto puede suceder si se creó el perfil en el PC, pero la sincronización falló
-                // o si es el primer dispositivo que se conecta.
-                
-                // Cargar datos locales como respaldo
-                const localPerfilesString = localStorage.getItem('ubercalc_perfiles');
-                const localPerfiles = localPerfilesString ? JSON.parse(localPerfilesString) : [];
+                perfiles = cloudPerfiles;
+            }
 
-                if (localPerfiles.length > 0) {
-                    // Si el local tiene datos y la nube no, subimos los locales (PC -> Nube)
-                    console.log('⬆️ Nube vacía para el código. Subiendo perfiles locales...');
-                    await googleSync.saveProfiles(localPerfiles);
-                    perfiles = localPerfiles;
-                }
+            // CARGAR HISTORIAL DESDE LA NUBE (¡NUEVO!)
+            console.log('☁️ Intentando cargar historial desde la nube...');
+            cloudHistorial = await googleSync.loadHistory();
+            
+            if (cloudHistorial && cloudHistorial.length > 0) {
+                console.log('✅ Historial cargado de la nube:', cloudHistorial.length);
+                historial = cloudHistorial;
             }
             
         } catch (error) {
@@ -2274,11 +2315,17 @@ async function cargarDatos() {
         }
     }
     
-    // 2. Cargar de LocalStorage si la nube NO proporcionó perfiles (fallo de sync o nube vacía)
+    // 2. Cargar de LocalStorage si la nube NO proporcionó datos
     if (!perfiles || perfiles.length === 0) {
         console.log('💾 Cargando perfiles de localStorage...');
         const localPerfilesString = localStorage.getItem('ubercalc_perfiles');
         perfiles = localPerfilesString ? JSON.parse(localPerfilesString) : [];
+    }
+
+    if (!historial || historial.length === 0) {
+        console.log('💾 Cargando historial de localStorage...');
+        const localHistorialString = localStorage.getItem('ubercalc_historial');
+        historial = localHistorialString ? JSON.parse(localHistorialString) : [];
     }
 
     // 3. Cargar historial (ajustar si el historial también se guarda en la nube)
@@ -2473,44 +2520,60 @@ window.cambiarUsuario = cambiarUsuario;
  * * NOTA: Esta ubicación es crítica, ya que todas las funciones de UI (ej. actualizarSelectorPerfiles) ya han sido definidas.
  */
 function cambiarUsuario() {
-    console.log('🔄 Iniciando cambio de usuario. Limpiando sesión y memoria...');
+    console.log('🔄 Iniciando cambio de usuario. Limpiando sesión COMPLETA...');
     
-    // 1. Limpiar código y ID de usuario en LocalStorage
-    localStorage.removeItem('ubercalc_user_code'); 
-    localStorage.removeItem('ubercalc_user_id');
-    localStorage.removeItem('uberCalc_data');
-    
-    // 2. Resetear el estado del sistema de sincronización en memoria
-    userCodeSystem.userCode = null;
-    userCodeSystem.userId = null;
-    userCodeSystem.initialized = false;
-    
-    // 3. Reiniciar los arrays de datos en memoria (Mantiene la solución al problema de sobrescritura)
-    perfiles = [];
-    perfilActual = null;
-    historial = [];
-    
-    // 4. Resetear la interfaz (ahora esta función estará definida)
-    actualizarSelectorPerfiles(); 
-    
-    // 5. Ocultar banners 
-    const banner = document.getElementById('user-code-banner');
-    const bannerMain = document.getElementById('user-code-banner-main');
-    if (banner) banner.style.display = 'none';
-    if (bannerMain) bannerMain.style.display = 'none';
-    
-    // 6. Mostrar el modal de código para la nueva entrada
-    showUserCodeModal(); 
-    
-    console.log('✅ Sesión reiniciada. Los datos anteriores se borraron de la memoria.');
+    if (confirm('¿Estás seguro de que quieres cambiar de usuario? Se perderán todos los datos locales no sincronizados.')) {
+        
+        // 1. Limpiar TODO en LocalStorage
+        localStorage.removeItem('ubercalc_user_code');
+        localStorage.removeItem('ubercalc_user_id');
+        localStorage.removeItem('ubercalc_perfiles');
+        localStorage.removeItem('ubercalc_historial');
+        localStorage.removeItem('ubercalc_perfil_actual_id');
+        localStorage.removeItem('uberCalc_data');
+        localStorage.removeItem('uberCalc_theme'); // Opcional: si quieres mantener el tema
+        
+        // 2. Resetear el estado del sistema de código
+        userCodeSystem.userCode = null;
+        userCodeSystem.userId = null;
+        userCodeSystem.initialized = false;
+        
+        // 3. Reiniciar Google Sync
+        if (googleSync) {
+            googleSync.initialized = false;
+            googleSync.userId = null;
+        }
+        
+        // 4. Limpiar datos en memoria
+        perfiles = [];
+        perfilActual = null;
+        historial = [];
+        calculoActual = null;
+        
+        // 5. Limpiar formularios
+        limpiarFormulario();
+        
+        // 6. Ocultar banners
+        const banner = document.getElementById('user-code-banner');
+        const bannerMain = document.getElementById('user-code-banner-main');
+        if (banner) banner.style.display = 'none';
+        if (bannerMain) bannerMain.style.display = 'none';
+        
+        // 7. Mostrar pantalla de perfiles (vacía)
+        mostrarPantalla('perfil');
+        actualizarInterfazPerfiles();
+        
+        // 8. Mostrar modal de código NUEVO
+        setTimeout(() => {
+            showUserCodeModal();
+            console.log('✅ Sesión completamente reiniciada. Listo para nuevo código.');
+            mostrarStatus('Sesión reiniciada. Ingresa un nuevo código.', 'info');
+        }, 500);
+        
+    } else {
+        console.log('❌ Cambio de usuario cancelado');
+    }
 }
-
-// ... Y justo después de esto, debería seguir esta sección en tu código:
-
-// Nuevas funciones globales para el sistema de código
-// window.generateUserCode = generateUserCode;
-// ... (y todas las demás llamadas a window.funcion = funcion)
-// window.cambiarUsuario = cambiarUsuario; // Asegúrate de que esta línea esté presente
 
 // --- Prevenir cierre accidental ---
 window.addEventListener('beforeunload', function(e) {
@@ -2546,3 +2609,4 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
