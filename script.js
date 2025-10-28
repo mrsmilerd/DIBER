@@ -502,32 +502,47 @@ function setUserCode() {
             await cargarDatos(); // Cargar datos existentes si los hay
         }
         
-        // VERIFICAR SI HAY PERFILES - LÓGICA MEJORADA
-        const tienePerfiles = perfiles && perfiles.length > 0;
-        const tienePerfilActual = perfilActual !== null;
+        // ✅ LÓGICA CORREGIDA: SIEMPRE mostrar pantalla de perfiles para nuevos usuarios
+        // Verificar si realmente hay datos en Firebase
+        let tieneDatosEnFirebase = false;
         
-        console.log('🔍 Estado después de cargar datos:', {
-            tienePerfiles,
-            tienePerfilActual,
-            perfilesCount: perfiles.length,
-            perfilActual: perfilActual ? perfilActual.nombre : 'null'
+        if (firebaseSync && firebaseSync.initialized) {
+            try {
+                const syncStatus = await firebaseSync.getSyncStatus();
+                tieneDatosEnFirebase = syncStatus.profilesCount > 0 || syncStatus.historyCount > 0;
+                console.log('🔍 Estado Firebase:', {
+                    profilesCount: syncStatus.profilesCount,
+                    historyCount: syncStatus.historyCount,
+                    tieneDatosEnFirebase
+                });
+            } catch (error) {
+                console.error('❌ Error verificando estado Firebase:', error);
+            }
+        }
+        
+        const tienePerfilesLocales = perfiles && perfiles.length > 0;
+        const tieneDatos = tienePerfilesLocales || tieneDatosEnFirebase;
+        
+        console.log('🔍 Estado final:', {
+            tienePerfilesLocales,
+            tieneDatosEnFirebase,
+            tieneDatos
         });
         
-        if (tienePerfiles && tienePerfilActual) {
+        if (tieneDatos) {
             // Usuario existente con datos - ir a pantalla principal
             console.log('🔄 Usuario existente, mostrando pantalla principal...');
             mostrarPantalla('main');
             mostrarStatus(`¡Bienvenido de vuelta!`, 'success');
         } else {
-            // Nuevo usuario o sin perfiles - ir a crear perfil
-            console.log('👤 Nuevo usuario o sin perfiles, mostrando pantalla de perfiles...');
+            // NUEVO USUARIO - SIEMPRE ir a crear perfil primero
+            console.log('👤 NUEVO USUARIO, mostrando pantalla de perfiles...');
             mostrarPantalla('perfil');
             mostrarStatus(`¡Bienvenido! Crea tu primer perfil para comenzar`, 'success');
         }
         
     }, 1500);
 }
-
 
 function showUserCodeModal() {
     const modal = document.getElementById('user-code-modal');
@@ -1100,36 +1115,33 @@ async function inicializarApp() {
         const firebaseReady = await initializeFirebaseSyncWithRetry();
         
         if (firebaseReady) {
-            console.log('✅ Firebase Sync inicializado, cargando datos...');
-            await cargarDatos();
-            
-            // 3. INICIAR ESCUCHA EN TIEMPO REAL - NUEVO
-console.log('👂 Iniciando escucha en tiempo real...');
-firebaseSync.listenForChanges((data) => {
-    console.log('🔄 Datos actualizados desde otro dispositivo');
+    console.log('✅ Firebase Sync inicializado, cargando datos...');
+    await cargarDatos();
     
-    // VERIFICAR si los datos son diferentes a los locales
-    const perfilesCambiaron = JSON.stringify(data.profiles) !== JSON.stringify(perfiles);
-    const historialCambio = JSON.stringify(data.history) !== JSON.stringify(historial);
-    
-    if (perfilesCambiaron || historialCambio) {
-        console.log('📦 Aplicando cambios desde la nube...');
+    // ✅ ESCUCHA EN TIEMPO REAL MEJORADA
+    console.log('👂 Iniciando escucha en tiempo real...');
+    firebaseSync.unsubscribe = firebaseSync.listenForChanges((data) => {
+        console.log('🔄 Datos actualizados desde la nube:', {
+            perfiles: data.profiles?.length || 0,
+            historial: data.history?.length || 0
+        });
         
-        // Actualizar datos en memoria
-        if (data.profiles) {
+        // Aplicar cambios solo si son diferentes
+        if (data.profiles && JSON.stringify(data.profiles) !== JSON.stringify(perfiles)) {
+            console.log('✅ Actualizando perfiles desde la nube');
             perfiles = data.profiles;
-            console.log('✅ Perfiles actualizados desde la nube:', perfiles.length);
-        }
-        if (data.history) {
-            historial = data.history;
-            console.log('✅ Historial actualizado desde la nube:', historial.length);
+            
+            // Actualizar perfil actual
+            if (perfiles.length > 0) {
+                const currentProfileId = localStorage.getItem('ubercalc_perfil_actual_id');
+                perfilActual = perfiles.find(p => p.id === currentProfileId) || perfiles[0];
+                localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
+            }
         }
         
-        // Actualizar perfil actual si es necesario
-        if (perfiles.length > 0 && (!perfilActual || !perfiles.find(p => p.id === perfilActual.id))) {
-            perfilActual = perfiles[0];
-            localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
-            console.log('✅ Perfil actual actualizado:', perfilActual.nombre);
+        if (data.history && JSON.stringify(data.history) !== JSON.stringify(historial)) {
+            console.log('✅ Actualizando historial desde la nube');
+            historial = data.history;
         }
         
         // Guardar en localStorage
@@ -1141,11 +1153,9 @@ firebaseSync.listenForChanges((data) => {
         actualizarHistorial();
         actualizarEstadisticas();
         
-        mostrarStatus('Datos actualizados desde otro dispositivo', 'info');
-    } else {
-        console.log('📭 No hay cambios nuevos en la nube');
-    }
-});
+        mostrarStatus('Datos actualizados', 'info');
+    });
+}
             
         } else {
             console.log('📱 Firebase Sync no disponible, usando almacenamiento local');
@@ -1414,20 +1424,34 @@ function procesarViaje(aceptado) {
         return;
     }
     
-    console.log(aceptado ? '✅ Aceptando viaje' : '❌ Rechazando viaje');
+    console.log(aceptado ? '✅ Aceptando viaje' : '❌ Rechazar viaje');
     
-    // Actualizar cálculo actual
-    calculoActual.aceptado = aceptado;
-    calculoActual.timestamp = new Date().toISOString();
-    calculoActual.id = 'viaje_' + Date.now(); // Asegurar ID único
+    // VERIFICAR que tenemos perfil actual
+    if (!perfilActual) {
+        console.error('❌ No hay perfil actual configurado');
+        mostrarStatus('Error: No hay perfil configurado', 'error');
+        return;
+    }
     
-    // Agregar al historial - CORREGIDO
-    historial.unshift({...calculoActual});
-    console.log('💾 Viaje guardado en historial:', {
-        id: calculoActual.id,
-        aceptado: calculoActual.aceptado,
-        rentabilidad: calculoActual.rentabilidad
+    // Crear objeto de viaje COMPLETO
+    const viaje = {
+        ...calculoActual,
+        aceptado: aceptado,
+        id: 'viaje_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        timestamp: new Date().toISOString(),
+        perfilId: perfilActual.id,
+        perfilNombre: perfilActual.nombre
+    };
+    
+    console.log('💾 Guardando viaje en historial:', {
+        id: viaje.id,
+        aceptado: viaje.aceptado,
+        rentabilidad: viaje.rentabilidad,
+        perfil: viaje.perfilNombre
     });
+    
+    // Agregar al historial
+    historial.unshift(viaje);
     
     // Limitar historial a 100 elementos
     if (historial.length > 100) {
@@ -1435,23 +1459,23 @@ function procesarViaje(aceptado) {
     }
     
     // Mostrar resultado en modal
-    mostrarResultadoModal(calculoActual);
+    mostrarResultadoModal(viaje);
     
-    // GUARDAR DATOS INMEDIATAMENTE - CORREGIDO
+    // ✅ GUARDAR DATOS Y SINCRONIZAR INMEDIATAMENTE
     guardarDatos().then(() => {
         console.log('✅ Datos guardados correctamente después del viaje');
+        mostrarStatus(aceptado ? '¡Viaje aceptado y guardado!' : 'Viaje rechazado y guardado', 'success');
     }).catch(error => {
         console.error('❌ Error guardando datos:', error);
+        mostrarStatus('Error al guardar el viaje', 'error');
     });
     
     // Actualizar interfaz
     actualizarEstadisticas();
+    actualizarHistorial();
     
     // Limpiar formulario
     limpiarFormulario();
-    
-    // Mostrar confirmación
-    mostrarStatus(aceptado ? '¡Viaje aceptado!' : 'Viaje rechazado', 'success');
 }
 
 function mostrarResultadoModal(resultado) {
@@ -2488,28 +2512,26 @@ async function forzarSincronizacionCompleta() {
 // =============================================
 
 function cambiarUsuario() {
-    console.log('🔄 Iniciando cambio de usuario. Limpiando sesión COMPLETA...');
+    console.log('🔄 Iniciando cambio de usuario...');
     
-    if (confirm('¿Estás seguro de que quieres cambiar de usuario? Se crearán nuevos datos locales para el nuevo código.')) {
+    if (confirm('¿Estás seguro de que quieres cambiar de usuario? Podrás volver a este usuario con el mismo código.')) {
         
         // 1. Cerrar todos los modales abiertos primero
         cerrarModal();
         cerrarExportModal();
         cerrarSyncPanel();
         
-        // 2. Limpiar datos específicos de la app
-        localStorage.removeItem('ubercalc_perfiles');
-        localStorage.removeItem('ubercalc_historial');
-        localStorage.removeItem('ubercalc_perfil_actual_id');
+        // 2. ✅ CORREGIDO: NO borrar datos de Firebase, solo limpiar localStorage
         localStorage.removeItem('ubercalc_user_code');
         localStorage.removeItem('ubercalc_user_id');
+        // NO borrar perfiles, historial ni perfil_actual_id
         
         // 3. Resetear el estado del sistema de código
         userCodeSystem.userCode = null;
         userCodeSystem.userId = null;
         userCodeSystem.initialized = false;
         
-        // 4. Reiniciar Firebase Sync COMPLETAMENTE
+        // 4. Reiniciar Firebase Sync (pero NO borrar datos)
         if (firebaseSync) {
             // Detener la escucha en tiempo real primero
             if (firebaseSync.unsubscribe) {
@@ -2520,47 +2542,36 @@ function cambiarUsuario() {
             firebaseSync = null;
         }
         
-        // 5. Limpiar datos en memoria
-        perfiles = [];
-        perfilActual = null;
-        historial = [];
+        // 5. ✅ CORREGIDO: NO limpiar datos en memoria, mantenerlos
+        // perfiles = []; ❌ NO hacer esto
+        // historial = []; ❌ NO hacer esto
+        // perfilActual = null; ❌ NO hacer esto
+        
         calculoActual = null;
         
         // 6. Limpiar formularios
         limpiarFormulario();
         
-        // 7. Ocultar banners y pantallas actuales
+        // 7. Ocultar banners
         const banner = document.getElementById('user-code-banner');
         const bannerMain = document.getElementById('user-code-banner-main');
         if (banner) banner.style.display = 'none';
         if (bannerMain) bannerMain.style.display = 'none';
         
-        // Ocultar todas las pantallas
-        document.querySelectorAll('.screen').forEach(screen => {
-            screen.classList.remove('active');
-        });
-        
-        // 8. MOSTRAR MODAL DE CÓDIGO automáticamente - CORREGIDO
+        // 8. MOSTRAR MODAL DE CÓDIGO automáticamente
         console.log('🔄 Mostrando modal para nuevo código...');
         
-        // Pequeño delay para asegurar que todo se limpió
         setTimeout(() => {
             showUserCodeModal();
             
-            // También limpiar el input del código
+            // Limpiar el input del código
             const codeInput = document.getElementById('user-code-input');
             if (codeInput) {
                 codeInput.value = '';
                 codeInput.focus();
             }
             
-            // Limpiar mensaje de estado
-            const statusDiv = document.getElementById('code-status');
-            if (statusDiv) {
-                statusDiv.style.display = 'none';
-            }
-            
-            console.log('✅ Modal de código mostrado para nuevo usuario');
+            console.log('✅ Modal de código mostrado para cambio de usuario');
         }, 300);
         
     } else {
@@ -2573,6 +2584,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
