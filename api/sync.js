@@ -1,46 +1,56 @@
 // api/sync.js
+export default async function handler(req, res) {
+  // Habilitar CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-// Usa la sintaxis de importación de módulo ES
-import fetch from 'node-fetch'; // <--- Correcto para type: "module"
+  // Manejar preflight OPTIONS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
 
-export default async function handler(request, response) {
-    if (request.method !== 'POST') {
-        return response.status(405).json({ error: 'Method Not Allowed' });
+  try {
+    const { targetUrl } = req.body;
+    
+    if (!targetUrl) {
+      return res.status(400).json({ error: 'targetUrl es requerido' });
     }
 
+    console.log('🔗 Proxy recibió targetUrl:', targetUrl);
+
+    // Hacer la request a Google Apps Script
+    const response = await fetch(targetUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
+    }
+
+    const data = await response.text();
+    console.log('✅ Proxy respuesta exitosa');
+
+    // Intentar parsear como JSON
     try {
-        const { targetUrl } = request.body;
-        
-        if (!targetUrl) {
-            return response.status(400).json({ error: 'Missing targetUrl in request body' });
-        }
-        
-        // 2. Realizar la solicitud al Google Apps Script desde el servidor de Vercel
-        const gasResponse = await fetch(targetUrl, { // <--- 'fetch' funciona sin require()
-            method: 'GET', 
-        });
-
-        // 3. Obtener el texto de la respuesta del Google Script
-        const gasText = await gasResponse.text();
-
-        if (!gasResponse.ok) {
-            console.error('GAS Error Response:', gasText);
-            return response.status(gasResponse.status).send(gasText);
-        }
-
-        // 4. Intentar parsear como JSON y devolverlo
-        try {
-            const gasJson = JSON.parse(gasText);
-            response.setHeader('Content-Type', 'application/json');
-            return response.status(200).json(gasJson);
-        } catch (jsonError) {
-            console.error('GAS returned non-JSON data:', gasText);
-            return response.status(500).json({ error: 'Google Apps Script did not return valid JSON.', rawResponse: gasText.substring(0, 100) + '...' });
-        }
-
-    } catch (error) {
-        console.error('Vercel Proxy Error:', error);
-        return response.status(500).json({ error: 'Internal Server Error in Vercel Proxy.', details: error.message });
+      const jsonData = JSON.parse(data);
+      res.status(200).json(jsonData);
+    } catch (parseError) {
+      // Si no es JSON, devolver como texto
+      res.status(200).json({ success: true, rawResponse: data });
     }
+
+  } catch (error) {
+    console.error('❌ Error en proxy:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      message: 'Error en el proxy de Vercel' 
+    });
+  }
 }
+
 
