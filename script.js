@@ -775,35 +775,41 @@ await historyRef.set({
     }
 
     async loadHistory() {
-        if (!this.initialized) {
-            console.warn('❌ Firebase Sync no inicializado, no se puede cargar historial');
-            return null;
+    if (!this.initialized) {
+        console.warn('❌ Firebase Sync no inicializado, no se puede cargar historial');
+        return [];
+    }
+
+    try {
+        if (!perfilActual || !perfilActual.id) {
+            console.warn("⚠️ No hay perfil actual definido, no se puede cargar historial.");
+            return [];
         }
 
-        try {
-            console.log('📥 Cargando historial desde Firebase...');
-            
-            if (!perfilActual || !perfilActual.id) {
-    console.warn("⚠️ No hay perfil actual definido, no se puede cargar historial.");
-    return [];
+        console.log(`📥 Cargando historial desde Firebase para el perfil: ${perfilActual.nombre}`);
+
+        const historyRef = this.db
+            .collection('users')
+            .doc(this.userId)
+            .collection('histories')
+            .doc(perfilActual.id);
+
+        const doc = await historyRef.get();
+
+        if (doc.exists) {
+            const data = doc.data();
+            console.log(`✅ Historial cargado (${(data.history || []).length} viajes)`);
+            return data.history || [];
+        } else {
+            console.log(`📭 Sin historial previo para el perfil: ${perfilActual.nombre}`);
+            return [];
+        }
+    } catch (error) {
+        console.error('❌ Error cargando historial desde Firebase:', error);
+        return [];
+    }
 }
 
-const historyRef = this.db
-  .collection('users')
-  .doc(this.userId)
-  .collection('histories')
-  .doc(perfilActual.id);
-
-const doc = await historyRef.get();
-
-if (doc.exists) {
-    const data = doc.data();
-    console.log(`📥 Historial cargado para perfil: ${perfilActual.nombre}`);
-    return data.history || [];
-} else {
-    console.log(`📭 Sin historial para el perfil: ${perfilActual.nombre}`);
-    return [];
-}
             
     // Sincronización completa
     async syncProfiles(profiles) {
@@ -2582,6 +2588,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
