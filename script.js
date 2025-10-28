@@ -29,6 +29,243 @@ const firebaseConfig = {
 };
 
 // =============================================
+// ELEMENTOS DOM - AQUÍ VAN LOS ELEMENTOS
+// =============================================
+
+// --- Elementos DOM ---
+const elementos = {
+    // Pantallas
+    perfilScreen: document.getElementById('perfil-screen'),
+    configPerfilScreen: document.getElementById('config-perfil-screen'),
+    mainScreen: document.getElementById('main-screen'),
+    
+    // Sistema de Pestañas
+    tabButtons: document.querySelectorAll('.tab-button'),
+    tabContents: document.querySelectorAll('.tab-content'),
+    
+    // Indicadores
+    statusIndicator: document.getElementById('status-indicator'),
+    statusText: document.getElementById('status-text'),
+    autoCalcIndicator: document.getElementById('auto-calc-indicator'),
+    
+    // Formularios
+    tarifaInput: document.getElementById('tarifa'),
+    minutosInput: document.getElementById('minutos'),
+    distanciaInput: document.getElementById('distancia'),
+    
+    // Resultado Rápido
+    resultadoRapido: document.getElementById('resultado-rapido'),
+    resultadoBadge: document.getElementById('resultado-badge'),
+    resultadoEmoji: document.getElementById('resultado-emoji'),
+    resultadoTexto: document.getElementById('resultado-texto'),
+    metricaMinuto: document.getElementById('metrica-minuto'),
+    metricaKm: document.getElementById('metrica-km'),
+    
+    // Botones de Acción
+    aceptarViajeBtn: document.getElementById('aceptar-viaje'),
+    rechazarViajeBtn: document.getElementById('rechazar-viaje'),
+    aceptarViajeTabBtn: document.getElementById('aceptar-viaje-tab'),
+    rechazarViajeTabBtn: document.getElementById('rechazar-viaje-tab'),
+    
+    // Modales
+    modalFondo: document.getElementById('modalFondo'),
+    modalContenido: document.getElementById('modalContenido'),
+    modalResultadosDoble: document.getElementById('modalResultadosDoble'),
+    modalBadge: document.getElementById('modal-badge'),
+    modalEmoji: document.getElementById('modal-emoji'),
+    modalTexto: document.getElementById('modal-texto'),
+    
+    // Historial
+    historyList: document.getElementById('history-list'),
+    clearHistoryBtn: document.getElementById('clear-history'),
+    exportarHistorialBtn: document.getElementById('exportar-historial'),
+    
+    // Estadísticas
+    statsViajes: document.getElementById('stats-viajes'),
+    statsGanancia: document.getElementById('stats-ganancia'),
+    statsTiempo: document.getElementById('stats-tiempo'),
+    statsRentables: document.getElementById('stats-rentables'),
+    statsGananciaHora: document.getElementById('stats-ganancia-hora'),
+    statsViajePromedio: document.getElementById('stats-viaje-promedio'),
+    
+    // Perfiles
+    perfilesLista: document.getElementById('perfiles-lista'),
+    nuevoPerfilBtn: document.getElementById('nuevo-perfil-btn'),
+    perfilForm: document.getElementById('perfil-form'),
+    volverPerfilesBtn: document.getElementById('volver-perfiles'),
+    cancelarPerfilBtn: document.getElementById('cancelar-perfil'),
+    cambiarPerfilBtn: document.getElementById('cambiar-perfil'),
+    
+    // Tema
+    themeToggle: document.getElementById('theme-toggle'),
+    
+    // Exportación
+    exportModal: document.getElementById('exportModal'),
+    exportarPdfBtn: document.getElementById('exportar-pdf'),
+    
+    // Sincronización
+    syncPanel: document.getElementById('sync-panel')
+};
+
+// =============================================
+// FUNCIONES BÁSICAS DE LA APLICACIÓN
+// =============================================
+
+function cerrarModal() {
+    console.log('❌ Cerrando modal...');
+    if (elementos.modalFondo) {
+        elementos.modalFondo.style.display = 'none';
+    }
+}
+
+function cerrarExportModal() {
+    console.log('❌ Cerrando modal de exportación...');
+    if (elementos.exportModal) {
+        elementos.exportModal.style.display = 'none';
+    }
+}
+
+function mostrarError(mensaje) {
+    mostrarStatus(mensaje, 'error');
+}
+
+function mostrarStatus(mensaje, tipo = 'info') {
+    console.log(`📢 Status [${tipo}]:`, mensaje);
+    
+    // Crear elemento de status si no existe
+    let statusElement = document.getElementById('status-message');
+    if (!statusElement) {
+        statusElement = document.createElement('div');
+        statusElement.id = 'status-message';
+        statusElement.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 10000;
+            transition: all 0.3s ease;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
+        document.body.appendChild(statusElement);
+    }
+    
+    // Configurar colores según tipo
+    const colores = {
+        success: '#28a745',
+        error: '#dc3545',
+        warning: '#ffc107',
+        info: '#17a2b8'
+    };
+    
+    statusElement.style.background = colores[tipo] || colores.info;
+    statusElement.textContent = mensaje;
+    statusElement.style.display = 'block';
+    statusElement.style.opacity = '1';
+    
+    // Auto-ocultar después de 3 segundos
+    setTimeout(() => {
+        statusElement.style.opacity = '0';
+        setTimeout(() => {
+            statusElement.style.display = 'none';
+        }, 300);
+    }, 3000);
+}
+
+function limpiarFormulario() {
+    console.log('🧹 Limpiando formulario');
+    
+    if (elementos.tarifaInput) elementos.tarifaInput.value = '';
+    if (elementos.minutosInput) elementos.minutosInput.value = '';
+    if (elementos.distanciaInput) elementos.distanciaInput.value = '';
+    
+    if (elementos.resultadoRapido) elementos.resultadoRapido.classList.add('hidden');
+    if (elementos.autoCalcIndicator) elementos.autoCalcIndicator.classList.add('hidden');
+    
+    calculoActual = null;
+}
+
+function formatearMoneda(valor) {
+    const moneda = perfilActual?.moneda || 'DOP';
+    const simbolo = moneda === 'USD' ? '$' : 'RD$';
+    return `${simbolo}${typeof valor === 'number' ? valor.toFixed(2) : '0.00'}`;
+}
+
+function formatearTiempo(minutos) {
+    const horas = Math.floor(minutos / 60);
+    const mins = minutos % 60;
+    
+    if (horas > 0) {
+        return `${horas}h ${mins}m`;
+    }
+    return `${mins}m`;
+}
+
+// =============================================
+// FUNCIONES DE NAVEGACIÓN ENTRE PANTALLAS
+// =============================================
+
+function mostrarPantalla(pantalla) {
+    console.log('🖥️ Mostrando pantalla:', pantalla);
+    
+    // Ocultar todas las pantallas
+    document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+    });
+    
+    // Mostrar pantalla seleccionada
+    switch(pantalla) {
+        case 'perfil':
+            if (elementos.perfilScreen) elementos.perfilScreen.classList.add('active');
+            actualizarInterfazPerfiles();
+            break;
+        case 'config-perfil':
+            if (elementos.configPerfilScreen) elementos.configPerfilScreen.classList.add('active');
+            break;
+        case 'main':
+            if (elementos.mainScreen) elementos.mainScreen.classList.add('active');
+            // Verificar que perfilActual existe antes de intentar usarlo
+            if (perfilActual) {
+                const perfilNombreElement = document.getElementById('perfil-actual-nombre');
+                if (perfilNombreElement) {
+                    perfilNombreElement.textContent = perfilActual.nombre;
+                }
+            }
+            break;
+    }
+}
+
+// =============================================
+// SISTEMA DE PESTAÑAS
+// =============================================
+
+function cambiarPestana(tabId) {
+    console.log('📑 Cambiando a pestaña:', tabId);
+    
+    // Actualizar botones de pestañas
+    elementos.tabButtons.forEach(button => {
+        const buttonTab = button.getAttribute('data-tab');
+        button.classList.toggle('active', buttonTab === tabId);
+    });
+    
+    // Actualizar contenido de pestañas
+    elementos.tabContents.forEach(content => {
+        const contentId = content.id.replace('tab-', '');
+        content.classList.toggle('active', contentId === tabId);
+    });
+    
+    // Actualizar datos si es necesario
+    if (tabId === 'resumen') {
+        actualizarEstadisticas();
+    } else if (tabId === 'historial') {
+        actualizarHistorial();
+    }
+}
+
+// =============================================
 // PERSISTENCIA DE DATOS (ACTUALIZADA PARA FIREBASE)
 // =============================================
 
@@ -751,81 +988,6 @@ async function initializeFirebaseSyncWithRetry(maxRetries = 3) {
     console.error('❌ No se pudo inicializar Firebase Sync después de', maxRetries, 'intentos');
     return false;
 }
-
-// --- Elementos DOM ---
-const elementos = {
-    // Pantallas
-    perfilScreen: document.getElementById('perfil-screen'),
-    configPerfilScreen: document.getElementById('config-perfil-screen'),
-    mainScreen: document.getElementById('main-screen'),
-    
-    // Sistema de Pestañas
-    tabButtons: document.querySelectorAll('.tab-button'),
-    tabContents: document.querySelectorAll('.tab-content'),
-    
-    // Indicadores
-    statusIndicator: document.getElementById('status-indicator'),
-    statusText: document.getElementById('status-text'),
-    autoCalcIndicator: document.getElementById('auto-calc-indicator'),
-    
-    // Formularios
-    tarifaInput: document.getElementById('tarifa'),
-    minutosInput: document.getElementById('minutos'),
-    distanciaInput: document.getElementById('distancia'),
-    
-    // Resultado Rápido
-    resultadoRapido: document.getElementById('resultado-rapido'),
-    resultadoBadge: document.getElementById('resultado-badge'),
-    resultadoEmoji: document.getElementById('resultado-emoji'),
-    resultadoTexto: document.getElementById('resultado-texto'),
-    metricaMinuto: document.getElementById('metrica-minuto'),
-    metricaKm: document.getElementById('metrica-km'),
-    
-    // Botones de Acción
-    aceptarViajeBtn: document.getElementById('aceptar-viaje'),
-    rechazarViajeBtn: document.getElementById('rechazar-viaje'),
-    aceptarViajeTabBtn: document.getElementById('aceptar-viaje-tab'),
-    rechazarViajeTabBtn: document.getElementById('rechazar-viaje-tab'),
-    
-    // Modales
-    modalFondo: document.getElementById('modalFondo'),
-    modalContenido: document.getElementById('modalContenido'),
-    modalResultadosDoble: document.getElementById('modalResultadosDoble'),
-    modalBadge: document.getElementById('modal-badge'),
-    modalEmoji: document.getElementById('modal-emoji'),
-    modalTexto: document.getElementById('modal-texto'),
-    
-    // Historial
-    historyList: document.getElementById('history-list'),
-    clearHistoryBtn: document.getElementById('clear-history'),
-    exportarHistorialBtn: document.getElementById('exportar-historial'),
-    
-    // Estadísticas
-    statsViajes: document.getElementById('stats-viajes'),
-    statsGanancia: document.getElementById('stats-ganancia'),
-    statsTiempo: document.getElementById('stats-tiempo'),
-    statsRentables: document.getElementById('stats-rentables'),
-    statsGananciaHora: document.getElementById('stats-ganancia-hora'),
-    statsViajePromedio: document.getElementById('stats-viaje-promedio'),
-    
-    // Perfiles
-    perfilesLista: document.getElementById('perfiles-lista'),
-    nuevoPerfilBtn: document.getElementById('nuevo-perfil-btn'),
-    perfilForm: document.getElementById('perfil-form'),
-    volverPerfilesBtn: document.getElementById('volver-perfiles'),
-    cancelarPerfilBtn: document.getElementById('cancelar-perfil'),
-    cambiarPerfilBtn: document.getElementById('cambiar-perfil'),
-    
-    // Tema
-    themeToggle: document.getElementById('theme-toggle'),
-    
-    // Exportación
-    exportModal: document.getElementById('exportModal'),
-    exportarPdfBtn: document.getElementById('exportar-pdf'),
-    
-    // Sincronización
-    syncPanel: document.getElementById('sync-panel')
-};
 
 // --- Inicialización MEJORADA ---
 document.addEventListener('DOMContentLoaded', function() {
@@ -1851,6 +2013,9 @@ window.cambiarUsuario = cambiarUsuario;
 // Funciones de perfil
 window.guardarPerfil = guardarPerfil;
 
+// Funciones básicas
+window.cambiarPestana = cambiarPestana;
+
 // =============================================
 // FUNCIONES DE SINCRONIZACIÓN (AÑADIR ESTAS)
 // =============================================
@@ -2067,6 +2232,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
