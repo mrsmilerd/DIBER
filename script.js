@@ -329,8 +329,14 @@ async function cargarDatos() {
             cloudHistorial = await firebaseSync.loadHistory();
             
             if (cloudHistorial && cloudHistorial.length > 0) {
-                console.log('✅ Historial cargado de Firebase:', cloudHistorial.length);
-                historial = cloudHistorial;
+    // 🔁 Fusionar sin duplicar
+    const combinados = [...historial, ...cloudHistorial];
+    historial = combinados.filter(
+        (v, i, self) =>
+            i === self.findIndex((t) =>
+                t.timestamp === v.timestamp && t.tarifa === v.tarifa && t.minutos === v.minutos
+            )
+    );
             }
             
         } catch (error) {
@@ -1143,11 +1149,13 @@ async function inicializarApp() {
         aplicarTemaGuardado();
         
         // 3. VERIFICAR que tenemos un perfil actual válido
-        if (!perfilActual && perfiles.length > 0) {
-            console.log('🔄 Estableciendo primer perfil como actual...');
-            perfilActual = perfiles[0];
-            localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
-        }
+       const perfilIdGuardado = localStorage.getItem('ubercalc_perfil_actual_id');
+if (perfilIdGuardado && perfiles.some(p => p.id === perfilIdGuardado)) {
+    perfilActual = perfiles.find(p => p.id === perfilIdGuardado);
+} else if (perfiles.length > 0) {
+    perfilActual = perfiles[0];
+    localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
+}
         
         actualizarInterfazPerfiles();
         
@@ -2569,6 +2577,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
