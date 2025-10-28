@@ -1115,47 +1115,53 @@ async function inicializarApp() {
         const firebaseReady = await initializeFirebaseSyncWithRetry();
         
         if (firebaseReady) {
-    console.log('✅ Firebase Sync inicializado, cargando datos...');
-    await cargarDatos();
-    
-    // ✅ ESCUCHA EN TIEMPO REAL MEJORADA
-    console.log('👂 Iniciando escucha en tiempo real...');
-    firebaseSync.unsubscribe = firebaseSync.listenForChanges((data) => {
-        console.log('🔄 Datos actualizados desde la nube:', {
-            perfiles: data.profiles?.length || 0,
-            historial: data.history?.length || 0
-        });
-        
-        // Aplicar cambios solo si son diferentes
-        if (data.profiles && JSON.stringify(data.profiles) !== JSON.stringify(perfiles)) {
-            console.log('✅ Actualizando perfiles desde la nube');
-            perfiles = data.profiles;
+            console.log('✅ Firebase Sync inicializado, cargando datos...');
+            await cargarDatos();
             
-            // Actualizar perfil actual
-            if (perfiles.length > 0) {
-                const currentProfileId = localStorage.getItem('ubercalc_perfil_actual_id');
-                perfilActual = perfiles.find(p => p.id === currentProfileId) || perfiles[0];
-                localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
+            // ✅ ESCUCHA EN TIEMPO REAL MEJORADA - CORREGIDO
+            console.log('👂 Iniciando escucha en tiempo real...');
+            
+            // AÑADIR TRY-CATCH PARA LA ESCUCHA EN TIEMPO REAL
+            try {
+                firebaseSync.unsubscribe = firebaseSync.listenForChanges((data) => {
+                    console.log('🔄 Datos actualizados desde la nube:', {
+                        perfiles: data.profiles?.length || 0,
+                        historial: data.history?.length || 0
+                    });
+                    
+                    // Aplicar cambios solo si son diferentes
+                    if (data.profiles && JSON.stringify(data.profiles) !== JSON.stringify(perfiles)) {
+                        console.log('✅ Actualizando perfiles desde la nube');
+                        perfiles = data.profiles;
+                        
+                        // Actualizar perfil actual
+                        if (perfiles.length > 0) {
+                            const currentProfileId = localStorage.getItem('ubercalc_perfil_actual_id');
+                            perfilActual = perfiles.find(p => p.id === currentProfileId) || perfiles[0];
+                            localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
+                        }
+                    }
+                    
+                    if (data.history && JSON.stringify(data.history) !== JSON.stringify(historial)) {
+                        console.log('✅ Actualizando historial desde la nube');
+                        historial = data.history;
+                    }
+                    
+                    // Guardar en localStorage
+                    localStorage.setItem('ubercalc_perfiles', JSON.stringify(perfiles));
+                    localStorage.setItem('ubercalc_historial', JSON.stringify(historial));
+                    
+                    // Actualizar interfaz
+                    actualizarInterfazPerfiles();
+                    actualizarHistorial();
+                    actualizarEstadisticas();
+                    
+                    mostrarStatus('Datos actualizados', 'info');
+                });
+            } catch (error) {
+                console.error('❌ Error iniciando escucha en tiempo real:', error);
             }
-        }
-        
-        if (data.history && JSON.stringify(data.history) !== JSON.stringify(historial)) {
-            console.log('✅ Actualizando historial desde la nube');
-            historial = data.history;
-        }
-        
-        // Guardar en localStorage
-        localStorage.setItem('ubercalc_perfiles', JSON.stringify(perfiles));
-        localStorage.setItem('ubercalc_historial', JSON.stringify(historial));
-        
-        // Actualizar interfaz
-        actualizarInterfazPerfiles();
-        actualizarHistorial();
-        actualizarEstadisticas();
-        
-        mostrarStatus('Datos actualizados', 'info');
-    });
-}
+            // ✅ FIN DEL BLOQUE TRY-CATCH CORREGIDO
             
         } else {
             console.log('📱 Firebase Sync no disponible, usando almacenamiento local');
@@ -1164,7 +1170,7 @@ async function inicializarApp() {
         
         aplicarTemaGuardado();
         
-        // 4. VERIFICAR que tenemos un perfil actual válido
+        // 3. VERIFICAR que tenemos un perfil actual válido
         if (!perfilActual && perfiles.length > 0) {
             console.log('🔄 Estableciendo primer perfil como actual...');
             perfilActual = perfiles[0];
@@ -1173,15 +1179,19 @@ async function inicializarApp() {
         
         actualizarInterfazPerfiles();
         
-        // 5. DECIDIR qué pantalla mostrar
-        if (perfiles.length > 0 && perfilActual) {
+        // 4. DECIDIR qué pantalla mostrar - LÓGICA SIMPLIFICADA
+        // SIEMPRE mostrar pantalla de perfiles si no hay perfiles
+        if (perfiles.length === 0) {
+            console.log('👤 Sin perfiles, mostrando pantalla de perfiles...');
+            mostrarPantalla('perfil');
+            mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
+        } else if (perfilActual) {
             console.log('🏠 Mostrando pantalla principal con perfil:', perfilActual.nombre);
             mostrarPantalla('main');
             actualizarEstadisticas();
         } else {
-            console.log('👤 Mostrando pantalla de perfiles (sin perfiles válidos)');
+            console.log('👤 Mostrando pantalla de perfiles (perfilActual es null)');
             mostrarPantalla('perfil');
-            mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
         }
         
         // Actualizar UI de sync
@@ -2584,6 +2594,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
