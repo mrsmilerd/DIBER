@@ -349,53 +349,6 @@ function debugUserCodeModal() {
 // CLASE GOOGLE SYNC (MODIFICADA PARA USAR CÓDIGO DE USUARIO)
 // =============================================
 
-async saveHistory(history) {
-    if (!this.initialized) {
-        console.warn('❌ Google Sync no inicializado, no se puede guardar historial');
-        return false;
-    }
-
-    try {
-        console.log('💾 Guardando historial en Google Sheets...', history.length);
-        
-        const result = await this.makeRequest({
-            action: 'saveHistory',
-            history: history
-        });
-        
-        this.lastSyncTime = result.lastSync;
-        console.log('✅ Historial guardado en Google Sheets correctamente');
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Error guardando historial en Google Sheets:', error);
-        return false;
-    }
-}
-
-async loadHistory() {
-    if (!this.initialized) {
-        console.warn('❌ Google Sync no inicializado, no se puede cargar historial');
-        return null;
-    }
-
-    try {
-        console.log('📥 Cargando historial desde Google Sheets...');
-        
-        const result = await this.makeRequest({
-            action: 'getHistory'
-        });
-        
-        this.lastSyncTime = result.lastSync;
-        console.log('✅ Historial cargado desde Google Sheets:', result.history?.length || 0);
-        return result.history || [];
-        
-    } catch (error) {
-        console.error('❌ Error cargando historial desde Google Sheets:', error);
-        return null;
-    }
-}
-
 class GoogleSync {
     constructor() {
         this.initialized = false;
@@ -676,6 +629,53 @@ async makeRequestFallback(params) {
         }
     }
 
+async saveHistory(history) {
+        if (!this.initialized) {
+            console.warn('❌ Google Sync no inicializado, no se puede guardar historial');
+            return false;
+        }
+
+        try {
+            console.log('💾 Guardando historial en Google Sheets...', history.length);
+            
+            const result = await this.makeRequest({
+                action: 'saveHistory',
+                history: history
+            });
+            
+            this.lastSyncTime = result.lastSync;
+            console.log('✅ Historial guardado en Google Sheets correctamente');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error guardando historial en Google Sheets:', error);
+            return false;
+        }
+    }
+
+    async loadHistory() {
+        if (!this.initialized) {
+            console.warn('❌ Google Sync no inicializado, no se puede cargar historial');
+            return null;
+        }
+
+        try {
+            console.log('📥 Cargando historial desde Google Sheets...');
+            
+            const result = await this.makeRequest({
+                action: 'getHistory'
+            });
+            
+            this.lastSyncTime = result.lastSync;
+            console.log('✅ Historial cargado desde Google Sheets:', result.history?.length || 0);
+            return result.history || [];
+            
+        } catch (error) {
+            console.error('❌ Error cargando historial desde Google Sheets:', error);
+            return null;
+        }
+    }
+    
     actualizarUIEstado(estado) {
         try {
             const syncInfo = document.getElementById('sync-info');
@@ -2601,6 +2601,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
