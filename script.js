@@ -2584,11 +2584,47 @@ function cambiarUsuario() {
     }
 }
 
+async function borrarDatosFirebase() {
+    if (!window.firebaseSync || !firebaseSync.initialized) {
+        console.error("❌ Firebase no está inicializado correctamente.");
+        return;
+    }
+
+    const userId = firebaseSync.userId;
+    const db = firebaseSync.db;
+
+    try {
+        console.log(`🧹 Eliminando todos los datos del usuario: ${userId} ...`);
+
+        // 1️⃣ Borrar los perfiles
+        const perfilesSnap = await db.collection('users').doc(userId).collection('profiles').get();
+        for (const doc of perfilesSnap.docs) {
+            await doc.ref.delete();
+        }
+
+        // 2️⃣ Borrar los viajes
+        const viajesSnap = await db.collection('users').doc(userId).collection('trips').get();
+        for (const doc of viajesSnap.docs) {
+            await doc.ref.delete();
+        }
+
+        // 3️⃣ Borrar documento principal del usuario
+        await db.collection('users').doc(userId).delete();
+
+        console.log("✅ Todos los datos del usuario han sido eliminados exitosamente.");
+        alert("✅ Todos los datos en Firebase fueron eliminados correctamente.");
+    } catch (error) {
+        console.error("❌ Error al borrar datos:", error);
+        alert("⚠️ Ocurrió un error al intentar eliminar los datos. Revisa la consola.");
+    }
+}
+
 // =============================================
 // INICIALIZACIÓN FINAL
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
