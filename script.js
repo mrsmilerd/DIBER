@@ -111,21 +111,8 @@ async function cargarDatos() {
         historial = localHistorialString ? JSON.parse(localHistorialString) : [];
     }
     
-    // 3. Establecer perfil actual - CORREGIDO
-    const lastProfileId = localStorage.getItem('ubercalc_perfil_actual_id');
-    console.log('🔍 Buscando perfil actual. Last ID:', lastProfileId, 'Perfiles disponibles:', perfiles.length);
-    
-    if (perfiles.length > 0) {
-        perfilActual = perfiles.find(p => p.id === lastProfileId) || perfiles[0];
-        console.log('✅ Perfil actual establecido:', perfilActual?.nombre);
-        
-        if (perfilActual) {
-            localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
-        }
-    } else {
-        perfilActual = null;
-        console.log('❌ No hay perfiles disponibles');
-    }
+    // 3. REPARAR PERFILES CORRUPTOS - NUEVO PASO
+    repararPerfilesCorruptos();
     
     console.log(`✅ Carga de datos finalizada. Perfiles: ${perfiles.length}, Historial: ${historial.length}, PerfilActual: ${perfilActual ? perfilActual.nombre : 'null'}`);
 }
@@ -844,42 +831,52 @@ document.addEventListener('DOMContentLoaded', function() {
 async function inicializarApp() {
     console.log('📡 Inicializando UberCalc con Sistema de Código y Firebase...');
     
-    // 1. PRIMERO: Inicializar sistema de código de usuario
-    await initializeUserCodeSystem();
-    
-    // 2. LUEGO: Inicializar Firebase Sync con reintentos
-    const firebaseReady = await initializeFirebaseSyncWithRetry();
-    
-    if (firebaseReady) {
-        await cargarDatos();
-    } else {
-        console.log('📱 Usando almacenamiento local');
-        await cargarDatos();
-    }
-    
-    aplicarTemaGuardado();
-
-if (perfiles.length === 0) {
-        console.log('🆕 No hay perfiles, creando uno por defecto...');
-        crearPerfilPorDefecto();
-    }
-    
-    actualizarInterfazPerfiles();
-    
-    // CORREGIDO: Verificar correctamente si hay perfiles y perfilActual
-     if (perfiles.length > 0 && perfilActual) {
-        console.log('🏠 Mostrando pantalla principal con perfil:', perfilActual.nombre);
-        mostrarPantalla('main');
-        actualizarEstadisticas();
-    } else {
-        console.log('👤 Mostrando pantalla de perfiles (sin perfiles o perfilActual es null)');
+    try {
+        // 1. PRIMERO: Inicializar sistema de código de usuario
+        await initializeUserCodeSystem();
+        
+        // 2. LUEGO: Inicializar Firebase Sync con reintentos
+        const firebaseReady = await initializeFirebaseSyncWithRetry();
+        
+        if (firebaseReady) {
+            await cargarDatos();
+        } else {
+            console.log('📱 Usando almacenamiento local');
+            await cargarDatos();
+        }
+        
+        aplicarTemaGuardado();
+        
+        // 3. VERIFICAR que tenemos un perfil actual válido
+        if (!perfilActual && perfiles.length > 0) {
+            console.log('🔄 Estableciendo primer perfil como actual...');
+            perfilActual = perfiles[0];
+            localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
+        }
+        
+        actualizarInterfazPerfiles();
+        
+        // 4. DECIDIR qué pantalla mostrar
+        if (perfiles.length > 0 && perfilActual) {
+            console.log('🏠 Mostrando pantalla principal con perfil:', perfilActual.nombre);
+            mostrarPantalla('main');
+            actualizarEstadisticas();
+        } else {
+            console.log('👤 Mostrando pantalla de perfiles (sin perfiles válidos)');
+            mostrarPantalla('perfil');
+        }
+        
+        // Actualizar UI de sync
+        actualizarPanelSync();
+        
+        console.log('🎉 UberCalc con Sistema de Código y Firebase inicializado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error crítico en inicialización:', error);
+        // Mostrar pantalla de perfiles como fallback
         mostrarPantalla('perfil');
+        mostrarStatus('Error al cargar la aplicación. Por favor, recarga la página.', 'error');
     }
-    
-    // Actualizar UI de sync
-    actualizarPanelSync();
-    
-    console.log('🎉 UberCalc con Sistema de Código y Firebase inicializado correctamente');
 }
 
 function configurarEventListeners() {
@@ -1199,17 +1196,26 @@ function actualizarInterfazPerfiles() {
     }
     
     perfiles.forEach(perfil => {
+        // VERIFICAR que el perfil tiene todas las propiedades necesarias
+        if (!perfil || typeof perfil !== 'object') {
+            console.warn('❌ Perfil inválido encontrado:', perfil);
+            return; // Saltar este perfil
+        }
+        
         const perfilElement = document.createElement('div');
         perfilElement.className = `perfil-item ${perfil.id === perfilActual?.id ? 'active' : ''}`;
         
-        const unidadRendimiento = perfil.tipoMedida === 'mi' ? 'mpg' : 'Km/Gl';
-        const detalles = `${perfil.rendimiento} ${unidadRendimiento} • ${perfil.moneda}`;
+        const unidadRendimiento = (perfil.tipoMedida === 'mi' ? 'mpg' : 'Km/Gl') || 'Km/Gl';
+        const detalles = `${perfil.rendimiento || '0'} ${unidadRendimiento} • ${perfil.moneda || 'DOP'}`;
+        
+        // CORRECCIÓN: Usar operador de encadenamiento opcional y valor por defecto
+        const tipoCombustible = perfil.tipoCombustible ? perfil.tipoCombustible.toUpperCase() : 'GLP';
         
         perfilElement.innerHTML = `
             <div class="perfil-info">
-                <h3>${perfil.nombre}</h3>
+                <h3>${perfil.nombre || 'Perfil sin nombre'}</h3>
                 <p>${detalles}</p>
-                <p class="small">${perfil.tipoCombustible.toUpperCase()}</p>
+                <p class="small">${tipoCombustible}</p>
             </div>
             <div class="perfil-actions">
                 <button class="btn-icon" onclick="editarPerfil('${perfil.id}')">✏️</button>
@@ -1219,6 +1225,8 @@ function actualizarInterfazPerfiles() {
         `;
         elementos.perfilesLista.appendChild(perfilElement);
     });
+    
+    console.log('✅ Interfaz de perfiles actualizada correctamente');
 }
 
 function crearPerfilPorDefecto() {
@@ -1250,6 +1258,40 @@ function crearPerfilPorDefecto() {
     
     console.log('✅ Perfil por defecto creado:', perfilDefault.nombre);
     return perfilDefault;
+}
+
+function repararPerfilesCorruptos() {
+    console.log('🔧 Verificando y reparando perfiles corruptos...');
+    
+    // Filtrar perfiles inválidos
+    const perfilesValidos = perfiles.filter(perfil => 
+        perfil && 
+        typeof perfil === 'object' && 
+        perfil.id && 
+        perfil.nombre
+    );
+    
+    if (perfilesValidos.length !== perfiles.length) {
+        console.log('🛠️ Se encontraron perfiles corruptos. Reparando...');
+        perfiles = perfilesValidos;
+    }
+    
+    // Si no hay perfiles válidos, crear uno por defecto
+    if (perfiles.length === 0) {
+        console.log('🆕 No hay perfiles válidos, creando uno por defecto...');
+        crearPerfilPorDefecto();
+        return;
+    }
+    
+    // Establecer perfil actual si es null
+    const lastProfileId = localStorage.getItem('ubercalc_perfil_actual_id');
+    if (!perfilActual && perfiles.length > 0) {
+        perfilActual = perfiles.find(p => p.id === lastProfileId) || perfiles[0];
+        console.log('✅ Perfil actual reparado:', perfilActual.nombre);
+        localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
+    }
+    
+    console.log('✅ Reparación completada. Perfiles válidos:', perfiles.length);
 }
 
 function mostrarConfigPerfil(perfilExistente = null) {
@@ -1758,5 +1800,6 @@ window.addEventListener('click', function(event) {
 });
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
