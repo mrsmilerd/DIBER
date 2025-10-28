@@ -277,14 +277,97 @@ class GoogleSync {
     }
 
     async makeRequest(params) {
-        if (!this.initialized) {
-            throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
+    if (!this.initialized) {
+        throw new Error('Google Sync no inicializado. Llama a initialize() primero.');
+    }
+
+    try {
+        console.log('📤 Enviando request DIRECTO a Google Apps Script...', params.action);
+        
+        // 1. Construir la URL de Google Apps Script DIRECTAMENTE
+        const urlParams = new URLSearchParams();
+        
+        // Agregar todos los parámetros
+        Object.keys(params).forEach(key => {
+            if (key === 'profiles' && typeof params[key] === 'object') {
+                // Para perfiles, convertir a JSON string
+                urlParams.append(key, JSON.stringify(params[key]));
+            } else {
+                urlParams.append(key, params[key]);
+            }
+        });
+        
+        // Agregar userId y timestamp
+        urlParams.append('userId', this.userId);
+        urlParams.append('timestamp', Date.now().toString());
+        
+        // URL DIRECTA de Google Apps Script (sin proxy)
+        const url = `${GOOGLE_SCRIPT_BASE_URL}?${urlParams.toString()}`;
+        
+        console.log('🔗 URL completa:', url);
+
+        // 2. Hacer request DIRECTO (sin proxy)
+        const response = await fetch(url, {
+            method: 'GET',
+            // No usar 'no-cors' porque necesitamos leer la respuesta
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        console.log('📥 Response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
         }
 
+        // Leer la respuesta como texto primero para debug
+        const responseText = await response.text();
+        console.log('📄 Response text:', responseText);
+        
+        // Intentar parsear como JSON
+        let result;
         try {
-            console.log('📤 Enviando request a Google Script a través de Vercel Proxy...', params.action);
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('❌ Error parseando JSON:', parseError);
+            console.log('📄 Response raw:', responseText);
+            throw new Error('Respuesta no es JSON válido: ' + responseText.substring(0, 100));
+        }
+        
+        console.log('✅ Request exitoso:', params.action, result);
+        
+        if (result.success === false) {
+            throw new Error(result.error || 'Error del servidor');
+        }
+        
+        return result;
+        
+    } catch (error) {
+        console.error('❌ Error en request DIRECTO:', error);
+        
+        // Mostrar error específico si es CORS
+        if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
+            console.error('🚫 ERROR CORS - Probando método alternativo...');
+            return await this.makeRequestFallback(params);
+        }
+        
+        throw error;
+    }
+}
+
+// Método alternativo para evitar problemas CORS
+async makeRequestFallback(params) {
+    console.log('🔄 Usando método alternativo (JSONP simulation)...');
+    
+    try {
+        // Crear un iframe temporal para evitar CORS
+        return new Promise((resolve, reject) => {
+            const callbackName = 'googleScriptCallback_' + Date.now();
+            const script = document.createElement('script');
             
-            // 1. Construir la URL completa del Google Script (Target URL)
+            // Construir URL con callback
             const urlParams = new URLSearchParams();
             Object.keys(params).forEach(key => {
                 if (key === 'profiles' && typeof params[key] === 'object') {
@@ -294,49 +377,35 @@ class GoogleSync {
                 }
             });
             urlParams.append('userId', this.userId);
+            urlParams.append('callback', callbackName);
             
-            // Usamos la URL base limpia de Google Apps Script
-            const targetUrl = `${GOOGLE_SCRIPT_BASE_URL}?${urlParams.toString()}&t=${Date.now()}`;
+            const url = `${GOOGLE_SCRIPT_BASE_URL}?${urlParams.toString()}`;
+            script.src = url;
             
-            console.log('🔗 Target URL de Google Script:', targetUrl);
-            console.log('🔗 Enviando a Vercel Proxy:', LOCAL_SYNC_ENDPOINT);
-
-            // 2. Llamar al endpoint local de Vercel y pasar la URL de Google Script
-            const response = await fetch(LOCAL_SYNC_ENDPOINT, {
-                method: 'POST', // Usamos POST para enviar la URL en el body
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    targetUrl: targetUrl // Enviamos la URL completa del Google Script
-                })
-            });
-
-            console.log('📥 Response status:', response.status, response.statusText);
+            // Configurar callback global
+            window[callbackName] = (data) => {
+                delete window[callbackName];
+                document.head.removeChild(script);
+                resolve(data);
+            };
             
-            if (!response.ok) {
-                // Si la respuesta no es OK, obtenemos el cuerpo del error (que ya no será HTML)
-                const errorBody = await response.text(); 
-                throw new Error(`Error HTTP en Vercel Proxy: ${response.status} - ${errorBody}`);
-            }
-
-            // Aquí response.json() SÍ funcionará porque el proxy de Vercel nos devuelve JSON limpio.
-            const result = await response.json(); 
+            // Timeout
+            setTimeout(() => {
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                    document.head.removeChild(script);
+                    reject(new Error('Timeout en request'));
+                }
+            }, 10000);
             
-            console.log('✅ Request exitoso:', params.action, result);
-            
-            if (result.success === false) {
-                throw new Error(result.error || 'Error del servidor');
-            }
-            
-            return result;
-            
-        } catch (error) {
-            console.error('❌ Error en request:', error);
-            throw error;
-        }
+            document.head.appendChild(script);
+        });
+    } catch (error) {
+        console.error('❌ Error en método alternativo:', error);
+        throw error;
     }
-
+}
+    
     async saveProfiles(profiles) {
         if (!this.initialized) {
             console.warn('❌ Google Sync no inicializado, no se puede guardar');
@@ -1013,6 +1082,61 @@ async function procesarViaje(aceptado) {
     
     if (aceptado) {
         setTimeout(() => cambiarPestana('historial'), 500);
+    }
+}
+
+// prueba Directa de Google Sheets
+async function pruebaDirectaGoogleSheets() {
+    console.log('🎯 PRUEBA DIRECTA GOOGLE SHEETS');
+    
+    // 1. Primero verificar que podemos conectar
+    console.log('1. Probando conexión básica...');
+    try {
+        const testUrl = `${GOOGLE_SCRIPT_BASE_URL}?action=getSyncStatus&userId=user_BTM625&test=direct`;
+        console.log('🔗 URL test:', testUrl);
+        
+        const response = await fetch(testUrl);
+        const result = await response.text();
+        console.log('✅ Respuesta cruda:', result);
+    } catch (error) {
+        console.error('❌ Error conexión directa:', error);
+    }
+    
+    // 2. Guardar un perfil de prueba
+    console.log('2. Guardando perfil de prueba...');
+    const perfilPrueba = [{
+        id: 'prueba_' + Date.now(),
+        nombre: 'PERFIL PRUEBA DIRECTA',
+        tipoMedida: 'km',
+        tipoCombustible: 'glp', 
+        rendimiento: 99.9,
+        precioCombustible: 100.0,
+        moneda: 'DOP',
+        timestamp: new Date().toISOString()
+    }];
+    
+    try {
+        const saveUrl = `${GOOGLE_SCRIPT_BASE_URL}?action=saveProfiles&profiles=${encodeURIComponent(JSON.stringify(perfilPrueba))}&userId=user_BTM625`;
+        console.log('🔗 Save URL:', saveUrl);
+        
+        const response = await fetch(saveUrl);
+        const result = await response.text();
+        console.log('✅ Save respuesta:', result);
+    } catch (error) {
+        console.error('❌ Error guardando:', error);
+    }
+    
+    // 3. Leer para verificar
+    console.log('3. Leyendo para verificar...');
+    try {
+        const readUrl = `${GOOGLE_SCRIPT_BASE_URL}?action=getProfiles&userId=user_BTM625`;
+        console.log('🔗 Read URL:', readUrl);
+        
+        const response = await fetch(readUrl);
+        const result = await response.text();
+        console.log('✅ Read respuesta:', result);
+    } catch (error) {
+        console.error('❌ Error leyendo:', error);
     }
 }
 
@@ -2136,6 +2260,7 @@ window.generateUserCode = generateUserCode;
 window.setUserCode = setUserCode;
 window.showUserCodeModal = showUserCodeModal;
 window.debugUserCodeModal = debugUserCodeModal;
+window.pruebaDirectaGoogleSheets = pruebaDirectaGoogleSheets;
 
 // --- Prevenir cierre accidental ---
 window.addEventListener('beforeunload', function(e) {
@@ -2171,6 +2296,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
