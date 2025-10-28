@@ -1799,7 +1799,249 @@ window.addEventListener('click', function(event) {
     }
 });
 
+// =============================================
+// FUNCIONES GLOBALES PARA HTML
+// =============================================
+
+// --- Funciones Globales para HTML ---
+window.cerrarModal = cerrarModal;
+window.cerrarExportModal = cerrarExportModal;
+window.cerrarSyncPanel = cerrarSyncPanel;
+window.mostrarConfigPerfil = mostrarConfigPerfil;
+window.seleccionarPerfil = seleccionarPerfil;
+window.editarPerfil = editarPerfil;
+window.eliminarPerfil = eliminarPerfil;
+window.mostrarPanelSync = mostrarPanelSync;
+window.forzarSincronizacion = forzarSincronizacion;
+window.mostrarInfoSync = mostrarInfoSync;
+window.diagnosticarSync = diagnosticarSync;
+window.actualizarPanelSync = actualizarPanelSync;
+
+// Funciones del sistema de código
+window.generateUserCode = generateUserCode;
+window.setUserCode = setUserCode;
+window.showUserCodeModal = showUserCodeModal;
+window.debugUserCodeModal = debugUserCodeModal;
+window.cambiarUsuario = cambiarUsuario;
+
+// Funciones de perfil
+window.guardarPerfil = guardarPerfil;
+
+// =============================================
+// FUNCIONES DE SINCRONIZACIÓN (AÑADIR ESTAS)
+// =============================================
+
+function mostrarPanelSync() {
+    console.log('🌐 Mostrando panel de sincronización');
+    actualizarPanelSync();
+    if (elementos.syncPanel) {
+        elementos.syncPanel.style.display = 'flex';
+    }
+}
+
+function cerrarSyncPanel() {
+    console.log('❌ Cerrando panel de sincronización');
+    if (elementos.syncPanel) {
+        elementos.syncPanel.style.display = 'none';
+    }
+}
+
+async function forzarSincronizacion() {
+    if (!firebaseSync || !firebaseSync.initialized) {
+        mostrarError('Firebase Sync no está configurado');
+        return;
+    }
+    
+    console.log('🔄 Forzando sincronización...');
+    mostrarStatus('🔄 Sincronizando con Firebase...', 'info');
+    
+    const syncResult = await firebaseSync.syncProfiles(perfiles);
+
+    if (syncResult && syncResult.success) {
+        const newProfiles = syncResult.mergedProfiles || perfiles;
+        perfiles = Array.isArray(newProfiles) ? newProfiles : perfiles;
+
+        guardarDatos();
+        actualizarInterfazPerfiles();
+        mostrarStatus('✅ Sincronización completada', 'success');
+        actualizarPanelSync();
+    } else {
+        mostrarError('❌ Error en la sincronización');
+    }
+}
+
+function mostrarInfoSync() {
+    alert(`🌐 SINCRONIZACIÓN CON FIREBASE
+
+✅ Cómo funciona:
+1. Tus perfiles se guardan automáticamente en Firebase
+2. Todos tus dispositivos acceden a los mismos perfiles
+3. Los cambios se sincronizan automáticamente
+4. Tus datos están seguros en tu base de datos de Firebase
+
+📱 Dispositivos conectados: Todos los que usen tu mismo código
+
+💡 Características:
+• Sincronización en tiempo real
+• Resolución automática de conflictos
+• Respaldo seguro en la nube
+• Totalmente gratuito
+
+🔒 Tus datos son privados y solo tú puedes acceder a ellos`);
+}
+
+async function diagnosticarSync() {
+    console.log('🔧 INICIANDO DIAGNÓSTICO COMPLETO DE SINCRONIZACIÓN...');
+    
+    if (!firebaseSync) {
+        console.error('❌ Firebase Sync no inicializado');
+        mostrarStatus('❌ Firebase Sync no inicializado', 'error');
+        return;
+    }
+
+    try {
+        console.log('1. Probando conexión básica...');
+        mostrarStatus('1. Probando conexión básica...', 'info');
+        
+        const testResult = await firebaseSync.getSyncStatus();
+        console.log('✅ Conexión básica OK:', testResult);
+
+        console.log('2. Probando obtener perfiles...');
+        mostrarStatus('2. Probando obtener perfiles...', 'info');
+        
+        const perfilesCloud = await firebaseSync.loadProfiles();
+        console.log('✅ Obtención de perfiles OK:', perfilesCloud?.length || 0);
+
+        console.log('3. Probando obtener historial...');
+        mostrarStatus('3. Probando obtener historial...', 'info');
+        
+        const historialCloud = await firebaseSync.loadHistory();
+        console.log('✅ Obtención de historial OK:', historialCloud?.length || 0);
+
+        console.log('4. Probando guardar perfiles...');
+        mostrarStatus('4. Probando guardar perfiles...', 'info');
+        
+        let saveProfilesResult = false;
+        if (perfilesCloud && perfilesCloud.length > 0) {
+            saveProfilesResult = await firebaseSync.saveProfiles(perfilesCloud);
+        } else {
+            saveProfilesResult = await firebaseSync.saveProfiles([]);
+        }
+        console.log('✅ Guardado de perfiles OK:', saveProfilesResult);
+
+        console.log('5. Probando guardar historial...');
+        mostrarStatus('5. Probando guardar historial...', 'info');
+        
+        let saveHistoryResult = false;
+        if (historialCloud && historialCloud.length > 0) {
+            saveHistoryResult = await firebaseSync.saveHistory(historialCloud);
+        } else {
+            saveHistoryResult = await firebaseSync.saveHistory([]);
+        }
+        console.log('✅ Guardado de historial OK:', saveHistoryResult);
+
+        console.log('6. Probando sincronización completa...');
+        mostrarStatus('6. Probando sincronización completa...', 'info');
+        
+        const syncResult = await firebaseSync.syncProfiles(perfiles || []);
+        const syncSuccess = syncResult && syncResult.success;
+        console.log('✅ Sincronización OK:', syncSuccess ? 'Éxito' : 'Falló');
+
+        // Mostrar resumen
+        const resumen = `
+🎉 DIAGNÓSTICO COMPLETADO - RESULTADOS:
+
+✅ Conexión: ${testResult ? 'OK' : 'FALLÓ'}
+✅ Perfiles en nube: ${perfilesCloud?.length || 0}
+✅ Historial en nube: ${historialCloud?.length || 0}
+✅ Guardado perfiles: ${saveProfilesResult ? 'OK' : 'FALLÓ'}
+✅ Guardado historial: ${saveHistoryResult ? 'OK' : 'FALLÓ'}
+✅ Sincronización: ${syncSuccess ? 'OK' : 'FALLÓ'}
+
+📊 Datos locales:
+• Perfiles: ${perfiles.length}
+• Historial: ${historial.length}
+• Código usuario: ${userCodeSystem.userCode || 'No configurado'}
+
+🔗 Estado Firebase Sync: ${firebaseSync.initialized ? 'INICIALIZADO' : 'NO INICIALIZADO'}
+        `;
+        
+        console.log(resumen);
+        mostrarStatus('✅ Diagnóstico: Todo funciona correctamente', 'success');
+        
+        // Mostrar alerta con resumen
+        setTimeout(() => {
+            alert(resumen);
+        }, 1000);
+        
+    } catch (error) {
+        console.error('❌ ERROR EN DIAGNÓSTICO:', error);
+        const errorMsg = `❌ Error en diagnóstico: ${error.message}`;
+        mostrarStatus(errorMsg, 'error');
+        
+        // Mostrar alerta con error
+        setTimeout(() => {
+            alert(`❌ DIAGNÓSTICO FALLIDO:\n\n${error.message}\n\nVerifica la consola para más detalles.`);
+        }, 1000);
+    }
+}
+
+// =============================================
+// FUNCIÓN DE CONTROL DE SESIÓN
+// =============================================
+
+function cambiarUsuario() {
+    console.log('🔄 Iniciando cambio de usuario. Limpiando sesión COMPLETA...');
+    
+    if (confirm('¿Estás seguro de que quieres cambiar de usuario? Se perderán TODOS los datos locales y se creará una sesión completamente nueva.')) {
+        
+        // 1. Limpiar ABSOLUTAMENTE TODO en LocalStorage
+        localStorage.clear();
+        
+        // 2. Resetear el estado del sistema de código
+        userCodeSystem.userCode = null;
+        userCodeSystem.userId = null;
+        userCodeSystem.initialized = false;
+        
+        // 3. Reiniciar Firebase Sync COMPLETAMENTE
+        if (firebaseSync) {
+            firebaseSync.initialized = false;
+            firebaseSync.userId = null;
+            firebaseSync = null;
+        }
+        
+        // 4. Limpiar datos en memoria
+        perfiles = [];
+        perfilActual = null;
+        historial = [];
+        calculoActual = null;
+        
+        // 5. Limpiar formularios
+        limpiarFormulario();
+        
+        // 6. Ocultar banners
+        const banner = document.getElementById('user-code-banner');
+        const bannerMain = document.getElementById('user-code-banner-main');
+        if (banner) banner.style.display = 'none';
+        if (bannerMain) bannerMain.style.display = 'none';
+        
+        // 7. RECARGAR LA PÁGINA COMPLETAMENTE
+        console.log('🔄 Recargando página para nueva sesión...');
+        setTimeout(() => {
+            location.reload(true);
+        }, 500);
+        
+    } else {
+        console.log('❌ Cambio de usuario cancelado');
+    }
+}
+
+// =============================================
+// INICIALIZACIÓN FINAL
+// =============================================
+
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
