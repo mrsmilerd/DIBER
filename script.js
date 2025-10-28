@@ -28,6 +28,46 @@ const GOOGLE_SCRIPT_URL = LOCAL_SYNC_ENDPOINT;
 // =============================================
 
 /**
+ * Inicia el proceso de cambio de usuario:
+ * 1. Limpia el código, ID y datos de la sesión actual (perfiles/historial) de la memoria y LocalStorage.
+ * 2. Muestra el modal para que el usuario ingrese un código nuevo o existente.
+ */
+function cambiarUsuario() {
+    console.log('🔄 Iniciando cambio de usuario. Limpiando sesión...');
+    
+    // 1. Limpiar código y ID de usuario en LocalStorage
+    localStorage.removeItem('ubercalc_user_code'); 
+    localStorage.removeItem('ubercalc_user_id');
+    localStorage.removeItem('uberCalc_data');
+    
+    // 2. Resetear el estado del sistema de sincronización en memoria
+    userCodeSystem.userCode = null;
+    userCodeSystem.userId = null;
+    userCodeSystem.initialized = false;
+    
+    // 3. Reiniciar los arrays de datos en memoria (¡CRÍTICO!)
+    // Esto evita que el código nuevo se asocie a los perfiles/historial cargados anteriormente.
+    perfiles = [];
+    perfilActual = null;
+    historial = [];
+    
+    // 4. Resetear la interfaz (para que no muestre el perfil anterior)
+    actualizarSelectorPerfiles(); // Borra perfiles del desplegable
+    // mostrarPantalla('code-entry'); // Si tienes una pantalla específica de código
+    
+    // 5. Ocultar banners (manteniendo tu lógica)
+    const banner = document.getElementById('user-code-banner');
+    const bannerMain = document.getElementById('user-code-banner-main');
+    if (banner) banner.style.display = 'none';
+    if (bannerMain) bannerMain.style.display = 'none';
+    
+    // 6. Mostrar el modal de código para la nueva entrada
+    showUserCodeModal(); 
+    
+    console.log('✅ Sesión reiniciada. El nuevo código forzará una carga de datos limpia.');
+}
+
+/**
  * Guarda los arrays 'perfiles' e 'historial' en LocalStorage y los sincroniza con Google Sheets (Nube).
  * Es fundamental para el funcionamiento multi-dispositivo.
  */
@@ -208,46 +248,6 @@ function setUserCode() {
     
     let code = input.value.trim().toUpperCase();
     console.log('📝 Código ingresado:', code);
-
-    /**
- * Inicia el proceso de cambio de usuario:
- * 1. Limpia el código, ID y datos de la sesión actual (perfiles/historial) de la memoria y LocalStorage.
- * 2. Muestra el modal para que el usuario ingrese un código nuevo o existente.
- */
-function cambiarUsuario() {
-    console.log('🔄 Iniciando cambio de usuario. Limpiando sesión...');
-    
-    // 1. Limpiar código y ID de usuario en LocalStorage
-    localStorage.removeItem('ubercalc_user_code'); 
-    localStorage.removeItem('ubercalc_user_id');
-    localStorage.removeItem('uberCalc_data');
-    
-    // 2. Resetear el estado del sistema de sincronización en memoria
-    userCodeSystem.userCode = null;
-    userCodeSystem.userId = null;
-    userCodeSystem.initialized = false;
-    
-    // 3. Reiniciar los arrays de datos en memoria (¡CRÍTICO!)
-    // Esto evita que el código nuevo se asocie a los perfiles/historial cargados anteriormente.
-    perfiles = [];
-    perfilActual = null;
-    historial = [];
-    
-    // 4. Resetear la interfaz (para que no muestre el perfil anterior)
-    actualizarSelectorPerfiles(); // Borra perfiles del desplegable
-    // mostrarPantalla('code-entry'); // Si tienes una pantalla específica de código
-    
-    // 5. Ocultar banners (manteniendo tu lógica)
-    const banner = document.getElementById('user-code-banner');
-    const bannerMain = document.getElementById('user-code-banner-main');
-    if (banner) banner.style.display = 'none';
-    if (bannerMain) bannerMain.style.display = 'none';
-    
-    // 6. Mostrar el modal de código para la nueva entrada
-    showUserCodeModal(); 
-    
-    console.log('✅ Sesión reiniciada. El nuevo código forzará una carga de datos limpia.');
-}
     
     // Mostrar estado en el modal
     function showCodeStatus(message, type) {
@@ -2535,6 +2535,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
