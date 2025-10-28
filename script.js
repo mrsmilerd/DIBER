@@ -754,6 +754,40 @@ async saveHistory(history) {
     }
 }
 
+// =============================================
+// FUNCIÓN DE REINTENTO PARA GOOGLE SYNC
+// =============================================
+
+/**
+ * ✅ NUEVA FUNCIÓN: Inicializa Google Sync con reintentos automáticos
+ */
+async function initializeGoogleSyncWithRetry(maxRetries = 3) {
+    console.log('🔄 Inicializando Google Sync con reintentos...');
+    googleSync = new GoogleSync();
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`🔄 Intento ${attempt}/${maxRetries} de inicializar Google Sync...`);
+            const success = await googleSync.initialize();
+            
+            if (success) {
+                console.log('✅ Google Sync inicializado correctamente');
+                return true;
+            }
+        } catch (error) {
+            console.warn(`⚠️ Error en intento ${attempt}:`, error.message);
+        }
+        
+        if (attempt < maxRetries) {
+            console.log('⏳ Esperando 2 segundos antes de reintentar...');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+    }
+    
+    console.error('❌ No se pudo inicializar Google Sync después de', maxRetries, 'intentos');
+    return false;
+}
+
 // --- Elementos DOM ---
 const elementos = {
     // Pantallas
@@ -854,18 +888,13 @@ async function inicializarApp() {
     // 1. PRIMERO: Inicializar sistema de código de usuario
     await initializeUserCodeSystem();
     
-    // 2. LUEGO: Inicializar Google Sync con el userId del código
-    console.log('📡 Inicializando Google Sync...');
-    googleSync = new GoogleSync();
-    const googleReady = await googleSync.initialize();
+    // 2. LUEGO: Inicializar Google Sync con reintentos
+    const googleReady = await initializeGoogleSyncWithRetry();
     
     if (googleReady) {
-        console.log('✅ Google Sync activo');
-        
-        // Cargar datos desde Google Sheets
         await cargarDatos();
     } else {
-        console.log('📱 Usando almacenamiento local (Google Sync no disponible)');
+        console.log('📱 Usando almacenamiento local');
         await cargarDatos();
     }
     
@@ -1509,6 +1538,13 @@ function mostrarConfigPerfil(perfil = null) {
 async function guardarPerfil(event) {
     event.preventDefault();
     console.log('💾 Guardando perfil...');
+
+     // VERIFICAR ESTADO DE GOOGLE SYNC ANTES DE GUARDAR
+    console.log('🔍 Estado Google Sync:', {
+        initialized: googleSync?.initialized,
+        userId: googleSync?.userId,
+        userCodeSystem: userCodeSystem
+    });
     
     // --- 1. Obtención y validación de datos ---
     const perfilId = document.getElementById('perfil-id').value;
@@ -1551,11 +1587,18 @@ async function guardarPerfil(event) {
     }
     
     // --- 3. Sincronización (¡El paso clave!) ---
-    // Esta función guarda en LocalStorage y sube a Google Sheets
-    guardarDatos(); 
-
-    // Opcional: Si tienes una función específica para forzar la sincronización (como la que mencionaste)
-    // await guardarYForzarSincronizacion(); 
+   if (googleSync && googleSync.initialized) {
+        console.log('☁️ Sincronizando con Google Sheets...');
+        await guardarDatos();
+    } else {
+        console.warn('⚠️ Google Sync no disponible. Guardando solo localmente.');
+        // Guardar solo localmente
+        localStorage.setItem('ubercalc_perfiles', JSON.stringify(perfiles));
+        localStorage.setItem('ubercalc_historial', JSON.stringify(historial));
+        if (perfilActual) {
+            localStorage.setItem('ubercalc_perfil_actual_id', perfilActual.id);
+        }
+    }
     
     // --- 4. Actualizar estado de la interfaz ---
     
@@ -2601,6 +2644,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
