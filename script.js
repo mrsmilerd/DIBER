@@ -282,59 +282,44 @@ class GoogleSync {
     }
 
     try {
-        console.log('📤 Enviando request DIRECTO a Google Apps Script...', params.action);
+        console.log('📤 Enviando request a Google Script a través de Vercel Proxy...', params.action);
         
-        // 1. Construir la URL de Google Apps Script DIRECTAMENTE
+        // 1. Construir la URL completa del Google Script (Target URL)
         const urlParams = new URLSearchParams();
-        
-        // Agregar todos los parámetros
         Object.keys(params).forEach(key => {
             if (key === 'profiles' && typeof params[key] === 'object') {
-                // Para perfiles, convertir a JSON string
                 urlParams.append(key, JSON.stringify(params[key]));
             } else {
                 urlParams.append(key, params[key]);
             }
         });
-        
-        // Agregar userId y timestamp
         urlParams.append('userId', this.userId);
-        urlParams.append('timestamp', Date.now().toString());
+        urlParams.append('t', Date.now().toString());
         
-        // URL DIRECTA de Google Apps Script (sin proxy)
-        const url = `${GOOGLE_SCRIPT_BASE_URL}?${urlParams.toString()}`;
+        // Usamos la URL base limpia de Google Apps Script
+        const targetUrl = `${GOOGLE_SCRIPT_BASE_URL}?${urlParams.toString()}`;
         
-        console.log('🔗 URL completa:', url);
+        console.log('🔗 Target URL de Google Script:', targetUrl);
+        console.log('🔗 Enviando a Vercel Proxy:', LOCAL_SYNC_ENDPOINT);
 
-        // 2. Hacer request DIRECTO (sin proxy)
-        const response = await fetch(url, {
-            method: 'GET',
-            // No usar 'no-cors' porque necesitamos leer la respuesta
-            mode: 'cors',
+        // 2. Llamar al endpoint local de Vercel y pasar la URL de Google Script
+        const response = await fetch(LOCAL_SYNC_ENDPOINT, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
+            body: JSON.stringify({
+                targetUrl: targetUrl // Enviamos la URL completa del Google Script
+            })
         });
 
         console.log('📥 Response status:', response.status, response.statusText);
         
         if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+            throw new Error(`Error HTTP en Vercel Proxy: ${response.status}`);
         }
 
-        // Leer la respuesta como texto primero para debug
-        const responseText = await response.text();
-        console.log('📄 Response text:', responseText);
-        
-        // Intentar parsear como JSON
-        let result;
-        try {
-            result = JSON.parse(responseText);
-        } catch (parseError) {
-            console.error('❌ Error parseando JSON:', parseError);
-            console.log('📄 Response raw:', responseText);
-            throw new Error('Respuesta no es JSON válido: ' + responseText.substring(0, 100));
-        }
+        const result = await response.json();
         
         console.log('✅ Request exitoso:', params.action, result);
         
@@ -345,14 +330,7 @@ class GoogleSync {
         return result;
         
     } catch (error) {
-        console.error('❌ Error en request DIRECTO:', error);
-        
-        // Mostrar error específico si es CORS
-        if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
-            console.error('🚫 ERROR CORS - Probando método alternativo...');
-            return await this.makeRequestFallback(params);
-        }
-        
+        console.error('❌ Error en request:', error);
         throw error;
     }
 }
@@ -2296,6 +2274,7 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
 
