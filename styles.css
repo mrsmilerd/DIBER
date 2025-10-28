@@ -1,4 +1,4 @@
-/* Paleta de Colores Mejorada */
+/* ===== DISEÑO MÓVIL MINIMALISTA ===== */
 :root {
     --primary-blue: #1a73e8;
     --secondary-orange: #f5a623;
@@ -14,12 +14,10 @@
     --text-primary: #424242;
     --text-secondary: #757575;
     --border-color: #e0e0e0;
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.15);
-    --gradient-primary: linear-gradient(135deg, #1a73e8, #1565c0);
-    --gradient-success: linear-gradient(135deg, #4CAF50, #45a049);
-    --gradient-warning: linear-gradient(135deg, #FF9800, #f57c00);
-    --gradient-error: linear-gradient(135deg, #f44336, #d32f2f);
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --mobile-padding: 15px;
+    --card-padding: 20px;
 }
 
 [data-theme="dark"] {
@@ -29,279 +27,512 @@
     --text-primary: #e0e0e0;
     --text-secondary: #b0b0b0;
     --border-color: #444444;
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.6);
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.6);
 }
 
-/* --- Reset y Base --- */
+/* Reset y Base Móvil */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    /* Cambio clave para mobile: eliminamos padding para full-screen */
-    background: var(--light-grey); 
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--light-grey);
     color: var(--text-primary);
     margin: 0;
-    padding: 0; /* Minimalismo: Sin padding en el cuerpo */
-    display: flex;
-    justify-content: center;
-    /* Cambio clave para mobile: Abarcar todo el alto y ancho */
-    align-items: stretch; 
-    min-height: 100vh;
-    line-height: 1.6;
+    padding: 10px;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* --- Sistema de Pantallas y Contenedor (Mobile First) --- */
+body.mobile-optimized {
+    background: var(--light-grey);
+}
+
+/* Sistema de Pantallas */
 .screen {
     display: none;
     width: 100%;
-    /* Max width solo aplica en pantallas grandes */
     max-width: 500px;
-    height: 100vh;
+    margin: 0 auto;
 }
 
 .screen.active {
     display: block;
 }
 
+/* Container Minimalista */
 .container {
     background-color: var(--card-bg);
-    padding: 20px; /* Reducido para más espacio en móvil */
-    /* Minimalismo: Eliminamos bordes y sombra en la vista mobile full-screen */
-    border-radius: 0; 
-    box-shadow: none; 
-    width: 100%;
-    margin: 0;
-    min-height: 100vh; /* Ocupar toda la altura en móvil */
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Estilos de Card/Sombra solo para pantallas más grandes (simulando Desktop/Tablet) */
-@media (min-width: 600px) {
-    body {
-        padding: 20px;
-        align-items: flex-start;
-        background: linear-gradient(135deg, var(--light-grey) 0%, #e8eaed 100%);
-    }
-    .container {
-        border-radius: 16px;
-        box-shadow: var(--shadow);
-        margin: 20px 0;
-        min-height: auto;
-        padding: 30px;
-    }
-    .screen {
-        height: auto;
-    }
-}
-
-/* --- Estilos de Componentes (Input, Botones, Títulos) --- */
-h2, h3 {
-    margin-bottom: 15px;
-    color: var(--primary-blue);
-}
-
-.input-group {
-    margin-bottom: 20px;
-}
-
-.input-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.95em;
-}
-
-.input-group input[type="text"],
-.input-group input[type="number"],
-.input-group select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 1em;
-    background-color: var(--light-grey);
-    color: var(--text-primary);
-    -webkit-appearance: none; /* Eliminar estilo nativo en iOS */
-}
-
-.input-with-unit {
-    display: flex;
-    align-items: center;
-    background-color: var(--light-grey);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-}
-
-.input-with-unit input {
-    flex-grow: 1;
-    border: none;
-    background: transparent;
-    padding-right: 0;
-}
-
-.input-with-unit .input-unit {
-    padding: 0 12px;
-    color: var(--medium-grey);
-    font-size: 0.9em;
-    font-weight: 500;
-}
-
-/* --- Botones --- */
-.primary-button, .secondary-button, .danger-button, .secondary-button-outline {
-    padding: 12px 18px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s;
-    text-decoration: none;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.primary-button {
-    background: var(--gradient-primary);
-    color: var(--white);
-    border: none;
-    box-shadow: 0 4px 8px rgba(26, 115, 232, 0.4);
-}
-
-.secondary-button {
-    background: var(--light-grey);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-}
-
-.secondary-button-outline {
-    background: transparent;
-    color: var(--primary-blue);
-    border: 1px solid var(--primary-blue);
-}
-
-.danger-button {
-    background: var(--error-red);
-    color: var(--white);
-    border: none;
-}
-
-.danger-button-outline {
-    background: transparent;
-    color: var(--error-red);
-    border: 1px solid var(--error-red);
-}
-
-/* Botones de Ancho Completo (Key for Mobile) */
-.primary-button-full, .secondary-button-full, .danger-button-outline-full {
-    width: 100%;
-    padding: 15px 18px;
-    font-size: 1.05em;
+    padding: var(--card-padding);
     border-radius: 12px;
-    /* Estilos base */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-weight: 700;
-    transition: background-color 0.2s;
+    box-shadow: var(--shadow);
+    width: 100%;
+    margin: 5px 0;
 }
 
-.primary-button-full {
-    background: var(--gradient-primary);
-    color: var(--white);
-    border: none;
-    box-shadow: 0 4px 8px rgba(26, 115, 232, 0.4);
-}
-
-.secondary-button-full {
-    background: var(--light-grey);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-}
-
-.danger-button-outline-full {
+.ultra-minimal .container {
+    padding: var(--card-padding);
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
     background: transparent;
-    color: var(--error-red);
-    border: 1px solid var(--error-red);
 }
 
-/* Grupos de botones */
-.button-group-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.button-group-row button, .button-group-row a {
-    flex: 1;
-}
-
-.button-group-column {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-/* Botones de Icono */
-.secondary-button-icon {
-    background: var(--light-grey);
-    border: none;
-    padding: 8px;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
+/* Header Móvil */
+.mobile-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 1.2em;
-    color: var(--primary-blue);
-    cursor: pointer;
-}
-
-.secondary-button-icon-small {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    padding: 6px;
-    border-radius: 8px;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9em;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-/* --- Header Minimalista para Mobile --- */
-.app-header-minimal {
-    display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding-bottom: 15px;
+    padding: 10px 0;
     margin-bottom: 20px;
     border-bottom: 1px solid var(--border-color);
 }
 
-.app-logo-small {
-    height: 30px;
-    width: auto;
+.mobile-header .app-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
 }
 
-/* --- Barras y Componentes de Sincronización --- */
+.mobile-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Tabs Móviles */
+.mobile-tabs {
+    display: flex;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-bottom: 20px;
+    gap: 5px;
+}
+
+.mobile-tab {
+    flex: 1;
+    padding: 12px 8px;
+    background: var(--light-grey);
+    border: none;
+    border-radius: 10px;
+    font-size: 0.8em;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-height: 50px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.mobile-tab.active {
+    background: var(--primary-blue);
+    color: white;
+}
+
+.tab-icon {
+    font-size: 1.1em;
+}
+
+.tab-text {
+    font-size: 0.7em;
+    white-space: nowrap;
+}
+
+/* Formularios Móviles */
+.mobile-form {
+    margin: 0;
+    padding: 0;
+}
+
+.mobile-input-group {
+    margin-bottom: 20px;
+}
+
+.mobile-input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9em;
+}
+
+.mobile-input {
+    width: 100%;
+    padding: 16px 12px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 16px;
+    color: var(--text-primary);
+    background-color: var(--card-bg);
+    transition: all 0.3s;
+    -webkit-appearance: none;
+}
+
+.mobile-input:focus {
+    border-color: var(--primary-blue);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+}
+
+.input-with-unit-mobile {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-unit-mobile .input-unit-mobile {
+    position: absolute;
+    right: 12px;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    background: var(--light-grey);
+    padding: 4px 8px;
+    border-radius: 6px;
+    pointer-events: none;
+}
+
+.input-with-unit-mobile input {
+    padding-right: 70px;
+}
+
+/* Secciones de Configuración Móvil */
+.config-section-mobile {
+    background: var(--light-grey);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.config-section-mobile h3 {
+    margin-bottom: 15px;
+    color: var(--text-primary);
+    font-size: 1em;
+    border-bottom: 2px solid var(--primary-blue);
+    padding-bottom: 8px;
+}
+
+.config-grid-mobile {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+/* Botones Móviles */
+.primary-button, .secondary-button {
+    padding: 16px 20px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 50px;
+    width: 100%;
+}
+
+.primary-button {
+    background: var(--primary-blue);
+    color: white;
+}
+
+.secondary-button {
+    background: var(--light-grey);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.secondary-button.small {
+    padding: 12px 16px;
+    font-size: 0.85em;
+    min-height: 44px;
+}
+
+.action-buttons-mobile {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.action-buttons-mobile .primary-button,
+.action-buttons-mobile .secondary-button {
+    flex: 1;
+}
+
+/* Botones Flotantes */
+.floating-actions {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    background: var(--card-bg);
+    padding: 12px;
+    border-radius: 50px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    z-index: 1000;
+}
+
+.floating-btn {
+    width: 55px;
+    height: 55px;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3em;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-width: 55px;
+    min-height: 55px;
+}
+
+.floating-btn.primary {
+    background: var(--primary-blue);
+    color: white;
+}
+
+.floating-btn.secondary {
+    background: var(--light-grey);
+    color: var(--text-primary);
+}
+
+/* Resultado Móvil */
+.mobile-result {
+    background: var(--light-grey);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.mobile-result.hidden {
+    display: none;
+}
+
+.result-badge-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 0.95em;
+    margin-bottom: 15px;
+}
+
+.result-badge-mini.rentable {
+    background: var(--success-green);
+    color: white;
+}
+
+.result-badge-mini.oportunidad {
+    background: var(--warning-orange);
+    color: white;
+}
+
+.result-badge-mini.no-rentable {
+    background: var(--error-red);
+    color: white;
+}
+
+/* Estadísticas Móviles */
+.mobile-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 15px 10px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.stat-value {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: var(--primary-blue);
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+
+.mobile-stats-container {
+    margin-top: 10px;
+}
+
+/* Perfiles Móviles */
+.perfiles-lista-mobile {
+    margin-bottom: 20px;
+}
+
+.mobile-profile-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: var(--light-grey);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.mobile-profile-item.active {
+    border: 2px solid var(--primary-blue);
+    background: rgba(26, 115, 232, 0.1);
+}
+
+.profile-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    background: var(--primary-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.profile-info-mini {
+    flex: 1;
+}
+
+.profile-name-mini {
+    font-weight: 600;
+    font-size: 1em;
+    color: var(--text-primary);
+}
+
+.profile-details-mini {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.profile-actions-mini {
+    display: flex;
+    gap: 8px;
+}
+
+/* Historial Móvil */
+.history-list-mobile {
+    max-height: 50vh;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.mobile-history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: var(--light-grey);
+    border-radius: 10px;
+    margin-bottom: 8px;
+}
+
+.history-emoji-mini {
+    font-size: 1.3em;
+}
+
+.history-info-mini {
+    flex: 1;
+}
+
+.history-main-mini {
+    font-weight: 600;
+    font-size: 0.9em;
+    color: var(--text-primary);
+}
+
+.history-details-mini {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.history-status-mini {
+    font-size: 1.2em;
+}
+
+.history-actions-mobile {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* Modales Móviles */
+.modal-fondo {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(5px);
+}
+
+.mobile-modal {
+    background-color: var(--card-bg);
+    border-radius: 16px;
+    box-shadow: var(--shadow-hover);
+    width: 100%;
+    max-width: 400px;
+    animation: modalSlideIn 0.3s ease-out;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.mobile-modal-content {
+    padding: 25px;
+}
+
+.modal-actions-mobile {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Sincronización Móvil */
 .sync-status-bar {
     display: flex;
     justify-content: space-between;
@@ -309,14 +540,17 @@ h2, h3 {
     background: var(--light-grey);
     padding: 12px 15px;
     border-radius: 10px;
-    margin: 10px 0 20px 0;
-    border: 2px solid var(--border-color);
+    margin: 10px 0;
+}
+
+.sync-status-bar.essential {
+    display: flex;
 }
 
 .sync-info {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-size: 0.9em;
 }
 
@@ -327,414 +561,90 @@ h2, h3 {
     padding: 8px 12px;
     border-radius: 8px;
     font-size: 0.8em;
-    display: flex;
-    align-items: center;
-    gap: 5px;
     cursor: pointer;
 }
 
-.sync-info-small {
-    /* ... estilos existentes ... */
-    justify-content: center;
-    margin-top: 15px;
-    padding: 10px;
-    background: var(--light-grey);
-    border-radius: 8px;
-    font-size: 0.85em;
-    color: var(--text-secondary);
-}
-
-/* --- Modales (Ajustes para un modal más limpio) --- */
-.modal-fondo {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal-contenido {
-    background: var(--card-bg);
-    border-radius: 16px;
-    box-shadow: var(--shadow-hover);
-    padding: 30px;
-    position: relative;
-    max-width: 90%;
-    width: 450px;
-    max-height: 90vh;
-    overflow-y: auto;
-    color: var(--text-primary);
-}
-
-/* Nuevo estilo para el modal de sync (reemplaza los estilos en línea) */
-.modal-minimal-sync {
-    max-width: 500px;
-    background: var(--card-bg);
-    color: var(--text-primary);
-}
-
-.modal-header {
+/* Estados de Empty */
+.empty-state {
     text-align: center;
-    padding-bottom: 20px;
-    margin-bottom: 20px;
-    border-bottom: 2px solid var(--border-color);
-}
-
-.modal-header h2, .modal-header h3 {
-    margin: 0;
-    color: var(--text-primary);
-}
-
-.modal-header p {
+    padding: 40px 20px;
     color: var(--text-secondary);
-    margin: 10px 0 0 0;
 }
 
-/* Estilos de input de código de usuario */
-.user-code-input-style {
-    width: 100%; 
-    padding: 15px; 
-    font-size: 18px; 
-    text-align: center; 
-    letter-spacing: 2px;
-    border: 2px solid var(--border-color) !important;
-    border-radius: 10px !important;
-    background: var(--light-grey) !important;
-    color: var(--text-primary) !important;
-    text-transform: uppercase;
+.empty-state p {
+    margin-bottom: 8px;
 }
 
-/* Contenedor del generador de código */
-.code-generator-container {
-    text-align: center; 
-    margin-top: 10px;
-}
-
-/* Caja de tips de sincronización */
-.sync-tip-box {
-    background: var(--light-grey);
-    padding: 15px; 
-    border-radius: 10px; 
-    margin: 20px 0; 
-    border-left: 4px solid var(--info-blue);
-}
-
-.sync-tip-box p {
-    margin: 0; 
-    font-size: 14px; 
-    color: var(--text-secondary); 
-    text-align: center;
-}
-
-/* Botón de cerrar modal */
-.modal-close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    font-size: 1.5em;
-    color: var(--medium-grey);
-    cursor: pointer;
-    line-height: 1;
-}
-
-
-/* --- Estilos de Perfiles (Sección de Selección) --- */
-.perfiles-lista {
-    display: grid;
-    gap: 12px;
-    margin-bottom: 25px;
-}
-
-.perfil-item {
-    background: var(--light-grey);
-    padding: 15px;
-    border-radius: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    min-height: 80px;
-    border-left: 4px solid transparent;
-}
-
-.perfil-item:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.perfil-info {
-    flex-grow: 1;
-}
-
-.perfil-nombre {
-    font-weight: 700;
-    font-size: 1.1em;
-    color: var(--text-primary);
-}
-
-.perfil-details {
-    font-size: 0.85em;
-    color: var(--text-secondary);
-    margin-top: 4px;
-}
-
-.perfil-actions {
-    display: flex;
-    gap: 8px;
-    margin-left: 15px;
-}
-
-/* --- Main Header (Perfil y Sync) --- */
-.main-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 15px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.profile-summary {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.empty-state .small {
     font-size: 0.9em;
 }
 
-.sync-status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.8em;
-    font-weight: 600;
-    padding: 6px 10px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.2s;
+/* Utilidades */
+.hidden {
+    display: none !important;
 }
 
-#status-icon {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.status-connected #status-icon {
-    background-color: var(--success-green);
-    box-shadow: 0 0 5px var(--success-green);
-}
-
-.status-error #status-icon {
-    background-color: var(--error-red);
-    box-shadow: 0 0 5px var(--error-red);
-}
-
-/* --- Sistema de Pestañas --- (Mantenido, funciona bien en mobile) */
-.tabs-container {
-    margin-top: 20px;
-}
-
-.tabs-header {
-    display: flex;
-    background: var(--light-grey);
-    border-radius: 12px;
-    padding: 4px;
-    margin-bottom: 20px;
-    border: 1px solid var(--border-color);
-}
-
-.tab-button {
-    flex: 1;
-    padding: 12px 8px;
-    border: none;
-    background: transparent;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
+.small {
     font-size: 0.85em;
-    color: var(--text-secondary);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.3s;
-    min-height: 60px;
-    -webkit-tap-highlight-color: transparent;
 }
 
-.tab-button.active {
-    background: var(--card-bg);
-    color: var(--primary-blue);
-    box-shadow: var(--shadow);
-    transform: translateY(-1px);
-}
-
-.tab-icon {
-    font-size: 1.2em;
-}
-
-.tab-text {
-    font-size: 0.75em;
-    white-space: nowrap;
-}
-
-.tab-content {
-    display: none;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-@keyframes fadeIn { 
-    from { opacity: 0; transform: translateY(10px); } 
-    to { opacity: 1; transform: translateY(0); } 
-}
-
-/* --- Resultado Rápido (Minimalista) --- */
-.resultado-rapido {
-    background: var(--light-grey);
-    border-radius: 12px;
-    padding: 15px; /* Más compacto para mobile */
-    margin: 20px 0;
-    border-left: 4px solid var(--primary-blue);
-    animation: slideIn 0.3s ease-out;
-}
-
-.resultado-rapido.hidden {
-    display: none;
-}
-
-.resultado-header h3 {
-    margin: 0 0 10px 0; /* Más compacto */
-    font-size: 1em;
-}
-
-.resultado-content {
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
-
-.resultado-badge {
-    padding: 8px 15px;
-    border-radius: 25px;
-    font-weight: 700;
-    font-size: 1.1em;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.resultado-metricas {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.metrica-item {
-    text-align: center;
-    padding: 8px 0;
-    border-right: 1px solid var(--border-color);
-}
-
-.metrica-item:last-child {
-    border-right: none;
-}
-
-.metrica-label {
-    display: block;
-    font-size: 0.75em;
-    color: var(--text-secondary);
-}
-
-.metrica-value {
-    font-size: 1.1em;
-    margin-top: 2px;
-    font-weight: 700;
-    color: var(--primary-blue);
-}
-
-
-/* --- Estadísticas (Resumen) --- */
-.estadisticas-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px; /* Reducido para mobile */
-}
-
-.stat-card {
-    background: var(--light-grey);
-    padding: 15px;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 80px;
-}
-
-.stat-label {
-    font-size: 0.75em;
-    color: var(--text-secondary);
-    font-weight: 500;
-    margin-bottom: 5px;
-}
-
-.stat-value {
-    font-size: 1.4em;
-    font-weight: 700;
-    color: var(--text-primary);
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-/* Colores para tarjetas de estadísticas */
-.stat-total .stat-value { color: var(--primary-blue); }
-.stat-money .stat-value { color: var(--success-green); }
-.stat-time .stat-value { color: var(--info-blue); }
-.stat-success .stat-value { color: var(--secondary-orange); }
-.stat-hourly .stat-value { color: var(--error-red); }
-.stat-avg .stat-value { color: var(--dark-grey); }
-
-/* --- Media Queries de Optimización (Manteniendo y ajustando) --- */
-@media (max-width: 768px) {
-    /* Ya manejado por la estrategia Mobile-First en body y container */
-    
-    /* El grid de estadísticas se simplifica en pantallas pequeñas */
-    .estadisticas-grid {
-        grid-template-columns: 1fr; /* Una columna en móvil */
-    }
-}
-
+/* Mejoras de Responsive */
 @media (max-width: 480px) {
-    /* Más ajustes de tamaño para pantallas muy pequeñas */
-    
-    .tabs-header {
-        padding: 2px;
-        border-radius: 10px;
+    body {
+        padding: 8px;
     }
     
-    .tab-button {
-        padding: 10px 4px;
-        min-height: 55px;
-    }
-
     .container {
         padding: 15px;
     }
-
-    .modal-contenido {
-        padding: 20px;
+    
+    .mobile-tab {
+        padding: 10px 6px;
+        min-height: 45px;
+        font-size: 0.75em;
     }
+    
+    .floating-actions {
+        bottom: 15px;
+        padding: 10px;
+        gap: 12px;
+    }
+    
+    .floating-btn {
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
+        min-height: 50px;
+    }
+    
+    .config-grid-mobile {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .action-buttons-mobile {
+        flex-direction: column;
+    }
+}
+
+/* Estados de Foco para Accesibilidad */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--primary-blue);
+    outline-offset: 2px;
+}
+
+/* Scrollbars Móviles */
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--light-grey);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--medium-grey);
+    border-radius: 2px;
 }
