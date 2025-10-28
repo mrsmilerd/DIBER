@@ -444,7 +444,6 @@ function setUserCode() {
     let code = input.value.trim().toUpperCase();
     console.log('📝 Código ingresado:', code);
     
-    // Mostrar estado en el modal
     function showCodeStatus(message, type) {
         if (statusDiv) {
             statusDiv.style.display = 'block';
@@ -455,7 +454,6 @@ function setUserCode() {
         }
     }
     
-    // VALIDACIÓN
     const codeRegex = /^[A-Z0-9]{3,6}$/;
     
     if (!code) {
@@ -472,7 +470,6 @@ function setUserCode() {
         return;
     }
     
-    // ✅ CÓDIGO VÁLIDO
     showCodeStatus('✅ Código válido! Conectando...', 'success');
     input.style.borderColor = '#28a745';
     
@@ -482,65 +479,33 @@ function setUserCode() {
     userCodeSystem.userId = 'user_' + code;
     userCodeSystem.initialized = true;
     
-    // Guardar en localStorage
     localStorage.setItem('ubercalc_user_code', code);
     
     console.log('✅ Código de usuario establecido:', code);
     console.log('✅ UserID:', userCodeSystem.userId);
     
-    // Ocultar modal después de éxito
     setTimeout(async () => {
-        hideUserCodeModal();
-        showUserCodeBanner();
-        
-        // INICIALIZAR FIREBASE SYNC PARA EL NUEVO USUARIO
-        console.log('🔄 Inicializando Firebase Sync para el nuevo usuario...');
-        const firebaseReady = await initializeFirebaseSyncWithRetry();
-        
-        if (firebaseReady) {
-            console.log('✅ Firebase Sync inicializado para nuevo usuario');
-            await cargarDatos(); // Cargar datos existentes si los hay
-        }
-        
-        // ✅ LÓGICA CORREGIDA: SIEMPRE mostrar pantalla de perfiles para nuevos usuarios
-        // Verificar si realmente hay datos en Firebase
-        let tieneDatosEnFirebase = false;
-        
-        if (firebaseSync && firebaseSync.initialized) {
-            try {
-                const syncStatus = await firebaseSync.getSyncStatus();
-                tieneDatosEnFirebase = syncStatus.profilesCount > 0 || syncStatus.historyCount > 0;
-                console.log('🔍 Estado Firebase:', {
-                    profilesCount: syncStatus.profilesCount,
-                    historyCount: syncStatus.historyCount,
-                    tieneDatosEnFirebase
-                });
-            } catch (error) {
-                console.error('❌ Error verificando estado Firebase:', error);
+        try {
+            hideUserCodeModal();
+            showUserCodeBanner();
+            
+            console.log('🔄 Inicializando Firebase Sync para el nuevo usuario...');
+            const firebaseReady = await initializeFirebaseSyncWithRetry();
+            
+            if (firebaseReady) {
+                console.log('✅ Firebase Sync inicializado para nuevo usuario');
+                await cargarDatos();
             }
-        }
-        
-        const tienePerfilesLocales = perfiles && perfiles.length > 0;
-        const tieneDatos = tienePerfilesLocales || tieneDatosEnFirebase;
-        
-        console.log('🔍 Estado final:', {
-            tienePerfilesLocales,
-            tieneDatosEnFirebase,
-            tieneDatos
-        });
-        
-        if (tieneDatos) {
-            // Usuario existente con datos - ir a pantalla principal
-            console.log('🔄 Usuario existente, mostrando pantalla principal...');
-            mostrarPantalla('main');
-            mostrarStatus(`¡Bienvenido de vuelta!`, 'success');
-        } else {
-            // NUEVO USUARIO - SIEMPRE ir a crear perfil primero
+            
+            // LÓGICA SIMPLIFICADA: SIEMPRE mostrar pantalla de perfiles para nuevos códigos
             console.log('👤 NUEVO USUARIO, mostrando pantalla de perfiles...');
             mostrarPantalla('perfil');
             mostrarStatus(`¡Bienvenido! Crea tu primer perfil para comenzar`, 'success');
+            
+        } catch (error) {
+            console.error('❌ Error en setUserCode:', error);
+            mostrarStatus('Error al conectar. Intenta nuevamente.', 'error');
         }
-        
     }, 1500);
 }
 
@@ -2594,6 +2559,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
