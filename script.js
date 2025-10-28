@@ -2411,11 +2411,13 @@ async function guardarYForzarSincronizacion() {
     }
 }
 
-// --- Función de Diagnóstico ---
+// FUNCIÓN DE DIAGNÓSTICO MEJORADA
+// =============================================
+
 async function diagnosticarSync() {
-    console.log('🔧 INICIANDO DIAGNÓSTICO DE SINCRONIZACIÓN...');
+    console.log('🔧 INICIANDO DIAGNÓSTICO COMPLETO DE SINCRONIZACIÓN...');
     
-    if (!googleSync || !googleSync.initialized) {
+    if (!googleSync) {
         console.error('❌ Google Sync no inicializado');
         mostrarStatus('❌ Google Sync no inicializado', 'error');
         return;
@@ -2433,36 +2435,82 @@ async function diagnosticarSync() {
         console.log('2. Probando obtener perfiles...');
         mostrarStatus('2. Probando obtener perfiles...', 'info');
         
-        const perfiles = await googleSync.loadProfiles();
-        console.log('✅ Obtención de perfiles OK:', perfiles?.length || 0);
+        const perfilesCloud = await googleSync.loadProfiles();
+        console.log('✅ Obtención de perfiles OK:', perfilesCloud?.length || 0);
 
-        console.log('3. Probando guardar perfiles...');
-        mostrarStatus('3. Probando guardar perfiles...', 'info');
+        console.log('3. Probando obtener historial...');
+        mostrarStatus('3. Probando obtener historial...', 'info');
         
-        let saveResult = false;
-        if (perfiles && perfiles.length > 0) {
-            saveResult = await googleSync.saveProfiles(perfiles);
-        } else {
-            saveResult = await googleSync.saveProfiles([]);
-        }
-        console.log('✅ Guardado de perfiles OK:', saveResult);
+        const historialCloud = await googleSync.loadHistory();
+        console.log('✅ Obtención de historial OK:', historialCloud?.length || 0);
 
-        console.log('4. Probando sincronización...');
-        mostrarStatus('4. Probando sincronización...', 'info');
+        console.log('4. Probando guardar perfiles...');
+        mostrarStatus('4. Probando guardar perfiles...', 'info');
+        
+        let saveProfilesResult = false;
+        if (perfilesCloud && perfilesCloud.length > 0) {
+            saveProfilesResult = await googleSync.saveProfiles(perfilesCloud);
+        } else {
+            saveProfilesResult = await googleSync.saveProfiles([]);
+        }
+        console.log('✅ Guardado de perfiles OK:', saveProfilesResult);
+
+        console.log('5. Probando guardar historial...');
+        mostrarStatus('5. Probando guardar historial...', 'info');
+        
+        let saveHistoryResult = false;
+        if (historialCloud && historialCloud.length > 0) {
+            saveHistoryResult = await googleSync.saveHistory(historialCloud);
+        } else {
+            saveHistoryResult = await googleSync.saveHistory([]);
+        }
+        console.log('✅ Guardado de historial OK:', saveHistoryResult);
+
+        console.log('6. Probando sincronización completa...');
+        mostrarStatus('6. Probando sincronización completa...', 'info');
         
         const syncResult = await googleSync.syncProfiles(perfiles || []);
         const syncSuccess = syncResult && syncResult.success;
         console.log('✅ Sincronización OK:', syncSuccess ? 'Éxito' : 'Falló');
 
-        console.log('🎉 DIAGNÓSTICO COMPLETADO - Todo OK');
+        // Mostrar resumen
+        const resumen = `
+🎉 DIAGNÓSTICO COMPLETADO - RESULTADOS:
+
+✅ Conexión: ${testResult ? 'OK' : 'FALLÓ'}
+✅ Perfiles en nube: ${perfilesCloud?.length || 0}
+✅ Historial en nube: ${historialCloud?.length || 0}
+✅ Guardado perfiles: ${saveProfilesResult ? 'OK' : 'FALLÓ'}
+✅ Guardado historial: ${saveHistoryResult ? 'OK' : 'FALLÓ'}
+✅ Sincronización: ${syncSuccess ? 'OK' : 'FALLÓ'}
+
+📊 Datos locales:
+• Perfiles: ${perfiles.length}
+• Historial: ${historial.length}
+• Código usuario: ${userCodeSystem.userCode || 'No configurado'}
+
+🔗 Estado Google Sync: ${googleSync.initialized ? 'INICIALIZADO' : 'NO INICIALIZADO'}
+        `;
+        
+        console.log(resumen);
         mostrarStatus('✅ Diagnóstico: Todo funciona correctamente', 'success');
+        
+        // Mostrar alerta con resumen
+        setTimeout(() => {
+            alert(resumen);
+        }, 1000);
         
     } catch (error) {
         console.error('❌ ERROR EN DIAGNÓSTICO:', error);
-        mostrarError(`❌ Error en diagnóstico: ${error.message}`);
+        const errorMsg = `❌ Error en diagnóstico: ${error.message}`;
+        mostrarStatus(errorMsg, 'error');
+        
+        // Mostrar alerta con error
+        setTimeout(() => {
+            alert(`❌ DIAGNÓSTICO FALLIDO:\n\n${error.message}\n\nVerifica la consola para más detalles.`);
+        }, 1000);
     }
 }
-
 // --- Funciones Globales para HTML ---
 window.cerrarModal = cerrarModal;
 window.cerrarExportModal = cerrarExportModal;
@@ -2583,5 +2631,6 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🎉 Script UberCalc con Sistema de Código cargado correctamente');
+
 
 
