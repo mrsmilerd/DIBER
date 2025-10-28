@@ -747,20 +747,22 @@ class FirebaseSync {
 
     // Métodos para historial
     async saveHistory(history) {
-        if (!this.initialized) {
-            console.warn('❌ Firebase Sync no inicializado, no se puede guardar historial');
-            return false;
-        }
+        if (!perfilActual || !perfilActual.id) {
+    console.warn("⚠️ No hay perfil actual definido, no se puede guardar historial.");
+    return false;
+}
 
-        try {
-            console.log('💾 Guardando historial en Firebase...', history.length);
-            
-            const userDocRef = this.db.collection('users').doc(this.userId);
-            await userDocRef.set({
-                history: history,
-                lastSync: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+const historyRef = this.db
+  .collection('users')
+  .doc(this.userId)
+  .collection('histories')
+  .doc(perfilActual.id);
+
+await historyRef.set({
+    history: history,
+    perfilNombre: perfilActual.nombre,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+}, { merge: true });
             
             this.lastSyncTime = new Date().toISOString();
             console.log('✅ Historial guardado en Firebase correctamente');
@@ -781,25 +783,28 @@ class FirebaseSync {
         try {
             console.log('📥 Cargando historial desde Firebase...');
             
-            const userDocRef = this.db.collection('users').doc(this.userId);
-            const doc = await userDocRef.get();
-            
-            if (doc.exists) {
-                const data = doc.data();
-                this.lastSyncTime = data.lastSync?.toDate().toISOString() || new Date().toISOString();
-                console.log('✅ Historial cargado desde Firebase:', data.history?.length || 0);
-                return data.history || [];
-            } else {
-                console.log('📭 No se encontró historial en Firebase para este usuario');
-                return [];
-            }
-            
-        } catch (error) {
-            console.error('❌ Error cargando historial desde Firebase:', error);
-            return null;
-        }
-    }
+            if (!perfilActual || !perfilActual.id) {
+    console.warn("⚠️ No hay perfil actual definido, no se puede cargar historial.");
+    return [];
+}
 
+const historyRef = this.db
+  .collection('users')
+  .doc(this.userId)
+  .collection('histories')
+  .doc(perfilActual.id);
+
+const doc = await historyRef.get();
+
+if (doc.exists) {
+    const data = doc.data();
+    console.log(`📥 Historial cargado para perfil: ${perfilActual.nombre}`);
+    return data.history || [];
+} else {
+    console.log(`📭 Sin historial para el perfil: ${perfilActual.nombre}`);
+    return [];
+}
+            
     // Sincronización completa
     async syncProfiles(profiles) {
         if (!this.initialized) return { success: false, message: 'Sync no inicializado.' };
@@ -1464,11 +1469,11 @@ function procesarViaje(aceptado) {
     // Actualizar interfaz
     actualizarEstadisticas();
     actualizarHistorial();
-    
+    guardarDatos();
+
     // Limpiar formulario
     limpiarFormulario();
 
-    guardarDatos();
 }
 
 function mostrarResultadoModal(resultado) {
@@ -2577,6 +2582,7 @@ function cambiarUsuario() {
 // =============================================
 
 console.log('🎉 UberCalc con Sistema de Código y Firebase cargado correctamente');
+
 
 
 
