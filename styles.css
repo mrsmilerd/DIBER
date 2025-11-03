@@ -1601,3 +1601,196 @@ select:focus-visible {
         font-size: 16px; /* Previene zoom en iOS */
     }
 }
+
+/* ===== MODAL RÁPIDO FLOTANTE ===== */
+.modal-rapido {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 300px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.modal-rapido.hidden {
+    display: none;
+}
+
+.modal-rapido-contenido {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    border-left: 4px solid var(--primary-blue);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--border-color);
+}
+
+.modal-rapido-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.modal-rapido-emoji {
+    font-size: 1.4em;
+    margin-right: 8px;
+}
+
+.modal-rapido-texto {
+    font-weight: 700;
+    font-size: 1em;
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.modal-rapido-cerrar {
+    background: none;
+    border: none;
+    font-size: 1.3em;
+    cursor: pointer;
+    color: var(--text-secondary);
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.modal-rapido-cerrar:hover {
+    background: var(--light-grey);
+    color: var(--text-primary);
+}
+
+.modal-rapido-metricas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.modal-rapido-metrica {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    background: var(--light-grey);
+    border-radius: 8px;
+    font-size: 0.85em;
+    text-align: center;
+}
+
+.modal-rapido-metrica span:first-child {
+    font-size: 1.1em;
+    margin-bottom: 4px;
+}
+
+.modal-rapido-metrica-valor {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-rapido-acciones {
+    display: flex;
+    gap: 8px;
+}
+
+.modal-rapido-acciones .primary-button.small,
+.modal-rapido-acciones .secondary-button.small {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 0.8em;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Efectos de rentabilidad en el modal rápido */
+.modal-rapido-contenido.rentable {
+    border-left-color: var(--success-green);
+}
+
+.modal-rapido-contenido.oportunidad {
+    border-left-color: var(--warning-orange);
+}
+
+.modal-rapido-contenido.no-rentable {
+    border-left-color: var(--error-red);
+}
+
+/* Responsive para móvil */
+@media (max-width: 768px) {
+    .modal-rapido {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .modal-rapido-contenido {
+        padding: 12px;
+    }
+    
+    .modal-rapido-header {
+        margin-bottom: 10px;
+    }
+    
+    .modal-rapido-metricas {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    
+    .modal-rapido-metrica {
+        padding: 6px;
+        font-size: 0.8em;
+    }
+    
+    .modal-rapido-acciones {
+        gap: 6px;
+    }
+    
+    .modal-rapido-acciones .primary-button.small,
+    .modal-rapido-acciones .secondary-button.small {
+        padding: 6px 10px;
+        font-size: 0.75em;
+        min-height: 32px;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-rapido {
+        top: 5px;
+        right: 5px;
+        left: 5px;
+    }
+    
+    .modal-rapido-contenido {
+        padding: 10px;
+    }
+    
+    .modal-rapido-texto {
+        font-size: 0.9em;
+    }
+    
+    .modal-rapido-metricas {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+}
