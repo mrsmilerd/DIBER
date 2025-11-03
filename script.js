@@ -351,6 +351,8 @@ function aceptarViaje() {
     const rentable = porMinuto >= perfilActual.umbralMinutoRentable && 
                      porKm >= perfilActual.umbralKmRentable;
     
+    console.log('✅ Aceptando viaje - rentable:', rentable);
+    
     // Agregar al historial
     agregarAlHistorial({
         ganancia: tarifa,
@@ -3371,6 +3373,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
