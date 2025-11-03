@@ -802,6 +802,12 @@ class FirebaseSync {
 async function guardarDatos() {
     console.log('💾 Guardando datos (local + Firebase)...');
     
+    // Desactivar temporalmente los listeners para evitar bucles
+    if (firebaseSync && firebaseSync.unsubscribe) {
+        console.log('🔇 Desactivando listeners temporalmente durante guardado...');
+        firebaseSync.unsubscribe();
+    }
+
     // Guardar en LocalStorage (Caché y fallback)
     localStorage.setItem('uberCalc_data', JSON.stringify({
         perfiles,
@@ -811,22 +817,29 @@ async function guardarDatos() {
         ultimaActualizacion: new Date().toISOString()
     }));
 
-    // Sincronizar con Firebase - NUEVA ESTRUCTURA
+    // Sincronizar con Firebase - NUEVA ESTRUCTURA (SOLO SI ES NECESARIO)
     if (firebaseSync && firebaseSync.initialized === true) {
-        console.log('☁️ Sincronizando datos con Firebase (nueva estructura)...');
+        console.log('☁️ Sincronizando datos con Firebase (solo cambios necesarios)...');
         
         try {
+            // Solo sincronizar si hay cambios reales
+            const syncPromises = [];
+            
             // 1. Sincronizar cada perfil individualmente
             for (const perfil of perfiles) {
-                await firebaseSync.saveProfile(perfil);
+                syncPromises.push(firebaseSync.saveProfile(perfil));
             }
-            console.log('✅ Perfiles guardados en Firebase (nueva estructura)');
             
-            // 2. Sincronizar cada viaje individualmente
-            for (const viaje of historial.slice(0, 100)) { // Limitar a 100 más recientes
-                await firebaseSync.saveTrip(viaje);
+            // 2. Sincronizar solo los viajes más recientes (últimos 10)
+            const viajesRecientes = historial.slice(0, 10);
+            for (const viaje of viajesRecientes) {
+                syncPromises.push(firebaseSync.saveTrip(viaje));
             }
-            console.log('✅ Viajes guardados en Firebase (nueva estructura)');
+            
+            // Esperar a que todas las sincronizaciones terminen
+            await Promise.all(syncPromises);
+            
+            console.log('✅ Datos guardados en Firebase correctamente');
             
             // 3. Actualizar última sincronización
             firebaseSync.lastSyncTime = new Date().toISOString();
@@ -838,6 +851,14 @@ async function guardarDatos() {
     } else {
         console.warn('⚠️ Firebase Sync no inicializado. Solo se guarda en local.');
     }
+    
+    // Reactivar listeners después de un breve delay
+    setTimeout(() => {
+        if (firebaseSync && firebaseSync.initialized) {
+            console.log('🔊 Reactivando listeners de Firebase...');
+            iniciarEscuchaFirebase();
+        }
+    }, 1000);
 }
 
 async function cargarDatos() {
@@ -902,6 +923,68 @@ async function cargarDatos() {
     }
     
     console.log(`✅ Carga de datos finalizada. Perfiles: ${perfiles.length}, Viajes: ${historial.length}, PerfilActual: ${perfilActual ? perfilActual.nombre : 'null'}`);
+}
+
+// =============================================
+// NUEVAS FUNCIONES PARA OPTIMIZAR SINCRONIZACIÓN
+// =============================================
+
+function guardarDatosLocal() {
+    console.log('💾 Guardando datos solo en localStorage...');
+    
+    localStorage.setItem('uberCalc_data', JSON.stringify({
+        perfiles,
+        perfilActual,
+        historial,
+        version: '2.0',
+        ultimaActualizacion: new Date().toISOString()
+    }));
+}
+
+function iniciarEscuchaFirebase() {
+    if (!firebaseSync || !firebaseSync.initialized) {
+        console.log('❌ Firebase Sync no disponible para escucha');
+        return;
+    }
+    
+    try {
+        console.log('👂 Iniciando escucha en tiempo real de Firebase...');
+        
+        firebaseSync.unsubscribe = firebaseSync.listenForChanges((change) => {
+            console.log('🔄 Datos actualizados desde la nube:', change.type);
+            
+            if (change.type === 'profiles') {
+                console.log('✅ Actualizando perfiles desde la nube:', change.data.length);
+                perfiles = change.data;
+                
+                // Actualizar perfil actual si es necesario
+                if (perfiles.length > 0) {
+                    const currentProfileId = perfilActual?.id;
+                    perfilActual = perfiles.find(p => p.id === currentProfileId) || perfiles[0];
+                }
+                
+                // Actualizar interfaz
+                actualizarInterfazPerfiles();
+            }
+            
+            if (change.type === 'trips') {
+                console.log('✅ Actualizando viajes desde la nube:', change.data.length);
+                historial = change.data;
+                
+                // Actualizar interfaz
+                actualizarHistorial();
+                actualizarEstadisticas();
+            }
+            
+            // Guardar localmente los datos actualizados
+            guardarDatosLocal();
+        });
+        
+        console.log('✅ Escucha de Firebase iniciada correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error iniciando escucha en tiempo real:', error);
+    }
 }
 
 // =============================================
@@ -1224,41 +1307,14 @@ async function inicializarApp() {
             console.log('✅ Firebase Sync con nueva estructura inicializado, cargando datos...');
             await cargarDatos();
             
-            // ✅ ESCUCHA EN TIEMPO REAL MEJORADA - NUEVA ESTRUCTURA
-            console.log('👂 Iniciando escucha en tiempo real (nueva estructura)...');
-            
-            try {
-                firebaseSync.unsubscribe = firebaseSync.listenForChanges((change) => {
-                    console.log('🔄 Datos actualizados desde la nube (nueva estructura):', change.type);
-                    
-                    if (change.type === 'profiles') {
-                        console.log('✅ Actualizando perfiles desde la nube:', change.data.length);
-                        perfiles = change.data;
-                        
-                        // Actualizar perfil actual
-                        if (perfiles.length > 0) {
-                            const currentProfileId = perfilActual?.id;
-                            perfilActual = perfiles.find(p => p.id === currentProfileId) || perfiles[0];
-                        }
-                        
-                        // Actualizar interfaz
-                        actualizarInterfazPerfiles();
-                    }
-                    
-                    if (change.type === 'trips') {
-                        console.log('✅ Actualizando viajes desde la nube:', change.data.length);
-                        historial = change.data;
-                        
-                        // Actualizar interfaz
-                        actualizarHistorial();
-                        actualizarEstadisticas();
-                    }
-                    
-                    mostrarStatus('Datos actualizados desde la nube', 'info');
-                });
-            } catch (error) {
-                console.error('❌ Error iniciando escucha en tiempo real:', error);
-            }
+            //// ✅ ESCUCHA EN TIEMPO REAL MEJORADA - NUEVA ESTRUCTURA
+// ✅ ESCUCHA EN TIEMPO REAL MEJORADA - NUEVA ESTRUCTURA
+console.log('👂 Configurando escucha en tiempo real (nueva estructura)...');
+
+// Iniciar la escucha después de un breve delay
+setTimeout(() => {
+    iniciarEscuchaFirebase();
+}, 2000);
             
         } else {
             console.log('📱 Firebase Sync no disponible, usando almacenamiento local');
@@ -1512,18 +1568,12 @@ function procesarViajeRapido(aceptado) {
     // Cerrar modal rápido primero
     cerrarModalRapido();
     
-    // Guardar en historial
+    // Guardar en historial (esto actualizará automáticamente las estadísticas)
+    guardarEnHistorial(calculoActual, aceptado);
+    
     if (aceptado) {
-        guardarEnHistorial(calculoActual, true);
         mostrarStatus('✅ Viaje aceptado y guardado en historial', 'success');
-        
-        // Actualizar estadísticas
-        actualizarEstadisticas();
-        
-        // Actualizar historial en tiempo real
-        actualizarHistorial();
     } else {
-        guardarEnHistorial(calculoActual, false);
         mostrarStatus('❌ Viaje rechazado', 'info');
     }
     
@@ -1532,7 +1582,11 @@ function procesarViajeRapido(aceptado) {
     
     // Cambiar a pestaña de historial si se aceptó
     if (aceptado) {
-        setTimeout(() => cambiarPestana('historial'), 500);
+        setTimeout(() => {
+            cambiarPestana('historial');
+            // Forzar actualización de estadísticas después de cambiar pestaña
+            setTimeout(actualizarEstadisticas, 100);
+        }, 500);
     }
 }
 
@@ -1766,6 +1820,8 @@ async function procesarViaje(aceptado) {
 
 // --- Gestión de Historial ---
 async function guardarEnHistorial(resultado, aceptado) {
+    console.log('💾 Guardando en historial:', { aceptado, rentabilidad: resultado.rentabilidad });
+    
     const historialItem = {
         ...resultado,
         aceptado: aceptado,
@@ -1776,23 +1832,35 @@ async function guardarEnHistorial(resultado, aceptado) {
     
     historial.unshift(historialItem);
     
-    // Mantener solo los últimos 50 registros
-    if (historial.length > 50) {
-        historial = historial.slice(0, 50);
+    // Mantener solo los últimos 100 registros para optimizar
+    if (historial.length > 100) {
+        historial = historial.slice(0, 100);
     }
     
-    // Guardar en Firebase si está disponible
-    if (firebaseSync && firebaseSync.initialized) {
+    // Guardar en Firebase si está disponible (SOLO UNA VEZ)
+    if (firebaseSync && firebaseSync.initialized && aceptado) {
+        console.log('☁️ Guardando viaje en Firebase...');
         await firebaseSync.saveTrip(historialItem);
     }
     
-    guardarDatos();
+    // Guardar datos localmente
+    guardarDatosLocal();
+    
+    // Actualizar interfaz
     actualizarHistorial();
-    actualizarEstadisticas(); // ← Asegurar que se actualicen las estadísticas
+    actualizarEstadisticas();
+    
+    console.log('✅ Viaje guardado en historial. Total viajes:', historial.length);
 }
 
 function actualizarHistorial() {
-    if (!elementos.historyList) return;
+    if (!elementos.historyList) {
+        console.log('❌ Elemento historyList no encontrado');
+        return;
+    }
+    
+    console.log('📋 Actualizando historial...');
+    console.log('📝 Total de viajes en historial:', historial.length);
     
     elementos.historyList.innerHTML = '';
     
@@ -1806,8 +1874,22 @@ function actualizarHistorial() {
         return;
     }
     
-    // Mostrar máximo 10 viajes en el historial
-    const historialMostrar = historial.slice(0, 10);
+    // Filtrar solo viajes aceptados para el historial
+    const viajesAceptados = historial.filter(item => item.aceptado);
+    console.log('✅ Viajes aceptados para mostrar:', viajesAceptados.length);
+    
+    // Mostrar máximo 10 viajes en el historial (más recientes primero)
+    const historialMostrar = viajesAceptados.slice(0, 10);
+    
+    if (historialMostrar.length === 0) {
+        elementos.historyList.innerHTML = `
+            <div class="history-item" style="text-align: center; opacity: 0.7;">
+                <div class="history-details">No hay viajes aceptados</div>
+                <div style="font-size: 0.8em; margin-top: 5px;">Los viajes que aceptes aparecerán aquí</div>
+            </div>
+        `;
+        return;
+    }
     
     historialMostrar.forEach(item => {
         const historyItem = document.createElement('div');
@@ -1837,6 +1919,8 @@ function actualizarHistorial() {
         
         elementos.historyList.appendChild(historyItem);
     });
+    
+    console.log('✅ Historial actualizado con', historialMostrar.length, 'viajes');
 }
 
 function mostrarDetallesViaje(viaje) {
@@ -1889,26 +1973,43 @@ async function limpiarHistorial() {
 // --- Estadísticas ---
 function actualizarEstadisticas() {
     // Verificar que los elementos existen
-    if (!elementos.statsViajes || !elementos.statsGanancia || !perfilActual) {
-        console.log('❌ No se pueden actualizar estadísticas - elementos faltantes');
+    if (!elementos.statsViajes || !elementos.statsGanancia) {
+        console.log('❌ Elementos de estadísticas no encontrados');
         return;
     }
     
+    console.log('📊 Actualizando estadísticas...');
+    console.log('📈 Historial total:', historial.length);
+    console.log('📅 Viajes aceptados:', historial.filter(item => item.aceptado).length);
+    
     const hoy = new Date().toDateString();
-    const viajesHoy = historial.filter(item => 
-        item.aceptado && new Date(item.timestamp).toDateString() === hoy
-    );
+    const viajesHoy = historial.filter(item => {
+        if (!item.aceptado) return false;
+        
+        try {
+            const itemDate = new Date(item.timestamp).toDateString();
+            return itemDate === hoy;
+        } catch (error) {
+            console.warn('⚠️ Error procesando fecha del viaje:', item);
+            return false;
+        }
+    });
+    
+    console.log('📅 Viajes hoy:', viajesHoy.length);
     
     const totalViajes = viajesHoy.length;
-    const gananciaTotal = viajesHoy.reduce((sum, item) => sum + item.tarifa, 0);
-    const tiempoTotal = viajesHoy.reduce((sum, item) => sum + item.minutos, 0);
+    const gananciaTotal = viajesHoy.reduce((sum, item) => sum + (item.tarifa || 0), 0);
+    const tiempoTotal = viajesHoy.reduce((sum, item) => sum + (item.minutos || 0), 0);
     const viajesRentables = viajesHoy.filter(item => item.rentabilidad === 'rentable').length;
     
-    // Actualizar UI
-    elementos.statsViajes.textContent = totalViajes;
-    elementos.statsGanancia.textContent = formatearMoneda(gananciaTotal);
-    elementos.statsTiempo.textContent = `${tiempoTotal}min`;
-    elementos.statsRentables.textContent = viajesRentables;
+    console.log('💰 Ganancia total:', gananciaTotal);
+    console.log('⏱️ Tiempo total:', tiempoTotal);
+    
+    // Actualizar UI - VERIFICAR QUE LOS ELEMENTOS EXISTEN
+    if (elementos.statsViajes) elementos.statsViajes.textContent = totalViajes;
+    if (elementos.statsGanancia) elementos.statsGanancia.textContent = formatearMoneda(gananciaTotal);
+    if (elementos.statsTiempo) elementos.statsTiempo.textContent = `${tiempoTotal}min`;
+    if (elementos.statsRentables) elementos.statsRentables.textContent = viajesRentables;
     
     // Calcular rendimiento
     const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
@@ -1917,7 +2018,12 @@ function actualizarEstadisticas() {
     if (elementos.statsGananciaHora) elementos.statsGananciaHora.textContent = formatearMoneda(gananciaPorHora);
     if (elementos.statsViajePromedio) elementos.statsViajePromedio.textContent = formatearMoneda(viajePromedio);
     
-    console.log('✅ Estadísticas actualizadas:', { totalViajes, gananciaTotal });
+    console.log('✅ Estadísticas actualizadas:', { 
+        totalViajes, 
+        gananciaTotal, 
+        tiempoTotal, 
+        viajesRentables 
+    });
 }
 
 // --- Gestión de Perfiles ---
@@ -2684,4 +2790,5 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
