@@ -1413,29 +1413,33 @@ function mostrarResultadoRapido(resultado) {
         modalRapido.className = 'modal-rapido hidden';
         modalRapido.innerHTML = `
             <div class="modal-rapido-contenido">
+                <button class="modal-rapido-cerrar" onclick="cerrarModalRapido()">×</button>
                 <div class="modal-rapido-header">
-                    <span class="modal-rapido-emoji" id="modal-rapido-emoji">✅</span>
-                    <span class="modal-rapido-texto" id="modal-rapido-texto">RENTABLE</span>
-                    <button class="modal-rapido-cerrar" onclick="cerrarModalRapido()">×</button>
+                    <div class="modal-rapido-badge" id="modal-rapido-badge">
+                        <span class="modal-rapido-emoji" id="modal-rapido-emoji">✅</span>
+                        <span class="modal-rapido-texto" id="modal-rapido-texto">RENTABLE</span>
+                    </div>
                 </div>
                 <div class="modal-rapido-metricas">
                     <div class="modal-rapido-metrica">
-                        <span>⏱️</span>
-                        <span class="modal-rapido-metrica-valor" id="modal-rapido-minuto">--/min</span>
+                        <div class="modal-rapido-metrica-icono">⏱️</div>
+                        <div class="modal-rapido-metrica-valor" id="modal-rapido-minuto">--/min</div>
+                        <div class="modal-rapido-metrica-label">Por minuto</div>
                     </div>
                     <div class="modal-rapido-metrica">
-                        <span>🛣️</span>
-                        <span class="modal-rapido-metrica-valor" id="modal-rapido-km">--/km</span>
+                        <div class="modal-rapido-metrica-icono">🛣️</div>
+                        <div class="modal-rapido-metrica-valor" id="modal-rapido-km">--/km</div>
+                        <div class="modal-rapido-metrica-label">Por distancia</div>
                     </div>
                 </div>
                 <div class="modal-rapido-acciones">
-                    <button class="secondary-button small" onclick="procesarViajeRapido(false)">
+                    <button class="secondary-button" onclick="procesarViajeRapido(false)">
                         <span class="button-icon">❌</span>
-                        Rechazar
+                        Rechazar Viaje
                     </button>
-                    <button class="primary-button small" id="modal-rapido-aceptar" onclick="procesarViajeRapido(true)">
+                    <button class="primary-button" id="modal-rapido-aceptar" onclick="procesarViajeRapido(true)">
                         <span class="button-icon">✅</span>
-                        Aceptar
+                        Aceptar Viaje
                     </button>
                 </div>
             </div>
@@ -1444,7 +1448,7 @@ function mostrarResultadoRapido(resultado) {
     }
     
     // Actualizar contenido
-    const modalContenido = modalRapido.querySelector('.modal-rapido-contenido');
+    const modalBadge = document.getElementById('modal-rapido-badge');
     document.getElementById('modal-rapido-emoji').textContent = resultado.emoji;
     document.getElementById('modal-rapido-texto').textContent = resultado.texto;
     document.getElementById('modal-rapido-minuto').textContent = `${formatearMoneda(resultado.gananciaPorMinuto)}/min`;
@@ -1453,12 +1457,12 @@ function mostrarResultadoRapido(resultado) {
     document.getElementById('modal-rapido-km').textContent = `${formatearMoneda(resultado.gananciaPorKm)}/${distanciaLabel}`;
     
     // Configurar estilos según rentabilidad
-    modalContenido.className = 'modal-rapido-contenido';
-    modalContenido.classList.add(resultado.rentabilidad);
+    modalBadge.className = 'modal-rapido-badge';
+    modalBadge.classList.add(resultado.rentabilidad);
     
     // Configurar botón de aceptar según rentabilidad
     const btnAceptar = document.getElementById('modal-rapido-aceptar');
-    btnAceptar.className = 'primary-button small';
+    btnAceptar.className = 'primary-button';
     btnAceptar.classList.add(resultado.rentabilidad);
     
     // Mostrar modal
@@ -1467,7 +1471,7 @@ function mostrarResultadoRapido(resultado) {
     // Guardar cálculo actual para uso posterior
     calculoActual = resultado;
     
-    // Auto-cerrar después de 10 segundos si no interactúan
+    // Auto-cerrar después de 12 segundos si no interactúan
     if (window.modalRapidoTimeout) {
         clearTimeout(window.modalRapidoTimeout);
     }
@@ -1476,7 +1480,7 @@ function mostrarResultadoRapido(resultado) {
             cerrarModalRapido();
             mostrarStatus('Modal automáticamente cerrado', 'info');
         }
-    }, 10000);
+    }, 12000);
 }
 
 function cerrarModalRapido() {
@@ -2661,3 +2665,4 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 }
+
