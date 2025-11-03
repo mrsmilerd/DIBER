@@ -2609,12 +2609,6 @@ function configurarCierreModalRapido() {
     });
 }
 
-// Llamar esta función en la inicialización
-document.addEventListener('DOMContentLoaded', function() {
-    // ... código existente ...
-    configurarCierreModalRapido();
-});
-
 // =============================================
 // MANEJAR CAMBIOS DE TAMAÑO PARA OPTIMIZAR MODAL
 // =============================================
@@ -2630,6 +2624,22 @@ window.addEventListener('resize', function() {
         }
     }
 });
+
+// =============================================
+// INICIALIZACIÓN FINAL
+// =============================================
+
+// Llamar esta función en la inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    configurarCierreModalRapido();
+});
+
+// --- Forzar cálculo inicial si hay datos ---
+setTimeout(() => {
+    if (elementos.tarifaInput.value && elementos.minutosInput.value && elementos.distanciaInput.value) {
+        calcularAutomatico();
+    }
+}, 1000);
 
 // =============================================
 // ACTUALIZAR UI DE SYNC EN BOTÓN
@@ -2677,3 +2687,4 @@ function actualizarUISyncBoton(estado) {
         console.error('❌ Error actualizando UI de sync en botón:', error);
     }
 }
+
