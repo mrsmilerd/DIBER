@@ -750,14 +750,14 @@ class FirebaseSync {
         }
     }
 
- actualizarUIEstado(estado) {
-    try {
-        // Actualizar el botón en lugar de la barra
-        actualizarUISyncBoton(estado);
-    } catch (error) {
-        console.error('❌ Error actualizando UI de sync:', error);
+    actualizarUIEstado(estado) {
+        try {
+            // Actualizar el botón en lugar de la barra
+            actualizarUISyncBoton(estado);
+        } catch (error) {
+            console.error('❌ Error actualizando UI de sync:', error);
+        }
     }
-}
 
     getDeviceInfo() {
         return {
@@ -1295,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function configurarEventListeners() {
     // Sistema de Pestañas
-     elementos.tabButtons.forEach(button => {
+    elementos.tabButtons.forEach(button => {
         button.addEventListener('click', () => cambiarPestana(button.dataset.tab));
     });
     
@@ -1337,7 +1337,7 @@ function configurarEventListeners() {
     if (syncStatusBtn) {
         syncStatusBtn.addEventListener('click', mostrarPanelSync);
     }
-        };
+}
 
 // --- Sistema de Pestañas ---
 function cambiarPestana(tabId) {
@@ -1378,18 +1378,24 @@ function calcularAutomatico() {
     // Verificar si tenemos todos los datos necesarios
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
-   if (datosCompletos) {
-    elementos.autoCalcIndicator.classList.remove('hidden');
-    
-    // Calcular resultado INMEDIATAMENTE
-    const resultado = calcularRentabilidad(tarifa, minutos, distancia);
-    
-    if (resultado) {
-        calculoActual = resultado;
-        mostrarResultadoRapido(resultado); // ← Esta línea ahora abre el modal flotante
+    if (datosCompletos) {
+        elementos.autoCalcIndicator.classList.remove('hidden');
+        
+        // Calcular resultado INMEDIATAMENTE
+        const resultado = calcularRentabilidad(tarifa, minutos, distancia);
+        
+        if (resultado) {
+            calculoActual = resultado;
+            mostrarResultadoRapido(resultado); // ← Esta línea ahora abre el modal flotante
+        } else {
+            elementos.autoCalcIndicator.classList.add('hidden');
+            elementos.resultadoRapido.classList.add('hidden');
+            cerrarModalRapido(); // Cerrar modal si hay error
+        }
     } else {
         elementos.autoCalcIndicator.classList.add('hidden');
         elementos.resultadoRapido.classList.add('hidden');
+        cerrarModalRapido(); // Cerrar modal si datos incompletos
     }
 }
 
@@ -1703,35 +1709,6 @@ function crearColumnaResultadoCompacta(titulo, valor, comparacion, rentabilidad)
     comparacionElem.style.fontSize = window.innerWidth <= 480 ? '0.7em' : '0.75em';
     comparacionElem.style.color = 'var(--text-secondary)';
     comparacionElem.style.lineHeight = '1.3';
-    
-    columna.appendChild(tituloElem);
-    columna.appendChild(valorElem);
-    columna.appendChild(comparacionElem);
-    
-    return columna;
-}
-
-function crearColumnaResultado(titulo, valor, comparacion, rentabilidad) {
-    const columna = document.createElement('div');
-    columna.className = 'resultado-columna';
-    
-    const tituloElem = document.createElement('h3');
-    tituloElem.textContent = titulo;
-    tituloElem.style.margin = '0 0 10px 0';
-    tituloElem.style.fontSize = '1em';
-    
-    const valorElem = document.createElement('div');
-    valorElem.className = `resultado-valor ${rentabilidad}`;
-    valorElem.textContent = valor;
-    valorElem.style.fontSize = '1.3em';
-    valorElem.style.fontWeight = 'bold';
-    valorElem.style.margin = '10px 0';
-    
-    const comparacionElem = document.createElement('div');
-    comparacionElem.className = 'resultado-comparacion';
-    comparacionElem.textContent = comparacion;
-    comparacionElem.style.fontSize = '0.85em';
-    comparacionElem.style.color = 'var(--text-secondary)';
     
     columna.appendChild(tituloElem);
     columna.appendChild(valorElem);
@@ -2535,60 +2512,6 @@ function formatearMoneda(valor) {
     return `${simbolo}${typeof valor === 'number' ? valor.toFixed(2) : '0.00'}`;
 }
 
-// --- Funciones Globales para HTML ---
-window.cerrarModal = cerrarModal;
-window.cerrarExportModal = cerrarExportModal;
-window.cerrarSyncPanel = cerrarSyncPanel;
-window.mostrarConfigPerfil = mostrarConfigPerfil;
-window.seleccionarPerfil = seleccionarPerfil;
-window.editarPerfil = editarPerfil;
-window.eliminarPerfil = eliminarPerfil;
-window.mostrarPanelSync = mostrarPanelSync;
-window.forzarSincronizacion = forzarSincronizacion;
-window.forzarSincronizacionCompleta = forzarSincronizacionCompleta;
-window.mostrarInfoSync = mostrarInfoSync;
-window.diagnosticarSync = diagnosticarSync;
-window.actualizarPanelSync = actualizarPanelSync;
-
-// Funciones del sistema de código
-window.generateUserCode = generateUserCode;
-window.setUserCode = setUserCode;
-window.showUserCodeModal = showUserCodeModal;
-window.cambiarUsuario = cambiarUsuario;
-
-// --- Prevenir cierre accidental ---
-window.addEventListener('beforeunload', function(e) {
-    const tieneDatosPendientes = elementos.tarifaInput.value || 
-                                 elementos.minutosInput.value || 
-                                 elementos.distanciaInput.value;
-    
-    if (tieneDatosPendientes) {
-        e.preventDefault();
-        e.returnValue = '';
-        return '';
-    }
-});
-
-// --- Cerrar modal al hacer clic fuera ---
-window.onclick = function(event) {
-    if (event.target === elementos.modalFondo) {
-        cerrarModal();
-    }
-    if (event.target === elementos.exportModal) {
-        cerrarExportModal();
-    }
-    if (event.target === elementos.syncPanel) {
-        cerrarSyncPanel();
-    }
-}
-
-// --- Forzar cálculo inicial si hay datos ---
-setTimeout(() => {
-    if (elementos.tarifaInput.value && elementos.minutosInput.value && elementos.distanciaInput.value) {
-        calcularAutomatico();
-    }
-}, 1000);
-
 // =============================================
 // ACTUALIZAR UI DE SYNC EN BOTÓN
 // =============================================
@@ -2687,4 +2610,54 @@ setTimeout(() => {
         calcularAutomatico();
     }
 }, 1000);
+
+// --- Funciones Globales para HTML ---
+window.cerrarModal = cerrarModal;
+window.cerrarExportModal = cerrarExportModal;
+window.cerrarSyncPanel = cerrarSyncPanel;
+window.mostrarConfigPerfil = mostrarConfigPerfil;
+window.seleccionarPerfil = seleccionarPerfil;
+window.editarPerfil = editarPerfil;
+window.eliminarPerfil = eliminarPerfil;
+window.mostrarPanelSync = mostrarPanelSync;
+window.forzarSincronizacion = forzarSincronizacion;
+window.forzarSincronizacionCompleta = forzarSincronizacionCompleta;
+window.mostrarInfoSync = mostrarInfoSync;
+window.diagnosticarSync = diagnosticarSync;
+window.actualizarPanelSync = actualizarPanelSync;
+
+// Funciones del sistema de código
+window.generateUserCode = generateUserCode;
+window.setUserCode = setUserCode;
+window.showUserCodeModal = showUserCodeModal;
+window.cambiarUsuario = cambiarUsuario;
+
+// Funciones del modal rápido
+window.cerrarModalRapido = cerrarModalRapido;
+window.procesarViajeRapido = procesarViajeRapido;
+
+// --- Prevenir cierre accidental ---
+window.addEventListener('beforeunload', function(e) {
+    const tieneDatosPendientes = elementos.tarifaInput.value || 
+                                 elementos.minutosInput.value || 
+                                 elementos.distanciaInput.value;
+    
+    if (tieneDatosPendientes) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+    }
+});
+
+// --- Cerrar modal al hacer clic fuera ---
+window.onclick = function(event) {
+    if (event.target === elementos.modalFondo) {
+        cerrarModal();
+    }
+    if (event.target === elementos.exportModal) {
+        cerrarExportModal();
+    }
+    if (event.target === elementos.syncPanel) {
+        cerrarSyncPanel();
+    }
 }
