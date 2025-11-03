@@ -2687,3 +2687,4 @@ setTimeout(() => {
         calcularAutomatico();
     }
 }, 1000);
+}
