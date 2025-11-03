@@ -1514,56 +1514,64 @@ function mostrarModalResultados(resultado) {
     // Limpiar resultados anteriores
     elementos.modalResultadosDoble.innerHTML = '';
     
-    // Crear columnas de resultados
-    const columnaMinuto = crearColumnaResultado(
-        '⏱️ Por Minuto',
+    // Agregar clase compacta para móvil
+    if (window.innerWidth <= 768) {
+        elementos.modalContenido.classList.add('modal-resultados-compacto');
+    } else {
+        elementos.modalContenido.classList.remove('modal-resultados-compacto');
+    }
+    
+    // Crear columnas de resultados COMPACTAS
+    const columnaMinuto = crearColumnaResultadoCompacta(
+        '⏱️ Minuto',
         `${formatearMoneda(resultado.gananciaPorMinuto)}/min`,
-        `Umbral: ${formatearMoneda(perfilActual.umbralMinutoRentable)}/min`,
+        `Umbral: ${formatearMoneda(perfilActual.umbralMinutoRentable)}`,
         resultado.rentabilidad
     );
     
     const distanciaLabel = perfilActual.tipoMedida === 'mi' ? 'mi' : 'km';
-    const columnaDistancia = crearColumnaResultado(
-        '🛣️ Por Distancia',
+    const columnaDistancia = crearColumnaResultadoCompacta(
+        '🛣️ Distancia',
         `${formatearMoneda(resultado.gananciaPorKm)}/${distanciaLabel}`,
-        `Umbral: ${formatearMoneda(perfilActual.umbralKmRentable)}/${distanciaLabel}`,
+        `Umbral: ${formatearMoneda(perfilActual.umbralKmRentable)}`,
         resultado.rentabilidad
     );
     
     elementos.modalResultadosDoble.appendChild(columnaMinuto);
     elementos.modalResultadosDoble.appendChild(columnaDistancia);
     
-    // Agregar información adicional con DESGLOSE COMPLETO
+    // Agregar información adicional con DESGLOSE COMPACTO
     const infoAdicional = document.createElement('div');
     infoAdicional.className = 'metricas-adicionales';
     infoAdicional.style.gridColumn = '1 / -1';
-    infoAdicional.style.marginTop = '20px';
-    infoAdicional.style.padding = '15px';
+    infoAdicional.style.marginTop = '15px';
+    infoAdicional.style.padding = '12px';
     infoAdicional.style.background = 'var(--light-grey)';
-    infoAdicional.style.borderRadius = '10px';
+    infoAdicional.style.borderRadius = '8px';
+    infoAdicional.style.fontSize = window.innerWidth <= 480 ? '0.85em' : '0.9em';
     
     infoAdicional.innerHTML = `
-        <h4 style="margin: 0 0 15px 0; text-align: center; color: var(--text-primary);">💰 Desglose Financiero</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em;">
-            <div style="grid-column: 1 / -1; text-align: center; padding: 10px; background: var(--card-bg); border-radius: 8px; border: 2px solid var(--success-green);">
-                <strong style="color: var(--success-green);">Ganancia Ofrecida</strong><br>
-                <span style="font-size: 1.2em; font-weight: bold;">${formatearMoneda(resultado.tarifa)}</span>
+        <h4 style="margin: 0 0 12px 0; text-align: center; color: var(--text-primary); font-size: ${window.innerWidth <= 480 ? '1em' : '1.1em'};">💰 Desglose Rápido</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: inherit;">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 8px; background: var(--card-bg); border-radius: 6px; border: 2px solid var(--success-green);">
+                <strong style="color: var(--success-green); font-size: 0.9em;">Ganancia Ofrecida</strong><br>
+                <span style="font-size: 1.1em; font-weight: bold;">${formatearMoneda(resultado.tarifa)}</span>
             </div>
-            <div style="padding: 8px; background: var(--card-bg); border-radius: 6px; border-left: 3px solid var(--error-red);">
+            <div style="padding: 6px; background: var(--card-bg); border-radius: 5px; border-left: 3px solid var(--error-red); font-size: 0.9em;">
                 <strong>⛽ Combustible</strong><br>
                 ${formatearMoneda(resultado.costoCombustible)}
             </div>
-            <div style="padding: 8px; background: var(--card-bg); border-radius: 6px; border-left: 3px solid var(--error-red);">
-                <strong>🔧 Mantenimiento</strong><br>
+            <div style="padding: 6px; background: var(--card-bg); border-radius: 5px; border-left: 3px solid var(--error-red); font-size: 0.9em;">
+                <strong>🔧 Manten.</strong><br>
                 ${formatearMoneda(resultado.costoMantenimiento)}
             </div>
-            <div style="padding: 8px; background: var(--card-bg); border-radius: 6px; border-left: 3px solid var(--error-red);">
+            <div style="padding: 6px; background: var(--card-bg); border-radius: 5px; border-left: 3px solid var(--error-red); font-size: 0.9em;">
                 <strong>🛡️ Seguro</strong><br>
                 ${formatearMoneda(resultado.costoSeguro)}
             </div>
-            <div style="grid-column: 1 / -1; text-align: center; padding: 12px; background: var(--card-bg); border-radius: 8px; border: 2px solid var(--secondary-orange); margin-top: 5px;">
-                <strong style="color: var(--secondary-orange);">GANANCIA NETA</strong><br>
-                <span style="font-size: 1.3em; font-weight: bold; color: var(--secondary-orange);">${formatearMoneda(resultado.gananciaNeta)}</span>
+            <div style="grid-column: 1 / -1; text-align: center; padding: 10px; background: var(--card-bg); border-radius: 6px; border: 2px solid var(--secondary-orange); margin-top: 5px;">
+                <strong style="color: var(--secondary-orange); font-size: 0.9em;">GANANCIA NETA</strong><br>
+                <span style="font-size: 1.2em; font-weight: bold; color: var(--secondary-orange);">${formatearMoneda(resultado.gananciaNeta)}</span>
             </div>
         </div>
     `;
@@ -1575,6 +1583,43 @@ function mostrarModalResultados(resultado) {
     
     // Mostrar modal
     elementos.modalFondo.style.display = 'flex';
+    
+    // Enfocar el botón de aceptar para mejor usabilidad
+    setTimeout(() => {
+        elementos.aceptarViaje.focus();
+    }, 300);
+}
+
+// NUEVA FUNCIÓN PARA COLUMNAS COMPACTAS
+function crearColumnaResultadoCompacta(titulo, valor, comparacion, rentabilidad) {
+    const columna = document.createElement('div');
+    columna.className = 'resultado-columna';
+    
+    const tituloElem = document.createElement('h3');
+    tituloElem.textContent = titulo;
+    tituloElem.style.margin = '0 0 8px 0';
+    tituloElem.style.fontSize = window.innerWidth <= 480 ? '0.85em' : '0.9em';
+    tituloElem.style.fontWeight = '600';
+    
+    const valorElem = document.createElement('div');
+    valorElem.className = `resultado-valor ${rentabilidad}`;
+    valorElem.textContent = valor;
+    valorElem.style.fontSize = window.innerWidth <= 480 ? '1.1em' : '1.2em';
+    valorElem.style.fontWeight = 'bold';
+    valorElem.style.margin = '5px 0';
+    
+    const comparacionElem = document.createElement('div');
+    comparacionElem.className = 'resultado-comparacion';
+    comparacionElem.textContent = comparacion;
+    comparacionElem.style.fontSize = window.innerWidth <= 480 ? '0.7em' : '0.75em';
+    comparacionElem.style.color = 'var(--text-secondary)';
+    comparacionElem.style.lineHeight = '1.3';
+    
+    columna.appendChild(tituloElem);
+    columna.appendChild(valorElem);
+    columna.appendChild(comparacionElem);
+    
+    return columna;
 }
 
 function crearColumnaResultado(titulo, valor, comparacion, rentabilidad) {
@@ -2456,6 +2501,22 @@ setTimeout(() => {
 }, 1000);
 
 // =============================================
+// MANEJAR CAMBIOS DE TAMAÑO PARA OPTIMIZAR MODAL
+// =============================================
+
+// Manejar cambios de tamaño de ventana para optimizar modal
+window.addEventListener('resize', function() {
+    if (elementos.modalFondo.style.display === 'flex') {
+        // Re-renderizar modal si está abierto para ajustarse al nuevo tamaño
+        if (calculoActual) {
+            setTimeout(() => {
+                mostrarModalResultados(calculoActual);
+            }, 100);
+        }
+    }
+});
+
+// =============================================
 // ACTUALIZAR UI DE SYNC EN BOTÓN
 // =============================================
 
@@ -2501,3 +2562,4 @@ function actualizarUISyncBoton(estado) {
         console.error('❌ Error actualizando UI de sync en botón:', error);
     }
 }
+
