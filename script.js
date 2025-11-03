@@ -2849,6 +2849,60 @@ setTimeout(() => {
     }
 }, 1000);
 
+// =====================================================
+// GUARDAR VIAJE EN HISTORIAL Y FIREBASE AL ACEPTAR/RECHAZAR
+// =====================================================
+
+async function registrarViaje(estado) {
+    if (!perfilActual) {
+        mostrarStatus('⚠️ Selecciona un perfil antes de registrar viajes', 'warning');
+        return;
+    }
+
+    const tarifa = parseFloat(elementos.tarifaInput.value) || 0;
+    const minutos = parseFloat(elementos.minutosInput.value) || 0;
+    const distancia = parseFloat(elementos.distanciaInput.value) || 0;
+
+    if (!tarifa || !minutos || !distancia) {
+        mostrarStatus('⚠️ Debes llenar todos los campos del viaje', 'warning');
+        return;
+    }
+
+    const viaje = {
+        id: 'trip_' + Date.now(),
+        perfilId: perfilActual.id,
+        perfilNombre: perfilActual.nombre,
+        tarifa,
+        minutos,
+        distancia,
+        estado, // "aceptado" o "rechazado"
+        rentable: calculoActual ? calculoActual.estado : 'sin calcular',
+        fecha: new Date().toLocaleString(),
+        timestamp: Date.now(),
+    };
+
+    // Guardar localmente
+    historial.unshift(viaje);
+    guardarDatosLocal();
+    actualizarHistorial();
+    actualizarEstadisticas();
+
+    // Guardar en Firebase (si está sincronizado)
+    if (firebaseSync && firebaseSync.initialized) {
+        await firebaseSync.saveTrip(viaje);
+    }
+
+    mostrarStatus(`✅ Viaje ${estado} registrado correctamente`, 'success');
+}
+
+// --- Listeners de botones ---
+if (elementos.aceptarViajeBtn) {
+    elementos.aceptarViajeBtn.addEventListener('click', () => registrarViaje('aceptado'));
+}
+if (elementos.rechazarViajeBtn) {
+    elementos.rechazarViajeBtn.addEventListener('click', () => registrarViaje('rechazado'));
+}
+
 // --- Funciones Globales para HTML ---
 window.cerrarModal = cerrarModal;
 window.cerrarExportModal = cerrarExportModal;
@@ -2916,6 +2970,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
