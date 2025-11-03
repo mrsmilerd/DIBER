@@ -1378,50 +1378,139 @@ function calcularAutomatico() {
     // Verificar si tenemos todos los datos necesarios
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
-    if (datosCompletos) {
-        elementos.autoCalcIndicator.classList.remove('hidden');
-        
-        // Calcular resultado INMEDIATAMENTE
-        const resultado = calcularRentabilidad(tarifa, minutos, distancia);
-        
-        if (resultado) {
-            calculoActual = resultado;
-            mostrarResultadoRapido(resultado);
-        } else {
-            elementos.autoCalcIndicator.classList.add('hidden');
-            elementos.resultadoRapido.classList.add('hidden');
-        }
+   f (datosCompletos) {
+    elementos.autoCalcIndicator.classList.remove('hidden');
+    
+    // Calcular resultado INMEDIATAMENTE
+    const resultado = calcularRentabilidad(tarifa, minutos, distancia);
+    
+    if (resultado) {
+        calculoActual = resultado;
+        mostrarResultadoRapido(resultado); // ← Esta línea ahora abre el modal flotante
     } else {
         elementos.autoCalcIndicator.classList.add('hidden');
         elementos.resultadoRapido.classList.add('hidden');
-        resetearInterfazCalculo();
     }
 }
 
 function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
     
-    // Actualizar badge
-    elementos.resultadoBadge.className = 'resultado-badge';
-    elementos.resultadoBadge.classList.add(resultado.rentabilidad);
-    elementos.resultadoEmoji.textContent = resultado.emoji;
-    elementos.resultadoTexto.textContent = resultado.texto;
+    // Ocultar el resultado rápido antiguo (si existe)
+    elementos.resultadoRapido.classList.add('hidden');
     
-    // Actualizar métricas
-    elementos.metricaMinuto.textContent = `${formatearMoneda(resultado.gananciaPorMinuto)}/min`;
+    // Crear modal flotante si no existe
+    let modalRapido = document.getElementById('modal-rapido');
+    if (!modalRapido) {
+        modalRapido = document.createElement('div');
+        modalRapido.id = 'modal-rapido';
+        modalRapido.className = 'modal-rapido hidden';
+        modalRapido.innerHTML = `
+            <div class="modal-rapido-contenido">
+                <div class="modal-rapido-header">
+                    <span class="modal-rapido-emoji" id="modal-rapido-emoji">✅</span>
+                    <span class="modal-rapido-texto" id="modal-rapido-texto">RENTABLE</span>
+                    <button class="modal-rapido-cerrar" onclick="cerrarModalRapido()">×</button>
+                </div>
+                <div class="modal-rapido-metricas">
+                    <div class="modal-rapido-metrica">
+                        <span>⏱️</span>
+                        <span class="modal-rapido-metrica-valor" id="modal-rapido-minuto">--/min</span>
+                    </div>
+                    <div class="modal-rapido-metrica">
+                        <span>🛣️</span>
+                        <span class="modal-rapido-metrica-valor" id="modal-rapido-km">--/km</span>
+                    </div>
+                </div>
+                <div class="modal-rapido-acciones">
+                    <button class="secondary-button small" onclick="procesarViajeRapido(false)">
+                        <span class="button-icon">❌</span>
+                        Rechazar
+                    </button>
+                    <button class="primary-button small" id="modal-rapido-aceptar" onclick="procesarViajeRapido(true)">
+                        <span class="button-icon">✅</span>
+                        Aceptar
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalRapido);
+    }
+    
+    // Actualizar contenido
+    const modalContenido = modalRapido.querySelector('.modal-rapido-contenido');
+    document.getElementById('modal-rapido-emoji').textContent = resultado.emoji;
+    document.getElementById('modal-rapido-texto').textContent = resultado.texto;
+    document.getElementById('modal-rapido-minuto').textContent = `${formatearMoneda(resultado.gananciaPorMinuto)}/min`;
     
     const distanciaLabel = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
-    elementos.metricaKm.textContent = `${formatearMoneda(resultado.gananciaPorKm)}/${distanciaLabel}`;
+    document.getElementById('modal-rapido-km').textContent = `${formatearMoneda(resultado.gananciaPorKm)}/${distanciaLabel}`;
     
-    // Mostrar resultado rápido
-    elementos.resultadoRapido.classList.remove('hidden');
+    // Configurar estilos según rentabilidad
+    modalContenido.className = 'modal-rapido-contenido';
+    modalContenido.classList.add(resultado.rentabilidad);
     
-    // Actualizar botón de aceptar
-    elementos.aceptarViajeTabBtn.className = 'primary-button';
-    elementos.aceptarViajeTabBtn.classList.add(resultado.rentabilidad);
+    // Configurar botón de aceptar según rentabilidad
+    const btnAceptar = document.getElementById('modal-rapido-aceptar');
+    btnAceptar.className = 'primary-button small';
+    btnAceptar.classList.add(resultado.rentabilidad);
     
-    // Ocultar indicador de cálculo
-    elementos.autoCalcIndicator.classList.add('hidden');
+    // Mostrar modal
+    modalRapido.classList.remove('hidden');
+    
+    // Guardar cálculo actual para uso posterior
+    calculoActual = resultado;
+    
+    // Auto-cerrar después de 10 segundos si no interactúan
+    if (window.modalRapidoTimeout) {
+        clearTimeout(window.modalRapidoTimeout);
+    }
+    window.modalRapidoTimeout = setTimeout(() => {
+        if (!modalRapido.classList.contains('hidden')) {
+            cerrarModalRapido();
+            mostrarStatus('Modal automáticamente cerrado', 'info');
+        }
+    }, 10000);
+}
+
+function cerrarModalRapido() {
+    const modalRapido = document.getElementById('modal-rapido');
+    if (modalRapido) {
+        modalRapido.classList.add('hidden');
+    }
+    if (window.modalRapidoTimeout) {
+        clearTimeout(window.modalRapidoTimeout);
+    }
+}
+
+function procesarViajeRapido(aceptado) {
+    if (!calculoActual) {
+        mostrarError('No hay cálculo actual para procesar');
+        return;
+    }
+    
+    // Cerrar modal rápido primero
+    cerrarModalRapido();
+    
+    // Guardar en historial
+    if (aceptado) {
+        guardarEnHistorial(calculoActual, true);
+        mostrarStatus('✅ Viaje aceptado y guardado en historial', 'success');
+        
+        // Actualizar estadísticas
+        actualizarEstadisticas();
+    } else {
+        guardarEnHistorial(calculoActual, false);
+        mostrarStatus('❌ Viaje rechazado', 'info');
+    }
+    
+    // Limpiar formulario
+    limpiarFormulario();
+    
+    // Cambiar a pestaña de historial si se aceptó
+    if (aceptado) {
+        setTimeout(() => cambiarPestana('historial'), 500);
+    }
 }
 
 function resetearInterfazCalculo() {
@@ -2501,6 +2590,32 @@ setTimeout(() => {
 }, 1000);
 
 // =============================================
+// MANEJAR CIERRE AUTOMÁTICO AL INTERACTUAR CON FORMULARIO
+// =============================================
+
+// Cerrar modal rápido cuando el usuario empiece a modificar los inputs
+function configurarCierreModalRapido() {
+    const inputs = [elementos.tarifaInput, elementos.minutosInput, elementos.distanciaInput];
+    
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            // Si el modal rápido está abierto y el usuario modifica un valor, cerrarlo
+            const modalRapido = document.getElementById('modal-rapido');
+            if (modalRapido && !modalRapido.classList.contains('hidden')) {
+                cerrarModalRapido();
+                mostrarStatus('Cálculo actualizado - Ingresa los nuevos valores', 'info');
+            }
+        });
+    });
+}
+
+// Llamar esta función en la inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    // ... código existente ...
+    configurarCierreModalRapido();
+});
+
+// =============================================
 // MANEJAR CAMBIOS DE TAMAÑO PARA OPTIMIZAR MODAL
 // =============================================
 
@@ -2562,4 +2677,5 @@ function actualizarUISyncBoton(estado) {
         console.error('❌ Error actualizando UI de sync en botón:', error);
     }
 }
+
 
