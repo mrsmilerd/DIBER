@@ -94,6 +94,14 @@ const elementos = {
     
     // Tema
     themeToggle: document.getElementById('theme-toggle'),
+
+     // Estadísticas - VERIFICA QUE ESTOS ID COINCIDAN CON TU HTML
+    statsViajes: document.getElementById('stats-viajes'),
+    statsGanancia: document.getElementById('stats-ganancia'),
+    statsTiempo: document.getElementById('stats-tiempo'),
+    statsRentables: document.getElementById('stats-rentables'),
+    statsGananciaHora: document.getElementById('stats-ganancia-hora'),
+    statsViajePromedio: document.getElementById('stats-viaje-promedio'),
     
     // Exportación
     exportModal: document.getElementById('exportModal'),
@@ -1878,18 +1886,7 @@ async function limpiarHistorial() {
 function actualizarEstadisticas() {
     console.log('📊 ACTUALIZANDO ESTADÍSTICAS...');
     
-    // Verificar que los elementos del DOM existen
-    const elementosNecesarios = [
-        'statsViajes', 'statsGanancia', 'statsTiempo', 'statsRentables',
-        'statsGananciaHora', 'statsViajePromedio'
-    ];
-    
-    elementosNecesarios.forEach(id => {
-        if (!document.getElementById(id)) {
-            console.error(`❌ Elemento no encontrado: ${id}`);
-        }
-    });
-
+    // Verificar que los elementos del DOM existen usando el objeto 'elementos'
     if (!elementos.statsViajes || !elementos.statsGanancia) {
         console.log('❌ Elementos de estadísticas no disponibles aún');
         return;
@@ -1926,8 +1923,10 @@ function actualizarEstadisticas() {
     try {
         elementos.statsViajes.textContent = totalViajes;
         elementos.statsGanancia.textContent = formatearMoneda(gananciaTotal);
-        elementos.statsTiempo.textContent = `${tiempoTotal}min`;
-        elementos.statsRentables.textContent = viajesRentables;
+        
+        // Actualizar elementos opcionales si existen
+        if (elementos.statsTiempo) elementos.statsTiempo.textContent = `${tiempoTotal}min`;
+        if (elementos.statsRentables) elementos.statsRentables.textContent = viajesRentables;
         
         // Calcular rendimiento
         const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
@@ -2710,3 +2709,4 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
