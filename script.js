@@ -112,11 +112,11 @@ const elementos = {
 };
 
 // =============================================
-// SISTEMA DE HISTORIAL Y RESUMEN
+// SISTEMA DE HISTORIAL Y RESUMEN - VERSIÓN DEFINITIVA
 // =============================================
 
-// Array para almacenar el historial de viajes
-let historialViajes = JSON.parse(localStorage.getItem('historialViajes')) || [];
+// VARIABLES GLOBALES CORREGIDAS
+let historial = JSON.parse(localStorage.getItem('historialViajes')) || [];
 let estadisticasDia = JSON.parse(localStorage.getItem('estadisticasDia')) || {
     viajes: 0,
     ganancia: 0,
@@ -125,56 +125,19 @@ let estadisticasDia = JSON.parse(localStorage.getItem('estadisticasDia')) || {
     noRentables: 0
 };
 
-// Inicializar el sistema de pestañas
-function inicializarTabs() {
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-    
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tabId = button.getAttribute('data-tab');
-            
-            // Remover clase active de todos
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
-            
-            // Activar tab seleccionado
-            button.classList.add('active');
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-            
-            // Si es resumen o historial, actualizar datos
-            if (tabId === 'resumen') {
-                actualizarResumen();
-            } else if (tabId === 'historial') {
-                actualizarHistorial();
-            }
-        });
-    });
-}
-
-// Actualizar la pestaña de resumen
-function actualizarResumen() {
-    // Actualizar estadísticas del día
-    document.getElementById('stats-viajes').textContent = estadisticasDia.viajes;
-    document.getElementById('stats-ganancia').textContent = `RD$${estadisticasDia.ganancia.toFixed(2)}`;
-    document.getElementById('stats-tiempo').textContent = `${estadisticasDia.tiempo}min`;
-    document.getElementById('stats-rentables').textContent = estadisticasDia.rentables;
-    
-    // Calcular rendimiento
-    const gananciaHora = estadisticasDia.tiempo > 0 ? 
-        (estadisticasDia.ganancia / (estadisticasDia.tiempo / 60)).toFixed(2) : 0;
-    const viajePromedio = estadisticasDia.viajes > 0 ? 
-        (estadisticasDia.ganancia / estadisticasDia.viajes).toFixed(2) : 0;
-    
-    document.getElementById('stats-ganancia-hora').textContent = `RD$${gananciaHora}`;
-    document.getElementById('stats-viaje-promedio').textContent = `RD$${viajePromedio}`;
-}
-
-// Actualizar la pestaña de historial
+// FUNCIÓN ACTUALIZAR HISTORIAL CORREGIDA
 function actualizarHistorial() {
+    console.log('🔄 actualizarHistorial() ejecutándose...');
+    console.log('📊 Datos en variable "historial":', historial);
+    
     const historyList = document.getElementById('history-list');
     
-    if (historialViajes.length === 0) {
+    if (!historyList) {
+        console.error('❌ Elemento history-list no encontrado');
+        return;
+    }
+
+    if (!historial || historial.length === 0) {
         historyList.innerHTML = `
             <div class="empty-state">
                 <span class="empty-icon">📋</span>
@@ -182,26 +145,42 @@ function actualizarHistorial() {
                 <p>Los viajes que aceptes aparecerán aquí</p>
             </div>
         `;
+        console.log('📭 Historial vacío');
         return;
     }
     
-    historyList.innerHTML = historialViajes.map((viaje, index) => `
-        <div class="history-item ${viaje.rentable ? 'rentable' : 'no-rentable'}">
+    console.log(`🎯 Renderizando ${historial.length} viajes...`);
+    
+    // MOSTRAR solo los últimos 15 viajes
+    const viajesParaMostrar = historial.slice(0, 15);
+    
+    historyList.innerHTML = viajesParaMostrar.map((viaje, index) => {
+        // Asegurar que todos los campos existan
+        const ganancia = viaje.ganancia || 0;
+        const minutos = viaje.minutos || 0;
+        const distancia = viaje.distancia || 0;
+        const porMinuto = viaje.porMinuto || 0;
+        const porKm = viaje.porKm || 0;
+        const rentable = Boolean(viaje.rentable);
+        const fecha = viaje.fecha || 'Fecha desconocida';
+        
+        return `
+        <div class="history-item ${rentable ? 'rentable' : 'no-rentable'}">
             <div class="history-header">
-                <span class="history-badge ${viaje.rentable ? 'badge-rentable' : 'badge-no-rentable'}">
-                    ${viaje.rentable ? '✅ RENTABLE' : '❌ NO RENTABLE'}
+                <span class="history-badge ${rentable ? 'badge-rentable' : 'badge-no-rentable'}">
+                    ${rentable ? '✅ RENTABLE' : '❌ NO RENTABLE'}
                 </span>
-                <span class="history-date">${viaje.fecha}</span>
+                <span class="history-date">${fecha}</span>
             </div>
             <div class="history-details">
                 <div class="history-route">
-                    <strong>Ganancia:</strong> RD$${viaje.ganancia}
+                    <strong>Ganancia:</strong> RD$${ganancia.toFixed(2)}
                 </div>
                 <div class="history-metrics">
-                    <span class="metric">⏱️ ${viaje.minutos}min</span>
-                    <span class="metric">🛣️ ${viaje.distancia}km</span>
-                    <span class="metric">💰 RD$${viaje.porMinuto}/min</span>
-                    <span class="metric">📏 RD$${viaje.porKm}/km</span>
+                    <span class="metric">⏱️ ${minutos}min</span>
+                    <span class="metric">🛣️ ${distancia}km</span>
+                    <span class="metric">💰 RD$${parseFloat(porMinuto).toFixed(2)}/min</span>
+                    <span class="metric">📏 RD$${parseFloat(porKm).toFixed(2)}/km</span>
                 </div>
             </div>
             <div class="history-actions">
@@ -210,37 +189,49 @@ function actualizarHistorial() {
                 </button>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
+    
+    console.log('✅ Historial actualizado correctamente');
+    console.log('📋 Viajes mostrados:', viajesParaMostrar.length);
 }
 
-// Agregar viaje al historial cuando se acepta
+// FUNCIÓN AGREGAR AL HISTORIAL CORREGIDA
 function agregarAlHistorial(viaje) {
+    console.log('➕ agregarAlHistorial() llamado con:', viaje);
+    
     const nuevoViaje = {
-        ...viaje,
+        ganancia: viaje.ganancia || 0,
+        minutos: viaje.minutos || 0,
+        distancia: viaje.distancia || 0,
+        porMinuto: viaje.porMinuto || 0,
+        porKm: viaje.porKm || 0,
+        rentable: viaje.rentable !== undefined ? viaje.rentable : false,
         fecha: new Date().toLocaleString('es-DO'),
         id: Date.now()
     };
     
-    historialViajes.unshift(nuevoViaje);
+    // Agregar al array historial
+    historial.unshift(nuevoViaje);
     
-    // Mantener solo los últimos 100 viajes
-    if (historialViajes.length > 100) {
-        historialViajes = historialViajes.slice(0, 100);
+    // Mantener solo los últimos 50 viajes
+    if (historial.length > 50) {
+        historial = historial.slice(0, 50);
     }
     
-    // Actualizar estadísticas del día
+    // Guardar en localStorage con la clave CORRECTA
+    localStorage.setItem('historialViajes', JSON.stringify(historial));
+    
+    // Actualizar estadísticas
     actualizarEstadisticasDia(nuevoViaje);
     
-    // Guardar en localStorage
-    localStorage.setItem('historialViajes', JSON.stringify(historialViajes));
+    console.log('💾 Historial guardado. Total viajes:', historial.length);
     
-    // Actualizar vistas si están activas
-    if (document.getElementById('tab-resumen').classList.contains('active')) {
-        actualizarResumen();
-    }
-    if (document.getElementById('tab-historial').classList.contains('active')) {
+    // Actualizar vista
+    setTimeout(() => {
         actualizarHistorial();
-    }
+        actualizarResumen();
+    }, 100);
 }
 
 // Actualizar estadísticas del día
@@ -3380,6 +3371,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
