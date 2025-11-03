@@ -1830,53 +1830,66 @@ function crearColumnaResultadoCompacta(titulo, valor, comparacion, rentabilidad)
 }
 
 async function procesarViaje(aceptado) {
-    console.log('🔄 Procesando viaje:', { aceptado, calculoActual: !!calculoActual });
-    
-    if (!calculoActual) {
-        mostrarError('No hay cálculo actual para procesar');
+    console.log(`🎬 Procesando viaje (Botón Principal): ${aceptado ? 'ACEPTADO' : 'RECHAZADO'}`);
+
+    // Paso 0: Validación y disponibilidad de datos
+    if (!validarInputs()) {
+        mostrarError('❌ Error: Datos de viaje incompletos o inválidos.');
         return;
     }
 
-    // Verificar que tenemos perfilActual
-    if (!perfilActual) {
-        mostrarError('No hay perfil seleccionado. Por favor, selecciona un perfil primero.');
+    if (!calculoActual || !perfilActual) {
+        mostrarError('❌ Error: Cálculo o perfil no disponible. Intenta calcular de nuevo.');
         return;
     }
 
-    try {
-        // Guardar en historial
-        await guardarEnHistorial(calculoActual, aceptado);
-        
-        if (aceptado) {
-            mostrarStatus('✅ Viaje aceptado y guardado en historial', 'success');
-        } else {
-            mostrarStatus('❌ Viaje rechazado', 'info');
-        }
+    // 1. Crear el objeto de historial
+    const historialItem = {
+        id: 'viaje_' + Date.now(),
+        perfilId: perfilActual.id,
+        fecha: new Date().toISOString(),
+        tarifa: calculoActual.tarifa,
+        minutos: calculoActual.minutos,
+        distancia: calculoActual.distancia,
+        gananciaNeta: calculoActual.gananciaNeta,
+        costoTotal: calculoActual.costoTotal,
+        rentabilidad: calculoActual.rentabilidad,
+        gananciaPorMinuto: calculoActual.gananciaPorMinuto,
+        gananciaPorKm: calculoActual.gananciaPorKm,
+        aceptado: aceptado, // <--- CLAVE PARA EL HISTORIAL
+        dispositivo: firebaseSync ? firebaseSync.detectDeviceType() : 'unknown'
+    };
 
-        // Limpiar formulario
-        limpiarFormulario();
-        cerrarModal();
-        
-        // Actualizar interfaz INMEDIATAMENTE
-        actualizarEstadisticas();
-        actualizarHistorial();
-        
-        // Cambiar a pestaña de historial si se aceptó
-        if (aceptado) {
-            setTimeout(() => {
-                cambiarPestana('historial');
-                // Forzar actualización después de cambiar pestaña
-                setTimeout(() => {
-                    actualizarEstadisticas();
-                    actualizarHistorial();
-                }, 100);
-            }, 500);
+    // 2. Agregar al historial global (localmente)
+    historial.unshift(historialItem); 
+
+    // 3. Sincronizar con Firebase (CLAVE PARA LA SINCRONIZACIÓN MULTIDISPOSITIVO)
+    // Se utiliza 'firebaseSync' para subir el nuevo viaje a la base de datos
+    if (firebaseSync && firebaseSync.initialized) {
+        console.log(`☁️ Guardando viaje en Firebase...`);
+        try {
+            await firebaseSync.saveTrip(historialItem);
+            console.log('✅ Viaje guardado en Firebase');
+        } catch (error) {
+            console.error('❌ Error guardando en Firebase:', error);
+            mostrarStatus('⚠️ Advertencia: No se pudo sincronizar con Firebase. Revisa tu conexión.', 'warning');
         }
-        
-    } catch (error) {
-        console.error('❌ Error procesando viaje:', error);
-        mostrarError('Error al procesar el viaje');
     }
+
+    // 4. Guardar datos en LocalStorage (Persistencia local)
+    // Se utiliza 'guardarDatos()' para salvar el array 'historial' localmente
+    guardarDatos(); 
+
+    // 5. Actualizar interfaz (Historial y Rendimiento)
+    // Se utilizan estas funciones para recalcular las estadísticas basadas en el 'historial'
+    actualizarHistorial();
+    actualizarEstadisticas();
+
+    console.log('✅ Viaje guardado en historial. Total viajes:', historial.length);
+
+    // 6. Limpiar y dar Feedback
+    limpiarFormulario();
+    mostrarStatus(`🎉 Viaje ${aceptado ? 'ACEPTADO' : 'RECHAZADO'} guardado en historial.`, 'success');
 }
 
 // --- Gestión de Historial ---
@@ -2970,6 +2983,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
