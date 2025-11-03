@@ -1471,16 +1471,6 @@ function mostrarResultadoRapido(resultado) {
     // Guardar cálculo actual para uso posterior
     calculoActual = resultado;
     
-    // Auto-cerrar después de 12 segundos si no interactúan
-    if (window.modalRapidoTimeout) {
-        clearTimeout(window.modalRapidoTimeout);
-    }
-    window.modalRapidoTimeout = setTimeout(() => {
-        if (!modalRapido.classList.contains('hidden')) {
-            cerrarModalRapido();
-            mostrarStatus('Modal automáticamente cerrado', 'info');
-        }
-    }, 12000);
 }
 
 function cerrarModalRapido() {
@@ -2665,4 +2655,5 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 }
+
 
