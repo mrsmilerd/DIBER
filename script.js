@@ -2590,6 +2590,53 @@ setTimeout(() => {
 }, 1000);
 
 // =============================================
+// ACTUALIZAR UI DE SYNC EN BOTÓN
+// =============================================
+
+function actualizarUISyncBoton(estado) {
+    try {
+        const syncBtn = document.getElementById('sync-status-btn');
+        const syncIcon = document.getElementById('sync-btn-icon');
+        
+        if (!syncBtn || !syncIcon) {
+            console.warn('❌ Botón de sync no encontrado');
+            return;
+        }
+        
+        // Remover clases anteriores
+        syncBtn.className = 'secondary-button small';
+        syncBtn.title = 'Estado de sincronización';
+        
+        switch(estado) {
+            case 'connected':
+                syncIcon.textContent = '✅';
+                syncBtn.title = 'Conectado a Firebase';
+                syncBtn.style.borderColor = 'var(--success-green)';
+                break;
+            case 'syncing':
+                syncIcon.textContent = '🔄';
+                syncBtn.title = 'Sincronizando...';
+                syncBtn.style.borderColor = 'var(--primary-blue)';
+                break;
+            case 'error':
+                syncIcon.textContent = '❌';
+                syncBtn.title = 'Error de conexión';
+                syncBtn.style.borderColor = 'var(--error-red)';
+                break;
+            default:
+                syncIcon.textContent = '🌐';
+                syncBtn.title = 'Conectando...';
+                syncBtn.style.borderColor = 'var(--border-color)';
+        }
+        
+        console.log(`🔄 Estado de sync en botón actualizado: ${estado}`);
+        
+    } catch (error) {
+        console.error('❌ Error actualizando UI de sync en botón:', error);
+    }
+}
+
+// =============================================
 // MANEJAR CIERRE AUTOMÁTICO AL INTERACTUAR CON FORMULARIO
 // =============================================
 
@@ -2640,50 +2687,3 @@ setTimeout(() => {
         calcularAutomatico();
     }
 }, 1000);
-
-// =============================================
-// ACTUALIZAR UI DE SYNC EN BOTÓN
-// =============================================
-
-function actualizarUISyncBoton(estado) {
-    try {
-        const syncBtn = document.getElementById('sync-status-btn');
-        const syncIcon = document.getElementById('sync-btn-icon');
-        
-        if (!syncBtn || !syncIcon) {
-            console.warn('❌ Botón de sync no encontrado');
-            return;
-        }
-        
-        // Remover clases anteriores
-        syncBtn.className = 'secondary-button small';
-        syncBtn.title = 'Estado de sincronización';
-        
-        switch(estado) {
-            case 'connected':
-                syncIcon.textContent = '✅';
-                syncBtn.title = 'Conectado a Firebase';
-                syncBtn.style.borderColor = 'var(--success-green)';
-                break;
-            case 'syncing':
-                syncIcon.textContent = '🔄';
-                syncBtn.title = 'Sincronizando...';
-                syncBtn.style.borderColor = 'var(--primary-blue)';
-                break;
-            case 'error':
-                syncIcon.textContent = '❌';
-                syncBtn.title = 'Error de conexión';
-                syncBtn.style.borderColor = 'var(--error-red)';
-                break;
-            default:
-                syncIcon.textContent = '🌐';
-                syncBtn.title = 'Conectando...';
-                syncBtn.style.borderColor = 'var(--border-color)';
-        }
-        
-        console.log(`🔄 Estado de sync en botón actualizado: ${estado}`);
-        
-    } catch (error) {
-        console.error('❌ Error actualizando UI de sync en botón:', error);
-    }
-}
