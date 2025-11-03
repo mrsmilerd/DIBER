@@ -1378,7 +1378,7 @@ function calcularAutomatico() {
     // Verificar si tenemos todos los datos necesarios
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
-   f (datosCompletos) {
+   if (datosCompletos) {
     elementos.autoCalcIndicator.classList.remove('hidden');
     
     // Calcular resultado INMEDIATAMENTE
@@ -2677,5 +2677,6 @@ function actualizarUISyncBoton(estado) {
         console.error('❌ Error actualizando UI de sync en botón:', error);
     }
 }
+
 
 
