@@ -861,7 +861,6 @@ async function cargarDatos() {
                     perfilActual = perfiles[0];
                     console.log('✅ Perfil actual establecido:', perfilActual.nombre);
                 }
-            }
             
             console.log('☁️ Intentando cargar viajes desde Firebase (nueva estructura)...');
             cloudTrips = await firebaseSync.loadTrips();
@@ -2685,3 +2684,4 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
