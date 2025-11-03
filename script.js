@@ -221,7 +221,7 @@ function agregarAlHistorial(viaje) {
         id: Date.now()
     };
     
-    historialViajes.unshift(nuevoViaje); // Agregar al inicio
+    historialViajes.unshift(nuevoViaje);
     
     // Mantener solo los últimos 100 viajes
     if (historialViajes.length > 100) {
@@ -232,7 +232,7 @@ function agregarAlHistorial(viaje) {
     actualizarEstadisticasDia(nuevoViaje);
     
     // Guardar en localStorage
-    guardarDatosHistorial();
+    localStorage.setItem('historialViajes', JSON.stringify(historialViajes));
     
     // Actualizar vistas si están activas
     if (document.getElementById('tab-resumen').classList.contains('active')) {
@@ -255,7 +255,6 @@ function actualizarEstadisticasDia(viaje) {
         estadisticasDia.noRentables++;
     }
     
-    // Guardar estadísticas
     localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
 }
 
@@ -275,20 +274,13 @@ function eliminarDelHistorial(index) {
             estadisticasDia.noRentables--;
         }
         
-        // Eliminar del array
         historialViajes.splice(index, 1);
         
-        // Guardar y actualizar
-        guardarDatosHistorial();
+        localStorage.setItem('historialViajes', JSON.stringify(historialViajes));
         localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
         actualizarHistorial();
         actualizarResumen();
     }
-}
-
-// Guardar datos del historial
-function guardarDatosHistorial() {
-    localStorage.setItem('historialViajes', JSON.stringify(historialViajes));
 }
 
 // Limpiar historial completo
@@ -313,18 +305,15 @@ function limpiarHistorialCompleto() {
     }
 }
 
-// Exportar historial a PDF
+// Exportar historial
 function exportarHistorialPDF() {
     if (historialViajes.length === 0) {
         mostrarMensaje('No hay datos para exportar', 'warning');
         return;
     }
     
-    // Aquí iría la lógica para generar PDF
-    // Por ahora simulamos la exportación
-    mostrarMensaje('Preparando exportación PDF...', 'info');
+    mostrarMensaje('Preparando exportación...', 'info');
     
-    // Simular generación de PDF
     setTimeout(() => {
         const enlace = document.createElement('a');
         enlace.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(historialViajes, null, 2));
@@ -366,7 +355,7 @@ function aceptarViaje() {
     const porMinuto = (tarifa / minutos).toFixed(2);
     const porKm = (tarifa / distancia).toFixed(2);
     
-    // Determinar si es rentable (usando tus umbrales existentes)
+    // Determinar si es rentable
     const perfilActual = obtenerPerfilActual();
     const rentable = porMinuto >= perfilActual.umbralMinutoRentable && 
                      porKm >= perfilActual.umbralKmRentable;
@@ -407,6 +396,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Asegurar que el botón "Aceptar Viaje" en el modal use la nueva función
     document.getElementById('aceptar-viaje').addEventListener('click', aceptarViaje);
+
+     // Inicializar sistema de pestañas
+    inicializarTabs();
+    
+    // Event listener para limpiar historial
+    document.getElementById('clear-history').addEventListener('click', limpiarHistorialCompleto);
+    
+    // Event listener para exportar historial
+    document.getElementById('exportar-historial').addEventListener('click', exportarHistorialPDF);
 });
 
 // =============================================
@@ -3394,5 +3392,6 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
