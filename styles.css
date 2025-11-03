@@ -77,6 +77,175 @@ body {
     -webkit-overflow-scrolling: touch;
 }
 
+/* --- Barra de Sincronización --- */
+.sync-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--light-grey);
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin: 10px 0 20px 0;
+    border: 2px solid var(--border-color);
+}
+
+.sync-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9em;
+}
+
+.sync-info.connected {
+    color: var(--success-green);
+}
+
+.sync-info.syncing {
+    color: var(--warning-orange);
+    animation: pulse 2s infinite;
+}
+
+.sync-info.error {
+    color: var(--error-red);
+}
+
+.sync-info.disconnected {
+    color: var(--medium-grey);
+}
+
+.sync-details-btn {
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.sync-info-small {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 15px;
+    padding: 10px;
+    background: var(--light-grey);
+    border-radius: 8px;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+
+/* --- Panel de Sincronización --- */
+.sync-panel-content {
+    padding: 20px 0;
+}
+
+.sync-info-section, .sync-status-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: var(--light-grey);
+    border-radius: 10px;
+}
+
+.sync-info-section h3, .sync-status-section h3 {
+    margin-bottom: 15px;
+    color: var(--text-primary);
+    font-size: 1.1em;
+}
+
+.device-info-current {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+}
+
+.device-icon {
+    font-size: 1.5em;
+}
+
+.device-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.device-id {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.connection-status {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.status-item:last-child {
+    border-bottom: none;
+}
+
+.status-label {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.status-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.sync-actions-panel {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.sync-tips {
+    background: linear-gradient(135deg, var(--light-grey), #e8f4ff);
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid var(--info-blue);
+}
+
+.sync-tips h4 {
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.sync-tips ul {
+    padding-left: 20px;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.sync-tips li {
+    margin-bottom: 5px;
+}
+
+.sync-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--light-grey);
+    border-radius: 20px;
+    font-size: 0.85em;
+    margin-top: 10px;
+}
+
 /* --- Sistema de Pestañas --- */
 .tabs-container {
     margin-top: 20px;
@@ -431,66 +600,6 @@ body {
     position: absolute;
     top: 0;
     right: 0;
-}
-
-/* --- Barra de Estado de Sincronización --- */
-.sync-status-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--light-grey);
-    border-radius: 10px;
-    padding: 12px 15px;
-    margin-bottom: 15px;
-    border-left: 4px solid var(--primary-blue);
-}
-
-.sync-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text-primary);
-}
-
-.sync-icon {
-    font-size: 1.1em;
-}
-
-.sync-text {
-    font-size: 0.9em;
-    font-weight: 500;
-}
-
-.sync-details-btn {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.8em;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.3s;
-}
-
-.sync-details-btn:hover {
-    border-color: var(--primary-blue);
-    background: rgba(26, 115, 232, 0.1);
-}
-
-.sync-info-small {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    justify-content: center;
-    margin-top: 15px;
-    padding: 10px;
-    background: var(--light-grey);
-    border-radius: 8px;
-    font-size: 0.85em;
-    color: var(--text-secondary);
 }
 
 /* --- Indicador de Estado --- */
@@ -1141,112 +1250,6 @@ select {
     margin-top: 10px;
 }
 
-/* --- Panel de Sincronización --- */
-.sync-panel-content {
-    padding: 20px;
-}
-
-.sync-info-section,
-.sync-status-section {
-    margin-bottom: 25px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 10px;
-    border-left: 4px solid #007cba;
-}
-
-.device-info-current {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 10px;
-    background: white;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
-}
-
-.device-icon {
-    font-size: 24px;
-}
-
-.device-details {
-    flex: 1;
-}
-
-.device-id {
-    font-size: 12px;
-    color: #666;
-    display: block;
-    margin-top: 5px;
-}
-
-.connection-status {
-    display: grid;
-    gap: 10px;
-}
-
-.status-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.status-item:last-child {
-    border-bottom: none;
-}
-
-.status-label {
-    font-weight: bold;
-    color: #333;
-}
-
-.status-value {
-    color: #007cba;
-    font-weight: 500;
-}
-
-.sync-actions-panel {
-    display: grid;
-    gap: 10px;
-    margin: 20px 0;
-}
-
-.sync-tips {
-    background: #fff3cd;
-    padding: 15px;
-    border-radius: 10px;
-    border-left: 4px solid #ffc107;
-}
-
-.sync-tips h4 {
-    margin: 0 0 10px 0;
-    color: #856404;
-}
-
-.sync-tips ul {
-    margin: 0;
-    padding-left: 20px;
-    color: #856404;
-}
-
-.sync-tips li {
-    margin-bottom: 5px;
-    font-size: 14px;
-}
-
-.sync-status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 15px;
-    background: #e7f3ff;
-    border-radius: 20px;
-    color: #007cba;
-    font-weight: 500;
-}
-
 /* --- Responsive Design Mejorado --- */
 @media (max-width: 768px) {
     body {
@@ -1359,14 +1362,14 @@ select {
         grid-template-columns: 1fr;
     }
 
+    .sync-actions-panel {
+        flex-direction: column;
+    }
+
     .sync-status-bar {
         flex-direction: column;
         gap: 10px;
-        align-items: stretch;
-    }
-
-    .sync-details-btn {
-        align-self: center;
+        text-align: center;
     }
 }
 
@@ -1433,50 +1436,168 @@ select:focus-visible {
     background: var(--dark-grey);
 }
 
-/* --- Botones de Header Mejorados --- */
-.header-actions {
-    display: flex;
+/* ===== OPTIMIZACIONES PARA MODAL EN MÓVIL ===== */
+@media (max-width: 768px) {
+    .modal-contenido {
+        padding: 20px 15px;
+        margin: 10px;
+        max-height: 85vh;
+        max-width: 95%;
+    }
+    
+    .modal-header {
+        margin-bottom: 15px;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.2em;
+        margin-bottom: 10px;
+    }
+    
+    /* Resultados más compactos */
+    .modal-resultados-doble {
+        gap: 10px;
+        margin: 15px 0;
+    }
+    
+    .resultado-columna {
+        padding: 15px 10px;
+    }
+    
+    .resultado-columna h3 {
+        font-size: 0.9em;
+        margin-bottom: 10px;
+    }
+    
+    .resultado-valor {
+        font-size: 1.4em;
+    }
+    
+    .resultado-comparacion {
+        font-size: 0.8em;
+    }
+    
+    /* Métricas adicionales más compactas */
+    .metricas-adicionales {
+        padding: 12px;
+        margin-top: 15px;
+    }
+    
+    .metricas-adicionales h4 {
+        font-size: 0.95em;
+        margin-bottom: 10px;
+    }
+    
+    /* Botones de acción más compactos */
+    .modal-actions {
+        margin: 20px 0 15px 0;
+        gap: 10px;
+    }
+    
+    .modal-actions .primary-button,
+    .modal-actions .secondary-button {
+        padding: 12px 15px;
+        min-height: 44px;
+        font-size: 0.9em;
+    }
+    
+    .modal-footer {
+        margin-top: 10px;
+        font-size: 0.8em;
+    }
+}
+
+/* ===== MODAL ULTRA COMPACTO PARA MÓVIL PEQUEÑO ===== */
+@media (max-width: 480px) {
+    .modal-contenido {
+        padding: 15px 12px;
+        margin: 5px;
+        max-height: 90vh;
+    }
+    
+    .modal-header {
+        margin-bottom: 12px;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.1em;
+    }
+    
+    .result-badge {
+        padding: 8px 15px;
+        font-size: 1em;
+    }
+    
+    .modal-resultados-doble {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .resultado-columna {
+        padding: 12px 8px;
+    }
+    
+    .resultado-valor {
+        font-size: 1.3em;
+    }
+    
+    /* Grid más compacto para métricas adicionales */
+    .metricas-adicionales div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+    
+    .metricas-adicionales {
+        padding: 10px;
+        margin-top: 12px;
+    }
+    
+    /* Texto más compacto en métricas */
+    .metricas-adicionales strong {
+        font-size: 0.85em;
+    }
+    
+    .metricas-adicionales span {
+        font-size: 0.9em;
+    }
+    
+    .cerrar-btn {
+        top: 10px;
+        right: 12px;
+        font-size: 1.3em;
+        width: 25px;
+        height: 25px;
+    }
+}
+
+/* ===== MEJORAS ESPECÍFICAS PARA EL MODAL DE RESULTADOS ===== */
+.modal-resultados-compacto .modal-resultados-doble {
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
-    position: absolute;
-    top: 0;
-    right: 0;
 }
 
-.header-actions .secondary-button.small {
-    padding: 10px;
-    min-width: 44px;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    background: var(--light-grey);
-    transition: all 0.3s;
+.modal-resultados-compacto .resultado-columna {
+    padding: 12px 8px;
 }
 
-.header-actions .secondary-button.small:hover {
-    border-color: var(--primary-blue);
-    background: rgba(26, 115, 232, 0.1);
-    transform: translateY(-2px);
-}
-
-.header-actions .button-icon {
+.modal-resultados-compacto .resultado-valor {
     font-size: 1.2em;
+    margin: 5px 0;
 }
 
-/* Estados del botón de sync */
-#sync-status-btn.connected {
-    border-color: var(--success-green) !important;
-    background: rgba(76, 175, 80, 0.1) !important;
+.modal-resultados-compacto .resultado-comparacion {
+    font-size: 0.75em;
 }
 
-#sync-status-btn.syncing {
-    border-color: var(--primary-blue) !important;
-    background: rgba(26, 115, 232, 0.1) !important;
+/* Estado de scroll suave para el modal */
+.modal-contenido {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
 }
 
-#sync-status-btn.error {
-    border-color: var(--error-red) !important;
-    background: rgba(244, 67, 54, 0.1) !important;
+/* Optimización para evitar zoom en inputs en iOS */
+@media (max-width: 768px) {
+    .modal-contenido {
+        font-size: 16px; /* Previene zoom en iOS */
+    }
 }
