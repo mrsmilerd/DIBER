@@ -116,7 +116,7 @@ const elementos = {
 // =============================================
 
 // VARIABLES GLOBALES CORREGIDAS
-let historial = JSON.parse(localStorage.getItem('historialViajes')) || [];
+let historial = JSON.parse(localStorage.getItem('historialViajes')) || []
 let estadisticasDia = JSON.parse(localStorage.getItem('estadisticasDia')) || {
     viajes: 0,
     ganancia: 0,
@@ -3373,6 +3373,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
