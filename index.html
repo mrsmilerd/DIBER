@@ -3,862 +3,464 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UberCalc - Calculadora Inteligente para Conductores</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="logo_b.png" type="image/png">
-    
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-</head>
-<body>
-    <!-- Modal de Código de Usuario -->
-    <div id="user-code-modal" class="modal-fondo">
-        <div class="modal-contenido" style="max-width: 500px; background: white; color: #333;">
-            <div class="modal-header" style="text-align: center; padding: 20px; border-bottom: 2px solid #007cba;">
-                <h2 style="margin: 0; color: #333;">🔄 Conectar Dispositivos</h2>
-                <p style="color: #666; margin: 10px 0 0 0;">Usa el MISMO código en todos tus dispositivos</p>
-            </div>
-            
-            <div class="modal-body" style="padding: 20px;">
-                <!-- Indicador de estado -->
-                <div id="code-status" style="display: none; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;"></div>
-                
-                <div style="margin: 20px 0;">
-                    <label for="user-code-input" style="display: block; margin-bottom: 10px; font-weight: bold; color: #333;">
-                        🔑 Tu Código de Sincronización:
-                    </label>
-                    <input type="text" id="user-code-input" 
-                           placeholder="Ej: ABC123 - Escribe aquí tu código"
-                           style="width: 100%; 
-                                  padding: 15px; 
-                                  font-size: 18px; 
-                                  text-align: center; 
-                                  letter-spacing: 2px;
-                                  border: 2px solid #ddd;
-                                  border-radius: 10px;
-                                  background: #f9f9f9;
-                                  color: #333;
-                                  text-transform: uppercase;"
-                           maxlength="6">
-                    <div style="text-align: center; margin-top: 10px;">
-                        <button onclick="generateUserCode()" 
-                                style="padding: 8px 16px; 
-                                       background: transparent; 
-                                       color: #007cba; 
-                                       border: 1px solid #007cba;
-                                       border-radius: 20px;
-                                       cursor: pointer;
-                                       font-size: 14px;">
-                            ✨ Generar Código Automático
-                        </button>
-                    </div>
-                </div>
-                
-                <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                    <p style="margin: 0; font-size: 14px; color: #856404; text-align: center;">
-                        ⚠️ <strong>Importante:</strong> 
-                        <br>• Escribe un código o genera uno automático
-                        <br>• Usa el <strong>MISMO código</strong> en PC, móvil y tablet
-                        <br>• Ejemplos: ABC123, PC123, MOV456
-                    </p>
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="setUserCode()" 
-                            style="flex: 1; 
-                                   padding: 15px; 
-                                   background: #007cba; 
-                                   color: white; 
-                                   border: none; 
-                                   border-radius: 10px;
-                                   font-size: 16px;
-                                   font-weight: bold;
-                                   cursor: pointer;">
-                        🚀 Conectar con este Código
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pantalla de Selección de Perfil -->
-    <div id="perfil-screen" class="screen active">
-        <div class="container">
-            <div class="logo-container">
-                <img src="logo_b.png" alt="Logo UberCalc" class="app-logo">
-            </div>
-
-            <div class="perfil-section">
-                <h2>👤 Seleccionar Perfil</h2>
-                <div id="perfiles-lista" class="perfiles-lista">
-                    <!-- Los perfiles se cargarán aquí -->
-                </div>
-                
-                <button id="nuevo-perfil-btn" class="primary-button">
-                    <span class="button-icon">➕</span>
-                    Crear Nuevo Perfil
-                </button>
-
-                <!-- Info de Sync -->
-                <div class="sync-info-small" id="sync-perfil-info">
-                    <span class="sync-icon">🌐</span>
-                    <span class="sync-text">Sincronización activa</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pantalla de Creación/Edición de Perfil -->
-    <div id="config-perfil-screen" class="screen">
-        <div class="container">
-            <div class="screen-header">
-                <button id="volver-perfiles" class="back-button">
-                    <span class="button-icon">⬅️</span>
-                    Volver
-                </button>
-                <h2>⚙️ Configurar Perfil</h2>
-            </div>
-
-            <form id="perfil-form" class="perfil-form">
-                <input type="hidden" id="perfil-id">
-                
-                <div class="input-group">
-                    <label for="nombre-perfil">
-                        👤 Nombre del Perfil
-                        <span class="required">*</span>
-                    </label>
-                    <input type="text" id="nombre-perfil" required placeholder="Ej: Mi Perfil Principal">
-                </div>
-
-                <div class="form-section">
-                    <h3>🚗 Configuración del Vehículo</h3>
-                    
-                    <div class="input-group">
-                        <label for="tipo-medida">
-                            📏 Sistema de Medida
-                            <span class="required">*</span>
-                        </label>
-                        <select id="tipo-medida" required>
-                            <option value="km">Kilómetros (Km)</option>
-                            <option value="mi">Millas (Mi)</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="tipo-combustible">
-                            ⛽ Tipo de Combustible
-                            <span class="required">*</span>
-                        </label>
-                        <select id="tipo-combustible" required>
-                            <option value="glp">Gas Licuado de Petróleo (GLP)</option>
-                            <option value="gas">Gasolina (GSL)</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="rendimiento">
-                            🎯 Rendimiento del Vehículo
-                            <span class="required">*</span>
-                        </label>
-                        <div class="input-with-unit">
-                            <input type="number" id="rendimiento" min="1" step="0.1" required placeholder="22.0" inputmode="decimal">
-                            <span id="rendimiento-unit" class="input-unit">Km/Gl</span>
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="precio-combustible">
-                            💰 Precio del Combustible
-                            <span class="required">*</span>
-                        </label>
-                        <div class="input-with-unit">
-                            <input type="number" id="precio-combustible" min="0" step="0.01" required placeholder="137.20" inputmode="decimal">
-                            <span id="precio-combustible-unit" class="input-unit">DOP/Gl</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>💰 Configuración de Rentabilidad</h3>
-                    
-                    <div class="input-group">
-                        <label for="moneda">
-                            💵 Moneda
-                            <span class="required">*</span>
-                        </label>
-                        <select id="moneda" required>
-                            <option value="DOP">Peso Dominicano (DOP)</option>
-                            <option value="USD">Dólar Americano (USD)</option>
-                        </select>
-                    </div>
-
-                    <div class="config-grid">
-                        <div class="input-group">
-                            <label for="umbral-minuto-rentable">
-                                ✅ Viaje Rentable - Por Minuto
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-with-unit">
-                                <input type="number" id="umbral-minuto-rentable" min="0" step="0.01" required value="6.00" inputmode="decimal">
-                                <span class="input-unit umbral-minuto">DOP/min</span>
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="umbral-km-rentable">
-                                ✅ Viaje Rentable - Por Distancia
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-with-unit">
-                                <input type="number" id="umbral-km-rentable" min="0" step="0.01" required value="25.00" inputmode="decimal">
-                                <span id="umbral-km-unit" class="input-unit">DOP/Km</span>
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="umbral-minuto-oportunidad">
-                                ⚠️ Viaje Oportunidad - Por Minuto
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-with-unit">
-                                <input type="number" id="umbral-minuto-oportunidad" min="0" step="0.01" required value="5.00" inputmode="decimal">
-                                <span class="input-unit umbral-minuto">DOP/min</span>
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="umbral-km-oportunidad">
-                                ⚠️ Viaje Oportunidad - Por Distancia
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-with-unit">
-                                <input type="number" id="umbral-km-oportunidad" min="0" step="0.01" required value="23.00" inputmode="decimal">
-                                <span id="umbral-km-oportunidad-unit" class="input-unit">DOP/Km</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>📊 Costos Mensuales</h3>
-                    
-                    <div class="config-grid">
-                        <div class="input-group">
-                            <label for="costo-seguro">Seguro Mensual</label>
-                            <div class="input-with-unit">
-                                <input type="number" id="costo-seguro" min="0" step="0.01" value="0" inputmode="decimal">
-                                <span class="input-unit costo-mensual">DOP</span>
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="costo-mantenimiento">Mantenimiento Mensual</label>
-                            <div class="input-with-unit">
-                                <input type="number" id="costo-mantenimiento" min="0" step="0.01" value="0" inputmode="decimal">
-                                <span class="input-unit costo-mensual">DOP</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="action-buttons">
-                    <button type="submit" class="primary-button">
-                        <span class="button-icon">💾</span>
-                        Guardar Perfil
-                    </button>
-                    <button type="button" id="cancelar-perfil" class="secondary-button">
-                        <span class="button-icon">❌</span>
-                        Cancelar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Pantalla Principal de Cálculos -->
-    <div id="main-screen" class="screen">
-        <div class="container">
-           <div class="app-header">
-    <div class="header-actions">
-        <button id="cambiar-perfil" class="secondary-button small" title="Cambiar perfil">
-            <span class="button-icon">👤</span>
-        </button>
-        <!-- NUEVO BOTÓN DE SYNC -->
-        <button id="sync-status-btn" class="secondary-button small" title="Estado de sincronización">
-            <span class="button-icon" id="sync-btn-icon">🌐</span>
-        </button>
-        <button id="theme-toggle" class="theme-toggle" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
-            <span class="theme-icon">🌙</span>
-        </button>
-    </div>
-    <div class="logo-container">
-        <img src="logo_b.png" alt="Logo UberCalc" class="app-logo">
-    </div>
-</div>
-
-            <!-- Indicador de Estado -->
-            <div id="status-indicator" class="status-indicator hidden">
-                <span id="status-text">Calculando...</span>
-            </div>
-
-            <!-- Sistema de Pestañas -->
-            <div class="tabs-container">
-                <div class="tabs-header">
-                    <button class="tab-button active" data-tab="calcular">
-                        <span class="tab-icon">🧮</span>
-                        <span class="tab-text">CALCULAR</span>
-                    </button>
-                    <button class="tab-button" data-tab="resumen">
-                        <span class="tab-icon">📊</span>
-                        <span class="tab-text">RESUMEN</span>
-                    </button>
-                    <button class="tab-button" data-tab="historial">
-                        <span class="tab-icon">📋</span>
-                        <span class="tab-text">HISTORIAL</span>
-                    </button>
-                </div>
-
-                <!-- Contenido de Pestañas -->
-                <div class="tab-content active" id="tab-calcular">
-                    <!-- Formulario Principal -->
-                    <div class="form-section">
-                        <h2 class="section-title centered">📊 Datos del Viaje</h2>
-                        
-                        <div class="input-group">
-                            <label for="tarifa">
-                                💰 Ganancia Ofrecida
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-with-unit">
-                                <input type="number" id="tarifa" min="0" step="0.01" placeholder="350.00" required inputmode="decimal">
-                                <span id="moneda-tarifa" class="input-unit">DOP</span>
-                            </div>
-                            <span class="error-message" id="tarifa-error"></span>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="minutos">
-                                ⏱️ Tiempo Estimado (Minutos)
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-with-unit">
-                                <input type="number" id="minutos" min="1" step="1" placeholder="25" required inputmode="numeric">
-                                <span class="input-unit">min</span>
-                            </div>
-                            <span class="error-message" id="minutos-error"></span>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="distancia">
-                                🛣️ Distancia Estimada
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-with-unit">
-                                <input type="number" id="distancia" min="0" step="0.1" placeholder="8.5" required inputmode="decimal">
-                                <span id="distancia-unit" class="input-unit">Km</span>
-                            </div>
-                            <span class="error-message" id="distancia-error"></span>
-                        </div>
-
-                        <!-- Indicador de Cálculo Automático -->
-                        <div id="auto-calc-indicator" class="auto-calc-indicator hidden">
-                            <div class="auto-calc-content">
-                                <span class="auto-calc-icon">🔄</span>
-                                <span class="auto-calc-text">CÁLCULO AUTOMÁTICO ACTIVO</span>
-                            </div>
-                        </div>
-
-                        <!-- Resultado Rápido -->
-                        <div id="resultado-rapido" class="resultado-rapido hidden">
-                            <div class="resultado-header">
-                                <h3>🎯 Resultado Instantáneo</h3>
-                            </div>
-                            <div class="resultado-content">
-                                <div class="resultado-badge" id="resultado-badge">
-                                    <span id="resultado-emoji">✅</span>
-                                    <span id="resultado-texto">RENTABLE</span>
-                                </div>
-                                <div class="resultado-metricas">
-                                    <div class="metrica-rapida">
-                                        <span class="metrica-label">Por minuto:</span>
-                                        <span id="metrica-minuto" class="metrica-valor">--</span>
-                                    </div>
-                                    <div class="metrica-rapida">
-                                        <span class="metrica-label">Por km:</span>
-                                        <span id="metrica-km" class="metrica-valor">--</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                <div class="tab-content" id="tab-resumen">
-                    <!-- Estadísticas del Día -->
-                    <div class="estadisticas-container">
-                        <h3>📈 Estadísticas del Día</h3>
-                        <div class="estadisticas-grid">
-                            <div class="estadistica-item">
-                                <span class="estadistica-valor" id="stats-viajes">0</span>
-                                <span class="estadistica-label">Viajes</span>
-                            </div>
-                            <div class="estadistica-item">
-                                <span class="estadistica-valor" id="stats-ganancia">RD$0</span>
-                                <span class="estadistica-label">Ganancia</span>
-                            </div>
-                            <div class="estadistica-item">
-                                <span class="estadistica-valor" id="stats-tiempo">0min</span>
-                                <span class="estadistica-label">Tiempo</span>
-                            </div>
-                            <div class="estadistica-item">
-                                <span class="estadistica-valor" id="stats-rentables">0</span>
-                                <span class="estadistica-label">Rentables</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Rendimiento -->
-                    <div class="rendimiento-container">
-                        <h3>🎯 Rendimiento</h3>
-                        <div class="rendimiento-grid">
-                            <div class="rendimiento-item">
-                                <span class="rendimiento-label">Ganancia/hora:</span>
-                                <span class="rendimiento-valor" id="stats-ganancia-hora">RD$0</span>
-                            </div>
-                            <div class="rendimiento-item">
-                                <span class="rendimiento-label">Viaje promedio:</span>
-                                <span class="rendimiento-valor" id="stats-viaje-promedio">RD$0</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tab-content" id="tab-historial">
-                    <!-- Historial de Cálculos -->
-                    <div class="history-section">
-                        <div id="history-list" class="history-list">
-                            <!-- Los cálculos aparecerán aquí -->
-                        </div>
-                        <div class="history-actions">
-                            <button id="exportar-historial" class="secondary-button small">
-                                📤 Exportar Historial
-                            </button>
-                            <button id="clear-history" class="secondary-button small">
-                                🗑️ Limpiar Historial
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Resultados Mejorado -->
-    <div id="modalFondo" class="modal-fondo">
-        <div id="modalContenido" class="modal-contenido">
-            <span class="cerrar-btn" onclick="cerrarModal()">&times;</span>
-            
-            <div class="modal-header">
-                <h2>📊 Resultado del Análisis</h2>
-                <div id="modal-badge" class="result-badge">
-                    <span id="modal-emoji">✅</span>
-                    <span id="modal-texto">RENTABLE</span>
-                </div>
-            </div>
-
-            <div id="modalResultadosDoble" class="modal-resultados-doble">
-                <!-- Los resultados aparecerán aquí -->
-            </div>
-
-            <div class="modal-actions">
-                <button id="rechazar-viaje" class="secondary-button">
-                    ❌ Rechazar Viaje
-                </button>
-                <button id="aceptar-viaje" class="primary-button">
-                    ✅ Aceptar Viaje
-                </button>
-            </div>
-
-            <p class="modal-footer small-info">
-                💡 Los viajes aceptados se guardan en tu historial semanal
-            </p>
-        </div>
-    </div>
-
-    <!-- Modal de Exportación Mejorado -->
-    <div id="exportModal" class="modal-fondo">
-        <div class="modal-contenido">
-            <span class="cerrar-btn" onclick="cerrarExportModal()">&times;</span>
-            <div class="modal-header">
-                <h2>📤 Exportar Historial</h2>
-            </div>
-            <div class="modal-body">
-                <p>¿Deseas generar un reporte PDF con todo tu historial?</p>
-                <p class="small-info">El reporte incluirá estadísticas completas y desglose de costos</p>
-                <div class="export-options" style="justify-content: center;">
-                    <button id="exportar-pdf" class="primary-button" style="max-width: 200px;">
-                        📄 Generar PDF
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Panel de Sincronización Firebase -->
-    <div id="sync-panel" class="modal-fondo">
-        <div class="modal-contenido">
-            <span class="cerrar-btn" onclick="cerrarSyncPanel()">&times;</span>
-            <div class="modal-header">
-                <h2>🌐 Sincronización Multi-Dispositivo</h2>
-                <div class="sync-status-badge" id="sync-panel-status">
-                    <span class="sync-icon">🔄</span>
-                    <span>Conectando...</span>
-                </div>
-            </div>
-            
-            <div class="sync-panel-content">
-                <div class="sync-info-section">
-                    <h3>📱 Dispositivo Actual</h3>
-                    <div class="device-info-current">
-                        <span class="device-icon" id="current-device-icon">📱</span>
-                        <div class="device-details">
-                            <strong id="current-device-name">Teléfono Principal</strong>
-                            <span class="device-id" id="current-device-id">ID: cargando...</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sync-status-section">
-                    <h3>🔗 Estado de Conexión</h3>
-                    <div class="connection-status">
-                        <div class="status-item">
-                            <span class="status-label">Firebase:</span>
-                            <span class="status-value" id="firebase-status">Conectando...</span>
-                        </div>
-                        <div class="status-item">
-                            <span class="status-label">Última sync:</span>
-                            <span class="status-value" id="last-sync-time">--</span>
-                        </div>
-                        <div class="status-item">
-                            <span class="status-label">Perfiles en nube:</span>
-                            <span class="status-value" id="cloud-profiles-count">--</span>
-                        </div>
-                        <div class="status-item">
-                            <span class="status-label">Historial en nube:</span>
-                            <span class="status-value" id="cloud-history-count">--</span>
-                        </div>
-                    </div>
-                </div>
-
-             <div class="sync-actions-panel" style="display: grid; gap: 10px; margin: 20px 0;">
-    <button id="force-sync-btn" class="primary-button" onclick="forzarSincronizacion()">
-        <span class="button-icon">🔄</span>
-        Sincronizar Ahora
-    </button>
-    
-    <button id="sync-from-firebase-btn" class="primary-button" onclick="forzarSincronizacionDesdeFirebase()">
-        <span class="button-icon">⬇️</span>
-        Cargar desde Firebase
-    </button>
-    
-    <button class="secondary-button" onclick="mostrarInfoSync()">
-        <span class="button-icon">ℹ️</span>
-        Cómo Funciona
-    </button>
-    <button class="secondary-button" onclick="showUserCodeModal()">
-        <span class="button-icon">🔑</span>
-        Cambiar Código
-    </button>
-    <button class="secondary-button" onclick="diagnosticarSync()">
-        <span class="button-icon">🔧</span>
-        Diagnóstico
-    </button>
-</div>
-                    
-                    <button class="secondary-button" onclick="mostrarInfoSync()">
-                        <span class="button-icon">ℹ️</span>
-                        Cómo Funciona
-                    </button>
-                    <button class="secondary-button" onclick="showUserCodeModal()">
-                        <span class="button-icon">🔑</span>
-                        Cambiar Código
-                    </button>
-                    <button class="secondary-button" onclick="diagnosticarSync()">
-                        <span class="button-icon">🔧</span>
-                        Diagnóstico
-                    </button>
-                </div>
-
-                <div class="sync-tips">
-                    <h4>💡 Tips de Sincronización</h4>
-                    <ul>
-                        <li>Los perfiles se sincronizan automáticamente entre dispositivos</li>
-                        <li>Usa el MISMO código en todos tus dispositivos</li>
-                        <li>Los datos se mantienen seguros en Firebase</li>
-                        <li>Funciona sin conexión con respaldo local</li>
-                        <li>Sincronización en tiempo real</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-    
-    <!-- Estilos adicionales para el sistema de código -->
+    <title>Smill - Aplicación de Viajes</title>
     <style>
-        /* Estilos para el modal de código de usuario */
-        #user-code-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        #user-code-modal.active {
-            display: flex !important;
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
         }
         
-        #user-code-modal.hidden {
-            display: none !important;
-        }
-        
-        .modal-contenido {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            max-width: 500px;
-            width: 90%;
-            margin: 20px;
-        }
-        
-        #user-code-input:focus {
-            outline: none;
-            border-color: #007cba;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-        }
-        
-        #user-code-banner {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            margin: 10px 0;
-            padding: 10px 15px;
-        }
-        
-        #user-code-banner .sync-info {
-            color: white;
-        }
-        
-        #user-code-banner .sync-details-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-        
-        #user-code-banner .sync-details-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        /* Asegurar que los modales tengan buen z-index */
-        .modal-fondo {
-            z-index: 10000;
-        }
-        
-        #user-code-modal {
-            z-index: 10001;
-        }
-        
-        /* Estilos para el botón Conectar */
-        #user-code-modal button {
-            background: #007cba !important;
-            color: white !important;
-            border: none !important;
-            padding: 15px !important;
-            border-radius: 10px !important;
-            font-size: 16px !important;
-            font-weight: bold !important;
-            cursor: pointer !important;
-            width: 100% !important;
-        }
-        
-        #user-code-modal button:hover {
-            background: #005a87 !important;
-        }
-
-        /* Estilos para el panel de sincronización */
-        .sync-panel-content {
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
         }
-
-        .sync-info-section,
-        .sync-status-section {
-            margin-bottom: 25px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #007cba;
+        
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
-        .device-info-current {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .device-icon {
-            font-size: 24px;
-        }
-
-        .device-details {
-            flex: 1;
-        }
-
-        .device-id {
-            font-size: 12px;
-            color: #666;
-            display: block;
-            margin-top: 5px;
-        }
-
-        .connection-status {
-            display: grid;
-            gap: 10px;
-        }
-
-        .status-item {
+        
+        .header-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #e0e0e0;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
-
-        .status-item:last-child {
-            border-bottom: none;
-        }
-
-        .status-label {
+        
+        .logo {
+            font-size: 24px;
             font-weight: bold;
-            color: #333;
         }
-
-        .status-value {
-            color: #007cba;
+        
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #3498db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        nav {
+            background-color: #34495e;
+            padding: 0 20px;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            list-style: none;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .nav-tabs li {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .nav-tabs a {
+            display: block;
+            padding: 15px 0;
+            color: #ecf0f1;
+            text-decoration: none;
+            transition: background-color 0.3s;
             font-weight: 500;
         }
-
-        .sync-actions-panel {
+        
+        .nav-tabs a:hover, .nav-tabs a.active {
+            background-color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-top: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .stats-container {
             display: grid;
-            gap: 10px;
-            margin: 20px 0;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
-
-        .sync-tips {
-            background: #fff3cd;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #ffc107;
+        
+        .stat-card {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-
-        .sync-tips h4 {
-            margin: 0 0 10px 0;
-            color: #856404;
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
         }
-
-        .sync-tips ul {
-            margin: 0;
-            padding-left: 20px;
-            color: #856404;
-        }
-
-        .sync-tips li {
-            margin-bottom: 5px;
+        
+        .stat-label {
+            color: #7f8c8d;
             font-size: 14px;
         }
-
-        .sync-status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 15px;
-            background: #e7f3ff;
-            border-radius: 20px;
-            color: #007cba;
-            font-weight: 500;
+        
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
-
-        /* Barra de estado de sincronización */
-        .sync-status-bar {
+        
+        .history-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--light-grey);
-            border-radius: 10px;
-            padding: 12px 15px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--primary-blue);
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
         }
-
-        .sync-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--text-primary);
+        
+        .trip-info {
+            flex: 1;
         }
-
-        .sync-icon {
-            font-size: 1.1em;
+        
+        .trip-route {
+            font-weight: 500;
+            margin-bottom: 5px;
         }
-
-        .sync-text {
-            font-size: 0.9em;
+        
+        .trip-date {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .trip-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
             font-weight: 500;
         }
-
-        .sync-details-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.8em;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.3s;
+        
+        .status-accepted {
+            background-color: #d4edda;
+            color: #155724;
         }
-
-        .sync-details-btn:hover {
-            border-color: var(--primary-blue);
-            background: rgba(26, 115, 232, 0.1);
+        
+        .status-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
         }
-
-        .sync-info-small {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 15px;
-            padding: 10px;
-            background: var(--light-grey);
+        
+        .diagnostic {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
             border-radius: 8px;
-            font-size: 0.85em;
-            color: var(--text-secondary);
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+        }
+        
+        .diagnostic h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .diagnostic pre {
+            white-space: pre-wrap;
+            font-size: 14px;
         }
     </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">Smill</div>
+            <div class="profile">
+                <div class="profile-pic">S</div>
+                <span>Perfil: Smill</span>
+            </div>
+        </div>
+    </header>
+    
+    <nav>
+        <ul class="nav-tabs">
+            <li><a href="#" class="tab-link active" data-tab="calcular">CALCULAR</a></li>
+            <li><a href="#" class="tab-link" data-tab="resumen">RESUMEN</a></li>
+            <li><a href="#" class="tab-link" data-tab="historial">HISTORIAL</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        <div id="calcular" class="tab-content active">
+            <h2>Calcular Costo de Viaje</h2>
+            <form id="trip-form">
+                <div class="form-group">
+                    <label for="origin">Origen</label>
+                    <input type="text" id="origin" placeholder="Ingresa el punto de origen" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="destination">Destino</label>
+                    <input type="text" id="destination" placeholder="Ingresa el punto de destino" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="vehicle-type">Tipo de Vehículo</label>
+                    <select id="vehicle-type" required>
+                        <option value="">Selecciona un tipo de vehículo</option>
+                        <option value="economy">Económico</option>
+                        <option value="comfort">Confort</option>
+                        <option value="premium">Premium</option>
+                    </select>
+                </div>
+                
+                <button type="submit">Calcular Costo</button>
+            </form>
+            
+            <div id="calculation-result" style="display: none; margin-top: 20px; padding: 15px; background-color: #e8f4fd; border-radius: 8px;">
+                <h3>Resultado del Cálculo</h3>
+                <p id="result-text"></p>
+            </div>
+        </div>
+        
+        <div id="resumen" class="tab-content">
+            <h2>Resumen de Viajes</h2>
+            
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-label">Total de Viajes</div>
+                    <div class="stat-value">74</div>
+                    <div class="stat-desc">En el historial</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Viajes Aceptados</div>
+                    <div class="stat-value">27</div>
+                    <div class="stat-desc">36.5% del total</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Viajes Rechazados</div>
+                    <div class="stat-value">47</div>
+                    <div class="stat-desc">63.5% del total</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Tasa de Aceptación</div>
+                    <div class="stat-value">36.5%</div>
+                    <div class="stat-desc">Promedio mensual</div>
+                </div>
+            </div>
+            
+            <h3>Últimos 3 Viajes</h3>
+            <div class="history-list">
+                <div class="history-item">
+                    <div class="trip-info">
+                        <div class="trip-route">Centro - Zona Norte</div>
+                        <div class="trip-date">15 Nov 2023, 14:30</div>
+                    </div>
+                    <div class="trip-status status-accepted">Aceptado</div>
+                </div>
+                
+                <div class="history-item">
+                    <div class="trip-info">
+                        <div class="trip-route">Aeropuerto - Centro</div>
+                        <div class="trip-date">14 Nov 2023, 09:15</div>
+                    </div>
+                    <div class="trip-status status-rejected">Rechazado</div>
+                </div>
+                
+                <div class="history-item">
+                    <div class="trip-info">
+                        <div class="trip-route">Zona Sur - Universidad</div>
+                        <div class="trip-date">13 Nov 2023, 17:45</div>
+                    </div>
+                    <div class="trip-status status-accepted">Aceptado</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="historial" class="tab-content">
+            <h2>Historial de Viajes</h2>
+            
+            <div class="history-list">
+                <div class="history-item">
+                    <div class="trip-info">
+                        <div class="trip-route">Centro - Zona Norte</div>
+                        <div class="trip-date">15 Nov 2023, 14:30 - $12.50</div>
+                    </div>
+                    <div class="trip-status status-accepted">Aceptado</div>
+                </div>
+                
+                <div class="history-item">
+                    <div class="trip-info">
+                        <div class="trip-route">Aeropuerto - Centro</div>
+                        <div class="trip-date">14 Nov 2023, 09:15 - $18.75</div>
+                    </div>
+                    <div class="trip-status status-rejected">Rechazado</div>
+                </div>
+                
+                <div class="history-item">
+                    <div class="trip-info">
+                        <div class="trip-route">Zona Sur - Universidad</div>
+                        <div class="trip-date">13 Nov 2023, 17:45 - $9.80</div>
+                    </div>
+                    <div class="trip-status status-accepted">Aceptado</div>
+                </div>
+                
+                <div class="history-item">
+                    <div class="trip-info">
+                        <div class="trip-route">Centro Comercial - Residencial</div>
+                        <div class="trip-date">12 Nov 2023, 20:10 - $14.20</div>
+                    </div>
+                    <div class="trip-status status-rejected">Rechazado</div>
+                </div>
+                
+                <div class="history-item">
+                    <div class="trip-info">
+                        <div class="trip-route">Estación - Parque Industrial</div>
+                        <div class="trip-date">11 Nov 2023, 07:30 - $22.40</div>
+                    </div>
+                    <div class="trip-status status-accepted">Aceptado</div>
+                </div>
+            </div>
+            
+            <button style="margin-top: 20px; width: 100%;">Cargar más viajes</button>
+        </div>
+        
+        <div class="diagnostic">
+            <h3>🔧 DIAGNÓSTICO RÁPIDO</h3>
+            <pre>Perfil actual: Smill
+Total historial: 74
+Viajes aceptados: 27
+Viajes rechazados: 47
+Últimos 3 viajes: mostrados correctamente</pre>
+        </div>
+    </div>
+
+    <script>
+        // Navegación entre pestañas
+        document.querySelectorAll('.tab-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remover clase active de todos los enlaces y contenidos
+                document.querySelectorAll('.tab-link').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Agregar clase active al enlace clickeado
+                this.classList.add('active');
+                
+                // Mostrar el contenido correspondiente
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Simular cálculo de viaje
+        document.getElementById('trip-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value;
+            const vehicleType = document.getElementById('vehicle-type').value;
+            
+            // Simular cálculo de precio
+            const basePrice = 10;
+            let multiplier = 1;
+            
+            if (vehicleType === 'comfort') multiplier = 1.5;
+            if (vehicleType === 'premium') multiplier = 2;
+            
+            const price = (basePrice * multiplier).toFixed(2);
+            
+            // Mostrar resultado
+            document.getElementById('result-text').textContent = 
+                `Viaje de ${origin} a ${destination} en vehículo ${vehicleType}: $${price}`;
+            document.getElementById('calculation-result').style.display = 'block';
+        });
+    </script>
 </body>
 </html>
-
-
-
