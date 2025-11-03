@@ -1795,7 +1795,7 @@ select:focus-visible {
     }
 }
 
-/* ===== MODAL RÁPIDO CENTRAL MEJORADO ===== */
+/* ===== MODAL RÁPIDO CENTRAL MEJORADO - VERSIÓN CORREGIDA ===== */
 .modal-rapido {
     position: fixed;
     top: 0;
@@ -1814,7 +1814,7 @@ select:focus-visible {
 }
 
 .modal-rapido.hidden {
-    display: none;
+    display: none !important;
 }
 
 .modal-rapido-contenido {
@@ -1828,6 +1828,7 @@ select:focus-visible {
     position: relative;
     animation: scaleIn 0.3s ease-out;
     text-align: center;
+    margin: 0 auto;
 }
 
 /* Efecto de vidrio esmerilado */
@@ -2162,4 +2163,25 @@ select:focus-visible {
 [data-theme="dark"] .modal-rapido-acciones .secondary-button {
     background: rgba(255, 255, 255, 0.1);
     border-color: #555;
+}
+
+/* ===== ELIMINAR ESTILOS ANTERIORES DEL MODAL FLOTANTE ===== */
+/* Esto sobrescribe cualquier estilo anterior que pusiera el modal en la esquina */
+.modal-rapido {
+    top: 0 !important;
+    left: 0 !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.modal-rapido-contenido {
+    margin: 0 auto !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
 }
