@@ -856,21 +856,27 @@ async function cargarDatos() {
                 console.log('✅ Perfiles cargados de Firebase (nueva estructura):', cloudPerfiles.length);
                 perfiles = cloudPerfiles;
             }
-
+ // IMPORTANTE: Establecer perfilActual si hay perfiles
+                if (!perfilActual && perfiles.length > 0) {
+                    perfilActual = perfiles[0];
+                    console.log('✅ Perfil actual establecido:', perfilActual.nombre);
+                }
+            }
+            
             console.log('☁️ Intentando cargar viajes desde Firebase (nueva estructura)...');
             cloudTrips = await firebaseSync.loadTrips();
             
-            if (cloudTrips && cloudTrips.length > 0) {
+           if (cloudTrips && cloudTrips.length > 0) {
                 console.log('✅ Viajes cargados de Firebase (nueva estructura):', cloudTrips.length);
                 historial = cloudTrips;
             }
             
-        } catch (error) {
+          } catch (error) {
             console.error('❌ Error al cargar datos de Firebase. Usando local storage.', error);
         }
     }
     
-    // 2. Cargar de LocalStorage si Firebase NO proporcionó datos
+        // 2. Cargar de LocalStorage si Firebase NO proporcionó datos
     if (!perfiles || perfiles.length === 0) {
         console.log('💾 Cargando perfiles de localStorage...');
         try {
@@ -880,6 +886,12 @@ async function cargarDatos() {
                 perfiles = datos.perfiles || [];
                 perfilActual = datos.perfilActual || null;
                 historial = datos.historial || [];
+                
+                // Si perfilActual sigue siendo null pero hay perfiles, usar el primero
+                if (!perfilActual && perfiles.length > 0) {
+                    perfilActual = perfiles[0];
+                    console.log('✅ Perfil actual establecido desde localStorage:', perfilActual.nombre);
+                }
             }
         } catch (error) {
             console.error('Error cargando datos:', error);
@@ -890,7 +902,7 @@ async function cargarDatos() {
         }
     }
     
-    console.log(`✅ Carga de datos finalizada. Perfiles: ${perfiles.length}, Viajes: ${historial.length}`);
+    console.log(`✅ Carga de datos finalizada. Perfiles: ${perfiles.length}, Viajes: ${historial.length}, PerfilActual: ${perfilActual ? perfilActual.nombre : 'null'}`);
 }
 
 // =============================================
@@ -1384,16 +1396,21 @@ function calcularAutomatico() {
         
         if (resultado) {
             calculoActual = resultado;
-            mostrarResultadoRapido(resultado); // ← Esta línea ahora abre el modal flotante
+            mostrarResultadoRapido(resultado);
         } else {
             elementos.autoCalcIndicator.classList.add('hidden');
             elementos.resultadoRapido.classList.add('hidden');
-            cerrarModalRapido(); // Cerrar modal si hay error
+            cerrarModalRapido();
         }
     } else {
         elementos.autoCalcIndicator.classList.add('hidden');
         elementos.resultadoRapido.classList.add('hidden');
-        cerrarModalRapido(); // Cerrar modal si datos incompletos
+        cerrarModalRapido();
+        
+        // Mostrar mensaje si falta perfil
+        if (tarifa > 0 && minutos > 0 && distancia > 0 && !perfilActual) {
+            mostrarStatus('⚠️ Selecciona un perfil primero', 'warning');
+        }
     }
 }
 
@@ -1487,6 +1504,12 @@ function procesarViajeRapido(aceptado) {
         return;
     }
     
+    // Verificar que tenemos perfilActual
+    if (!perfilActual) {
+        mostrarError('No hay perfil seleccionado. Por favor, selecciona un perfil primero.');
+        return;
+    }
+    
     // Cerrar modal rápido primero
     cerrarModalRapido();
     
@@ -1515,8 +1538,10 @@ function procesarViajeRapido(aceptado) {
 }
 
 function resetearInterfazCalculo() {
-    elementos.aceptarViajeTabBtn.className = 'primary-button';
-    elementos.aceptarViajeTabBtn.classList.remove('rentable', 'oportunidad', 'no-rentable');
+  if (elementos.aceptarViajeTabBtn) {
+        elementos.aceptarViajeTabBtn.className = 'primary-button';
+        elementos.aceptarViajeTabBtn.classList.remove('rentable', 'oportunidad', 'no-rentable');
+    }
     calculoActual = null;
 }
 
@@ -1864,11 +1889,15 @@ async function limpiarHistorial() {
 
 // --- Estadísticas ---
 function actualizarEstadisticas() {
-    if (!perfilActual) return;
+    // Verificar que los elementos existen
+    if (!elementos.statsViajes || !elementos.statsGanancia || !perfilActual) {
+        console.log('❌ No se pueden actualizar estadísticas - elementos faltantes');
+        return;
+    }
     
     const hoy = new Date().toDateString();
     const viajesHoy = historial.filter(item => 
-        new Date(item.timestamp).toDateString() === hoy && item.aceptado
+        item.aceptado && new Date(item.timestamp).toDateString() === hoy
     );
     
     const totalViajes = viajesHoy.length;
@@ -1876,17 +1905,11 @@ function actualizarEstadisticas() {
     const tiempoTotal = viajesHoy.reduce((sum, item) => sum + item.minutos, 0);
     const viajesRentables = viajesHoy.filter(item => item.rentabilidad === 'rentable').length;
     
-    // Calcular costos totales
-    const costoCombustibleTotal = viajesHoy.reduce((sum, item) => sum + item.costoCombustible, 0);
-    const costoMantenimientoTotal = viajesHoy.reduce((sum, item) => sum + item.costoMantenimiento, 0);
-    const costoSeguroTotal = viajesHoy.reduce((sum, item) => sum + item.costoSeguro, 0);
-    const gananciaNetaTotal = viajesHoy.reduce((sum, item) => sum + item.gananciaNeta, 0);
-    
-    // Actualizar UI - VERIFICAR QUE ESTAS LÍNEAS ESTÉN PRESENTES
-    if (elementos.statsViajes) elementos.statsViajes.textContent = totalViajes;
-    if (elementos.statsGanancia) elementos.statsGanancia.textContent = formatearMoneda(gananciaTotal);
-    if (elementos.statsTiempo) elementos.statsTiempo.textContent = `${tiempoTotal}min`;
-    if (elementos.statsRentables) elementos.statsRentables.textContent = viajesRentables;
+    // Actualizar UI
+    elementos.statsViajes.textContent = totalViajes;
+    elementos.statsGanancia.textContent = formatearMoneda(gananciaTotal);
+    elementos.statsTiempo.textContent = `${tiempoTotal}min`;
+    elementos.statsRentables.textContent = viajesRentables;
     
     // Calcular rendimiento
     const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
@@ -1895,19 +1918,7 @@ function actualizarEstadisticas() {
     if (elementos.statsGananciaHora) elementos.statsGananciaHora.textContent = formatearMoneda(gananciaPorHora);
     if (elementos.statsViajePromedio) elementos.statsViajePromedio.textContent = formatearMoneda(viajePromedio);
     
-    // Guardar estadísticas para exportación
-    window.estadisticasExportacion = {
-        totalViajes,
-        gananciaTotal,
-        tiempoTotal,
-        viajesRentables,
-        costoCombustibleTotal,
-        costoMantenimientoTotal,
-        costoSeguroTotal,
-        gananciaNetaTotal,
-        gananciaPorHora,
-        viajePromedio
-    };
+    console.log('✅ Estadísticas actualizadas:', { totalViajes, gananciaTotal });
 }
 
 // --- Gestión de Perfiles ---
@@ -2658,11 +2669,19 @@ window.onclick = function(event) {
     }
 }
 
-// Código temporal para debug
-console.log('=== DEBUG HISTORIAL ===');
-console.log('Historial length:', historial.length);
-console.log('Perfil actual:', perfilActual);
-console.log('Elementos stats:', elementos.statsViajes, elementos.statsGanancia);
-console.log('=== FIN DEBUG ===');
+// Función para verificar el estado actual
+function verificarEstado() {
+    console.log('=== VERIFICACIÓN DE ESTADO ===');
+    console.log('Perfil actual:', perfilActual);
+    console.log('Perfiles disponibles:', perfiles.length);
+    console.log('Historial:', historial.length);
+    console.log('Elementos cargados:', {
+        statsViajes: !!elementos.statsViajes,
+        statsGanancia: !!elementos.statsGanancia,
+        historyList: !!elementos.historyList
+    });
+    console.log('=== FIN VERIFICACIÓN ===');
+}
 
-
+// Llamar esta función para debug
+setTimeout(verificarEstado, 2000);
