@@ -2016,3 +2016,17 @@ select:focus-visible {
     border-color: var(--error-red) !important;
     background: rgba(244, 67, 54, 0.1) !important;
 }
+
+/* ===== MEJORAS DE ESPACIO TRAS ELIMINAR BOTONES ===== */
+#tab-calcular .form-section {
+    margin-bottom: 10px;
+}
+
+#tab-calcular .resultado-rapido {
+    margin-bottom: 10px;
+}
+
+/* Espacio extra para que se vea más limpio */
+#tab-calcular {
+    padding-bottom: 10px;
+}
