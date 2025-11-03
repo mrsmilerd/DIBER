@@ -554,6 +554,25 @@
                         <span class="button-icon">🔄</span>
                         Sincronizar Ahora
                     </button>
+
+<button id="sync-from-firebase-btn" class="primary-button" onclick="forzarSincronizacionDesdeFirebase()">
+        <span class="button-icon">⬇️</span>
+        Cargar desde Firebase
+    </button>
+    
+    <button class="secondary-button" onclick="mostrarInfoSync()">
+        <span class="button-icon">ℹ️</span>
+        Cómo Funciona
+    </button>
+    <button class="secondary-button" onclick="showUserCodeModal()">
+        <span class="button-icon">🔑</span>
+        Cambiar Código
+    </button>
+    <button class="secondary-button" onclick="diagnosticarSync()">
+        <span class="button-icon">🔧</span>
+        Diagnóstico
+    </button>
+</div>
                     
                     <button class="secondary-button" onclick="mostrarInfoSync()">
                         <span class="button-icon">ℹ️</span>
@@ -840,4 +859,5 @@
     </style>
 </body>
 </html>
+
 
