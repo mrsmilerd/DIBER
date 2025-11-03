@@ -2400,80 +2400,68 @@ function crearColumnaResultadoCompacta(titulo, valor, comparacion, rentabilidad)
 // =============================================
 
 function actualizarHistorial() {
-    console.log('📋 ACTUALIZANDO HISTORIAL - VERSIÓN DEFINITIVA...');
-    console.log('📊 Total viajes en sistema:', historial.length);
-    console.log('✅ Viajes aceptados:', historial.filter(item => item.aceptado).length);
+    const historyList = document.getElementById('history-list');
     
-    if (!elementos.historyList) {
-        console.error('❌ Elemento historyList no encontrado');
+    if (!historyList) {
+        console.error('❌ Elemento history-list no encontrado');
         return;
     }
+
+    console.log('🔄 Actualizando historial con:', historialViajes.length, 'viajes');
     
-    // Limpiar el historial
-    elementos.historyList.innerHTML = '';
-    
-    // Filtrar SOLO viajes ACEPTADOS
-    const viajesAceptados = historial.filter(item => item.aceptado === true);
-    console.log('🎯 Viajes aceptados para mostrar:', viajesAceptados.length);
-    
-    if (viajesAceptados.length === 0) {
-        elementos.historyList.innerHTML = `
-            <div class="history-item" style="text-align: center; padding: 30px; color: #666;">
-                <div style="font-size: 1.2em; margin-bottom: 10px;">No hay viajes aceptados</div>
-                <div style="font-size: 0.9em;">
-                    Los viajes que aceptes aparecerán aquí<br>
-                    Total de viajes en sistema: ${historial.length}
-                </div>
+    if (historialViajes.length === 0) {
+        historyList.innerHTML = `
+            <div class="empty-state">
+                <span class="empty-icon">📋</span>
+                <h3>No hay viajes en el historial</h3>
+                <p>Los viajes que aceptes aparecerán aquí</p>
             </div>
         `;
         return;
     }
     
-    // Ordenar por fecha (más recientes primero)
-    const historialOrdenado = viajesAceptados.sort((a, b) => {
-        return new Date(b.timestamp) - new Date(a.timestamp);
-    });
+    // MOSTRAR solo los últimos 15 viajes
+    const viajesParaMostrar = historialViajes.slice(0, 15);
     
-    // Mostrar máximo 15 viajes
-    const mostrar = historialOrdenado.slice(0, 15);
-    
-    console.log('🔄 Mostrando viajes:', mostrar.length);
-    
-    mostrar.forEach((item, index) => {
-        const historyItem = document.createElement('div');
-        historyItem.className = `history-item ${item.rentabilidad}`;
+    historyList.innerHTML = viajesParaMostrar.map((viaje, index) => {
+        // Asegurar que todos los campos existan
+        const ganancia = viaje.ganancia || 0;
+        const minutos = viaje.minutos || 0;
+        const distancia = viaje.distancia || 0;
+        const porMinuto = viaje.porMinuto || 0;
+        const porKm = viaje.porKm || 0;
+        const rentable = Boolean(viaje.rentable);
+        const fecha = viaje.fecha || 'Fecha desconocida';
         
-        // Formatear fecha y hora
-        const fechaObj = new Date(item.timestamp);
-        const hora = fechaObj.toLocaleTimeString('es-DO', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
-        const fecha = fechaObj.toLocaleDateString('es-DO');
-        
-        const distanciaLabel = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
-        const detalles = `${formatearMoneda(item.tarifa)} • ${item.minutos}min • ${item.distancia}${distanciaLabel}`;
-        
-        historyItem.innerHTML = `
-            <div class="history-info">
-                <div class="history-time">${hora} - ${fecha}</div>
-                <div class="history-details">${detalles}</div>
-                <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                    ${item.texto} ${item.emoji} • Ganancia neta: ${formatearMoneda(item.gananciaNeta)}
+        return `
+        <div class="history-item ${rentable ? 'rentable' : 'no-rentable'}">
+            <div class="history-header">
+                <span class="history-badge ${rentable ? 'badge-rentable' : 'badge-no-rentable'}">
+                    ${rentable ? '✅ RENTABLE' : '❌ NO RENTABLE'}
+                </span>
+                <span class="history-date">${fecha}</span>
+            </div>
+            <div class="history-details">
+                <div class="history-route">
+                    <strong>Ganancia:</strong> RD$${ganancia.toFixed(2)}
+                </div>
+                <div class="history-metrics">
+                    <span class="metric">⏱️ ${minutos}min</span>
+                    <span class="metric">🛣️ ${distancia}km</span>
+                    <span class="metric">💰 RD$${parseFloat(porMinuto).toFixed(2)}/min</span>
+                    <span class="metric">📏 RD$${parseFloat(porKm).toFixed(2)}/km</span>
                 </div>
             </div>
-            <div class="history-status">✅</div>
+            <div class="history-actions">
+                <button onclick="eliminarDelHistorial(${index})" class="delete-btn" title="Eliminar">
+                    🗑️
+                </button>
+            </div>
+        </div>
         `;
-        
-        // Hacer clickable
-        historyItem.addEventListener('click', () => {
-            mostrarDetallesViaje(item);
-        });
-        
-        elementos.historyList.appendChild(historyItem);
-    });
+    }).join('');
     
-    console.log('✅ Historial actualizado correctamente');
+    console.log('✅ Historial actualizado:', viajesParaMostrar.length, 'viajes mostrados');
 }
 
 // =============================================
@@ -3392,6 +3380,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
