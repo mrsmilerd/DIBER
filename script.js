@@ -1497,6 +1497,9 @@ function procesarViajeRapido(aceptado) {
         
         // Actualizar estadísticas
         actualizarEstadisticas();
+        
+        // Actualizar historial en tiempo real
+        actualizarHistorial();
     } else {
         guardarEnHistorial(calculoActual, false);
         mostrarStatus('❌ Viaje rechazado', 'info');
@@ -1761,6 +1764,7 @@ async function guardarEnHistorial(resultado, aceptado) {
     
     guardarDatos();
     actualizarHistorial();
+    actualizarEstadisticas(); // ← Asegurar que se actualicen las estadísticas
 }
 
 function actualizarHistorial() {
@@ -1878,7 +1882,7 @@ function actualizarEstadisticas() {
     const costoSeguroTotal = viajesHoy.reduce((sum, item) => sum + item.costoSeguro, 0);
     const gananciaNetaTotal = viajesHoy.reduce((sum, item) => sum + item.gananciaNeta, 0);
     
-    // Actualizar UI
+    // Actualizar UI - VERIFICAR QUE ESTAS LÍNEAS ESTÉN PRESENTES
     if (elementos.statsViajes) elementos.statsViajes.textContent = totalViajes;
     if (elementos.statsGanancia) elementos.statsGanancia.textContent = formatearMoneda(gananciaTotal);
     if (elementos.statsTiempo) elementos.statsTiempo.textContent = `${tiempoTotal}min`;
@@ -2654,5 +2658,11 @@ window.onclick = function(event) {
     }
 }
 
+// Código temporal para debug
+console.log('=== DEBUG HISTORIAL ===');
+console.log('Historial length:', historial.length);
+console.log('Perfil actual:', perfilActual);
+console.log('Elementos stats:', elementos.statsViajes, elementos.statsGanancia);
+console.log('=== FIN DEBUG ===');
 
 
