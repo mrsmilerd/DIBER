@@ -112,6 +112,475 @@ const elementos = {
 };
 
 // =============================================
+// SISTEMA DE HISTORIAL Y RESUMEN
+// =============================================
+
+// Array para almacenar el historial de viajes
+let historialViajes = JSON.parse(localStorage.getItem('historialViajes')) || [];
+let estadisticasDia = JSON.parse(localStorage.getItem('estadisticasDia')) || {
+    viajes: 0,
+    ganancia: 0,
+    tiempo: 0,
+    rentables: 0,
+    noRentables: 0
+};
+
+// Inicializar el sistema de pestañas
+function inicializarTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.getAttribute('data-tab');
+            
+            // Remover clase active de todos
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Activar tab seleccionado
+            button.classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            
+            // Si es resumen o historial, actualizar datos
+            if (tabId === 'resumen') {
+                actualizarResumen();
+            } else if (tabId === 'historial') {
+                actualizarHistorial();
+            }
+        });
+    });
+}
+
+// Actualizar la pestaña de resumen
+function actualizarResumen() {
+    // Actualizar estadísticas del día
+    document.getElementById('stats-viajes').textContent = estadisticasDia.viajes;
+    document.getElementById('stats-ganancia').textContent = `RD$${estadisticasDia.ganancia.toFixed(2)}`;
+    document.getElementById('stats-tiempo').textContent = `${estadisticasDia.tiempo}min`;
+    document.getElementById('stats-rentables').textContent = estadisticasDia.rentables;
+    
+    // Calcular rendimiento
+    const gananciaHora = estadisticasDia.tiempo > 0 ? 
+        (estadisticasDia.ganancia / (estadisticasDia.tiempo / 60)).toFixed(2) : 0;
+    const viajePromedio = estadisticasDia.viajes > 0 ? 
+        (estadisticasDia.ganancia / estadisticasDia.viajes).toFixed(2) : 0;
+    
+    document.getElementById('stats-ganancia-hora').textContent = `RD$${gananciaHora}`;
+    document.getElementById('stats-viaje-promedio').textContent = `RD$${viajePromedio}`;
+}
+
+// Actualizar la pestaña de historial
+function actualizarHistorial() {
+    const historyList = document.getElementById('history-list');
+    
+    if (historialViajes.length === 0) {
+        historyList.innerHTML = `
+            <div class="empty-state">
+                <span class="empty-icon">📋</span>
+                <h3>No hay viajes en el historial</h3>
+                <p>Los viajes que aceptes aparecerán aquí</p>
+            </div>
+        `;
+        return;
+    }
+    
+    historyList.innerHTML = historialViajes.map((viaje, index) => `
+        <div class="history-item ${viaje.rentable ? 'rentable' : 'no-rentable'}">
+            <div class="history-header">
+                <span class="history-badge ${viaje.rentable ? 'badge-rentable' : 'badge-no-rentable'}">
+                    ${viaje.rentable ? '✅ RENTABLE' : '❌ NO RENTABLE'}
+                </span>
+                <span class="history-date">${viaje.fecha}</span>
+            </div>
+            <div class="history-details">
+                <div class="history-route">
+                    <strong>Ganancia:</strong> RD$${viaje.ganancia}
+                </div>
+                <div class="history-metrics">
+                    <span class="metric">⏱️ ${viaje.minutos}min</span>
+                    <span class="metric">🛣️ ${viaje.distancia}km</span>
+                    <span class="metric">💰 RD$${viaje.porMinuto}/min</span>
+                    <span class="metric">📏 RD$${viaje.porKm}/km</span>
+                </div>
+            </div>
+            <div class="history-actions">
+                <button onclick="eliminarDelHistorial(${index})" class="delete-btn" title="Eliminar">
+                    🗑️
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Agregar viaje al historial cuando se acepta
+function agregarAlHistorial(viaje) {
+    const nuevoViaje = {
+        ...viaje,
+        fecha: new Date().toLocaleString('es-DO'),
+        id: Date.now()
+    };
+    
+    historialViajes.unshift(nuevoViaje); // Agregar al inicio
+    
+    // Mantener solo los últimos 100 viajes
+    if (historialViajes.length > 100) {
+        historialViajes = historialViajes.slice(0, 100);
+    }
+    
+    // Actualizar estadísticas del día
+    actualizarEstadisticasDia(nuevoViaje);
+    
+    // Guardar en localStorage
+    guardarDatosHistorial();
+    
+    // Actualizar vistas si están activas
+    if (document.getElementById('tab-resumen').classList.contains('active')) {
+        actualizarResumen();
+    }
+    if (document.getElementById('tab-historial').classList.contains('active')) {
+        actualizarHistorial();
+    }
+}
+
+// Actualizar estadísticas del día
+function actualizarEstadisticasDia(viaje) {
+    estadisticasDia.viajes++;
+    estadisticasDia.ganancia += parseFloat(viaje.ganancia);
+    estadisticasDia.tiempo += parseInt(viaje.minutos);
+    
+    if (viaje.rentable) {
+        estadisticasDia.rentables++;
+    } else {
+        estadisticasDia.noRentables++;
+    }
+    
+    // Guardar estadísticas
+    localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
+}
+
+// Eliminar viaje del historial
+function eliminarDelHistorial(index) {
+    if (confirm('¿Estás seguro de que quieres eliminar este viaje del historial?')) {
+        const viajeEliminado = historialViajes[index];
+        
+        // Actualizar estadísticas
+        estadisticasDia.viajes--;
+        estadisticasDia.ganancia -= parseFloat(viajeEliminado.ganancia);
+        estadisticasDia.tiempo -= parseInt(viajeEliminado.minutos);
+        
+        if (viajeEliminado.rentable) {
+            estadisticasDia.rentables--;
+        } else {
+            estadisticasDia.noRentables--;
+        }
+        
+        // Eliminar del array
+        historialViajes.splice(index, 1);
+        
+        // Guardar y actualizar
+        guardarDatosHistorial();
+        localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
+        actualizarHistorial();
+        actualizarResumen();
+    }
+}
+
+// Guardar datos del historial
+function guardarDatosHistorial() {
+    localStorage.setItem('historialViajes', JSON.stringify(historialViajes));
+}
+
+// Limpiar historial completo
+function limpiarHistorialCompleto() {
+    if (confirm('¿Estás seguro de que quieres limpiar todo el historial? Esta acción no se puede deshacer.')) {
+        historialViajes = [];
+        estadisticasDia = {
+            viajes: 0,
+            ganancia: 0,
+            tiempo: 0,
+            rentables: 0,
+            noRentables: 0
+        };
+        
+        localStorage.removeItem('historialViajes');
+        localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
+        
+        actualizarHistorial();
+        actualizarResumen();
+        
+        mostrarMensaje('Historial limpiado correctamente', 'success');
+    }
+}
+
+// Exportar historial a PDF
+function exportarHistorialPDF() {
+    if (historialViajes.length === 0) {
+        mostrarMensaje('No hay datos para exportar', 'warning');
+        return;
+    }
+    
+    // Aquí iría la lógica para generar PDF
+    // Por ahora simulamos la exportación
+    mostrarMensaje('Preparando exportación PDF...', 'info');
+    
+    // Simular generación de PDF
+    setTimeout(() => {
+        const enlace = document.createElement('a');
+        enlace.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(historialViajes, null, 2));
+        enlace.download = `historial-viajes-${new Date().toISOString().split('T')[0]}.json`;
+        enlace.click();
+        
+        mostrarMensaje('Datos exportados correctamente', 'success');
+    }, 1000);
+}
+
+// Resetear estadísticas diarias (ejecutar al cambiar de día)
+function resetearEstadisticasDiarias() {
+    const hoy = new Date().toDateString();
+    const ultimaFecha = localStorage.getItem('ultimaFechaEstadisticas');
+    
+    if (ultimaFecha !== hoy) {
+        estadisticasDia = {
+            viajes: 0,
+            ganancia: 0,
+            tiempo: 0,
+            rentables: 0,
+            noRentables: 0
+        };
+        localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
+        localStorage.setItem('ultimaFechaEstadisticas', hoy);
+    }
+}
+
+// =============================================
+// MODIFICACIONES A LAS FUNCIONES EXISTENTES
+// =============================================
+
+// Modificar la función aceptarViaje para que agregue al historial
+function aceptarViaje() {
+    const tarifa = parseFloat(document.getElementById('tarifa').value);
+    const minutos = parseInt(document.getElementById('minutos').value);
+    const distancia = parseFloat(document.getElementById('distancia').value);
+    
+    const porMinuto = (tarifa / minutos).toFixed(2);
+    const porKm = (tarifa / distancia).toFixed(2);
+    
+    // Determinar si es rentable (usando tus umbrales existentes)
+    const perfilActual = obtenerPerfilActual();
+    const rentable = porMinuto >= perfilActual.umbralMinutoRentable && 
+                     porKm >= perfilActual.umbralKmRentable;
+    
+    // Agregar al historial
+    agregarAlHistorial({
+        ganancia: tarifa,
+        minutos: minutos,
+        distancia: distancia,
+        porMinuto: porMinuto,
+        porKm: porKm,
+        rentable: rentable
+    });
+    
+    // Cerrar modal y limpiar formulario
+    cerrarModal();
+    document.getElementById('calcular-form').reset();
+    
+    mostrarMensaje('Viaje aceptado y guardado en historial', 'success');
+}
+
+// =============================================
+// EVENT LISTENERS
+// =============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar sistema de pestañas
+    inicializarTabs();
+    
+    // Resetear estadísticas si es un nuevo día
+    resetearEstadisticasDiarias();
+    
+    // Event listener para limpiar historial
+    document.getElementById('clear-history').addEventListener('click', limpiarHistorialCompleto);
+    
+    // Event listener para exportar historial
+    document.getElementById('exportar-historial').addEventListener('click', exportarHistorialPDF);
+    
+    // Asegurar que el botón "Aceptar Viaje" en el modal use la nueva función
+    document.getElementById('aceptar-viaje').addEventListener('click', aceptarViaje);
+});
+
+// =============================================
+// ESTILOS CSS PARA EL HISTORIAL
+// =============================================
+
+// Agrega estos estilos a tu styles.css
+const estilosHistorial = `
+/* Estilos para el historial */
+.history-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.history-item {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-left: 4px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.history-item.rentable {
+    border-left-color: #28a745;
+    background: rgba(40, 167, 69, 0.05);
+}
+
+.history-item.no-rentable {
+    border-left-color: #dc3545;
+    background: rgba(220, 53, 69, 0.05);
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.history-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+}
+
+.badge-rentable {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-no-rentable {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.history-date {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+}
+
+.history-details {
+    margin-bottom: 10px;
+}
+
+.history-route {
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.history-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    font-size: 0.85em;
+}
+
+.metric {
+    color: var(--text-secondary);
+}
+
+.history-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.delete-btn:hover {
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-icon {
+    font-size: 3em;
+    margin-bottom: 15px;
+    display: block;
+}
+
+/* Estadísticas */
+.estadisticas-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.estadistica-item {
+    background: var(--card-bg);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.estadistica-valor {
+    display: block;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--primary-blue);
+    margin-bottom: 5px;
+}
+
+.estadistica-label {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+
+.rendimiento-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.rendimiento-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.rendimiento-label {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.rendimiento-valor {
+    color: var(--primary-blue);
+    font-weight: bold;
+}
+`;
+
+// Inyectar estilos
+const styleSheet = document.createElement('style');
+styleSheet.textContent = estilosHistorial;
+document.head.appendChild(styleSheet);
+
+// =============================================
 // SISTEMA DE CÓDIGO DE USUARIO
 // =============================================
 
@@ -2925,4 +3394,5 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
