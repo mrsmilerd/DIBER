@@ -1456,17 +1456,19 @@ function cerrarModalRapido() {
 }
 
 function procesarViajeRapido(aceptado) {
+    console.log('⚡ Procesando viaje rápido:', { aceptado, calculoActual: !!calculoActual });
+    
     if (!calculoActual) {
         mostrarError('No hay cálculo actual para procesar');
         return;
     }
-    
+
     // Verificar que tenemos perfilActual
     if (!perfilActual) {
         mostrarError('No hay perfil seleccionado. Por favor, selecciona un perfil primero.');
         return;
     }
-    
+
     // Cerrar modal rápido primero
     cerrarModalRapido();
     
@@ -1482,12 +1484,19 @@ function procesarViajeRapido(aceptado) {
     // Limpiar formulario
     limpiarFormulario();
     
+    // Actualizar interfaz INMEDIATAMENTE
+    actualizarEstadisticas();
+    actualizarHistorial();
+    
     // Cambiar a pestaña de historial si se aceptó
     if (aceptado) {
         setTimeout(() => {
             cambiarPestana('historial');
-            // Forzar actualización de estadísticas después de cambiar pestaña
-            setTimeout(actualizarEstadisticas, 100);
+            // Forzar actualización después de cambiar pestaña
+            setTimeout(() => {
+                actualizarEstadisticas();
+                actualizarHistorial();
+            }, 100);
         }, 500);
     }
 }
@@ -1692,45 +1701,75 @@ function crearColumnaResultadoCompacta(titulo, valor, comparacion, rentabilidad)
 }
 
 async function procesarViaje(aceptado) {
+    console.log('🔄 Procesando viaje:', { aceptado, calculoActual: !!calculoActual });
+    
     if (!calculoActual) {
         mostrarError('No hay cálculo actual para procesar');
         return;
     }
-    
-    // Guardar en historial
-    if (aceptado) {
-        await guardarEnHistorial(calculoActual, true);
-        mostrarStatus('✅ Viaje aceptado y guardado en historial', 'success');
-        
-        // Actualizar estadísticas
-        actualizarEstadisticas();
-    } else {
-        await guardarEnHistorial(calculoActual, false);
-        mostrarStatus('❌ Viaje rechazado', 'info');
+
+    // Verificar que tenemos perfilActual
+    if (!perfilActual) {
+        mostrarError('No hay perfil seleccionado. Por favor, selecciona un perfil primero.');
+        return;
     }
-    
-    // Limpiar formulario
-    limpiarFormulario();
-    cerrarModal();
-    
-    // Cambiar a pestaña de historial si se aceptó
-    if (aceptado) {
-        setTimeout(() => cambiarPestana('historial'), 500);
+
+    try {
+        // Guardar en historial
+        await guardarEnHistorial(calculoActual, aceptado);
+        
+        if (aceptado) {
+            mostrarStatus('✅ Viaje aceptado y guardado en historial', 'success');
+        } else {
+            mostrarStatus('❌ Viaje rechazado', 'info');
+        }
+
+        // Limpiar formulario
+        limpiarFormulario();
+        cerrarModal();
+        
+        // Actualizar interfaz INMEDIATAMENTE
+        actualizarEstadisticas();
+        actualizarHistorial();
+        
+        // Cambiar a pestaña de historial si se aceptó
+        if (aceptado) {
+            setTimeout(() => {
+                cambiarPestana('historial');
+                // Forzar actualización después de cambiar pestaña
+                setTimeout(() => {
+                    actualizarEstadisticas();
+                    actualizarHistorial();
+                }, 100);
+            }, 500);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error procesando viaje:', error);
+        mostrarError('Error al procesar el viaje');
     }
 }
 
 // --- Gestión de Historial ---
 async function guardarEnHistorial(resultado, aceptado) {
-    console.log('💾 Guardando en historial:', { aceptado, rentabilidad: resultado.rentabilidad });
+    console.log('💾 GUARDANDO EN HISTORIAL:', { 
+        aceptado, 
+        rentabilidad: resultado.rentabilidad,
+        tarifa: resultado.tarifa 
+    });
     
     const historialItem = {
         ...resultado,
         aceptado: aceptado,
         id: 'viaje_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         perfilId: perfilActual?.id,
-        perfilNombre: perfilActual?.nombre
+        perfilNombre: perfilActual?.nombre,
+        timestamp: new Date().toISOString()
     };
     
+    console.log('📝 Item a guardar:', historialItem);
+    
+    // Agregar al historial
     historial.unshift(historialItem);
     
     // Mantener solo los últimos 100 registros para optimizar
@@ -1757,6 +1796,7 @@ async function guardarEnHistorial(resultado, aceptado) {
     actualizarEstadisticas();
     
     console.log('✅ Viaje guardado en historial. Total viajes:', historial.length);
+    console.log('✅ Viajes aceptados:', historial.filter(item => item.aceptado).length);
 }
 
 function actualizarHistorial() {
@@ -1768,6 +1808,7 @@ function actualizarHistorial() {
     }
     
     console.log('📝 Total de viajes en historial:', historial.length);
+    console.log('✅ Viajes aceptados:', historial.filter(item => item.aceptado).length);
     
     // Limpiar el historial
     elementos.historyList.innerHTML = '';
@@ -1886,7 +1927,7 @@ async function limpiarHistorial() {
 function actualizarEstadisticas() {
     console.log('📊 ACTUALIZANDO ESTADÍSTICAS...');
     
-    // Verificar que los elementos del DOM existen usando el objeto 'elementos'
+    // Verificar que los elementos del DOM existen
     if (!elementos.statsViajes || !elementos.statsGanancia) {
         console.log('❌ Elementos de estadísticas no disponibles aún');
         return;
@@ -1897,11 +1938,18 @@ function actualizarEstadisticas() {
     
     // Filtrar viajes ACEPTADOS de hoy
     const viajesHoy = historial.filter(item => {
-        if (!item.aceptado) return false;
+        if (!item.aceptado) {
+            console.log('❌ Viaje no aceptado, filtrando:', item.id);
+            return false;
+        }
         
         try {
             const itemDate = new Date(item.timestamp).toDateString();
-            return itemDate === hoy;
+            const esHoy = itemDate === hoy;
+            if (esHoy) {
+                console.log('✅ Viaje aceptado hoy:', item.id, item.tarifa);
+            }
+            return esHoy;
         } catch (error) {
             console.warn('⚠️ Error procesando fecha del viaje:', item);
             return false;
@@ -1918,6 +1966,7 @@ function actualizarEstadisticas() {
     
     console.log('💰 Ganancia total hoy:', gananciaTotal);
     console.log('⏱️ Tiempo total hoy:', tiempoTotal);
+    console.log('🎯 Viajes rentables hoy:', viajesRentables);
     
     // Actualizar UI con verificaciones
     try {
@@ -1940,10 +1989,12 @@ function actualizarEstadisticas() {
         }
         
         console.log('✅ Estadísticas actualizadas correctamente');
+        
     } catch (error) {
         console.error('❌ Error actualizando UI de estadísticas:', error);
     }
 }
+
 
 // --- Gestión de Perfiles ---
 function mostrarConfigPerfil(perfil = null) {
@@ -2520,6 +2571,8 @@ function mostrarStatus(mensaje, tipo = 'info') {
 }
 
 function limpiarFormulario() {
+    console.log('🧹 Limpiando formulario...');
+    
     elementos.tarifaInput.value = '';
     elementos.minutosInput.value = '';
     elementos.distanciaInput.value = '';
@@ -2527,6 +2580,11 @@ function limpiarFormulario() {
     elementos.resultadoRapido.classList.add('hidden');
     resetearInterfazCalculo();
     calculoActual = null;
+    
+    // Cerrar modal rápido si está abierto
+    cerrarModalRapido();
+    
+    console.log('✅ Formulario limpiado');
 }
 
 function cerrarModal() {
@@ -2709,4 +2767,5 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
