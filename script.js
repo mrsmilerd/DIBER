@@ -1683,12 +1683,13 @@ function procesarViajeRapido(aceptado) {
 }
 
 // =============================================
-// GUARDAR EN HISTORIAL - VERSIÓN SIMPLIFICADA
+// GUARDAR EN HISTORIAL - VERSIÓN DEFINITIVA
 // =============================================
 
 async function guardarEnHistorial(resultado, aceptado) {
-    console.log('💾 GUARDANDO EN HISTORIAL (SIMPLIFICADO)...');
+    console.log('💾 GUARDANDO EN HISTORIAL - VERSIÓN DEFINITIVA...', { aceptado });
     
+    // Crear el item del historial
     const historialItem = {
         ...resultado,
         aceptado: aceptado,
@@ -1698,14 +1699,16 @@ async function guardarEnHistorial(resultado, aceptado) {
         timestamp: new Date().toISOString()
     };
     
-    console.log('📝 Item:', historialItem);
+    console.log('📝 Item a guardar:', historialItem);
     
-    // Agregar al historial LOCAL
+    // AGREGAR AL HISTORIAL LOCAL
     historial.unshift(historialItem);
+    console.log('✅ Agregado al historial local. Total:', historial.length);
     
-    // Guardar en Firebase SOLO si fue aceptado
-    if (firebaseSync && firebaseSync.initialized && aceptado) {
+    // GUARDAR EN FIREBASE SOLO SI FUE ACEPTADO
+    if (aceptado && firebaseSync && firebaseSync.initialized) {
         try {
+            console.log('☁️ Guardando en Firebase...');
             await firebaseSync.saveTrip(historialItem);
             console.log('✅ Guardado en Firebase');
         } catch (error) {
@@ -1713,14 +1716,16 @@ async function guardarEnHistorial(resultado, aceptado) {
         }
     }
     
-    // Guardar LOCALMENTE siempre
+    // GUARDAR EN LOCALSTORAGE SIEMPRE
     guardarDatos();
+    console.log('✅ Datos guardados en localStorage');
     
     // ACTUALIZAR INTERFAZ INMEDIATAMENTE
+    console.log('🔄 Actualizando interfaz...');
     actualizarEstadisticas();
     actualizarHistorial();
     
-    console.log('✅ Historial actualizado. Total:', historial.length);
+    console.log('🎉 Proceso de guardado completado');
 }
 
 function resetearInterfazCalculo() {
@@ -1924,114 +1929,155 @@ function crearColumnaResultadoCompacta(titulo, valor, comparacion, rentabilidad)
 }
 
 // =============================================
-// ACTUALIZAR HISTORIAL - VERSIÓN SUPER SIMPLE
+// ACTUALIZAR HISTORIAL - VERSIÓN DEFINITIVA
 // =============================================
 
 function actualizarHistorial() {
-    console.log('📋 ACTUALIZANDO HISTORIAL (SIMPLE)...');
+    console.log('📋 ACTUALIZANDO HISTORIAL - VERSIÓN DEFINITIVA...');
+    console.log('📊 Total viajes en sistema:', historial.length);
+    console.log('✅ Viajes aceptados:', historial.filter(item => item.aceptado).length);
     
     if (!elementos.historyList) {
-        console.error('❌ No hay elemento historyList');
+        console.error('❌ Elemento historyList no encontrado');
         return;
     }
     
-    // Limpiar
+    // Limpiar el historial
     elementos.historyList.innerHTML = '';
     
-    // Filtrar solo viajes ACEPTADOS
+    // Filtrar SOLO viajes ACEPTADOS
     const viajesAceptados = historial.filter(item => item.aceptado === true);
-    console.log('✅ Viajes aceptados para mostrar:', viajesAceptados.length);
+    console.log('🎯 Viajes aceptados para mostrar:', viajesAceptados.length);
     
     if (viajesAceptados.length === 0) {
         elementos.historyList.innerHTML = `
             <div class="history-item" style="text-align: center; padding: 30px; color: #666;">
-                <div style="font-size: 1.1em; margin-bottom: 10px;">No hay viajes aceptados</div>
-                <div style="font-size: 0.9em;">Los viajes que aceptes aparecerán aquí</div>
+                <div style="font-size: 1.2em; margin-bottom: 10px;">No hay viajes aceptados</div>
+                <div style="font-size: 0.9em;">
+                    Los viajes que aceptes aparecerán aquí<br>
+                    Total de viajes en sistema: ${historial.length}
+                </div>
             </div>
         `;
         return;
     }
     
-    // Mostrar los últimos 10 viajes aceptados
-    const mostrar = viajesAceptados.slice(0, 10);
+    // Ordenar por fecha (más recientes primero)
+    const historialOrdenado = viajesAceptados.sort((a, b) => {
+        return new Date(b.timestamp) - new Date(a.timestamp);
+    });
     
-    mostrar.forEach(item => {
-        const div = document.createElement('div');
-        div.className = `history-item ${item.rentabilidad}`;
+    // Mostrar máximo 15 viajes
+    const mostrar = historialOrdenado.slice(0, 15);
+    
+    console.log('🔄 Mostrando viajes:', mostrar.length);
+    
+    mostrar.forEach((item, index) => {
+        const historyItem = document.createElement('div');
+        historyItem.className = `history-item ${item.rentabilidad}`;
         
-        const fecha = new Date(item.timestamp).toLocaleDateString('es-DO');
-        const hora = new Date(item.timestamp).toLocaleTimeString('es-DO');
+        // Formatear fecha y hora
+        const fechaObj = new Date(item.timestamp);
+        const hora = fechaObj.toLocaleTimeString('es-DO', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+        const fecha = fechaObj.toLocaleDateString('es-DO');
+        
         const distanciaLabel = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
+        const detalles = `${formatearMoneda(item.tarifa)} • ${item.minutos}min • ${item.distancia}${distanciaLabel}`;
         
-        div.innerHTML = `
+        historyItem.innerHTML = `
             <div class="history-info">
                 <div class="history-time">${hora} - ${fecha}</div>
-                <div class="history-details">
-                    ${formatearMoneda(item.tarifa)} • ${item.minutos}min • ${item.distancia}${distanciaLabel}
-                </div>
+                <div class="history-details">${detalles}</div>
                 <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                    ${item.texto} ${item.emoji}
+                    ${item.texto} ${item.emoji} • Ganancia neta: ${formatearMoneda(item.gananciaNeta)}
                 </div>
             </div>
             <div class="history-status">✅</div>
         `;
         
-        elementos.historyList.appendChild(div);
+        // Hacer clickable
+        historyItem.addEventListener('click', () => {
+            mostrarDetallesViaje(item);
+        });
+        
+        elementos.historyList.appendChild(historyItem);
     });
     
-    console.log('✅ Historial mostrado:', mostrar.length, 'viajes');
+    console.log('✅ Historial actualizado correctamente');
 }
 
 // =============================================
-// ACTUALIZAR ESTADÍSTICAS - VERSIÓN SIMPLE
+// ACTUALIZAR ESTADÍSTICAS - VERSIÓN DEFINITIVA
 // =============================================
 
 function actualizarEstadisticas() {
-    console.log('📊 ACTUALIZANDO ESTADÍSTICAS (SIMPLE)...');
+    console.log('📊 ACTUALIZANDO ESTADÍSTICAS - VERSIÓN DEFINITIVA...');
     
+    // Verificar que los elementos existen
     if (!elementos.statsViajes || !elementos.statsGanancia) {
-        console.log('❌ Elementos de stats no listos');
+        console.error('❌ Elementos de estadísticas no encontrados');
         return;
     }
     
     const hoy = new Date().toDateString();
+    console.log('📅 Fecha de hoy:', hoy);
     
     // Filtrar viajes ACEPTADOS de HOY
     const viajesHoy = historial.filter(item => {
-        if (!item.aceptado) return false;
+        // Solo viajes aceptados
+        if (!item.aceptado) {
+            return false;
+        }
+        
+        // Verificar fecha
         try {
-            return new Date(item.timestamp).toDateString() === hoy;
-        } catch {
+            const itemDate = new Date(item.timestamp).toDateString();
+            return itemDate === hoy;
+        } catch (error) {
+            console.warn('⚠️ Error procesando fecha:', item);
             return false;
         }
     });
     
-    console.log('📅 Viajes hoy:', viajesHoy.length);
+    console.log('✅ Viajes aceptados hoy:', viajesHoy.length);
     
+    // Calcular estadísticas
     const totalViajes = viajesHoy.length;
     const gananciaTotal = viajesHoy.reduce((sum, item) => sum + (item.tarifa || 0), 0);
     const tiempoTotal = viajesHoy.reduce((sum, item) => sum + (item.minutos || 0), 0);
     const viajesRentables = viajesHoy.filter(item => item.rentabilidad === 'rentable').length;
     
-    // Actualizar UI
+    console.log('💰 Ganancia total:', gananciaTotal);
+    console.log('⏱️ Tiempo total:', tiempoTotal);
+    
+    // ACTUALIZAR LA INTERFAZ
     elementos.statsViajes.textContent = totalViajes;
     elementos.statsGanancia.textContent = formatearMoneda(gananciaTotal);
     
-    if (elementos.statsTiempo) elementos.statsTiempo.textContent = `${tiempoTotal}min`;
-    if (elementos.statsRentables) elementos.statsRentables.textContent = viajesRentables;
+    if (elementos.statsTiempo) {
+        elementos.statsTiempo.textContent = `${tiempoTotal}min`;
+    }
     
-    // Calcular rendimiento
+    if (elementos.statsRentables) {
+        elementos.statsRentables.textContent = viajesRentables;
+    }
+    
+    // Calcular métricas adicionales
     const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
     const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
     
     if (elementos.statsGananciaHora) {
         elementos.statsGananciaHora.textContent = formatearMoneda(gananciaPorHora);
     }
+    
     if (elementos.statsViajePromedio) {
         elementos.statsViajePromedio.textContent = formatearMoneda(viajePromedio);
     }
     
-    console.log('✅ Estadísticas actualizadas');
+    console.log('✅ Estadísticas actualizadas correctamente');
 }
 
 async function limpiarHistorial() {
@@ -2785,6 +2831,29 @@ setTimeout(() => {
     }
 }, 1000);
 
+// =============================================
+// DIAGNÓSTICO RÁPIDO
+// =============================================
+
+function diagnosticoRapido() {
+    console.log('🔧 DIAGNÓSTICO RÁPIDO');
+    console.log('Perfil actual:', perfilActual?.nombre);
+    console.log('Total historial:', historial.length);
+    console.log('Viajes aceptados:', historial.filter(item => item.aceptado).length);
+    console.log('Viajes rechazados:', historial.filter(item => !item.aceptado).length);
+    
+    // Mostrar los últimos 3 viajes
+    console.log('Últimos 3 viajes:', historial.slice(0, 3));
+    
+    alert(`DIAGNÓSTICO:
+• Perfil: ${perfilActual?.nombre || 'Ninguno'}
+• Total viajes: ${historial.length}
+• Aceptados: ${historial.filter(item => item.aceptado).length}
+• Rechazados: ${historial.filter(item => !item.aceptado).length}
+
+Revisa la consola para más detalles.`);
+}
+
 // --- Funciones Globales para HTML ---
 window.cerrarModal = cerrarModal;
 window.cerrarExportModal = cerrarExportModal;
@@ -2799,6 +2868,7 @@ window.forzarSincronizacionCompleta = forzarSincronizacionCompleta;
 window.mostrarInfoSync = mostrarInfoSync;
 window.diagnosticarSync = diagnosticarSync;
 window.actualizarPanelSync = actualizarPanelSync;
+window.diagnosticoRapido = diagnosticoRapido;
 
 // Funciones del sistema de código
 window.generateUserCode = generateUserCode;
@@ -2855,3 +2925,4 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
