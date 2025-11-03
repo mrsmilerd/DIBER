@@ -1307,8 +1307,6 @@ function configurarEventListeners() {
     // Botones de Acción
     elementos.aceptarViajeBtn.addEventListener('click', () => procesarViaje(true));
     elementos.rechazarViajeBtn.addEventListener('click', () => procesarViaje(false));
-    elementos.aceptarViajeTabBtn.addEventListener('click', () => procesarViaje(true));
-    elementos.rechazarViajeTabBtn.addEventListener('click', () => procesarViaje(false));
     
     // Historial
     elementos.clearHistoryBtn.addEventListener('click', limpiarHistorial);
@@ -2655,5 +2653,6 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 }
+
 
 
