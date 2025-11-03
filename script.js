@@ -2393,6 +2393,11 @@ function crearColumnaResultadoCompacta(titulo, valor, comparacion, rentabilidad)
 // =============================================
 
 function actualizarHistorial() {
+    console.log('🔄 actualizarHistorial CORREGIDA ejecutándose...');
+    
+    // Usar la variable correcta
+    const datos = historial; // ← ESTA ES LA LÍNEA CLAVE
+    
     const historyList = document.getElementById('history-list');
     
     if (!historyList) {
@@ -2400,9 +2405,7 @@ function actualizarHistorial() {
         return;
     }
 
-    console.log('🔄 Actualizando historial con:', historialViajes.length, 'viajes');
-    
-    if (historialViajes.length === 0) {
+    if (!datos || datos.length === 0) {
         historyList.innerHTML = `
             <div class="empty-state">
                 <span class="empty-icon">📋</span>
@@ -2413,11 +2416,11 @@ function actualizarHistorial() {
         return;
     }
     
-    // MOSTRAR solo los últimos 15 viajes
-    const viajesParaMostrar = historialViajes.slice(0, 15);
+    console.log(`🎯 Renderizando ${datos.length} viajes...`);
+    
+    const viajesParaMostrar = datos.slice(0, 15);
     
     historyList.innerHTML = viajesParaMostrar.map((viaje, index) => {
-        // Asegurar que todos los campos existan
         const ganancia = viaje.ganancia || 0;
         const minutos = viaje.minutos || 0;
         const distancia = viaje.distancia || 0;
@@ -2454,7 +2457,7 @@ function actualizarHistorial() {
         `;
     }).join('');
     
-    console.log('✅ Historial actualizado:', viajesParaMostrar.length, 'viajes mostrados');
+    console.log('✅ Historial actualizado correctamente');
 }
 
 // =============================================
@@ -3373,6 +3376,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
