@@ -2687,4 +2687,3 @@ function actualizarUISyncBoton(estado) {
         console.error('❌ Error actualizando UI de sync en botón:', error);
     }
 }
-
