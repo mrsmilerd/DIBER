@@ -2262,3 +2262,46 @@ select:focus-visible {
         text-align: center;
     }
 }
+
+/* ===== FILTROS DE HISTORIAL ===== */
+.filtros-historial {
+    margin-bottom: 20px;
+}
+
+.filtros-historial h3 {
+    margin-bottom: 15px;
+    color: var(--text-primary);
+    font-size: 1.2em;
+}
+
+.filtros-container {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filtro-btn {
+    padding: 10px 15px;
+    border: 2px solid var(--border-color);
+    background: var(--light-grey);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 500;
+    transition: all 0.3s;
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+}
+
+.filtro-btn:hover {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+}
+
+.filtro-btn.active {
+    background: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
