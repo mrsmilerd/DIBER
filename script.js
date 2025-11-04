@@ -512,8 +512,6 @@ elementos.exportarHistorial.addEventListener('click', function() {
     mostrarModalExportacion();
 });
 
-});
-
 // =============================================
 // ESTILOS CSS PARA EL HISTORIAL
 // =============================================
@@ -3719,4 +3717,5 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
