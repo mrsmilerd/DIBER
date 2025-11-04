@@ -87,13 +87,36 @@ function agregarAlHistorial(viaje) {
     const porMinuto = viaje.gananciaPorMinuto || (minutos > 0 ? (tarifa / minutos) : 0);
     const porKm = viaje.gananciaPorKm || (distancia > 0 ? (tarifa / distancia) : 0);
     
-    // Determinar rentabilidad
-    let rentable = false;
+    // DETERMINAR RENTABILIDAD CORRECTAMENTE - ESTA ES LA CLAVE
+    let rentabilidad, emoji, texto;
+    
     if (viaje.rentabilidad) {
-        rentable = (viaje.rentabilidad === 'rentable');
+        // Si ya viene con rentabilidad del cálculo, usarla
+        rentabilidad = viaje.rentabilidad;
+        emoji = viaje.emoji;
+        texto = viaje.texto;
     } else if (perfilActual) {
-        rentable = (porMinuto >= perfilActual.umbralMinutoRentable && 
-                   porKm >= perfilActual.umbralKmRentable);
+        // Calcular rentabilidad basada en los umbrales del perfil
+        if (porMinuto >= perfilActual.umbralMinutoRentable && 
+            porKm >= perfilActual.umbralKmRentable) {
+            rentabilidad = 'rentable';
+            emoji = '✅';
+            texto = 'RENTABLE';
+        } else if (porMinuto >= perfilActual.umbralMinutoOportunidad && 
+                   porKm >= perfilActual.umbralKmOportunidad) {
+            rentabilidad = 'oportunidad';
+            emoji = '⚠️';
+            texto = 'OPORTUNIDAD';
+        } else {
+            rentabilidad = 'no-rentable';
+            emoji = '❌';
+            texto = 'NO RENTABLE';
+        }
+    } else {
+        // Sin perfil, marcar como no rentable por defecto
+        rentabilidad = 'no-rentable';
+        emoji = '❌';
+        texto = 'NO RENTABLE';
     }
 
     const nuevoViaje = {
@@ -106,10 +129,10 @@ function agregarAlHistorial(viaje) {
         porKm: parseFloat(porKm.toFixed(2)),
         gananciaPorMinuto: parseFloat(porMinuto.toFixed(2)),
         gananciaPorKm: parseFloat(porKm.toFixed(2)),
-        rentable: rentable,
-        rentabilidad: rentable ? 'rentable' : 'no-rentable',
-        emoji: viaje.emoji || (rentable ? '✅' : '❌'),
-        texto: viaje.texto || (rentable ? 'RENTABLE' : 'NO RENTABLE'),
+        rentable: rentabilidad === 'rentable', // ← ESTO ES IMPORTANTE
+        rentabilidad: rentabilidad, // ← Y ESTO TAMBIÉN
+        emoji: emoji,
+        texto: texto,
         aceptado: viaje.aceptado !== undefined ? viaje.aceptado : true,
         fecha: new Date().toLocaleString('es-DO', {
             year: 'numeric',
@@ -129,6 +152,7 @@ function agregarAlHistorial(viaje) {
     };
     
     console.log('📝 Viaje procesado para historial:', nuevoViaje);
+    console.log('🎯 Estado de rentabilidad:', rentabilidad, 'Rentable:', nuevoViaje.rentable);
 
     historial.unshift(nuevoViaje);
     
@@ -178,7 +202,9 @@ function actualizarHistorialConFiltros() {
         const distancia = viaje.distancia || 0;
         const porMinuto = viaje.porMinuto || viaje.gananciaPorMinuto || 0;
         const porKm = viaje.porKm || viaje.gananciaPorKm || 0;
-        const rentable = Boolean(viaje.rentable);
+        const rentable = viaje.rentable !== undefined ? 
+                 Boolean(viaje.rentable) : 
+                 (viaje.rentabilidad === 'rentable');
         const fecha = viaje.fecha || 'Fecha desconocida';
         
         return `
@@ -1133,10 +1159,17 @@ function procesarViajeRapido(aceptado) {
 
     cerrarModalRapido();
     
-    agregarAlHistorial({
+    // Asegurarnos de que el cálculo actual tenga todos los datos necesarios
+    const viajeParaHistorial = {
         ...calculoActual,
-        aceptado: aceptado
-    });
+        aceptado: aceptado,
+        // Forzar la inclusión de todos los campos de rentabilidad
+        rentable: calculoActual.rentabilidad === 'rentable',
+        emoji: calculoActual.emoji,
+        texto: calculoActual.texto
+    };
+    
+    agregarAlHistorial(viajeParaHistorial);
     
     if (aceptado) {
         mostrarMensaje('✅ Viaje aceptado y guardado en historial', 'success');
@@ -1151,18 +1184,29 @@ function procesarViajeRapido(aceptado) {
 }
 
 function guardarEnHistorial(resultado, aceptado) {
-    console.log('💾 GUARDANDO EN HISTORIAL...', { aceptado });
+    console.log('💾 GUARDANDO EN HISTORIAL...', { aceptado, resultado });
     
+    if (!resultado) {
+        console.error('❌ No hay resultado para guardar');
+        return;
+    }
+
+    // Asegurarnos de que el resultado tenga la rentabilidad correcta
     const historialItem = {
         ...resultado,
         aceptado: aceptado,
         id: 'viaje_' + Date.now(),
         perfilId: perfilActual?.id,
         perfilNombre: perfilActual?.nombre,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        // Forzar la actualización de los campos de rentabilidad
+        rentable: resultado.rentabilidad === 'rentable',
+        emoji: resultado.emoji,
+        texto: resultado.texto
     };
     
     console.log('📝 Item a guardar:', historialItem);
+    console.log('🎯 Rentabilidad del viaje:', historialItem.rentabilidad, 'Rentable:', historialItem.rentable);
     
     historial.unshift(historialItem);
     console.log('✅ Agregado al historial local. Total:', historial.length);
@@ -1184,6 +1228,28 @@ function guardarEnHistorial(resultado, aceptado) {
     actualizarHistorialConFiltros();
     
     console.log('🎉 Proceso de guardado completado');
+}
+
+// Función para debuggear el historial (puedes llamarla desde la consola)
+function debugHistorial() {
+    console.log('🐛 DEBUG DEL HISTORIAL:');
+    historial.forEach((viaje, index) => {
+        console.log(`Viaje ${index + 1}:`, {
+            id: viaje.id,
+            ganancia: viaje.ganancia,
+            rentabilidad: viaje.rentabilidad,
+            rentable: viaje.rentable,
+            emoji: viaje.emoji,
+            texto: viaje.texto
+        });
+    });
+    
+    // También mostrar en un alert para fácil visualización
+    const resumen = historial.map((v, i) => 
+        `Viaje ${i+1}: ${v.ganancia} - ${v.rentabilidad} (${v.rentable ? 'SÍ' : 'NO'})`
+    ).join('\n');
+    
+    alert(`DEBUG HISTORIAL (${historial.length} viajes):\n\n${resumen}`);
 }
 
 // =============================================
@@ -1550,5 +1616,6 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
