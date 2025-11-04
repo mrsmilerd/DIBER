@@ -75,8 +75,9 @@ historial = JSON.parse(localStorage.getItem('historialViajes')) || [];
 function agregarAlHistorial(viaje) {
     console.log('➕ agregarAlHistorial() llamado con:', viaje);
     
-    if (!viaje.tarifa && !viaje.ganancia) {
-        console.error('❌ Error: Viaje sin tarifa/ganancia');
+    // Validar datos esenciales
+    if (!viaje || (!viaje.tarifa && !viaje.ganancia)) {
+        console.error('❌ Error: Viaje sin datos esenciales');
         return;
     }
 
@@ -86,6 +87,7 @@ function agregarAlHistorial(viaje) {
     const porMinuto = viaje.gananciaPorMinuto || (minutos > 0 ? (tarifa / minutos) : 0);
     const porKm = viaje.gananciaPorKm || (distancia > 0 ? (tarifa / distancia) : 0);
     
+    // Determinar rentabilidad
     let rentable = false;
     if (viaje.rentabilidad) {
         rentable = (viaje.rentabilidad === 'rentable');
@@ -95,35 +97,44 @@ function agregarAlHistorial(viaje) {
     }
 
     const nuevoViaje = {
+        id: viaje.id || 'viaje_' + Date.now(),
         ganancia: tarifa,
+        tarifa: tarifa,
         minutos: minutos,
         distancia: distancia,
-        porMinuto: porMinuto,
-        porKm: porKm,
+        porMinuto: parseFloat(porMinuto.toFixed(2)),
+        porKm: parseFloat(porKm.toFixed(2)),
+        gananciaPorMinuto: parseFloat(porMinuto.toFixed(2)),
+        gananciaPorKm: parseFloat(porKm.toFixed(2)),
         rentable: rentable,
-        fecha: new Date().toLocaleString('es-DO'),
-        id: 'viaje_' + Date.now(),
-        tarifa: tarifa,
-        gananciaPorMinuto: porMinuto,
-        gananciaPorKm: porKm,
         rentabilidad: rentable ? 'rentable' : 'no-rentable',
         emoji: viaje.emoji || (rentable ? '✅' : '❌'),
         texto: viaje.texto || (rentable ? 'RENTABLE' : 'NO RENTABLE'),
         aceptado: viaje.aceptado !== undefined ? viaje.aceptado : true,
+        fecha: new Date().toLocaleString('es-DO', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        }),
         timestamp: viaje.timestamp || new Date().toISOString(),
         gananciaNeta: viaje.gananciaNeta || 0,
         costoCombustible: viaje.costoCombustible || 0,
         costoMantenimiento: viaje.costoMantenimiento || 0,
         costoSeguro: viaje.costoSeguro || 0,
-        costoTotal: viaje.costoTotal || 0
+        costoTotal: viaje.costoTotal || 0,
+        perfilId: perfilActual?.id,
+        perfilNombre: perfilActual?.nombre
     };
     
     console.log('📝 Viaje procesado para historial:', nuevoViaje);
 
     historial.unshift(nuevoViaje);
     
-    if (historial.length > 50) {
-        historial = historial.slice(0, 50);
+    // Limitar historial a 100 elementos
+    if (historial.length > 100) {
+        historial = historial.slice(0, 100);
     }
     
     localStorage.setItem('historialViajes', JSON.stringify(historial));
@@ -147,7 +158,10 @@ function actualizarHistorialConFiltros() {
         return;
     }
 
-    if (!historial || historial.length === 0) {
+    // Filtrar historial según el filtro activo
+    const viajesFiltrados = filtrarHistorial(historial, filtroActual);
+    
+    if (!viajesFiltrados || viajesFiltrados.length === 0) {
         elementos['history-list'].innerHTML = `
             <div class="empty-state">
                 <span class="empty-icon">📋</span>
@@ -158,14 +172,12 @@ function actualizarHistorialConFiltros() {
         return;
     }
     
-    const viajesParaMostrar = historial.slice(0, 15);
-    
-    elementos['history-list'].innerHTML = viajesParaMostrar.map((viaje, index) => {
-        const ganancia = viaje.ganancia || 0;
+    elementos['history-list'].innerHTML = viajesFiltrados.map((viaje, index) => {
+        const ganancia = viaje.ganancia || viaje.tarifa || 0;
         const minutos = viaje.minutos || 0;
         const distancia = viaje.distancia || 0;
-        const porMinuto = viaje.porMinuto || 0;
-        const porKm = viaje.porKm || 0;
+        const porMinuto = viaje.porMinuto || viaje.gananciaPorMinuto || 0;
+        const porKm = viaje.porKm || viaje.gananciaPorKm || 0;
         const rentable = Boolean(viaje.rentable);
         const fecha = viaje.fecha || 'Fecha desconocida';
         
@@ -183,13 +195,13 @@ function actualizarHistorialConFiltros() {
                 </div>
                 <div class="history-metrics">
                     <span class="metric">⏱️ ${minutos}min</span>
-                    <span class="metric">🛣️ ${distancia}km</span>
-                    <span class="metric">💰 ${formatearMoneda(parseFloat(porMinuto))}/min</span>
-                    <span class="metric">📏 ${formatearMoneda(parseFloat(porKm))}/km</span>
+                    <span class="metric">🛣️ ${distancia}${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}</span>
+                    <span class="metric">💰 ${formatearMoneda(porMinuto)}/min</span>
+                    <span class="metric">📏 ${formatearMoneda(porKm)}/${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}</span>
                 </div>
             </div>
             <div class="history-actions">
-                <button onclick="eliminarDelHistorial(${index})" class="delete-btn" title="Eliminar">
+                <button onclick="eliminarDelHistorial('${viaje.id}')" class="delete-btn" title="Eliminar">
                     🗑️
                 </button>
             </div>
@@ -216,6 +228,84 @@ function limpiarHistorialCompleto() {
         actualizarHistorialConFiltros();
         actualizarEstadisticas();
         mostrarMensaje('Historial limpiado correctamente', 'success');
+    }
+}
+
+// =============================================
+// SISTEMA DE FILTRADO DE HISTORIAL
+// =============================================
+
+function filtrarHistorial(historial, filtro) {
+    if (!historial || historial.length === 0) return [];
+    
+    const ahora = new Date();
+    
+    switch (filtro) {
+        case 'hoy':
+            const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+            return historial.filter(viaje => {
+                try {
+                    const fechaViaje = new Date(viaje.timestamp);
+                    return fechaViaje >= hoy;
+                } catch (error) {
+                    return false;
+                }
+            });
+            
+        case 'semana':
+            const inicioSemana = new Date(ahora);
+            inicioSemana.setDate(ahora.getDate() - ahora.getDay());
+            inicioSemana.setHours(0, 0, 0, 0);
+            return historial.filter(viaje => {
+                try {
+                    const fechaViaje = new Date(viaje.timestamp);
+                    return fechaViaje >= inicioSemana;
+                } catch (error) {
+                    return false;
+                }
+            });
+            
+        case 'mes':
+            const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+            return historial.filter(viaje => {
+                try {
+                    const fechaViaje = new Date(viaje.timestamp);
+                    return fechaViaje >= inicioMes;
+                } catch (error) {
+                    return false;
+                }
+            });
+            
+        case 'todos':
+        default:
+            return historial;
+    }
+}
+
+function cambiarFiltroHistorial(nuevoFiltro) {
+    filtroActual = nuevoFiltro;
+    
+    // Actualizar botones activos
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filtro === nuevoFiltro);
+    });
+    
+    actualizarHistorialConFiltros();
+}
+
+// =============================================
+// CORREGIR FUNCIÓN DE ELIMINACIÓN
+// =============================================
+
+function eliminarDelHistorial(viajeId) {
+    const index = historial.findIndex(viaje => viaje.id === viajeId);
+    
+    if (index !== -1 && confirm('¿Estás seguro de que quieres eliminar este viaje del historial?')) {
+        historial.splice(index, 1);
+        localStorage.setItem('historialViajes', JSON.stringify(historial));
+        actualizarHistorialConFiltros();
+        actualizarEstadisticas();
+        mostrarMensaje('Viaje eliminado correctamente', 'success');
     }
 }
 
@@ -1223,6 +1313,13 @@ function configurarEventListeners() {
     if (elementos['theme-toggle']) {
         elementos['theme-toggle'].addEventListener('click', alternarTema);
     }
+
+    // Filtros de historial
+document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        cambiarFiltroHistorial(btn.dataset.filtro);
+    });
+});
     
     // Sincronización
     if (elementos['sync-status-btn']) {
@@ -1453,4 +1550,5 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
