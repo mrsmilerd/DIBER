@@ -2191,3 +2191,74 @@ select:focus-visible {
     color: var(--primary-blue);
     font-weight: bold;
 }
+
+/* Estilos para filtros de historial */
+.filtros-historial {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.filtro-titulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.filtro-titulo h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.filtro-activo {
+    background: var(--primary-blue);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.filtro-botones {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 8px;
+}
+
+.filtro-btn {
+    padding: 10px 5px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.filtro-btn:hover {
+    border-color: var(--primary-blue);
+    background: rgba(26, 115, 232, 0.1);
+}
+
+.filtro-btn.active {
+    background: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .filtro-botones {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .filtro-titulo {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+}
