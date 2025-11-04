@@ -334,6 +334,32 @@ function resetearEstadisticasDiarias() {
 }
 
 // =============================================
+// SISTEMA DE PESTAÑAS - FUNCIÓN FALTANTE
+// =============================================
+
+function inicializarTabs() {
+    console.log('🔄 Inicializando sistema de pestañas...');
+    
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    if (tabButtons.length === 0 || tabContents.length === 0) {
+        console.error('❌ No se encontraron elementos de pestañas');
+        return;
+    }
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.dataset.tab;
+            console.log('📁 Cambiando a pestaña:', tabId);
+            cambiarPestana(tabId);
+        });
+    });
+    
+    console.log('✅ Sistema de pestañas inicializado');
+}
+
+// =============================================
 // MODIFICACIONES A LAS FUNCIONES EXISTENTES
 // =============================================
 
@@ -3376,6 +3402,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
