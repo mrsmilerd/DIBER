@@ -438,6 +438,20 @@
 
 <!-- Pestaña Historial -->
 <div class="tab-content" id="tab-historial">
+    <!-- CONTROLES DE FILTRO NUEVOS -->
+    <div class="filtros-historial">
+        <div class="filtro-titulo">
+            <h3>📋 Historial de Viajes</h3>
+            <span class="filtro-activo" id="filtro-activo-texto">Hoy</span>
+        </div>
+        <div class="filtro-botones">
+            <button class="filtro-btn active" data-filtro="hoy">Hoy</button>
+            <button class="filtro-btn" data-filtro="semana">Esta Semana</button>
+            <button class="filtro-btn" data-filtro="mes">Este Mes</button>
+            <button class="filtro-btn" data-filtro="todos">Todos</button>
+        </div>
+    </div>
+
     <!-- Historial de Cálculos -->
     <div class="history-section">
         <div id="history-list" class="history-list">
@@ -842,6 +856,7 @@
     </style>
 </body>
 </html>
+
 
 
 
