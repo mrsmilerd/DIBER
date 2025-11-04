@@ -275,7 +275,7 @@ function agregarAlHistorial(viaje) {
     
     // Actualizar vista
     setTimeout(() => {
-        actualizarHistorialConFiltros;
+        actualizarHistorialConFiltros()
         actualizarEstadisticas();
     }, 100);
 }
@@ -326,7 +326,7 @@ function eliminarDelHistorial(index) {
         
         localStorage.setItem('historialViajes', JSON.stringify(historialViajes));
         localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
-        actualizarHistorialConFiltros;
+        actualizarHistorialConFiltros()
         actualizarResumen();
     }
 }
@@ -350,7 +350,7 @@ function limpiarHistorialCompleto() {
         localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
         
         // Actualizar interfaz - USAR actualizarEstadisticas en lugar de actualizarResumen
-        actualizarHistorialConFiltros;
+        actualizarHistorialConFiltros()
         actualizarEstadisticas(); // ← ESTA ES LA CORRECCIÓN
         
         mostrarMensaje('Historial limpiado correctamente', 'success');
@@ -471,7 +471,7 @@ function aceptarViaje() {
     // Actualizar interfaz
     setTimeout(() => {
         actualizarEstadisticas();
-        actualizarHistorialConFiltros;
+        actualizarHistorialConFiltros()
     }, 500);
 }
 
@@ -506,11 +506,12 @@ elementos.exportarHistorial.addEventListener('click', function() {
     console.log('📤 Botón exportar clickeado - Filtro activo:', filtroActual);
     
     // PRIMERO: Actualizar el historial con los filtros actuales
-    actualizarHistorialConFiltros;
+    actualizarHistorialConFiltros();
     
     // LUEGO: Mostrar el modal de exportación
     mostrarModalExportacion();
 });
+
 
 // =============================================
 // ESTILOS CSS PARA EL HISTORIAL
@@ -1441,7 +1442,7 @@ function iniciarEscuchaFirebase() {
                 historial = change.data;
                 
                 // Actualizar interfaz
-                actualizarHistorialConFiltros;
+                actualizarHistorialConFiltros()
                 actualizarEstadisticas();
             }
             
@@ -1521,7 +1522,7 @@ async function cargarDatos() {
     // 4. FORZAR ACTUALIZACIÓN DE INTERFAZ
     actualizarInterfazPerfiles();
     actualizarEstadisticas();
-    actualizarHistorialConFiltros;
+    actualizarHistorialConFiltros()
     
     // Guardar los datos combinados
     guardarDatos();
@@ -1659,7 +1660,7 @@ async function forzarSincronizacionCompleta() {
         
         // 5. Actualizar interfaz
         actualizarInterfazPerfiles();
-        actualizarHistorialConFiltros;
+        actualizarHistorialConFiltros()
         actualizarEstadisticas();
         
         // 6. Guardar localmente
@@ -1711,7 +1712,7 @@ async function sincronizarFirebaseALocal() {
         // Actualizar interfaz
         actualizarInterfazPerfiles();
         actualizarEstadisticas();
-        actualizarHistorialConFiltros;
+        actualizarHistorialConFiltros()
         
         // Guardar localmente
         guardarDatos();
@@ -1858,7 +1859,7 @@ async function diagnosticarSync() {
     
     // Forzar actualización de UI
     actualizarEstadisticas();
-    actualizarHistorialConFiltros;
+    actualizarHistorialConFiltros()
     
     const diagnostico = `
 🎉 DIAGNÓSTICO COMPLETADO
@@ -1932,7 +1933,7 @@ async function inicializarApp() {
             // FORZAR ACTUALIZACIÓN INMEDIATA
             setTimeout(() => {
                 actualizarEstadisticas();
-                actualizarHistorialConFiltros;
+                actualizarHistorialConFiltros()
             }, 500);
         } else {
             console.log('👤 Mostrando pantalla de perfiles (perfilActual es null)');
@@ -2002,12 +2003,12 @@ function configurarEventListeners() {
     document.getElementById('tipo-combustible').addEventListener('change', actualizarUnidades);
     document.getElementById('moneda').addEventListener('change', actualizarUnidades);
 
-   // Sincronización - Agregar event listener para Enter en el código de usuario
+    // Sincronización - Agregar event listener para Enter en el código de usuario
     const syncStatusBtn = document.getElementById('sync-status-btn');
     if (syncStatusBtn) {
         syncStatusBtn.addEventListener('click', mostrarPanelSync);
     }
-} 
+}
 
 // --- Sistema de Pestañas ---
 function cambiarPestana(tabId) {
@@ -2025,7 +2026,7 @@ function cambiarPestana(tabId) {
     if (tabId === 'resumen') {
         actualizarEstadisticas();
     } else if (tabId === 'historial') {
-        actualizarHistorialConFiltros;
+        actualizarHistorialConFiltros()
     }
 }
 
@@ -2192,7 +2193,7 @@ async function procesarViaje(aceptado) {
         
         // Actualizar interfaz INMEDIATAMENTE
         actualizarEstadisticas();
-        actualizarHistorialConFiltros;
+        actualizarHistorialConFiltros()
         
         // Cambiar a pestaña de historial si se aceptó
         if (aceptado) {
@@ -2201,7 +2202,7 @@ async function procesarViaje(aceptado) {
                 // Forzar actualización después de cambiar pestaña
                 setTimeout(() => {
                     actualizarEstadisticas();
-                    actualizarHistorialConFiltros;
+                    actualizarHistorialConFiltros()
                 }, 100);
             }, 500);
         }
@@ -2240,7 +2241,7 @@ function procesarViajeRapido(aceptado) {
     
     // Actualizar interfaz
     actualizarEstadisticas();
-    actualizarHistorialConFiltros;
+    actualizarHistorialConFiltros()
 }
 
 // =============================================
@@ -2284,7 +2285,7 @@ async function guardarEnHistorial(resultado, aceptado) {
     // ACTUALIZAR INTERFAZ INMEDIATAMENTE
     console.log('🔄 Actualizando interfaz...');
     actualizarEstadisticas();
-    actualizarHistorialConFiltros;
+    actualizarHistorialConFiltros()
     
     console.log('🎉 Proceso de guardado completado');
 }
@@ -2652,7 +2653,7 @@ async function limpiarHistorial() {
         
         historial = [];
         guardarDatos();
-        actualizarHistorialConFiltros;
+        actualizarHistorialConFiltros()
         actualizarEstadisticas();
         mostrarStatus('🗑️ Historial limpiado correctamente', 'success');
     }
@@ -3237,7 +3238,7 @@ function mostrarPantalla(pantalla) {
         elementos.mainScreen.classList.add('active');
         actualizarUnidades();
         actualizarEstadisticas();
-        actualizarHistorialConFiltros;
+        actualizarHistorialConFiltros()
     }
 }
 
@@ -3639,7 +3640,7 @@ function inicializarFiltrosHistorial() {
             }
             
             // Actualizar vista
-            actualizarHistorialConFiltros;
+            actualizarHistorialConFiltros();
         });
     });
     
@@ -3701,12 +3702,6 @@ window.onclick = function(event) {
     }
 }
 
-// =============================================
-// CIERRE FORZADO PARA DEBUG
-// =============================================
-
-console.log("✅ Archivo cargado completamente");
-
 // Función para verificar el estado actual
 function verificarEstado() {
     console.log('=== VERIFICACIÓN DE ESTADO ===');
@@ -3718,6 +3713,7 @@ function verificarEstado() {
         statsGanancia: !!elementos.statsGanancia,
         historyList: !!elementos.historyList
     });
+    console.log('=== FIN VERIFICACIÓN ===');
 }
 
 // Llamar esta función para debug
