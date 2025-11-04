@@ -34,6 +34,8 @@ const elementos = {};
 
 // Inicializar elementos DOM de forma segura
 function inicializarElementosDOM() {
+    console.log('🔍 Inicializando elementos DOM...');
+    
     const ids = [
         'perfil-screen', 'config-perfil-screen', 'main-screen',
         'status-indicator', 'status-text', 'auto-calc-indicator',
@@ -45,16 +47,22 @@ function inicializarElementosDOM() {
         'history-list', 'clear-history', 'exportar-historial',
         'stats-viajes', 'stats-ganancia', 'stats-tiempo', 'stats-rentables', 'stats-ganancia-hora', 'stats-viaje-promedio',
         'perfiles-lista', 'nuevo-perfil-btn', 'perfil-form', 'volver-perfiles', 'cancelar-perfil', 'cambiar-perfil',
-        'theme-toggle', 'exportModal', 'exportar-pdf', 'sync-panel'
+        'theme-toggle', 'exportModal', 'exportar-pdf', 'sync-panel',
+        'sync-status-btn', 'sync-btn-icon'
     ];
 
     ids.forEach(id => {
         elementos[id] = document.getElementById(id);
+        if (!elementos[id]) {
+            console.warn(`⚠️ Elemento no encontrado: ${id}`);
+        }
     });
 
     // Elementos adicionales
     elementos.tabButtons = document.querySelectorAll('.tab-button');
     elementos.tabContents = document.querySelectorAll('.tab-content');
+    
+    console.log('✅ Elementos DOM inicializados');
 }
 
 // =============================================
@@ -218,6 +226,11 @@ function limpiarHistorialCompleto() {
 function inicializarTabs() {
     console.log('🔄 Inicializando sistema de pestañas...');
     
+    if (!elementos.tabButtons || elementos.tabButtons.length === 0) {
+        console.error('❌ No se encontraron botones de pestañas');
+        return;
+    }
+    
     elementos.tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const tabId = button.dataset.tab;
@@ -225,9 +238,13 @@ function inicializarTabs() {
             cambiarPestana(tabId);
         });
     });
+    
+    console.log('✅ Sistema de pestañas inicializado');
 }
 
 function cambiarPestana(tabId) {
+    if (!elementos.tabButtons || !elementos.tabContents) return;
+    
     elementos.tabButtons.forEach(button => {
         button.classList.toggle('active', button.dataset.tab === tabId);
     });
@@ -255,6 +272,8 @@ function manejarCalculoAutomatico() {
 }
 
 function calcularAutomatico() {
+    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
+    
     const tarifa = parseFloat(elementos.tarifa.value) || 0;
     const minutos = parseFloat(elementos.minutos.value) || 0;
     const distancia = parseFloat(elementos.distancia.value) || 0;
@@ -262,7 +281,10 @@ function calcularAutomatico() {
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
     if (datosCompletos) {
-        elementos['auto-calc-indicator'].classList.remove('hidden');
+        if (elementos['auto-calc-indicator']) {
+            elementos['auto-calc-indicator'].classList.remove('hidden');
+        }
+        
         const resultado = calcularRentabilidad(tarifa, minutos, distancia);
         
         if (resultado) {
@@ -270,8 +292,12 @@ function calcularAutomatico() {
             mostrarResultadoRapido(resultado);
         }
     } else {
-        elementos['auto-calc-indicator'].classList.add('hidden');
-        elementos['resultado-rapido'].classList.add('hidden');
+        if (elementos['auto-calc-indicator']) {
+            elementos['auto-calc-indicator'].classList.add('hidden');
+        }
+        if (elementos['resultado-rapido']) {
+            elementos['resultado-rapido'].classList.add('hidden');
+        }
         cerrarModalRapido();
     }
 }
@@ -329,6 +355,9 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
 // =============================================
 
 function mostrarConfigPerfil(perfil = null) {
+    const form = elementos['perfil-form'];
+    if (!form) return;
+    
     if (perfil) {
         document.getElementById('perfil-id').value = perfil.id;
         document.getElementById('nombre-perfil').value = perfil.nombre;
@@ -344,7 +373,7 @@ function mostrarConfigPerfil(perfil = null) {
         document.getElementById('costo-seguro').value = perfil.costoSeguro || 0;
         document.getElementById('costo-mantenimiento').value = perfil.costoMantenimiento || 0;
     } else {
-        elementos['perfil-form'].reset();
+        form.reset();
         document.getElementById('perfil-id').value = '';
         document.getElementById('umbral-minuto-rentable').value = '6.00';
         document.getElementById('umbral-km-rentable').value = '25.00';
@@ -661,13 +690,17 @@ function generateUserCode() {
     }
     
     const input = document.getElementById('user-code-input');
-    input.value = code;
-    input.focus();
-    input.select();
+    if (input) {
+        input.value = code;
+        input.focus();
+        input.select();
+    }
 }
 
 function setUserCode() {
     const input = document.getElementById('user-code-input');
+    if (!input) return;
+    
     let code = input.value.trim().toUpperCase();
     
     const codeRegex = /^[A-Z0-9]{3,6}$/;
@@ -818,11 +851,17 @@ function mostrarPantalla(pantalla) {
     });
     
     if (pantalla === 'perfil') {
-        elementos['perfil-screen'].classList.add('active');
+        if (elementos['perfil-screen']) {
+            elementos['perfil-screen'].classList.add('active');
+        }
     } else if (pantalla === 'config-perfil') {
-        elementos['config-perfil-screen'].classList.add('active');
+        if (elementos['config-perfil-screen']) {
+            elementos['config-perfil-screen'].classList.add('active');
+        }
     } else if (pantalla === 'main') {
-        elementos['main-screen'].classList.add('active');
+        if (elementos['main-screen']) {
+            elementos['main-screen'].classList.add('active');
+        }
         actualizarUnidades();
         actualizarEstadisticas();
         actualizarHistorialConFiltros();
@@ -876,7 +915,6 @@ function actualizarEstadisticas() {
 }
 
 function actualizarEstadisticasDia(viaje) {
-    // Implementación básica - puedes expandir esto
     console.log('📊 Actualizando estadísticas del día:', viaje);
 }
 
@@ -944,44 +982,190 @@ function cerrarModalRapido() {
     }
 }
 
+function cerrarExportModal() {
+    if (elementos.exportModal) {
+        elementos.exportModal.style.display = 'none';
+    }
+}
+
+function cerrarSyncPanel() {
+    console.log('❌ Cerrando panel de sincronización');
+    if (elementos.syncPanel) {
+        elementos.syncPanel.style.display = 'none';
+    }
+}
+
 // =============================================
-// INICIALIZACIÓN DE LA APLICACIÓN
+// FUNCIONES DE PROCESAMIENTO DE VIAJES
 // =============================================
 
-async function inicializarApp() {
-    console.log('🚀 Inicializando UberCalc...');
+function procesarViaje(aceptado) {
+    console.log('🔄 Procesando viaje:', { aceptado, calculoActual: !!calculoActual });
     
-    inicializarElementosDOM();
-    
+    if (!calculoActual) {
+        mostrarError('No hay cálculo actual para procesar');
+        return;
+    }
+
+    if (!perfilActual) {
+        mostrarError('No hay perfil seleccionado. Por favor, selecciona un perfil primero.');
+        return;
+    }
+
     try {
-        const userCodeInitialized = await initializeUserCodeSystem();
+        guardarEnHistorial(calculoActual, aceptado);
         
-        if (!userCodeInitialized) {
-            console.log('⏳ Esperando que el usuario ingrese código...');
-            return;
-        }
-        
-        await initializeFirebaseSync();
-        await cargarDatos();
-        
-        aplicarTemaGuardado();
-        
-        if (perfiles.length === 0) {
-            mostrarPantalla('perfil');
-            mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
-        } else if (perfilActual) {
-            mostrarPantalla('main');
+        if (aceptado) {
+            mostrarStatus('✅ Viaje aceptado y guardado en historial', 'success');
         } else {
-            mostrarPantalla('perfil');
+            mostrarStatus('❌ Viaje rechazado', 'info');
         }
+
+        limpiarFormulario();
+        cerrarModal();
         
-        console.log('🎉 UberCalc inicializado correctamente');
+        actualizarEstadisticas();
+        actualizarHistorialConFiltros();
         
     } catch (error) {
-        console.error('❌ Error crítico en inicialización:', error);
-        mostrarPantalla('perfil');
-        mostrarStatus('Error al cargar la aplicación. Por favor, recarga la página.', 'error');
+        console.error('❌ Error procesando viaje:', error);
+        mostrarError('Error al procesar el viaje');
     }
+}
+
+function procesarViajeRapido(aceptado) {
+    console.log('⚡ Procesando viaje rápido:', { aceptado, calculoActual: !!calculoActual });
+    
+    if (!calculoActual) {
+        mostrarError('No hay cálculo actual para procesar');
+        return;
+    }
+
+    cerrarModalRapido();
+    
+    agregarAlHistorial({
+        ...calculoActual,
+        aceptado: aceptado
+    });
+    
+    if (aceptado) {
+        mostrarMensaje('✅ Viaje aceptado y guardado en historial', 'success');
+    } else {
+        mostrarMensaje('❌ Viaje rechazado', 'info');
+    }
+    
+    limpiarFormulario();
+    
+    actualizarEstadisticas();
+    actualizarHistorialConFiltros();
+}
+
+function guardarEnHistorial(resultado, aceptado) {
+    console.log('💾 GUARDANDO EN HISTORIAL...', { aceptado });
+    
+    const historialItem = {
+        ...resultado,
+        aceptado: aceptado,
+        id: 'viaje_' + Date.now(),
+        perfilId: perfilActual?.id,
+        perfilNombre: perfilActual?.nombre,
+        timestamp: new Date().toISOString()
+    };
+    
+    console.log('📝 Item a guardar:', historialItem);
+    
+    historial.unshift(historialItem);
+    console.log('✅ Agregado al historial local. Total:', historial.length);
+    
+    if (aceptado && firebaseSync && firebaseSync.initialized) {
+        try {
+            console.log('☁️ Guardando en Firebase...');
+            firebaseSync.saveTrip(historialItem);
+            console.log('✅ Guardado en Firebase');
+        } catch (error) {
+            console.error('❌ Error guardando en Firebase:', error);
+        }
+    }
+    
+    guardarDatos();
+    console.log('✅ Datos guardados en localStorage');
+    
+    actualizarEstadisticas();
+    actualizarHistorialConFiltros();
+    
+    console.log('🎉 Proceso de guardado completado');
+}
+
+// =============================================
+// SISTEMA DE RESULTADO RÁPIDO
+// =============================================
+
+function mostrarResultadoRapido(resultado) {
+    if (!resultado) return;
+    
+    if (elementos['resultado-rapido']) {
+        elementos['resultado-rapido'].classList.add('hidden');
+    }
+    
+    let modalRapido = document.getElementById('modal-rapido');
+    if (!modalRapido) {
+        modalRapido = document.createElement('div');
+        modalRapido.id = 'modal-rapido';
+        modalRapido.className = 'modal-rapido hidden';
+        modalRapido.innerHTML = `
+            <div class="modal-rapido-contenido">
+                <button class="modal-rapido-cerrar" onclick="cerrarModalRapido()">×</button>
+                <div class="modal-rapido-header">
+                    <div class="modal-rapido-badge" id="modal-rapido-badge">
+                        <span class="modal-rapido-emoji" id="modal-rapido-emoji">✅</span>
+                        <span class="modal-rapido-texto" id="modal-rapido-texto">RENTABLE</span>
+                    </div>
+                </div>
+                <div class="modal-rapido-metricas">
+                    <div class="modal-rapido-metrica">
+                        <div class="modal-rapido-metrica-icono">⏱️</div>
+                        <div class="modal-rapido-metrica-valor" id="modal-rapido-minuto">--/min</div>
+                        <div class="modal-rapido-metrica-label">Por minuto</div>
+                    </div>
+                    <div class="modal-rapido-metrica">
+                        <div class="modal-rapido-metrica-icono">🛣️</div>
+                        <div class="modal-rapido-metrica-valor" id="modal-rapido-km">--/km</div>
+                        <div class="modal-rapido-metrica-label">Por distancia</div>
+                    </div>
+                </div>
+                <div class="modal-rapido-acciones">
+                    <button class="secondary-button" onclick="procesarViajeRapido(false)">
+                        <span class="button-icon">❌</span>
+                        Rechazar Viaje
+                    </button>
+                    <button class="primary-button" id="modal-rapido-aceptar" onclick="procesarViajeRapido(true)">
+                        <span class="button-icon">✅</span>
+                        Aceptar Viaje
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalRapido);
+    }
+    
+    const modalBadge = document.getElementById('modal-rapido-badge');
+    document.getElementById('modal-rapido-emoji').textContent = resultado.emoji;
+    document.getElementById('modal-rapido-texto').textContent = resultado.texto;
+    document.getElementById('modal-rapido-minuto').textContent = `${formatearMoneda(resultado.gananciaPorMinuto)}/min`;
+    
+    const distanciaLabel = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
+    document.getElementById('modal-rapido-km').textContent = `${formatearMoneda(resultado.gananciaPorKm)}/${distanciaLabel}`;
+    
+    modalBadge.className = 'modal-rapido-badge';
+    modalBadge.classList.add(resultado.rentabilidad);
+    
+    const btnAceptar = document.getElementById('modal-rapido-aceptar');
+    btnAceptar.className = 'primary-button';
+    btnAceptar.classList.add(resultado.rentabilidad);
+    
+    modalRapido.classList.remove('hidden');
+    
+    calculoActual = resultado;
 }
 
 // =============================================
@@ -989,6 +1173,8 @@ async function inicializarApp() {
 // =============================================
 
 function configurarEventListeners() {
+    console.log('🎯 Configurando event listeners...');
+    
     // Sistema de Pestañas
     inicializarTabs();
     
@@ -1037,6 +1223,13 @@ function configurarEventListeners() {
     if (elementos['theme-toggle']) {
         elementos['theme-toggle'].addEventListener('click', alternarTema);
     }
+    
+    // Sincronización
+    if (elementos['sync-status-btn']) {
+        elementos['sync-status-btn'].addEventListener('click', mostrarPanelSync);
+    }
+    
+    console.log('✅ Event listeners configurados');
 }
 
 function alternarTema() {
@@ -1045,11 +1238,108 @@ function alternarTema() {
     
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('uberCalc_theme', newTheme);
+    
+    const themeIcon = elementos['theme-toggle']?.querySelector('.theme-icon');
+    if (themeIcon) {
+        themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    }
 }
 
 function aplicarTemaGuardado() {
     const savedTheme = localStorage.getItem('uberCalc_theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    const themeIcon = elementos['theme-toggle']?.querySelector('.theme-icon');
+    if (themeIcon) {
+        themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    }
+}
+
+// =============================================
+// FUNCIONES DE SINCRONIZACIÓN
+// =============================================
+
+function mostrarPanelSync() {
+    console.log('🌐 Mostrando panel de sincronización');
+    if (elementos.syncPanel) {
+        elementos.syncPanel.style.display = 'flex';
+    }
+}
+
+async function forzarSincronizacion() {
+    if (!firebaseSync || !firebaseSync.initialized) {
+        console.log('❌ Firebase Sync no disponible');
+        return;
+    }
+    
+    console.log('🔄 INICIANDO SINCRONIZACIÓN MANUAL...');
+    mostrarStatus('🔄 Sincronizando con Firebase...', 'info');
+    
+    try {
+        for (const perfil of perfiles) {
+            await firebaseSync.saveProfile(perfil);
+        }
+        
+        const viajesAceptados = historial.filter(item => item.aceptado).slice(0, 20);
+        for (const viaje of viajesAceptados) {
+            await firebaseSync.saveTrip(viaje);
+        }
+        
+        console.log('✅ Sincronización manual completada');
+        mostrarStatus('✅ Sincronización completada', 'success');
+        
+    } catch (error) {
+        console.error('❌ Error en sincronización manual:', error);
+        mostrarStatus('❌ Error en sincronización', 'error');
+    }
+}
+
+function mostrarInfoSync() {
+    alert(`🌐 SINCRONIZACIÓN CON FIREBASE
+
+✅ Cómo funciona:
+1. Tus perfiles se guardan individualmente en Firebase
+2. Cada viaje es un documento independiente
+3. Todos tus dispositivos acceden a los mismos datos
+4. Los cambios se sincronizan automáticamente
+
+📱 Dispositivos conectados: Todos los que usen tu mismo código
+
+💡 Características:
+• Sincronización en tiempo real
+• Sin conflictos entre dispositivos
+• Respaldo seguro en la nube
+• Totalmente gratuito
+
+🔒 Tus datos son privados y solo tú puedes acceder a ellos`);
+}
+
+function diagnosticarSync() {
+    console.log('🔧 INICIANDO DIAGNÓSTICO...');
+    
+    const diagnostico = `
+🎉 DIAGNÓSTICO COMPLETADO
+
+📊 DATOS LOCALES:
+• Perfiles: ${perfiles.length}
+• Historial total: ${historial.length}
+• Viajes aceptados: ${historial.filter(item => item.aceptado).length}
+• Perfil actual: ${perfilActual?.nombre || 'Ninguno'}
+
+☁️ FIREBASE:
+• Estado: ${firebaseSync?.initialized ? 'Conectado' : 'No conectado'}
+
+📱 INTERFAZ:
+• Estadísticas: ${elementos.statsViajes ? 'OK' : 'ERROR'}
+• Historial: ${elementos.historyList ? 'OK' : 'ERROR'}
+
+🔧 ACCIONES RECOMENDADAS:
+1. Usa "Sincronizar Ahora" para subir datos
+2. Verifica que los viajes tengan "aceptado: true"
+3. Los viajes RECHAZADOS no se muestran en el historial
+    `;
+    
+    alert(diagnostico);
 }
 
 // =============================================
@@ -1058,6 +1348,8 @@ function aplicarTemaGuardado() {
 
 window.cerrarModal = cerrarModal;
 window.cerrarModalRapido = cerrarModalRapido;
+window.cerrarExportModal = cerrarExportModal;
+window.cerrarSyncPanel = cerrarSyncPanel;
 window.mostrarConfigPerfil = mostrarConfigPerfil;
 window.seleccionarPerfil = seleccionarPerfil;
 window.editarPerfil = editarPerfil;
@@ -1067,31 +1359,11 @@ window.setUserCode = setUserCode;
 window.cambiarUsuario = cambiarUsuario;
 window.eliminarDelHistorial = eliminarDelHistorial;
 window.procesarViajeRapido = procesarViajeRapido;
-
-// Función procesarViaje para el modal rápido
-function procesarViaje(aceptado) {
-    if (!calculoActual) {
-        mostrarError('No hay cálculo actual para procesar');
-        return;
-    }
-
-    agregarAlHistorial({
-        ...calculoActual,
-        aceptado: aceptado
-    });
-    
-    if (aceptado) {
-        mostrarStatus('✅ Viaje aceptado y guardado en historial', 'success');
-    } else {
-        mostrarStatus('❌ Viaje rechazado', 'info');
-    }
-
-    limpiarFormulario();
-    cerrarModal();
-    
-    actualizarEstadisticas();
-    actualizarHistorialConFiltros();
-}
+window.mostrarPanelSync = mostrarPanelSync;
+window.forzarSincronizacion = forzarSincronizacion;
+window.mostrarInfoSync = mostrarInfoSync;
+window.diagnosticarSync = diagnosticarSync;
+window.showUserCodeModal = showUserCodeModal;
 
 function cambiarUsuario() {
     if (confirm('¿Estás seguro de que quieres cambiar de usuario?')) {
@@ -1111,10 +1383,50 @@ function cambiarUsuario() {
 // INICIALIZACIÓN FINAL
 // =============================================
 
+async function inicializarApp() {
+    console.log('🚀 Inicializando UberCalc...');
+    
+    inicializarElementosDOM();
+    
+    try {
+        const userCodeInitialized = await initializeUserCodeSystem();
+        
+        if (!userCodeInitialized) {
+            console.log('⏳ Esperando que el usuario ingrese código...');
+            return;
+        }
+        
+        await initializeFirebaseSync();
+        await cargarDatos();
+        
+        aplicarTemaGuardado();
+        configurarEventListeners();
+        
+        if (perfiles.length === 0) {
+            mostrarPantalla('perfil');
+            mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
+        } else if (perfilActual) {
+            mostrarPantalla('main');
+        } else {
+            mostrarPantalla('perfil');
+        }
+        
+        console.log('🎉 UberCalc inicializado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error crítico en inicialización:', error);
+        mostrarPantalla('perfil');
+        mostrarStatus('Error al cargar la aplicación. Por favor, recarga la página.', 'error');
+    }
+}
+
+// =============================================
+// EJECUCIÓN PRINCIPAL
+// =============================================
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 DOM cargado, inicializando aplicación...');
     inicializarApp();
-    configurarEventListeners();
 });
 
 // Prevenir cierre accidental
@@ -1135,9 +1447,9 @@ window.onclick = function(event) {
         cerrarModal();
     }
     if (elementos.exportModal && event.target === elementos.exportModal) {
-        elementos.exportModal.style.display = 'none';
+        cerrarExportModal();
     }
     if (elementos.syncPanel && event.target === elementos.syncPanel) {
-        elementos.syncPanel.style.display = 'none';
+        cerrarSyncPanel();
     }
 };
