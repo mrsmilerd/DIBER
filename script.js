@@ -3702,7 +3702,7 @@ window.onclick = function(event) {
     }
 }
 
-/ Función para verificar el estado actual
+// Función para verificar el estado actual
 function verificarEstado() {
     console.log('=== VERIFICACIÓN DE ESTADO ===');
     console.log('Perfil actual:', perfilActual);
@@ -3718,3 +3718,4 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
