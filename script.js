@@ -196,20 +196,30 @@ function actualizarHistorial() {
     console.log('📋 Viajes mostrados:', viajesParaMostrar.length);
 }
 
-// FUNCIÓN AGREGAR AL HISTORIAL CORREGIDA
+// FUNCIÓN AGREGAR AL HISTORIAL - VERSIÓN CORREGIDA
 function agregarAlHistorial(viaje) {
     console.log('➕ agregarAlHistorial() llamado con:', viaje);
     
+    // Asegurar que tenemos todos los datos necesarios
     const nuevoViaje = {
-        ganancia: viaje.ganancia || 0,
+        ganancia: viaje.tarifa || viaje.ganancia || 0,
         minutos: viaje.minutos || 0,
         distancia: viaje.distancia || 0,
-        porMinuto: viaje.porMinuto || 0,
-        porKm: viaje.porKm || 0,
-        rentable: viaje.rentable !== undefined ? viaje.rentable : false,
+        porMinuto: viaje.gananciaPorMinuto || (viaje.tarifa / viaje.minutos).toFixed(2) || 0,
+        porKm: viaje.gananciaPorKm || (viaje.tarifa / viaje.distancia).toFixed(2) || 0,
+        rentable: viaje.rentabilidad === 'rentable', // ← USAR rentabilidad en lugar de rentable
         fecha: new Date().toLocaleString('es-DO'),
-        id: Date.now()
+        id: Date.now(),
+        // Mantener compatibilidad con el sistema nuevo
+        tarifa: viaje.tarifa || viaje.ganancia || 0,
+        gananciaPorMinuto: viaje.gananciaPorMinuto || 0,
+        gananciaPorKm: viaje.gananciaPorKm || 0,
+        rentabilidad: viaje.rentabilidad || 'no-rentable',
+        aceptado: viaje.aceptado || true,
+        timestamp: new Date().toISOString()
     };
+    
+    console.log('📝 Viaje procesado para historial:', nuevoViaje);
     
     // Agregar al array historial
     historial.unshift(nuevoViaje);
@@ -219,10 +229,10 @@ function agregarAlHistorial(viaje) {
         historial = historial.slice(0, 50);
     }
     
-    // Guardar en localStorage con la clave CORRECTA
+    // Guardar en localStorage
     localStorage.setItem('historialViajes', JSON.stringify(historial));
     
-    // Actualizar estadísticas
+    // Actualizar estadísticas del día
     actualizarEstadisticasDia(nuevoViaje);
     
     console.log('💾 Historial guardado. Total viajes:', historial.length);
@@ -230,23 +240,34 @@ function agregarAlHistorial(viaje) {
     // Actualizar vista
     setTimeout(() => {
         actualizarHistorial();
-        actualizarResumen();
+        actualizarEstadisticas(); // ← ACTUALIZAR ESTADÍSTICAS EN LUGAR DE RESUMEN
     }, 100);
 }
 
-// Actualizar estadísticas del día
+// Actualizar estadísticas del día - VERSIÓN CORREGIDA
 function actualizarEstadisticasDia(viaje) {
-    estadisticasDia.viajes++;
-    estadisticasDia.ganancia += parseFloat(viaje.ganancia);
-    estadisticasDia.tiempo += parseInt(viaje.minutos);
+    if (!estadisticasDia) {
+        estadisticasDia = {
+            viajes: 0,
+            ganancia: 0,
+            tiempo: 0,
+            rentables: 0,
+            noRentables: 0
+        };
+    }
     
-    if (viaje.rentable) {
+    estadisticasDia.viajes++;
+    estadisticasDia.ganancia += parseFloat(viaje.ganancia || viaje.tarifa || 0);
+    estadisticasDia.tiempo += parseInt(viaje.minutos || 0);
+    
+    if (viaje.rentable || viaje.rentabilidad === 'rentable') {
         estadisticasDia.rentables++;
     } else {
         estadisticasDia.noRentables++;
     }
     
     localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
+    console.log('📊 Estadísticas actualizadas:', estadisticasDia);
 }
 
 // Eliminar viaje del historial
@@ -274,10 +295,12 @@ function eliminarDelHistorial(index) {
     }
 }
 
-// Limpiar historial completo
+// Limpiar historial completo - VERSIÓN CORREGIDA
 function limpiarHistorialCompleto() {
     if (confirm('¿Estás seguro de que quieres limpiar todo el historial? Esta acción no se puede deshacer.')) {
-        historialViajes = [];
+        historial = [];
+        
+        // Resetear estadísticas del día
         estadisticasDia = {
             viajes: 0,
             ganancia: 0,
@@ -286,11 +309,13 @@ function limpiarHistorialCompleto() {
             noRentables: 0
         };
         
-        localStorage.removeItem('historialViajes');
+        // Guardar en localStorage
+        localStorage.setItem('historialViajes', JSON.stringify(historial));
         localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
         
+        // Actualizar interfaz - USAR actualizarEstadisticas en lugar de actualizarResumen
         actualizarHistorial();
-        actualizarResumen();
+        actualizarEstadisticas(); // ← ESTA ES LA CORRECCIÓN
         
         mostrarMensaje('Historial limpiado correctamente', 'success');
     }
@@ -407,8 +432,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Resetear estadísticas si es un nuevo día
     resetearEstadisticasDiarias();
     
-    // Event listener para limpiar historial
-    document.getElementById('clear-history').addEventListener('click', limpiarHistorialCompleto);
+    // Event listener para limpiar historial - VERSIÓN CORREGIDA
+document.getElementById('clear-history').addEventListener('click', limpiarHistorialCompleto);
     
     // Event listener para exportar historial
     document.getElementById('exportar-historial').addEventListener('click', exportarHistorialPDF);
@@ -425,6 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listener para exportar historial
     document.getElementById('exportar-historial').addEventListener('click', exportarHistorialPDF);
 });
+
 
 // =============================================
 // ESTILOS CSS PARA EL HISTORIAL
@@ -3179,6 +3205,10 @@ function mostrarStatus(mensaje, tipo = 'info') {
     }, 3000);
 }
 
+function mostrarMensaje(mensaje, tipo = 'info') {
+    mostrarStatus(mensaje, tipo);
+}
+
 function limpiarFormulario() {
     console.log('🧹 Limpiando formulario...');
     
@@ -3403,6 +3433,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
