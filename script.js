@@ -326,7 +326,7 @@ function eliminarDelHistorial(index) {
         
         localStorage.setItem('historialViajes', JSON.stringify(historialViajes));
         localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
-        actualizarHistorialConFiltros();
+        actualizarHistorialConFiltros;
         actualizarResumen();
     }
 }
@@ -350,7 +350,7 @@ function limpiarHistorialCompleto() {
         localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
         
         // Actualizar interfaz - USAR actualizarEstadisticas en lugar de actualizarResumen
-        actualizarHistorialConFiltros();
+        actualizarHistorialConFiltros;
         actualizarEstadisticas(); // ← ESTA ES LA CORRECCIÓN
         
         mostrarMensaje('Historial limpiado correctamente', 'success');
@@ -471,7 +471,7 @@ function aceptarViaje() {
     // Actualizar interfaz
     setTimeout(() => {
         actualizarEstadisticas();
-        actualizarHistorialConFiltros();
+        actualizarHistorialConFiltros;
     }, 500);
 }
 
@@ -506,7 +506,7 @@ elementos.exportarHistorial.addEventListener('click', function() {
     console.log('📤 Botón exportar clickeado - Filtro activo:', filtroActual);
     
     // PRIMERO: Actualizar el historial con los filtros actuales
-    actualizarHistorialConFiltros();
+    actualizarHistorialConFiltros;
     
     // LUEGO: Mostrar el modal de exportación
     mostrarModalExportacion();
@@ -1441,7 +1441,7 @@ function iniciarEscuchaFirebase() {
                 historial = change.data;
                 
                 // Actualizar interfaz
-                actualizarHistorialConFiltros();
+                actualizarHistorialConFiltros;
                 actualizarEstadisticas();
             }
             
@@ -1521,7 +1521,7 @@ async function cargarDatos() {
     // 4. FORZAR ACTUALIZACIÓN DE INTERFAZ
     actualizarInterfazPerfiles();
     actualizarEstadisticas();
-    actualizarHistorialConFiltros();
+    actualizarHistorialConFiltros;
     
     // Guardar los datos combinados
     guardarDatos();
@@ -1659,7 +1659,7 @@ async function forzarSincronizacionCompleta() {
         
         // 5. Actualizar interfaz
         actualizarInterfazPerfiles();
-        actualizarHistorialConFiltros();
+        actualizarHistorialConFiltros;
         actualizarEstadisticas();
         
         // 6. Guardar localmente
@@ -1711,7 +1711,7 @@ async function sincronizarFirebaseALocal() {
         // Actualizar interfaz
         actualizarInterfazPerfiles();
         actualizarEstadisticas();
-        actualizarHistorialConFiltros();
+        actualizarHistorialConFiltros;
         
         // Guardar localmente
         guardarDatos();
@@ -1858,7 +1858,7 @@ async function diagnosticarSync() {
     
     // Forzar actualización de UI
     actualizarEstadisticas();
-    actualizarHistorialConFiltros();
+    actualizarHistorialConFiltros;
     
     const diagnostico = `
 🎉 DIAGNÓSTICO COMPLETADO
@@ -1932,7 +1932,7 @@ async function inicializarApp() {
             // FORZAR ACTUALIZACIÓN INMEDIATA
             setTimeout(() => {
                 actualizarEstadisticas();
-                actualizarHistorialConFiltros();
+                actualizarHistorialConFiltros;
             }, 500);
         } else {
             console.log('👤 Mostrando pantalla de perfiles (perfilActual es null)');
@@ -2025,7 +2025,7 @@ function cambiarPestana(tabId) {
     if (tabId === 'resumen') {
         actualizarEstadisticas();
     } else if (tabId === 'historial') {
-        actualizarHistorialConFiltros();
+        actualizarHistorialConFiltros;
     }
 }
 
@@ -2192,7 +2192,7 @@ async function procesarViaje(aceptado) {
         
         // Actualizar interfaz INMEDIATAMENTE
         actualizarEstadisticas();
-        actualizarHistorialConFiltros();
+        actualizarHistorialConFiltros;
         
         // Cambiar a pestaña de historial si se aceptó
         if (aceptado) {
@@ -2201,7 +2201,7 @@ async function procesarViaje(aceptado) {
                 // Forzar actualización después de cambiar pestaña
                 setTimeout(() => {
                     actualizarEstadisticas();
-                    actualizarHistorialConFiltros();
+                    actualizarHistorialConFiltros;
                 }, 100);
             }, 500);
         }
@@ -2240,7 +2240,7 @@ function procesarViajeRapido(aceptado) {
     
     // Actualizar interfaz
     actualizarEstadisticas();
-    actualizarHistorialConFiltros();
+    actualizarHistorialConFiltros;
 }
 
 // =============================================
@@ -2284,7 +2284,7 @@ async function guardarEnHistorial(resultado, aceptado) {
     // ACTUALIZAR INTERFAZ INMEDIATAMENTE
     console.log('🔄 Actualizando interfaz...');
     actualizarEstadisticas();
-    actualizarHistorialConFiltros();
+    actualizarHistorialConFiltros;
     
     console.log('🎉 Proceso de guardado completado');
 }
@@ -2652,7 +2652,7 @@ async function limpiarHistorial() {
         
         historial = [];
         guardarDatos();
-        actualizarHistorialConFiltros();
+        actualizarHistorialConFiltros;
         actualizarEstadisticas();
         mostrarStatus('🗑️ Historial limpiado correctamente', 'success');
     }
@@ -3237,7 +3237,7 @@ function mostrarPantalla(pantalla) {
         elementos.mainScreen.classList.add('active');
         actualizarUnidades();
         actualizarEstadisticas();
-        actualizarHistorialConFiltros();
+        actualizarHistorialConFiltros;
     }
 }
 
@@ -3639,7 +3639,7 @@ function inicializarFiltrosHistorial() {
             }
             
             // Actualizar vista
-            actualizarHistorialConFiltros();
+            actualizarHistorialConFiltros;
         });
     });
     
@@ -3722,3 +3722,4 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
