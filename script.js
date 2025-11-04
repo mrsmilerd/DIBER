@@ -42,7 +42,7 @@ function inicializarElementosDOM() {
         'tarifa', 'minutos', 'distancia',
         'resultado-rapido', 'resultado-badge', 'resultado-emoji', 'resultado-texto',
         'metrica-minuto', 'metrica-km',
-        'aceptar-viaje', 'rechazar-viaje', 'aceptar-viaje-tab', 'rechazar-viaje-tab',
+        'aceptar-viaje', 'rechazar-viaje',
         'modalFondo', 'modalContenido', 'modalResultadosDoble', 'modal-badge', 'modal-emoji', 'modal-texto',
         'history-list', 'clear-history', 'exportar-historial',
         'stats-viajes', 'stats-ganancia', 'stats-tiempo', 'stats-rentables', 'stats-ganancia-hora', 'stats-viaje-promedio',
@@ -1453,3 +1453,4 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
