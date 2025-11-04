@@ -3701,6 +3701,12 @@ window.onclick = function(event) {
     }
 }
 
+// =============================================
+// CIERRE FORZADO PARA DEBUG
+// =============================================
+
+console.log("✅ Archivo cargado completamente");
+
 // Función para verificar el estado actual
 function verificarEstado() {
     console.log('=== VERIFICACIÓN DE ESTADO ===');
@@ -3717,3 +3723,4 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
