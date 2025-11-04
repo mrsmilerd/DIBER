@@ -126,7 +126,7 @@ let estadisticasDia = JSON.parse(localStorage.getItem('estadisticasDia')) || {
 };
 
 // FUNCIÓN ACTUALIZAR HISTORIAL CORREGIDA
-function actualizarHistorialConFiltros()
+function actualizarHistorialConFiltros() {
     console.log('🔄 actualizarHistorialConFiltros() ejecutándose...');
     console.log('📊 Datos en variable "historial":', historial);
     
@@ -3757,6 +3757,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
