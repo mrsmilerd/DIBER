@@ -3719,8 +3719,10 @@ function verificarEstado() {
         historyList: !!elementos.historyList
     });
     console.log('=== FIN VERIFICACIÓN ===');
+    });
 }
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
