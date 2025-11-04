@@ -2004,12 +2004,12 @@ function configurarEventListeners() {
     document.getElementById('tipo-combustible').addEventListener('change', actualizarUnidades);
     document.getElementById('moneda').addEventListener('change', actualizarUnidades);
 
-    // Sincronización - Agregar event listener para Enter en el código de usuario
+   // Sincronización - Agregar event listener para Enter en el código de usuario
     const syncStatusBtn = document.getElementById('sync-status-btn');
     if (syncStatusBtn) {
         syncStatusBtn.addEventListener('click', mostrarPanelSync);
     }
-}
+} 
 
 // --- Sistema de Pestañas ---
 function cambiarPestana(tabId) {
@@ -3719,3 +3719,4 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
