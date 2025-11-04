@@ -196,31 +196,65 @@ function actualizarHistorial() {
     console.log('📋 Viajes mostrados:', viajesParaMostrar.length);
 }
 
-// FUNCIÓN AGREGAR AL HISTORIAL - VERSIÓN CORREGIDA
+// FUNCIÓN AGREGAR AL HISTORIAL - VERSIÓN DEFINITIVA CORREGIDA
 function agregarAlHistorial(viaje) {
     console.log('➕ agregarAlHistorial() llamado con:', viaje);
     
-    // Asegurar que tenemos todos los datos necesarios
+    // Validar que tenemos los datos mínimos
+    if (!viaje.tarifa && !viaje.ganancia) {
+        console.error('❌ Error: Viaje sin tarifa/ganancia');
+        return;
+    }
+
+    // Calcular métricas si no vienen en el viaje
+    const tarifa = viaje.tarifa || viaje.ganancia || 0;
+    const minutos = viaje.minutos || 0;
+    const distancia = viaje.distancia || 0;
+    
+    const porMinuto = viaje.gananciaPorMinuto || (minutos > 0 ? (tarifa / minutos) : 0);
+    const porKm = viaje.gananciaPorKm || (distancia > 0 ? (tarifa / distancia) : 0);
+    
+    // Determinar rentabilidad
+    let rentable = false;
+    if (viaje.rentabilidad) {
+        rentable = (viaje.rentabilidad === 'rentable');
+    } else if (perfilActual) {
+        // Calcular rentabilidad basada en umbrales del perfil
+        rentable = (porMinuto >= perfilActual.umbralMinutoRentable && 
+                   porKm >= perfilActual.umbralKmRentable);
+    }
+
     const nuevoViaje = {
-        ganancia: viaje.tarifa || viaje.ganancia || 0,
-        minutos: viaje.minutos || 0,
-        distancia: viaje.distancia || 0,
-        porMinuto: viaje.gananciaPorMinuto || (viaje.tarifa / viaje.minutos).toFixed(2) || 0,
-        porKm: viaje.gananciaPorKm || (viaje.tarifa / viaje.distancia).toFixed(2) || 0,
-        rentable: viaje.rentabilidad === 'rentable', // ← USAR rentabilidad en lugar de rentable
+        // Datos básicos para compatibilidad
+        ganancia: tarifa,
+        minutos: minutos,
+        distancia: distancia,
+        porMinuto: porMinuto,
+        porKm: porKm,
+        rentable: rentable,
         fecha: new Date().toLocaleString('es-DO'),
-        id: Date.now(),
-        // Mantener compatibilidad con el sistema nuevo
-        tarifa: viaje.tarifa || viaje.ganancia || 0,
-        gananciaPorMinuto: viaje.gananciaPorMinuto || 0,
-        gananciaPorKm: viaje.gananciaPorKm || 0,
-        rentabilidad: viaje.rentabilidad || 'no-rentable',
-        aceptado: viaje.aceptado || true,
-        timestamp: new Date().toISOString()
+        id: 'viaje_' + Date.now(),
+        
+        // Datos extendidos del sistema nuevo
+        tarifa: tarifa,
+        gananciaPorMinuto: porMinuto,
+        gananciaPorKm: porKm,
+        rentabilidad: rentable ? 'rentable' : 'no-rentable',
+        emoji: viaje.emoji || (rentable ? '✅' : '❌'),
+        texto: viaje.texto || (rentable ? 'RENTABLE' : 'NO RENTABLE'),
+        aceptado: viaje.aceptado !== undefined ? viaje.aceptado : true,
+        timestamp: viaje.timestamp || new Date().toISOString(),
+        
+        // Datos de costos si están disponibles
+        gananciaNeta: viaje.gananciaNeta || 0,
+        costoCombustible: viaje.costoCombustible || 0,
+        costoMantenimiento: viaje.costoMantenimiento || 0,
+        costoSeguro: viaje.costoSeguro || 0,
+        costoTotal: viaje.costoTotal || 0
     };
     
     console.log('📝 Viaje procesado para historial:', nuevoViaje);
-    
+
     // Agregar al array historial
     historial.unshift(nuevoViaje);
     
@@ -232,15 +266,17 @@ function agregarAlHistorial(viaje) {
     // Guardar en localStorage
     localStorage.setItem('historialViajes', JSON.stringify(historial));
     
-    // Actualizar estadísticas del día
-    actualizarEstadisticasDia(nuevoViaje);
-    
     console.log('💾 Historial guardado. Total viajes:', historial.length);
+    
+    // Actualizar estadísticas del día si el viaje fue aceptado
+    if (nuevoViaje.aceptado) {
+        actualizarEstadisticasDia(nuevoViaje);
+    }
     
     // Actualizar vista
     setTimeout(() => {
         actualizarHistorial();
-        actualizarEstadisticas(); // ← ACTUALIZAR ESTADÍSTICAS EN LUGAR DE RESUMEN
+        actualizarEstadisticas();
     }, 100);
 }
 
@@ -390,35 +426,53 @@ function inicializarTabs() {
 
 // Modificar la función aceptarViaje para que agregue al historial
 function aceptarViaje() {
-    const tarifa = parseFloat(document.getElementById('tarifa').value);
-    const minutos = parseInt(document.getElementById('minutos').value);
-    const distancia = parseFloat(document.getElementById('distancia').value);
+    console.log('✅ Aceptando viaje...');
     
-    const porMinuto = (tarifa / minutos).toFixed(2);
-    const porKm = (tarifa / distancia).toFixed(2);
+    if (!calculoActual) {
+        mostrarError('No hay cálculo actual para aceptar');
+        return;
+    }
+
+    // Obtener valores del formulario
+    const tarifa = parseFloat(document.getElementById('tarifa').value) || 0;
+    const minutos = parseInt(document.getElementById('minutos').value) || 0;
+    const distancia = parseFloat(document.getElementById('distancia').value) || 0;
     
-    // Determinar si es rentable
-    const perfilActual = obtenerPerfilActual();
-    const rentable = porMinuto >= perfilActual.umbralMinutoRentable && 
-                     porKm >= perfilActual.umbralKmRentable;
-    
-    console.log('✅ Aceptando viaje - rentable:', rentable);
-    
-    // Agregar al historial
+    console.log('📊 Datos del viaje a aceptar:', { tarifa, minutos, distancia, calculoActual });
+
+    // AGREGAR AL HISTORIAL CON LOS DATOS CORRECTOS
     agregarAlHistorial({
-        ganancia: tarifa,
-        minutos: minutos,
-        distancia: distancia,
-        porMinuto: porMinuto,
-        porKm: porKm,
-        rentable: rentable
+        // Usar los datos del cálculo actual que son correctos
+        tarifa: calculoActual.tarifa || tarifa,
+        minutos: calculoActual.minutos || minutos,
+        distancia: calculoActual.distancia || distancia,
+        gananciaPorMinuto: calculoActual.gananciaPorMinuto,
+        gananciaPorKm: calculoActual.gananciaPorKm,
+        rentabilidad: calculoActual.rentabilidad,
+        emoji: calculoActual.emoji,
+        texto: calculoActual.texto,
+        gananciaNeta: calculoActual.gananciaNeta,
+        costoCombustible: calculoActual.costoCombustible,
+        costoMantenimiento: calculoActual.costoMantenimiento,
+        costoSeguro: calculoActual.costoSeguro,
+        costoTotal: calculoActual.costoTotal,
+        aceptado: true, // ← IMPORTANTE: Marcar como aceptado
+        timestamp: new Date().toISOString()
     });
     
+    console.log('💾 Viaje agregado al historial');
+
     // Cerrar modal y limpiar formulario
     cerrarModal();
-    document.getElementById('calcular-form').reset();
+    limpiarFormulario();
     
-    mostrarMensaje('Viaje aceptado y guardado en historial', 'success');
+    mostrarMensaje('✅ Viaje aceptado y guardado en historial', 'success');
+    
+    // Actualizar interfaz
+    setTimeout(() => {
+        actualizarEstadisticas();
+        actualizarHistorial();
+    }, 500);
 }
 
 // =============================================
@@ -2157,42 +2211,27 @@ function procesarViajeRapido(aceptado) {
         return;
     }
 
-    // Verificar que tenemos perfilActual
-    if (!perfilActual) {
-        mostrarError('No hay perfil seleccionado. Por favor, selecciona un perfil primero.');
-        return;
-    }
-
     // Cerrar modal rápido primero
     cerrarModalRapido();
     
-    // Guardar en historial (esto actualizará automáticamente las estadísticas)
-    guardarEnHistorial(calculoActual, aceptado);
+    // Guardar en historial con los datos CORRECTOS
+    agregarAlHistorial({
+        ...calculoActual,
+        aceptado: aceptado
+    });
     
     if (aceptado) {
-        mostrarStatus('✅ Viaje aceptado y guardado en historial', 'success');
+        mostrarMensaje('✅ Viaje aceptado y guardado en historial', 'success');
     } else {
-        mostrarStatus('❌ Viaje rechazado', 'info');
+        mostrarMensaje('❌ Viaje rechazado', 'info');
     }
     
     // Limpiar formulario
     limpiarFormulario();
     
-    // Actualizar interfaz INMEDIATAMENTE
+    // Actualizar interfaz
     actualizarEstadisticas();
     actualizarHistorial();
-    
-    // Cambiar a pestaña de historial si se aceptó
-    if (aceptado) {
-        setTimeout(() => {
-            cambiarPestana('historial');
-            // Forzar actualización después de cambiar pestaña
-            setTimeout(() => {
-                actualizarEstadisticas();
-                actualizarHistorial();
-            }, 100);
-        }, 500);
-    }
 }
 
 // =============================================
@@ -2446,10 +2485,8 @@ function crearColumnaResultadoCompacta(titulo, valor, comparacion, rentabilidad)
 // =============================================
 
 function actualizarHistorial() {
-    console.log('🔄 actualizarHistorial CORREGIDA ejecutándose...');
-    
-    // Usar la variable correcta
-    const datos = historial; // ← ESTA ES LA LÍNEA CLAVE
+    console.log('🔄 actualizarHistorial ejecutándose...');
+    console.log('📊 Datos en historial:', historial);
     
     const historyList = document.getElementById('history-list');
     
@@ -2458,7 +2495,7 @@ function actualizarHistorial() {
         return;
     }
 
-    if (!datos || datos.length === 0) {
+    if (!historial || historial.length === 0) {
         historyList.innerHTML = `
             <div class="empty-state">
                 <span class="empty-icon">📋</span>
@@ -2469,18 +2506,25 @@ function actualizarHistorial() {
         return;
     }
     
-    console.log(`🎯 Renderizando ${datos.length} viajes...`);
+    console.log(`🎯 Renderizando ${historial.length} viajes...`);
     
-    const viajesParaMostrar = datos.slice(0, 15);
+    // MOSTRAR solo los últimos 15 viajes ACEPTADOS
+    const viajesAceptados = historial.filter(viaje => viaje.aceptado !== false);
+    const viajesParaMostrar = viajesAceptados.slice(0, 15);
     
     historyList.innerHTML = viajesParaMostrar.map((viaje, index) => {
-        const ganancia = viaje.ganancia || 0;
+        // Usar los datos CORRECTOS del viaje
+        const ganancia = viaje.tarifa || viaje.ganancia || 0;
         const minutos = viaje.minutos || 0;
         const distancia = viaje.distancia || 0;
-        const porMinuto = viaje.porMinuto || 0;
-        const porKm = viaje.porKm || 0;
-        const rentable = Boolean(viaje.rentable);
-        const fecha = viaje.fecha || 'Fecha desconocida';
+        const porMinuto = viaje.gananciaPorMinuto || viaje.porMinuto || 0;
+        const porKm = viaje.gananciaPorKm || viaje.porKm || 0;
+        
+        // Determinar rentabilidad CORRECTAMENTE
+        const rentable = viaje.rentable !== undefined ? viaje.rentable : 
+                        (viaje.rentabilidad === 'rentable');
+        
+        const fecha = viaje.fecha || new Date(viaje.timestamp).toLocaleString('es-DO') || 'Fecha desconocida';
         
         return `
         <div class="history-item ${rentable ? 'rentable' : 'no-rentable'}">
@@ -2492,13 +2536,13 @@ function actualizarHistorial() {
             </div>
             <div class="history-details">
                 <div class="history-route">
-                    <strong>Ganancia:</strong> RD$${ganancia.toFixed(2)}
+                    <strong>Ganancia:</strong> ${formatearMoneda(ganancia)}
                 </div>
                 <div class="history-metrics">
                     <span class="metric">⏱️ ${minutos}min</span>
                     <span class="metric">🛣️ ${distancia}km</span>
-                    <span class="metric">💰 RD$${parseFloat(porMinuto).toFixed(2)}/min</span>
-                    <span class="metric">📏 RD$${parseFloat(porKm).toFixed(2)}/km</span>
+                    <span class="metric">💰 ${formatearMoneda(parseFloat(porMinuto))}/min</span>
+                    <span class="metric">📏 ${formatearMoneda(parseFloat(porKm))}/km</span>
                 </div>
             </div>
             <div class="history-actions">
@@ -2511,6 +2555,7 @@ function actualizarHistorial() {
     }).join('');
     
     console.log('✅ Historial actualizado correctamente');
+    console.log('📋 Viajes mostrados:', viajesParaMostrar.length);
 }
 
 // =============================================
@@ -3433,6 +3478,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
