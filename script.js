@@ -126,8 +126,8 @@ let estadisticasDia = JSON.parse(localStorage.getItem('estadisticasDia')) || {
 };
 
 // FUNCIÓN ACTUALIZAR HISTORIAL CORREGIDA
-function actualizarHistorial() {
-    console.log('🔄 actualizarHistorial() ejecutándose...');
+function actualizarHistorialConFiltros()
+    console.log('🔄 actualizarHistorialConFiltros() ejecutándose...');
     console.log('📊 Datos en variable "historial":', historial);
     
     const historyList = document.getElementById('history-list');
@@ -275,7 +275,7 @@ function agregarAlHistorial(viaje) {
     
     // Actualizar vista
     setTimeout(() => {
-        actualizarHistorial();
+        actualizarHistorialConFiltros()
         actualizarEstadisticas();
     }, 100);
 }
@@ -326,7 +326,7 @@ function eliminarDelHistorial(index) {
         
         localStorage.setItem('historialViajes', JSON.stringify(historialViajes));
         localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
-        actualizarHistorial();
+        actualizarHistorialConFiltros()
         actualizarResumen();
     }
 }
@@ -350,7 +350,7 @@ function limpiarHistorialCompleto() {
         localStorage.setItem('estadisticasDia', JSON.stringify(estadisticasDia));
         
         // Actualizar interfaz - USAR actualizarEstadisticas en lugar de actualizarResumen
-        actualizarHistorial();
+        actualizarHistorialConFiltros()
         actualizarEstadisticas(); // ← ESTA ES LA CORRECCIÓN
         
         mostrarMensaje('Historial limpiado correctamente', 'success');
@@ -471,7 +471,7 @@ function aceptarViaje() {
     // Actualizar interfaz
     setTimeout(() => {
         actualizarEstadisticas();
-        actualizarHistorial();
+        actualizarHistorialConFiltros()
     }, 500);
 }
 
@@ -1435,7 +1435,7 @@ function iniciarEscuchaFirebase() {
                 historial = change.data;
                 
                 // Actualizar interfaz
-                actualizarHistorial();
+                actualizarHistorialConFiltros()
                 actualizarEstadisticas();
             }
             
@@ -1515,7 +1515,7 @@ async function cargarDatos() {
     // 4. FORZAR ACTUALIZACIÓN DE INTERFAZ
     actualizarInterfazPerfiles();
     actualizarEstadisticas();
-    actualizarHistorial();
+    actualizarHistorialConFiltros()
     
     // Guardar los datos combinados
     guardarDatos();
@@ -1653,7 +1653,7 @@ async function forzarSincronizacionCompleta() {
         
         // 5. Actualizar interfaz
         actualizarInterfazPerfiles();
-        actualizarHistorial();
+        actualizarHistorialConFiltros()
         actualizarEstadisticas();
         
         // 6. Guardar localmente
@@ -1705,7 +1705,7 @@ async function sincronizarFirebaseALocal() {
         // Actualizar interfaz
         actualizarInterfazPerfiles();
         actualizarEstadisticas();
-        actualizarHistorial();
+        actualizarHistorialConFiltros()
         
         // Guardar localmente
         guardarDatos();
@@ -1852,7 +1852,7 @@ async function diagnosticarSync() {
     
     // Forzar actualización de UI
     actualizarEstadisticas();
-    actualizarHistorial();
+    actualizarHistorialConFiltros()
     
     const diagnostico = `
 🎉 DIAGNÓSTICO COMPLETADO
@@ -1926,7 +1926,7 @@ async function inicializarApp() {
             // FORZAR ACTUALIZACIÓN INMEDIATA
             setTimeout(() => {
                 actualizarEstadisticas();
-                actualizarHistorial();
+                actualizarHistorialConFiltros()
             }, 500);
         } else {
             console.log('👤 Mostrando pantalla de perfiles (perfilActual es null)');
@@ -1961,6 +1961,9 @@ function configurarEventListeners() {
     elementos.tabButtons.forEach(button => {
         button.addEventListener('click', () => cambiarPestana(button.dataset.tab));
     });
+
+    // Inicializar filtros de historial
+    inicializarFiltrosHistorial();
     
     // Cálculo Automático - USANDO input en lugar de change para mejor respuesta
     elementos.tarifaInput.addEventListener('input', manejarCalculoAutomatico);
@@ -2016,7 +2019,7 @@ function cambiarPestana(tabId) {
     if (tabId === 'resumen') {
         actualizarEstadisticas();
     } else if (tabId === 'historial') {
-        actualizarHistorial();
+        actualizarHistorialConFiltros()
     }
 }
 
@@ -2183,7 +2186,7 @@ async function procesarViaje(aceptado) {
         
         // Actualizar interfaz INMEDIATAMENTE
         actualizarEstadisticas();
-        actualizarHistorial();
+        actualizarHistorialConFiltros()
         
         // Cambiar a pestaña de historial si se aceptó
         if (aceptado) {
@@ -2192,7 +2195,7 @@ async function procesarViaje(aceptado) {
                 // Forzar actualización después de cambiar pestaña
                 setTimeout(() => {
                     actualizarEstadisticas();
-                    actualizarHistorial();
+                    actualizarHistorialConFiltros()
                 }, 100);
             }, 500);
         }
@@ -2231,7 +2234,7 @@ function procesarViajeRapido(aceptado) {
     
     // Actualizar interfaz
     actualizarEstadisticas();
-    actualizarHistorial();
+    actualizarHistorialConFiltros()
 }
 
 // =============================================
@@ -2275,7 +2278,7 @@ async function guardarEnHistorial(resultado, aceptado) {
     // ACTUALIZAR INTERFAZ INMEDIATAMENTE
     console.log('🔄 Actualizando interfaz...');
     actualizarEstadisticas();
-    actualizarHistorial();
+    actualizarHistorialConFiltros()
     
     console.log('🎉 Proceso de guardado completado');
 }
@@ -2484,7 +2487,7 @@ function crearColumnaResultadoCompacta(titulo, valor, comparacion, rentabilidad)
 // ACTUALIZAR HISTORIAL - VERSIÓN DEFINITIVA
 // =============================================
 
-function actualizarHistorial() {
+function actualizarHistorialConFiltros()
     console.log('🔄 actualizarHistorial ejecutándose...');
     console.log('📊 Datos en historial:', historial);
     
@@ -2643,7 +2646,7 @@ async function limpiarHistorial() {
         
         historial = [];
         guardarDatos();
-        actualizarHistorial();
+        actualizarHistorialConFiltros()
         actualizarEstadisticas();
         mostrarStatus('🗑️ Historial limpiado correctamente', 'success');
     }
@@ -3285,7 +3288,7 @@ function mostrarPantalla(pantalla) {
         elementos.mainScreen.classList.add('active');
         actualizarUnidades();
         actualizarEstadisticas();
-        actualizarHistorial();
+        actualizarHistorialConFiltros()
     }
 }
 
@@ -3502,6 +3505,187 @@ function diagnosticoRapido() {
 Revisa la consola para más detalles.`);
 }
 
+// =============================================
+// SISTEMA DE FILTROS POR PERIODO - NUEVO
+// =============================================
+
+let filtroActual = 'hoy';
+
+// Función para filtrar historial por periodo
+function filtrarHistorialPorPeriodo(periodo) {
+    console.log(`🔄 Filtrando historial por: ${periodo}`);
+    filtroActual = periodo;
+    
+    const hoy = new Date();
+    let fechaInicio;
+    
+    switch(periodo) {
+        case 'hoy':
+            fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+            break;
+        case 'semana':
+            fechaInicio = new Date(hoy);
+            fechaInicio.setDate(hoy.getDate() - 7);
+            break;
+        case 'mes':
+            fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            break;
+        case 'todos':
+            fechaInicio = null;
+            break;
+        default:
+            fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    }
+    
+    let historialFiltrado;
+    
+    if (fechaInicio) {
+        historialFiltrado = historial.filter(viaje => {
+            const fechaViaje = new Date(viaje.timestamp);
+            return fechaViaje >= fechaInicio;
+        });
+    } else {
+        historialFiltrado = [...historial];
+    }
+    
+    console.log(`📊 Historial filtrado: ${historialFiltrado.length} viajes`);
+    return historialFiltrado;
+}
+
+// Función para actualizar la vista del historial con filtros
+function actualizarHistorialConFiltros() {
+    const historialFiltrado = filtrarHistorialPorPeriodo(filtroActual);
+    mostrarHistorialEnVista(historialFiltrado);
+    actualizarEstadisticasConFiltro(historialFiltrado);
+}
+
+// Función para mostrar historial en la vista
+function mostrarHistorialEnVista(historialParaMostrar) {
+    const historyList = document.getElementById('history-list');
+    
+    if (!historyList) return;
+
+    if (!historialParaMostrar || historialParaMostrar.length === 0) {
+        const periodos = {
+            'hoy': 'hoy',
+            'semana': 'esta semana', 
+            'mes': 'este mes',
+            'todos': 'ningún'
+        };
+        
+        historyList.innerHTML = `
+            <div class="empty-state">
+                <span class="empty-icon">📋</span>
+                <h3>No hay viajes ${periodos[filtroActual]} en el historial</h3>
+                <p>Los viajes que aceptes aparecerán aquí</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Mostrar solo los últimos 20 viajes del filtro
+    const viajesParaMostrar = historialParaMostrar.slice(0, 20);
+    
+    historyList.innerHTML = viajesParaMostrar.map((viaje, index) => {
+        const ganancia = viaje.tarifa || viaje.ganancia || 0;
+        const minutos = viaje.minutos || 0;
+        const distancia = viaje.distancia || 0;
+        const porMinuto = viaje.gananciaPorMinuto || viaje.porMinuto || 0;
+        const porKm = viaje.gananciaPorKm || viaje.porKm || 0;
+        const rentable = viaje.rentable !== undefined ? viaje.rentable : 
+                        (viaje.rentabilidad === 'rentable');
+        const fecha = viaje.fecha || new Date(viaje.timestamp).toLocaleString('es-DO');
+        
+        return `
+        <div class="history-item ${rentable ? 'rentable' : 'no-rentable'}">
+            <div class="history-header">
+                <span class="history-badge ${rentable ? 'badge-rentable' : 'badge-no-rentable'}">
+                    ${rentable ? '✅ RENTABLE' : '❌ NO RENTABLE'}
+                </span>
+                <span class="history-date">${fecha}</span>
+            </div>
+            <div class="history-details">
+                <div class="history-route">
+                    <strong>Ganancia:</strong> ${formatearMoneda(ganancia)}
+                </div>
+                <div class="history-metrics">
+                    <span class="metric">⏱️ ${minutos}min</span>
+                    <span class="metric">🛣️ ${distancia}km</span>
+                    <span class="metric">💰 ${formatearMoneda(parseFloat(porMinuto))}/min</span>
+                    <span class="metric">📏 ${formatearMoneda(parseFloat(porKm))}/km</span>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+// Función para actualizar estadísticas con filtro
+function actualizarEstadisticasConFiltro(historialFiltrado) {
+    const viajesAceptados = historialFiltrado.filter(item => item.aceptado !== false);
+    
+    // Calcular estadísticas del periodo filtrado
+    const stats = {
+        viajes: viajesAceptados.length,
+        ganancia: viajesAceptados.reduce((sum, item) => sum + (item.tarifa || item.ganancia || 0), 0),
+        tiempo: viajesAceptados.reduce((sum, item) => sum + (item.minutos || 0), 0),
+        rentables: viajesAceptados.filter(item => item.rentabilidad === 'rentable').length
+    };
+    
+    // Actualizar UI
+    if (elementos.statsViajes) elementos.statsViajes.textContent = stats.viajes;
+    if (elementos.statsGanancia) elementos.statsGanancia.textContent = formatearMoneda(stats.ganancia);
+    if (elementos.statsTiempo) elementos.statsTiempo.textContent = `${stats.tiempo}min`;
+    if (elementos.statsRentables) elementos.statsRentables.textContent = stats.rentables;
+    
+    // Calcular métricas adicionales
+    const gananciaPorHora = stats.tiempo > 0 ? (stats.ganancia / stats.tiempo) * 60 : 0;
+    const viajePromedio = stats.viajes > 0 ? stats.ganancia / stats.viajes : 0;
+    
+    if (elementos.statsGananciaHora) elementos.statsGananciaHora.textContent = formatearMoneda(gananciaPorHora);
+    if (elementos.statsViajePromedio) elementos.statsViajePromedio.textContent = formatearMoneda(viajePromedio);
+}
+
+// Función para inicializar los filtros
+function inicializarFiltrosHistorial() {
+    const filtroBtns = document.querySelectorAll('.filtro-btn');
+    const filtroActivoText = document.getElementById('filtro-activo-texto');
+    
+    if (filtroBtns.length === 0) {
+        console.log('❌ No se encontraron botones de filtro');
+        return;
+    }
+    
+    filtroBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remover active de todos los botones
+            filtroBtns.forEach(b => b.classList.remove('active'));
+            // Agregar active al botón clickeado
+            this.classList.add('active');
+            
+            // Actualizar filtro
+            const nuevoFiltro = this.dataset.filtro;
+            filtroActual = nuevoFiltro;
+            
+            // Actualizar texto del filtro activo
+            const textosFiltro = {
+                'hoy': 'Hoy',
+                'semana': 'Esta Semana', 
+                'mes': 'Este Mes',
+                'todos': 'Todos'
+            };
+            if (filtroActivoText) {
+                filtroActivoText.textContent = textosFiltro[nuevoFiltro];
+            }
+            
+            // Actualizar vista
+            actualizarHistorialConFiltros();
+        });
+    });
+    
+    console.log('✅ Filtros de historial inicializados');
+}
+
 // --- Funciones Globales para HTML ---
 window.cerrarModal = cerrarModal;
 window.cerrarExportModal = cerrarExportModal;
@@ -3573,6 +3757,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
