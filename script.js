@@ -2938,41 +2938,80 @@ function mostrarModalExportacion() {
     elementos.exportModal.style.display = 'flex';
 }
 
-function exportarPDF() {
-    mostrarStatus('🔄 Generando PDF...', 'info');
+// Calcular estadísticas REALES para exportación
+function calcularEstadisticasExportacion() {
+    console.log('📈 Calculando estadísticas para exportación...');
     
-    // Crear contenido del PDF
-    const contenido = generarContenidoPDF();
+    // Filtrar solo viajes ACEPTADOS
+    const viajesAceptados = historial.filter(item => item.aceptado !== false);
+    console.log('✅ Viajes aceptados para estadísticas:', viajesAceptados.length);
     
-    // Método mejorado para móvil - Crear blob y descargar
-    const blob = new Blob([contenido], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
+    const stats = {
+        // Ingresos
+        gananciaTotal: viajesAceptados.reduce((sum, item) => sum + (item.tarifa || item.ganancia || 0), 0),
+        gananciaNetaTotal: viajesAceptados.reduce((sum, item) => sum + (item.gananciaNeta || 0), 0),
+        
+        // Costos
+        costoCombustibleTotal: viajesAceptados.reduce((sum, item) => sum + (item.costoCombustible || 0), 0),
+        costoMantenimientoTotal: viajesAceptados.reduce((sum, item) => sum + (item.costoMantenimiento || 0), 0),
+        costoSeguroTotal: viajesAceptados.reduce((sum, item) => sum + (item.costoSeguro || 0), 0),
+        
+        // Tiempo y métricas
+        tiempoTotal: viajesAceptados.reduce((sum, item) => sum + (item.minutos || 0), 0),
+        viajesAceptados: viajesAceptados.length,
+        viajesRentables: viajesAceptados.filter(item => item.rentabilidad === 'rentable').length
+    };
     
-    // Crear enlace de descarga
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `UberCalc_Reporte_${new Date().toISOString().split('T')[0]}.html`;
-    link.style.display = 'none';
+    // Calcular métricas derivadas
+    stats.viajePromedio = stats.viajesAceptados > 0 ? stats.gananciaTotal / stats.viajesAceptados : 0;
+    stats.gananciaPorHora = stats.tiempoTotal > 0 ? (stats.gananciaTotal / stats.tiempoTotal) * 60 : 0;
+    stats.eficiencia = stats.viajesAceptados > 0 ? (stats.viajesRentables / stats.viajesAceptados) * 100 : 0;
     
-    // Agregar al documento y hacer click
-    document.body.appendChild(link);
-    link.click();
-    
-    // Limpiar
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    // Mostrar mensaje de éxito
-    setTimeout(() => {
-        mostrarStatus('📄 PDF generado correctamente', 'success');
-        cerrarExportModal();
-    }, 1000);
+    console.log('📊 Estadísticas calculadas:', stats);
+    return stats;
 }
 
-function generarContenidoPDF() {
-    const stats = window.estadisticasExportacion || {};
-    const viajesAceptados = historial.filter(item => item.aceptado).length;
-    const viajesRentables = historial.filter(item => item.aceptado && item.rentabilidad === 'rentable').length;
+function exportarPDF() {
+    console.log('📊 Generando reporte PDF...');
+    
+    if (historial.length === 0) {
+        mostrarError('No hay datos en el historial para exportar');
+        return;
+    }
+
+    mostrarStatus('🔄 Preparando reporte...', 'info');
+
+    // Calcular estadísticas REALES antes de exportar
+    const stats = calcularEstadisticasExportacion();
+    console.log('📈 Estadísticas para exportación:', stats);
+
+    // Crear contenido del PDF con datos REALES
+    const contenido = generarContenidoPDF(stats);
+    
+    // Abrir en nueva pestaña
+    const ventana = window.open('', '_blank');
+    ventana.document.write(contenido);
+    ventana.document.close();
+    
+    // Opción para imprimir/guardar como PDF
+    setTimeout(() => {
+        ventana.print();
+        mostrarStatus('✅ Reporte generado - Usa "Guardar como PDF" en la impresión', 'success');
+    }, 1000);
+    
+    cerrarExportModal();
+}
+
+function generarContenidoPDF(stats) {
+    console.log('📄 Generando contenido PDF con stats:', stats);
+    
+    // Asegurar que tenemos estadísticas
+    if (!stats) {
+        stats = calcularEstadisticasExportacion();
+    }
+    
+    const viajesAceptados = historial.filter(item => item.aceptado !== false);
+    const viajesRentables = viajesAceptados.filter(item => item.rentabilidad === 'rentable').length;
     
     return `
 <!DOCTYPE html>
@@ -2980,181 +3019,236 @@ function generarContenidoPDF() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte UberCalc</title>
+    <title>Reporte UberCalc - ${new Date().toLocaleDateString('es-DO')}</title>
     <style>
         body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            margin: 25px; 
             line-height: 1.4;
             color: #333;
+            background: white;
         }
         .header { 
             text-align: center; 
             margin-bottom: 30px;
-            border-bottom: 2px solid #333;
+            border-bottom: 3px solid #007cba;
             padding-bottom: 20px;
+        }
+        .header h1 {
+            color: #007cba;
+            margin: 0 0 10px 0;
+            font-size: 28px;
         }
         .summary-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 20px 0;
+            gap: 20px;
+            margin: 25px 0;
         }
         .summary-card {
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
         }
         .summary-card.ingresos {
             background-color: #e8f5e8;
-            border-color: #4CAF50;
+            border-color: #28a745;
         }
         .summary-card.costos {
             background-color: #ffe8e8;
-            border-color: #f44336;
+            border-color: #dc3545;
         }
         .summary-card.rendimiento {
             background-color: #e8f4ff;
-            border-color: #2196F3;
+            border-color: #007cba;
+            grid-column: 1 / -1;
         }
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            margin: 20px 0;
+            margin: 25px 0;
             font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         th, td { 
             border: 1px solid #ddd; 
-            padding: 8px; 
+            padding: 10px; 
             text-align: left; 
         }
         th { 
-            background-color: #f2f2f2; 
+            background-color: #f8f9fa; 
             font-weight: bold;
+            color: #333;
         }
         .rentable { background-color: #d4edda; }
         .oportunidad { background-color: #fff3cd; }
         .no-rentable { background-color: #f8d7da; }
         .footer {
             text-align: center;
-            margin-top: 30px;
+            margin-top: 40px;
             color: #666;
             font-size: 0.9em;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
         }
         .valor-destacado {
-            font-size: 1.3em;
+            font-size: 1.4em;
             font-weight: bold;
-            margin: 5px 0;
+            margin: 8px 0;
         }
-        .valor-positivo { color: #4CAF50; }
-        .valor-negativo { color: #f44336; }
+        .valor-positivo { color: #28a745; }
+        .valor-negativo { color: #dc3545; }
         .desglose-costos {
-            margin: 20px 0;
-            padding: 15px;
+            margin: 25px 0;
+            padding: 20px;
             background: #f8f9fa;
-            border-radius: 8px;
+            border-radius: 10px;
+            border-left: 4px solid #007cba;
+        }
+        .resumen-final {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ffc107;
+            margin: 25px 0;
+            text-align: center;
         }
         @media print {
-            body { margin: 10px; }
+            body { margin: 15px; }
             .summary-grid { grid-template-columns: 1fr 1fr; }
+            .no-print { display: none; }
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        .metricas-adicionales {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🚗 UberCalc - Reporte Completo</h1>
-        <p><strong>Generado el:</strong> ${new Date().toLocaleString('es-DO')}</p>
-        <p><strong>Perfil:</strong> ${perfilActual?.nombre || 'No especificado'}</p>
-        <p><strong>Total de registros:</strong> ${historial.length}</p>
+        <div class="info-row">
+            <div><strong>Generado el:</strong> ${new Date().toLocaleString('es-DO')}</div>
+            <div><strong>Perfil:</strong> ${perfilActual?.nombre || 'No especificado'}</div>
+        </div>
+        <div class="info-row">
+            <div><strong>Total de registros:</strong> ${historial.length}</div>
+            <div><strong>Viajes aceptados:</strong> ${viajesAceptados.length}</div>
+        </div>
     </div>
 
     <div class="summary-grid">
         <div class="summary-card ingresos">
             <h3>💰 INGRESOS</h3>
-            <div class="valor-destacado valor-positivo">${formatearMoneda(stats.gananciaTotal || 0)}</div>
-            <p><strong>Ganancia Neta:</strong> ${formatearMoneda(stats.gananciaNetaTotal || 0)}</p>
-            <p><strong>Viajes Aceptados:</strong> ${viajesAceptados}</p>
-            <p><strong>Viaje Promedio:</strong> ${formatearMoneda(stats.viajePromedio || 0)}</p>
+            <div class="valor-destacado valor-positivo">${formatearMoneda(stats.gananciaTotal)}</div>
+            <div class="metricas-adicionales">
+                <div>
+                    <strong>Ganancia Neta:</strong><br>
+                    ${formatearMoneda(stats.gananciaNetaTotal)}
+                </div>
+                <div>
+                    <strong>Viajes Aceptados:</strong><br>
+                    ${stats.viajesAceptados}
+                </div>
+                <div>
+                    <strong>Viaje Promedio:</strong><br>
+                    ${formatearMoneda(stats.viajePromedio)}
+                </div>
+                <div>
+                    <strong>Eficiencia:</strong><br>
+                    ${stats.eficiencia.toFixed(1)}%
+                </div>
+            </div>
         </div>
         
         <div class="summary-card costos">
             <h3>💸 COSTOS TOTALES</h3>
-            <div class="valor-destacado valor-negativo">${formatearMoneda((stats.costoCombustibleTotal || 0) + (stats.costoMantenimientoTotal || 0) + (stats.costoSeguroTotal || 0))}</div>
-            <p><strong>⛽ Combustible:</strong> ${formatearMoneda(stats.costoCombustibleTotal || 0)}</p>
-            <p><strong>🔧 Mantenimiento:</strong> ${formatearMoneda(stats.costoMantenimientoTotal || 0)}</p>
-            <p><strong>🛡️ Seguro:</strong> ${formatearMoneda(stats.costoSeguroTotal || 0)}</p>
+            <div class="valor-destacado valor-negativo">${formatearMoneda(stats.costoCombustibleTotal + stats.costoMantenimientoTotal + stats.costoSeguroTotal)}</div>
+            <div style="margin-top: 15px;">
+                <div class="info-row">
+                    <span>⛽ Combustible:</span>
+                    <span>${formatearMoneda(stats.costoCombustibleTotal)}</span>
+                </div>
+                <div class="info-row">
+                    <span>🔧 Mantenimiento:</span>
+                    <span>${formatearMoneda(stats.costoMantenimientoTotal)}</span>
+                </div>
+                <div class="info-row">
+                    <span>🛡️ Seguro:</span>
+                    <span>${formatearMoneda(stats.costoSeguroTotal)}</span>
+                </div>
+            </div>
         </div>
         
-        <div class="summary-card rendimiento" style="grid-column: 1 / -1;">
+        <div class="summary-card rendimiento">
             <h3>📊 RENDIMIENTO</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                <div>
-                    <strong>Ganancia/Hora:</strong><br>
-                    <span class="valor-destacado valor-positivo">${formatearMoneda(stats.gananciaPorHora || 0)}</span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                <div style="text-align: center;">
+                    <strong>Ganancia/Hora</strong><br>
+                    <span class="valor-destacado valor-positivo">${formatearMoneda(stats.gananciaPorHora)}</span>
                 </div>
-                <div>
-                    <strong>Tiempo Total:</strong><br>
-                    <span class="valor-destacado">${stats.tiempoTotal || 0} min</span>
+                <div style="text-align: center;">
+                    <strong>Tiempo Total</strong><br>
+                    <span class="valor-destacado">${stats.tiempoTotal} min</span>
                 </div>
-                <div>
-                    <strong>Eficiencia:</strong><br>
-                    <span class="valor-destacado valor-positivo">${viajesAceptados > 0 ? ((viajesRentables / viajesAceptados) * 100).toFixed(1) : 0}%</span>
+                <div style="text-align: center;">
+                    <strong>Viajes Rentables</strong><br>
+                    <span class="valor-destacado valor-positivo">${stats.viajesRentables}/${stats.viajesAceptados}</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="desglose-costos">
-        <h3>📈 RESUMEN FINANCIERO</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div>
-                <strong>Ingresos Totales:</strong> ${formatearMoneda(stats.gananciaTotal || 0)}
+    <div class="resumen-final">
+        <h3 style="margin: 0 0 15px 0; color: #856404;">🎯 RESUMEN FINANCIERO FINAL</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+            <div style="text-align: center;">
+                <strong>Ingresos Totales</strong><br>
+                <span style="font-size: 1.2em; color: #28a745;">${formatearMoneda(stats.gananciaTotal)}</span>
             </div>
-            <div>
-                <strong>Costos Totales:</strong> ${formatearMoneda((stats.costoCombustibleTotal || 0) + (stats.costoMantenimientoTotal || 0) + (stats.costoSeguroTotal || 0))}
+            <div style="text-align: center;">
+                <strong>Costos Totales</strong><br>
+                <span style="font-size: 1.2em; color: #dc3545;">${formatearMoneda(stats.costoCombustibleTotal + stats.costoMantenimientoTotal + stats.costoSeguroTotal)}</span>
             </div>
-            <div style="grid-column: 1 / -1; text-align: center; padding: 10px; background: white; border-radius: 5px; margin-top: 10px;">
-                <strong style="color: #f5a623; font-size: 1.2em;">GANANCIA NETA TOTAL: ${formatearMoneda(stats.gananciaNetaTotal || 0)}</strong>
-            </div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; border: 2px solid #28a745;">
+            <strong style="color: #28a745; font-size: 1.3em;">GANANCIA NETA TOTAL: ${formatearMoneda(stats.gananciaNetaTotal)}</strong>
         </div>
     </div>
 
-    <h3>📋 DETALLE DE VIAJES (${historial.length} registros)</h3>
+    <h3>📋 DETALLE DE VIAJES ACEPTADOS (${viajesAceptados.length} viajes)</h3>
     <table>
         <thead>
             <tr>
-                <th>Fecha</th>
-                <th>Hora</th>
+                <th>Fecha/Hora</th>
                 <th>Ganancia</th>
-                <th>Minutos</th>
+                <th>Tiempo</th>
                 <th>Distancia</th>
-                <th>Combustible</th>
-                <th>Mantenimiento</th>
-                <th>Seguro</th>
                 <th>Ganancia Neta</th>
                 <th>Rentabilidad</th>
-                <th>Aceptado</th>
             </tr>
         </thead>
         <tbody>
-            ${historial.map(item => {
+            ${viajesAceptados.map(item => {
                 const fecha = new Date(item.timestamp).toLocaleDateString();
                 const hora = new Date(item.timestamp).toLocaleTimeString();
                 const distanciaLabel = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
                 
                 return `
                     <tr class="${item.rentabilidad}">
-                        <td>${fecha}</td>
-                        <td>${hora}</td>
-                        <td>${formatearMoneda(item.tarifa)}</td>
-                        <td>${item.minutos}</td>
+                        <td>${fecha}<br><small>${hora}</small></td>
+                        <td>${formatearMoneda(item.tarifa || item.ganancia)}</td>
+                        <td>${item.minutos} min</td>
                         <td>${item.distancia} ${distanciaLabel}</td>
-                        <td>${formatearMoneda(item.costoCombustible)}</td>
-                        <td>${formatearMoneda(item.costoMantenimiento)}</td>
-                        <td>${formatearMoneda(item.costoSeguro)}</td>
-                        <td>${formatearMoneda(item.gananciaNeta)}</td>
-                        <td>${item.texto}</td>
-                        <td>${item.aceptado ? '✅ Sí' : '❌ No'}</td>
+                        <td>${formatearMoneda(item.gananciaNeta || 0)}</td>
+                        <td>${item.rentabilidad === 'rentable' ? '✅ Rentable' : '❌ No Rentable'}</td>
                     </tr>
                 `;
             }).join('')}
@@ -3162,15 +3256,16 @@ function generarContenidoPDF() {
     </table>
 
     <div class="footer">
-        <p>Exportado desde UberCalc - Calculadora Inteligente para Conductores</p>
+        <p><strong>UberCalc - Calculadora Inteligente para Conductores</strong></p>
         <p>¡Sigue maximizando tus ganancias! 🚗💨</p>
+        <p class="no-print"><small>Para guardar como PDF: Archivo → Imprimir → Guardar como PDF</small></p>
     </div>
 
     <script>
-        // Auto-print en dispositivos de escritorio
-        if (window.innerWidth > 768) {
+        // Auto-focus para impresión
+        setTimeout(() => {
             window.print();
-        }
+        }, 500);
     </script>
 </body>
 </html>`;
@@ -3478,6 +3573,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
