@@ -2487,7 +2487,7 @@ function crearColumnaResultadoCompacta(titulo, valor, comparacion, rentabilidad)
 // ACTUALIZAR HISTORIAL - VERSIÓN DEFINITIVA
 // =============================================
 
-function actualizarHistorialConFiltros()
+function actualizarHistorialConFiltros() {
     console.log('🔄 actualizarHistorial ejecutándose...');
     console.log('📊 Datos en historial:', historial);
     
@@ -3757,6 +3757,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
