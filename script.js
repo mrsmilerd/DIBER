@@ -1877,6 +1877,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function configurarEventListeners() {
     // Sistema de Pestañas
+    inicializarTabs();
     elementos.tabButtons.forEach(button => {
         button.addEventListener('click', () => cambiarPestana(button.dataset.tab));
     });
@@ -3402,6 +3403,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
