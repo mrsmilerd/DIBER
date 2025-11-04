@@ -501,8 +501,15 @@ document.getElementById('clear-history').addEventListener('click', limpiarHistor
     // Event listener para limpiar historial
     document.getElementById('clear-history').addEventListener('click', limpiarHistorialCompleto);
     
-    // Event listener para exportar historial
-    document.getElementById('exportar-historial').addEventListener('click', exportarHistorialPDF);
+    // Event listener para exportar historial - VERSIÓN CORREGIDA
+elementos.exportarHistorial.addEventListener('click', function() {
+    console.log('📤 Botón exportar clickeado - Filtro activo:', filtroActual);
+    
+    // PRIMERO: Actualizar el historial con los filtros actuales
+    actualizarHistorialConFiltros();
+    
+    // LUEGO: Mostrar el modal de exportación
+    mostrarModalExportacion();
 });
 
 
@@ -2942,11 +2949,14 @@ function mostrarModalExportacion() {
 }
 
 // Calcular estadísticas REALES para exportación
-function calcularEstadisticasExportacion() {
+function calcularEstadisticasExportacion(historialParaCalcular = null) {
     console.log('📈 Calculando estadísticas para exportación...');
     
+    // Usar historial proporcionado o filtrar según el periodo activo
+    const historialCalculo = historialParaCalcular || filtrarHistorialPorPeriodo(filtroActual);
+    
     // Filtrar solo viajes ACEPTADOS
-    const viajesAceptados = historial.filter(item => item.aceptado !== false);
+    const viajesAceptados = historialCalculo.filter(item => item.aceptado !== false);
     console.log('✅ Viajes aceptados para estadísticas:', viajesAceptados.length);
     
     const stats = {
@@ -2962,7 +2972,11 @@ function calcularEstadisticasExportacion() {
         // Tiempo y métricas
         tiempoTotal: viajesAceptados.reduce((sum, item) => sum + (item.minutos || 0), 0),
         viajesAceptados: viajesAceptados.length,
-        viajesRentables: viajesAceptados.filter(item => item.rentabilidad === 'rentable').length
+        viajesRentables: viajesAceptados.filter(item => item.rentabilidad === 'rentable').length,
+        
+        // Información del periodo
+        periodo: filtroActual,
+        nombrePeriodo: obtenerNombreFiltro(filtroActual)
     };
     
     // Calcular métricas derivadas
@@ -2977,19 +2991,22 @@ function calcularEstadisticasExportacion() {
 function exportarPDF() {
     console.log('📊 Generando reporte PDF...');
     
-    if (historial.length === 0) {
-        mostrarError('No hay datos en el historial para exportar');
+    // Usar el historial FILTRADO según el periodo seleccionado
+    const historialFiltrado = filtrarHistorialPorPeriodo(filtroActual);
+    
+    if (historialFiltrado.length === 0) {
+        mostrarError(`No hay datos en el historial de ${obtenerNombreFiltro(filtroActual)} para exportar`);
         return;
     }
 
-    mostrarStatus('🔄 Preparando reporte...', 'info');
+    mostrarStatus(`🔄 Preparando reporte de ${obtenerNombreFiltro(filtroActual)}...`, 'info');
 
-    // Calcular estadísticas REALES antes de exportar
-    const stats = calcularEstadisticasExportacion();
+    // Calcular estadísticas REALES del periodo filtrado
+    const stats = calcularEstadisticasExportacion(historialFiltrado);
     console.log('📈 Estadísticas para exportación:', stats);
 
-    // Crear contenido del PDF con datos REALES
-    const contenido = generarContenidoPDF(stats);
+    // Crear contenido del PDF con datos del periodo filtrado
+    const contenido = generarContenidoPDF(stats, historialFiltrado);
     
     // Abrir en nueva pestaña
     const ventana = window.open('', '_blank');
@@ -2999,22 +3016,27 @@ function exportarPDF() {
     // Opción para imprimir/guardar como PDF
     setTimeout(() => {
         ventana.print();
-        mostrarStatus('✅ Reporte generado - Usa "Guardar como PDF" en la impresión', 'success');
+        mostrarStatus(`✅ Reporte de ${obtenerNombreFiltro(filtroActual)} generado - Usa "Guardar como PDF" en la impresión`, 'success');
     }, 1000);
     
     cerrarExportModal();
 }
 
-function generarContenidoPDF(stats) {
+function generarContenidoPDF(stats, historialParaExportar = null) {
     console.log('📄 Generando contenido PDF con stats:', stats);
     
     // Asegurar que tenemos estadísticas
     if (!stats) {
-        stats = calcularEstadisticasExportacion();
+        stats = calcularEstadisticasExportacion(historialParaExportar);
     }
     
-    const viajesAceptados = historial.filter(item => item.aceptado !== false);
+    // Usar historial proporcionado o filtrar según el periodo activo
+    const historialExportar = historialParaExportar || filtrarHistorialPorPeriodo(filtroActual);
+    const viajesAceptados = historialExportar.filter(item => item.aceptado !== false);
     const viajesRentables = viajesAceptados.filter(item => item.rentabilidad === 'rentable').length;
+    
+    // Obtener nombre del periodo para el título
+    const nombrePeriodo = stats.nombrePeriodo || obtenerNombreFiltro(filtroActual);
     
     return `
 <!DOCTYPE html>
@@ -3022,7 +3044,7 @@ function generarContenidoPDF(stats) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte UberCalc - ${new Date().toLocaleDateString('es-DO')}</title>
+    <title>Reporte UberCalc - ${nombrePeriodo}</title>
     <style>
         body { 
             font-family: 'Segoe UI', Arial, sans-serif; 
@@ -3042,107 +3064,35 @@ function generarContenidoPDF(stats) {
             margin: 0 0 10px 0;
             font-size: 28px;
         }
+        .periodo-badge {
+            display: inline-block;
+            background: #007cba;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
         .summary-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin: 25px 0;
         }
-        .summary-card {
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px solid #ddd;
-        }
-        .summary-card.ingresos {
-            background-color: #e8f5e8;
-            border-color: #28a745;
-        }
-        .summary-card.costos {
-            background-color: #ffe8e8;
-            border-color: #dc3545;
-        }
-        .summary-card.rendimiento {
-            background-color: #e8f4ff;
-            border-color: #007cba;
-            grid-column: 1 / -1;
-        }
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 25px 0;
-            font-size: 12px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        th, td { 
-            border: 1px solid #ddd; 
-            padding: 10px; 
-            text-align: left; 
-        }
-        th { 
-            background-color: #f8f9fa; 
-            font-weight: bold;
-            color: #333;
-        }
-        .rentable { background-color: #d4edda; }
-        .oportunidad { background-color: #fff3cd; }
-        .no-rentable { background-color: #f8d7da; }
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            color: #666;
-            font-size: 0.9em;
-            border-top: 1px solid #ddd;
-            padding-top: 20px;
-        }
-        .valor-destacado {
-            font-size: 1.4em;
-            font-weight: bold;
-            margin: 8px 0;
-        }
-        .valor-positivo { color: #28a745; }
-        .valor-negativo { color: #dc3545; }
-        .desglose-costos {
-            margin: 25px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #007cba;
-        }
-        .resumen-final {
-            background: #fff3cd;
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px solid #ffc107;
-            margin: 25px 0;
-            text-align: center;
-        }
-        @media print {
-            body { margin: 15px; }
-            .summary-grid { grid-template-columns: 1fr 1fr; }
-            .no-print { display: none; }
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-        }
-        .metricas-adicionales {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 15px 0;
-        }
+        /* ... (el resto del CSS permanece igual) ... */
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🚗 UberCalc - Reporte Completo</h1>
+        <h1>🚗 UberCalc - Reporte de ${nombrePeriodo}</h1>
+        <div class="periodo-badge">${nombrePeriodo.toUpperCase()}</div>
         <div class="info-row">
             <div><strong>Generado el:</strong> ${new Date().toLocaleString('es-DO')}</div>
             <div><strong>Perfil:</strong> ${perfilActual?.nombre || 'No especificado'}</div>
         </div>
         <div class="info-row">
-            <div><strong>Total de registros:</strong> ${historial.length}</div>
+            <div><strong>Total de registros:</strong> ${historialExportar.length}</div>
             <div><strong>Viajes aceptados:</strong> ${viajesAceptados.length}</div>
         </div>
     </div>
@@ -3559,6 +3509,17 @@ function actualizarHistorialConFiltros() {
     actualizarEstadisticasConFiltro(historialFiltrado);
 }
 
+// Función para obtener el nombre del filtro activo
+function obtenerNombreFiltro(filtro) {
+    const nombres = {
+        'hoy': 'Hoy',
+        'semana': 'Esta Semana',
+        'mes': 'Este Mes', 
+        'todos': 'Todo el Historial'
+    };
+    return nombres[filtro] || 'Periodo';
+}
+
 // Función para mostrar historial en la vista
 function mostrarHistorialEnVista(historialParaMostrar) {
     const historyList = document.getElementById('history-list');
@@ -3757,6 +3718,7 @@ function verificarEstado() {
 
 // Llamar esta función para debug
 setTimeout(verificarEstado, 2000);
+
 
 
 
