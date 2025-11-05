@@ -1,5 +1,5 @@
 // =============================================
-// UBER CALC - Calculadora Inteligente para Conductores
+// DIBER - Calculadora Inteligente para Conductores
 // Versión Mejorada con Sistema de Pestañas Y SINCRONIZACIÓN MULTI-DISPOSITIVO
 // =============================================
 
@@ -2250,6 +2250,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
