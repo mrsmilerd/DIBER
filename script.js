@@ -2357,7 +2357,7 @@ function aplicarTemaGuardado() {
     }
 }
 
-/ EJECUTA ESTO EN LA CONSOLA para ver qué elementos tienes
+// EJECUTA ESTO EN LA CONSOLA para ver qué elementos tienes
 function diagnosticarRendimiento() {
     console.log('🔍 DIAGNÓSTICO DE RENDIMIENTO');
     console.log('==============================');
@@ -2595,6 +2595,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
