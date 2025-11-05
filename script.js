@@ -114,9 +114,9 @@ function exportarHistorial() {
     }
 }
 
-// Función para exportar como PDF (más avanzada)
+// Función para exportar como PDF (más avanzada) - CORREGIDA
 function exportarHistorialPDF() {
-    console.log('📄 Generando PDF con resumen...');
+    console.log('📄 Generando PDF con resumen COMPLETO...');
     
     if (!historial || historial.length === 0) {
         mostrarError('No hay historial para exportar');
@@ -124,25 +124,16 @@ function exportarHistorialPDF() {
     }
 
     try {
-        // Calcular estadísticas completas
-        const viajesAceptados = historial.filter(v => v.aceptado);
-        const totalViajes = viajesAceptados.length;
-        const viajesRentables = viajesAceptados.filter(v => v.rentable).length;
+        // ✅ USA estadísticas completas (todos los viajes)
+        const stats = obtenerEstadisticasCompletas();
         
-        const gananciaTotal = viajesAceptados.reduce((sum, v) => sum + (v.ganancia || v.tarifa || 0), 0);
-        const tiempoTotal = viajesAceptados.reduce((sum, v) => sum + (v.minutos || 0), 0);
-        const distanciaTotal = viajesAceptados.reduce((sum, v) => sum + (v.distancia || 0), 0);
-        
-        // Calcular costos totales
-        const costoCombustibleTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoCombustible || 0), 0);
-        const costoMantenimientoTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoMantenimiento || 0), 0);
-        const costoSeguroTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoSeguro || 0), 0);
-        const costoTotal = costoCombustibleTotal + costoMantenimientoTotal + costoSeguroTotal;
-        
-        const gananciaNeta = gananciaTotal - costoTotal;
-        const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
-        const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
-        const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
+        console.log('📊 Datos para PDF (COMPLETO):', {
+            totalViajes: stats.totalViajes,
+            viajesRentables: stats.viajesRentables,
+            eficiencia: `${stats.eficiencia.toFixed(1)}%`,
+            gananciaTotal: stats.gananciaTotal,
+            periodo: 'Todos los viajes del historial'
+        });
 
         // Crear contenido del PDF mejorado
         const pdfContent = `
@@ -367,45 +358,46 @@ function exportarHistorialPDF() {
                 <h2 class="section-title">📊 Información General</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-value">${totalViajes}</div>
+                        <div class="stat-value">${stats.totalViajes}</div>
                         <div class="stat-label">Total de Viajes</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">${viajesRentables}</div>
+                        <div class="stat-value">${stats.viajesRentables}</div>
                         <div class="stat-label">Viajes Rentables</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">${formatearMoneda(gananciaTotal)}</div>
+                        <div class="stat-value">${formatearMoneda(stats.gananciaTotal)}</div>
                         <div class="stat-label">Ganancia Total</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">${tiempoTotal} min</div>
+                        <div class="stat-value">${stats.tiempoTotal} min</div>
                         <div class="stat-label">Tiempo Total</div>
                     </div>
                 </div>
                 <p><strong>Generado el:</strong> ${new Date().toLocaleString('es-DO')}</p>
                 <p><strong>Perfil activo:</strong> ${perfilActual?.nombre || 'No especificado'}</p>
+                <p><strong>Periodo:</strong> <span class="highlight">Todos los viajes del historial</span></p>
             </div>
             
             <!-- Ingresos -->
             <div class="section">
                 <h2 class="section-title">💰 Ingresos</h2>
                 <div class="summary-card">
-                    <div class="summary-value">${formatearMoneda(gananciaTotal)}</div>
+                    <div class="summary-value">${formatearMoneda(stats.gananciaTotal)}</div>
                     <div class="summary-label">Ganancia Total</div>
                 </div>
                 <div class="costs-breakdown">
                     <div class="cost-item">
                         <span class="cost-label">Viajes Aceptados:</span>
-                        <span class="cost-value">${totalViajes}</span>
+                        <span class="cost-value">${stats.totalViajes}</span>
                     </div>
                     <div class="cost-item">
                         <span class="cost-label">Viaje Promedio:</span>
-                        <span class="cost-value">${formatearMoneda(viajePromedio)}</span>
+                        <span class="cost-value">${formatearMoneda(stats.viajePromedio)}</span>
                     </div>
                     <div class="cost-item">
                         <span class="cost-label">Ganancia por Hora:</span>
-                        <span class="cost-value">${formatearMoneda(gananciaPorHora)}/h</span>
+                        <span class="cost-value">${formatearMoneda(stats.gananciaPorHora)}/h</span>
                     </div>
                 </div>
             </div>
@@ -414,21 +406,21 @@ function exportarHistorialPDF() {
             <div class="section">
                 <h2 class="section-title">📈 Costos Totales</h2>
                 <div class="summary-card" style="background: linear-gradient(135deg, #dc3545, #e83e8c);">
-                    <div class="summary-value">${formatearMoneda(costoTotal)}</div>
+                    <div class="summary-value">${formatearMoneda(stats.costoTotal)}</div>
                     <div class="summary-label">Costos Totales</div>
                 </div>
                 <div class="costs-breakdown">
                     <div class="cost-item">
                         <span class="cost-label">Combustible:</span>
-                        <span class="cost-value">${formatearMoneda(costoCombustibleTotal)}</span>
+                        <span class="cost-value">${formatearMoneda(stats.costoCombustibleTotal)}</span>
                     </div>
                     <div class="cost-item">
                         <span class="cost-label">Mantenimiento:</span>
-                        <span class="cost-value">${formatearMoneda(costoMantenimientoTotal)}</span>
+                        <span class="cost-value">${formatearMoneda(stats.costoMantenimientoTotal)}</span>
                     </div>
                     <div class="cost-item">
                         <span class="cost-label">Seguro:</span>
-                        <span class="cost-value">${formatearMoneda(costoSeguroTotal)}</span>
+                        <span class="cost-value">${formatearMoneda(stats.costoSeguroTotal)}</span>
                     </div>
                 </div>
             </div>
@@ -438,20 +430,20 @@ function exportarHistorialPDF() {
                 <h2 class="section-title">🎯 Rendimiento</h2>
                 <div class="performance-grid">
                     <div class="performance-item">
-                        <div class="stat-value">${formatearMoneda(gananciaPorHora)}</div>
+                        <div class="stat-value">${formatearMoneda(stats.gananciaPorHora)}</div>
                         <div class="stat-label">Ganancia/Hora</div>
                     </div>
                     <div class="performance-item">
-                        <div class="stat-value">${distanciaTotal} km</div>
+                        <div class="stat-value">${stats.distanciaTotal} km</div>
                         <div class="stat-label">Distancia Total</div>
                     </div>
                     <div class="performance-item">
-                        <div class="stat-value">${eficiencia.toFixed(1)}%</div>
+                        <div class="stat-value">${stats.eficiencia.toFixed(1)}%</div>
                         <div class="stat-label">Eficiencia</div>
                     </div>
                 </div>
                 <div style="text-align: center; margin-top: 20px;">
-                    <span class="efficiency-badge">Eficiencia: ${eficiencia.toFixed(1)}%</span>
+                    <span class="efficiency-badge">Eficiencia: ${stats.eficiencia.toFixed(1)}%</span>
                 </div>
             </div>
             
@@ -460,16 +452,16 @@ function exportarHistorialPDF() {
                 <h2 class="section-title">💵 Resumen Financiero</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-value" style="color: #28a745;">${formatearMoneda(gananciaTotal)}</div>
+                        <div class="stat-value" style="color: #28a745;">${formatearMoneda(stats.gananciaTotal)}</div>
                         <div class="stat-label">Ingresos Totales</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" style="color: #dc3545;">${formatearMoneda(costoTotal)}</div>
+                        <div class="stat-value" style="color: #dc3545;">${formatearMoneda(stats.costoTotal)}</div>
                         <div class="stat-label">Costos Totales</div>
                     </div>
                 </div>
                 <div class="summary-card" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); margin-top: 20px;">
-                    <div class="summary-value">${formatearMoneda(gananciaNeta)}</div>
+                    <div class="summary-value">${formatearMoneda(stats.gananciaNeta)}</div>
                     <div class="summary-label">GANANCIA NETA TOTAL</div>
                 </div>
             </div>
@@ -501,7 +493,6 @@ function exportarHistorialPDF() {
         mostrarError('Error al generar el PDF');
     }
 }
-
 // =============================================
 // FUNCIONES PARA MODAL DE EXPORTACIÓN
 // =============================================
@@ -1773,15 +1764,24 @@ function actualizarEstadisticas() {
         return;
     }
     
-    // ✅ CORREGIDO: Usar TODOS los viajes aceptados, no solo los de hoy
-    const viajesAceptados = historial.filter(item => item.aceptado === true);
+    // ✅ CORREGIDO: Usar solo viajes de HOY para el modal de resumen
+    const hoy = new Date().toDateString();
+    const viajesHoy = historial.filter(item => {
+        if (!item.aceptado) return false;
+        try {
+            const itemDate = new Date(item.timestamp).toDateString();
+            return itemDate === hoy;
+        } catch (error) {
+            return false;
+        }
+    });
     
-    const totalViajes = viajesAceptados.length;
-    const gananciaTotal = viajesAceptados.reduce((sum, item) => sum + (item.ganancia || item.tarifa || 0), 0);
-    const tiempoTotal = viajesAceptados.reduce((sum, item) => sum + (item.minutos || 0), 0);
+    const totalViajes = viajesHoy.length;
+    const gananciaTotal = viajesHoy.reduce((sum, item) => sum + (item.ganancia || item.tarifa || 0), 0);
+    const tiempoTotal = viajesHoy.reduce((sum, item) => sum + (item.minutos || 0), 0);
     
-    // ✅ CORREGIDO: Usar rentabilidad correctamente
-    const viajesRentables = viajesAceptados.filter(item => {
+    // ✅ CORREGIDO: Calcular viajes rentables correctamente para HOY
+    const viajesRentables = viajesHoy.filter(item => {
         return item.rentable === true || item.rentabilidad === 'rentable';
     }).length;
     
@@ -1799,7 +1799,7 @@ function actualizarEstadisticas() {
     const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
     const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
     
-    // ✅ CORREGIDO: Cálculo de eficiencia seguro
+    // ✅ CORREGIDO: Cálculo de eficiencia seguro para HOY
     const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
     
     if (elementos['stats-ganancia-hora']) {
@@ -1810,8 +1810,56 @@ function actualizarEstadisticas() {
         elementos['stats-viaje-promedio'].textContent = formatearMoneda(viajePromedio);
     }
     
-    // ✅ ACTUALIZAR ESTADÍSTICAS DE RENDIMIENTO SI EXISTEN
-    actualizarEstadisticasRendimiento(totalViajes, viajesRentables, gananciaTotal, tiempoTotal, gananciaPorHora, eficiencia);
+    console.log('📈 Estadísticas de HOY actualizadas:', {
+        totalViajes,
+        viajesRentables,
+        eficiencia: `${eficiencia.toFixed(1)}%`,
+        gananciaTotal: formatearMoneda(gananciaTotal),
+        fecha: hoy
+    });
+}
+
+// ✅ NUEVA FUNCIÓN: Obtener estadísticas para PDF (todos los viajes)
+function obtenerEstadisticasCompletas() {
+    // Usar TODOS los viajes aceptados del historial completo para PDF
+    const viajesAceptados = historial.filter(v => v.aceptado === true);
+    const totalViajes = viajesAceptados.length;
+    
+    const viajesRentables = viajesAceptados.filter(v => {
+        return v.rentable === true || v.rentabilidad === 'rentable';
+    }).length;
+    
+    const gananciaTotal = viajesAceptados.reduce((sum, v) => sum + (v.ganancia || v.tarifa || 0), 0);
+    const tiempoTotal = viajesAceptados.reduce((sum, v) => sum + (v.minutos || 0), 0);
+    const distanciaTotal = viajesAceptados.reduce((sum, v) => sum + (v.distancia || 0), 0);
+    
+    // Calcular costos totales
+    const costoCombustibleTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoCombustible || 0), 0);
+    const costoMantenimientoTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoMantenimiento || 0), 0);
+    const costoSeguroTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoSeguro || 0), 0);
+    const costoTotal = costoCombustibleTotal + costoMantenimientoTotal + costoSeguroTotal;
+    
+    const gananciaNeta = gananciaTotal - costoTotal;
+    const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
+    const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
+    const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
+
+    return {
+        viajesAceptados,
+        totalViajes,
+        viajesRentables,
+        gananciaTotal,
+        tiempoTotal,
+        distanciaTotal,
+        costoCombustibleTotal,
+        costoMantenimientoTotal,
+        costoSeguroTotal,
+        costoTotal,
+        gananciaNeta,
+        eficiencia,
+        viajePromedio,
+        gananciaPorHora
+    };
 }
 
 // ✅ NUEVA FUNCIÓN: Actualizar estadísticas de rendimiento específicas
