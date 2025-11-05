@@ -99,7 +99,7 @@ function exportarHistorial() {
         const url = URL.createObjectURL(blob);
         
         link.setAttribute('href', url);
-        link.setAttribute('download', `ubercalc_historial_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `DIBER_historial_${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
         
         document.body.appendChild(link);
@@ -150,7 +150,7 @@ function exportarHistorialPDF() {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>UberCalc - Reporte Completo</title>
+    <title>DIBER - Reporte Completo</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -357,7 +357,7 @@ function exportarHistorialPDF() {
     <div class="container">
         <div class="header">
             <div class="logo">🚗</div>
-            <h1 class="title">UberCalc - Reporte Completo</h1>
+            <h1 class="title">DIBER - Reporte Completo</h1>
             <p class="subtitle">Análisis detallado de tu actividad</p>
         </div>
         
@@ -476,7 +476,7 @@ function exportarHistorialPDF() {
         </div>
         
         <div class="footer">
-            <p>Reporte generado por UberCalc • ${new Date().getFullYear()}</p>
+            <p>Reporte generado por DIBER • ${new Date().getFullYear()}</p>
             <p>¡Sigue maximizando tus ganancias! 🚀</p>
         </div>
     </div>
@@ -1238,7 +1238,7 @@ class FirebaseSync {
 async function initializeUserCodeSystem() {
     console.log('🔐 Inicializando sistema de código de usuario...');
     
-    const savedCode = localStorage.getItem('ubercalc_user_code');
+    const savedCode = localStorage.getItem('DIBER_user_code');
     
     if (savedCode) {
         userCodeSystem.userCode = savedCode;
@@ -1297,7 +1297,7 @@ function setUserCode() {
     userCodeSystem.userId = 'user_' + code;
     userCodeSystem.initialized = true;
     
-    localStorage.setItem('ubercalc_user_code', code);
+    localStorage.setItem('DIBER_user_code', code);
     
     hideUserCodeModal();
     showUserCodeBanner();
@@ -1361,7 +1361,7 @@ async function cargarDatos() {
     
     // Cargar de localStorage primero
     try {
-        const datosGuardados = localStorage.getItem('uberCalc_data');
+        const datosGuardados = localStorage.getItem('DIBER_data');
         if (datosGuardados) {
             const datos = JSON.parse(datosGuardados);
             perfiles = datos.perfiles || [];
@@ -1408,7 +1408,7 @@ async function cargarDatos() {
 function guardarDatos() {
     console.log('💾 Guardando datos...');
     
-    localStorage.setItem('uberCalc_data', JSON.stringify({
+    localStorage.setItem('DIBER_data', JSON.stringify({
         perfiles,
         perfilActual,
         historial,
@@ -1867,7 +1867,7 @@ function alternarTema() {
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     
     document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('uberCalc_theme', newTheme);
+    localStorage.setItem('DIBER_theme', newTheme);
     
     const themeIcon = elementos['theme-toggle']?.querySelector('.theme-icon');
     if (themeIcon) {
@@ -1876,7 +1876,7 @@ function alternarTema() {
 }
 
 function aplicarTemaGuardado() {
-    const savedTheme = localStorage.getItem('uberCalc_theme') || 'light';
+    const savedTheme = localStorage.getItem('DIBER_theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
     
     const themeIcon = elementos['theme-toggle']?.querySelector('.theme-icon');
@@ -2000,7 +2000,7 @@ window.mostrarExportModal = mostrarExportModal;
 
 function cambiarUsuario() {
     if (confirm('¿Estás seguro de que quieres cambiar de usuario?')) {
-        localStorage.removeItem('ubercalc_user_code');
+        localStorage.removeItem('DIBER_user_code');
         userCodeSystem.userCode = null;
         userCodeSystem.userId = null;
         userCodeSystem.initialized = false;
@@ -2017,7 +2017,7 @@ function cambiarUsuario() {
 // =============================================
 
 async function inicializarApp() {
-    console.log('🚀 Inicializando UberCalc...');
+    console.log('🚀 Inicializando DIBER...');
     
     inicializarElementosDOM();
     
@@ -2045,7 +2045,7 @@ async function inicializarApp() {
             mostrarPantalla('perfil');
         }
         
-        console.log('🎉 UberCalc inicializado correctamente');
+        console.log('🎉 DIBER inicializado correctamente');
         
     } catch (error) {
         console.error('❌ Error crítico en inicialización:', error);
@@ -2087,6 +2087,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
