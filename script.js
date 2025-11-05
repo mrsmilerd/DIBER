@@ -528,6 +528,69 @@ function configurarModalExportacion() {
 }
 
 // =============================================
+// DIAGNÓSTICO DE SINCRONIZACIÓN
+// =============================================
+
+function diagnosticarSincronizacion() {
+    console.log('🔍 DIAGNÓSTICO DE SINCRONIZACIÓN COMPLETO');
+    console.log('=========================================');
+    
+    // Estado de Firebase
+    console.log('🌐 FIREBASE:');
+    console.log('• Inicializado:', firebaseSync?.initialized);
+    console.log('• User ID:', userCodeSystem.userId);
+    console.log('• User Code:', userCodeSystem.userCode);
+    
+    // Datos locales
+    console.log('💾 DATOS LOCALES:');
+    console.log('• Perfiles:', perfiles.length);
+    console.log('• Historial:', historial.length, 'viajes');
+    console.log('• Perfil actual:', perfilActual?.nombre);
+    
+    // Verificar localStorage
+    const localData = localStorage.getItem('diber_data');
+    const historialLocal = localStorage.getItem('historialViajes');
+    const userCode = localStorage.getItem('diber_user_code');
+    
+    console.log('📦 LOCALSTORAGE:');
+    console.log('• diber_data:', localData ? JSON.parse(localData).historial?.length + ' viajes' : 'No hay datos');
+    console.log('• historialViajes:', historialLocal ? JSON.parse(historialLocal).length + ' viajes' : 'No hay datos');
+    console.log('• diber_user_code:', userCode || 'No hay código');
+    
+    // Verificar viajes recientes
+    console.log('📅 VIAJES RECIENTES:');
+    const viajesHoy = historial.filter(viaje => {
+        try {
+            const fechaViaje = new Date(viaje.timestamp);
+            const hoy = new Date();
+            return fechaViaje.toDateString() === hoy.toDateString();
+        } catch (error) {
+            return false;
+        }
+    });
+    
+    console.log('• Viajes hoy:', viajesHoy.length);
+    viajesHoy.forEach((viaje, index) => {
+        console.log(`  ${index + 1}. ${viaje.fecha} - ${viaje.ganancia} - ${viaje.rentabilidad}`);
+    });
+    
+    // Problemas comunes
+    console.log('🔧 PROBLEMAS COMUNES:');
+    console.log('• User Code válido:', userCodeSystem.userCode && userCodeSystem.userCode.length >= 3);
+    console.log('• Firebase disponible:', typeof firebase !== 'undefined');
+    console.log('• Perfil seleccionado:', !!perfilActual);
+    console.log('• Viajes con timestamp:', historial.every(v => v.timestamp));
+    
+    return {
+        firebaseInicializado: firebaseSync?.initialized,
+        userCode: userCodeSystem.userCode,
+        perfilesCount: perfiles.length,
+        historialCount: historial.length,
+        viajesHoyCount: viajesHoy.length
+    };
+}
+
+// =============================================
 // SISTEMA DE HISTORIAL
 // =============================================
 
@@ -1203,6 +1266,74 @@ class FirebaseSync {
         }
     }
 
+async function verificarConexionFirebase() {
+    console.log('📡 Verificando conexión Firebase...');
+    
+    if (!firebaseSync) {
+        console.log('❌ FirebaseSync no está inicializado');
+        return false;
+    }
+    
+    try {
+        // Intentar una operación simple de Firebase
+        const testRef = firebaseSync.db.collection('test').doc('connection_test');
+        await testRef.set({
+            test: true,
+            timestamp: new Date().toISOString()
+        }, { merge: true });
+        
+        console.log('✅ Conexión Firebase OK');
+        return true;
+    } catch (error) {
+        console.error('❌ Error de conexión Firebase:', error);
+        return false;
+    }
+}
+
+async function resincronizarCompleta() {
+    console.log('🔄 INICIANDO RESINCRONIZACIÓN COMPLETA...');
+    
+    // Verificar Firebase primero
+    const firebaseOk = await verificarConexionFirebase();
+    if (!firebaseOk) {
+        mostrarError('No hay conexión con Firebase. Verifica tu internet.');
+        return;
+    }
+    
+    mostrarStatus('🔄 Sincronizando todos los datos...', 'info');
+    
+    try {
+        // 1. Subir perfiles a Firebase
+        console.log('📤 Subiendo perfiles...');
+        for (const perfil of perfiles) {
+            await firebaseSync.saveProfile(perfil);
+        }
+        console.log('✅ Perfiles sincronizados:', perfiles.length);
+        
+        // 2. Subir viajes a Firebase
+        console.log('📤 Subiendo viajes...');
+        const viajesParaSincronizar = historial.filter(item => item.aceptado).slice(0, 50);
+        let viajesSubidos = 0;
+        
+        for (const viaje of viajesParaSincronizar) {
+            const exito = await firebaseSync.saveTrip(viaje);
+            if (exito) viajesSubidos++;
+        }
+        console.log('✅ Viajes sincronizados:', viajesSubidos, 'de', viajesParaSincronizar.length);
+        
+        // 3. Recargar datos de Firebase
+        console.log('📥 Recargando datos...');
+        await cargarDatos();
+        
+        console.log('✅ Resincronización completada');
+        mostrarStatus(`✅ Sincronizado: ${viajesSubidos} viajes, ${perfiles.length} perfiles`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Error en resincronización:', error);
+        mostrarStatus('❌ Error en sincronización', 'error');
+    }
+}
+    
     async loadTrips() {
         if (!this.initialized) return null;
 
@@ -1238,7 +1369,7 @@ class FirebaseSync {
 async function initializeUserCodeSystem() {
     console.log('🔐 Inicializando sistema de código de usuario...');
     
-    const savedCode = localStorage.getItem('DIBER_user_code');
+    const savedCode = localStorage.getItem('diber_user_code');
     
     if (savedCode) {
         userCodeSystem.userCode = savedCode;
@@ -1248,6 +1379,9 @@ async function initializeUserCodeSystem() {
         console.log('✅ Código de usuario cargado:', userCodeSystem.userCode);
         hideUserCodeModal();
         showUserCodeBanner();
+        
+        // Verificar conexión Firebase inmediatamente
+        await initializeFirebaseSync();
         return true;
     } else {
         showUserCodeModal();
@@ -1344,17 +1478,30 @@ function showUserCodeBanner() {
 async function initializeFirebaseSync() {
     console.log('🔄 Inicializando Firebase Sync...');
     
+    // Si ya está inicializado, no hacer nada
+    if (firebaseSync && firebaseSync.initialized) {
+        console.log('✅ Firebase Sync ya estaba inicializado');
+        return true;
+    }
+    
     firebaseSync = new FirebaseSync();
     const success = await firebaseSync.initialize();
     
     if (success) {
-        console.log('✅ Firebase Sync listo para usar');
+        console.log('✅ Firebase Sync inicializado CORRECTAMENTE');
+        
+        // Intentar cargar datos inmediatamente
+        setTimeout(async () => {
+            await cargarDatos();
+        }, 1000);
+        
         return true;
     } else {
         console.log('📱 Usando almacenamiento local solamente');
         return false;
     }
 }
+
 
 async function cargarDatos() {
     console.log('🔄 Cargando datos...');
@@ -1570,6 +1717,18 @@ function cerrarSyncPanel() {
     console.log('❌ Cerrando panel de sincronización');
     if (elementos.syncPanel) {
         elementos.syncPanel.style.display = 'none';
+    }
+}
+
+async function resetearSincronizacion() {
+    console.log('🔄 RESETEANDO SISTEMA DE SINCRONIZACIÓN...');
+    
+    if (confirm('¿Estás seguro de que quieres resetear la sincronización? Esto no borrará tus datos locales.')) {
+        // Limpiar instancia de Firebase
+        firebaseSync = null;
+        
+        // Recargar la página para reinicializar todo
+        location.reload();
     }
 }
 
@@ -1997,6 +2156,10 @@ window.showUserCodeModal = showUserCodeModal;
 window.exportarHistorial = exportarHistorial;
 window.exportarHistorialPDF = exportarHistorialPDF;
 window.mostrarExportModal = mostrarExportModal;
+window.diagnosticarSincronizacion = diagnosticarSincronizacion;
+window.resincronizarCompleta = resincronizarCompleta;
+window.resetearSincronizacion = resetearSincronizacion;
+window.verificarConexionFirebase = verificarConexionFirebase;
 
 function cambiarUsuario() {
     if (confirm('¿Estás seguro de que quieres cambiar de usuario?')) {
@@ -2087,6 +2250,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
