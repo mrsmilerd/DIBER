@@ -829,6 +829,59 @@ async function eliminarDelHistorial(viajeId) {
 }
 
 // =============================================
+// FUNCIÓN LIMPIAR HISTORIAL COMPLETO
+// =============================================
+
+function limpiarHistorialCompleto() {
+    console.log('🗑️ Solicitando limpiar historial completo...');
+    
+    if (historial.length === 0) {
+        mostrarMensaje('El historial ya está vacío', 'info');
+        return;
+    }
+    
+    if (confirm(`¿Estás seguro de que quieres limpiar TODO el historial?\n\nSe eliminarán ${historial.length} viajes.\n\n⚠️ Esta acción NO se puede deshacer.`)) {
+        // Limpiar historial local
+        historial = [];
+        
+        // Guardar cambios en localStorage
+        localStorage.setItem('historialViajes', JSON.stringify(historial));
+        guardarDatos();
+        
+        console.log('✅ Historial completo limpiado');
+        
+        // Actualizar la interfaz
+        actualizarHistorialConFiltros();
+        actualizarEstadisticas();
+        
+        mostrarMensaje(`✅ Historial limpiado correctamente (${historial.length} viajes)`, 'success');
+        
+        // Intentar limpiar también de Firebase si está disponible
+        if (firebaseSync && firebaseSync.initialized) {
+            try {
+                console.log('☁️ Intentando limpiar Firebase...');
+                // Obtener todos los viajes de Firebase y eliminarlos uno por uno
+                const tripsRef = firebaseSync.db.collection('users').doc(userCodeSystem.userId)
+                    .collection('trips');
+                
+                const snapshot = await tripsRef.get();
+                const batch = firebaseSync.db.batch();
+                
+                snapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                console.log('✅ Historial de Firebase limpiado');
+            } catch (error) {
+                console.error('❌ Error limpiando Firebase:', error);
+                // No mostrar error al usuario, ya se limpió localmente
+            }
+        }
+    }
+}
+
+// =============================================
 // SISTEMA DE FILTRADO DE HISTORIAL
 // =============================================
 
@@ -2253,6 +2306,7 @@ window.generateUserCode = generateUserCode;
 window.setUserCode = setUserCode;
 window.cambiarUsuario = cambiarUsuario;
 window.eliminarDelHistorial = eliminarDelHistorial;
+window.limpiarHistorialCompleto = limpiarHistorialCompleto;
 window.procesarViajeRapido = procesarViajeRapido;
 window.mostrarPanelSync = mostrarPanelSync;
 window.forzarSincronizacion = forzarSincronizacion;
@@ -2356,5 +2410,6 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
