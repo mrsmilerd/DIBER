@@ -782,6 +782,7 @@ function actualizarHistorialConFiltros() {
     console.log('✅ Historial actualizado correctamente');
 }
 
+// CORREGIDO: Función ahora es async
 async function eliminarDelHistorial(viajeId) {
     console.log('🗑️ Intentando eliminar viaje con ID:', viajeId);
     
@@ -832,7 +833,8 @@ async function eliminarDelHistorial(viajeId) {
 // FUNCIÓN LIMPIAR HISTORIAL COMPLETO
 // =============================================
 
-function limpiarHistorialCompleto() {
+// CORREGIDO: Función ahora es async
+async function limpiarHistorialCompleto() {
     console.log('🗑️ Solicitando limpiar historial completo...');
     
     if (historial.length === 0) {
@@ -2410,6 +2412,3 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
-
-
-
