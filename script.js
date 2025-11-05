@@ -2357,29 +2357,36 @@ function aplicarTemaGuardado() {
     }
 }
 
-// ✅ EJECUTAR ESTO EN LA CONSOLA para limpiar duplicados
-function limpiarElementosDuplicados() {
-    const elementos = document.querySelectorAll('[id*="ganancia-hora"], [id*="eficiencia"], [id*="distancia"]');
-    const idsVistos = new Set();
-    const duplicados = [];
+/ EJECUTA ESTO EN LA CONSOLA para ver qué elementos tienes
+function diagnosticarRendimiento() {
+    console.log('🔍 DIAGNÓSTICO DE RENDIMIENTO');
+    console.log('==============================');
     
-    elementos.forEach(el => {
-        if (idsVistos.has(el.id)) {
-            duplicados.push(el);
-            el.remove(); // Eliminar duplicados
-        } else {
-            idsVistos.add(el.id);
-        }
+    const elementosClave = [
+        'rendimiento-ganancia-hora-linea',
+        'rendimiento-viaje-promedio-linea', 
+        'stats-ganancia-hora',
+        'stats-distancia-total',
+        'stats-eficiencia',
+        'stats-eficiencia-badge'
+    ];
+    
+    elementosClave.forEach(id => {
+        const el = document.getElementById(id);
+        console.log(`${id}:`, el ? `✅ "${el.textContent}"` : '❌ NO EXISTE');
     });
     
-    console.log(`🗑️ Eliminados ${duplicados.length} elementos duplicados`);
-    return duplicados;
+    // Buscar duplicados
+    const todosElementos = document.querySelectorAll('[id]');
+    const conteoIds = {};
+    
+    todosElementos.forEach(el => {
+        conteoIds[el.id] = (conteoIds[el.id] || 0) + 1;
+    });
+    
+    const duplicados = Object.entries(conteoIds).filter(([id, count]) => count > 1);
+    console.log('🔁 Elementos duplicados:', duplicados);
 }
-
-// Ejecutar al cargar la página
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(limpiarElementosDuplicados, 1000);
-});
 
 // =============================================
 // FUNCIONES DE SINCRONIZACIÓN
@@ -2588,6 +2595,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
