@@ -783,24 +783,48 @@ function actualizarHistorialConFiltros() {
 }
 
 function eliminarDelHistorial(viajeId) {
+    console.log('🗑️ Intentando eliminar viaje con ID:', viajeId);
+    
+    // Buscar el índice del viaje por ID
     const index = historial.findIndex(viaje => viaje.id === viajeId);
     
-    if (index !== -1 && confirm('¿Estás seguro de que quieres eliminar este viaje del historial?')) {
-        historial.splice(index, 1);
-        localStorage.setItem('historialViajes', JSON.stringify(historial));
-        actualizarHistorialConFiltros();
-        actualizarEstadisticas();
-        mostrarMensaje('Viaje eliminado correctamente', 'success');
+    if (index === -1) {
+        console.error('❌ Viaje no encontrado con ID:', viajeId);
+        mostrarError('No se pudo encontrar el viaje para eliminar');
+        return;
     }
-}
-
-function limpiarHistorialCompleto() {
-    if (confirm('¿Estás seguro de que quieres limpiar todo el historial? Esta acción no se puede deshacer.')) {
-        historial = [];
+    
+    if (confirm('¿Estás seguro de que quieres eliminar este viaje del historial?')) {
+        // Eliminar del historial local
+        historial.splice(index, 1);
+        
+        // Guardar cambios en localStorage
         localStorage.setItem('historialViajes', JSON.stringify(historial));
+        guardarDatos();
+        
+        console.log('✅ Viaje eliminado correctamente. Nuevo total:', historial.length);
+        
+        // Actualizar la interfaz
         actualizarHistorialConFiltros();
         actualizarEstadisticas();
-        mostrarMensaje('Historial limpiado correctamente', 'success');
+        
+        mostrarMensaje('Viaje eliminado correctamente', 'success');
+        
+        // Intentar eliminar también de Firebase si está disponible
+        if (firebaseSync && firebaseSync.initialized) {
+            try {
+                console.log('☁️ Intentando eliminar de Firebase...');
+                // Firebase no tiene un método delete en nuestra clase, así que lo manejamos directamente
+                const tripRef = firebaseSync.db.collection('users').doc(userCodeSystem.userId)
+                    .collection('trips').doc(viajeId);
+                
+                await tripRef.delete();
+                console.log('✅ Viaje eliminado de Firebase');
+            } catch (error) {
+                console.error('❌ Error eliminando de Firebase:', error);
+                // No mostrar error al usuario, ya se eliminó localmente
+            }
+        }
     }
 }
 
@@ -1529,13 +1553,20 @@ async function cargarDatos() {
     
     // Cargar de localStorage primero
     try {
+        // Cargar historial específico
+        const historialGuardado = localStorage.getItem('historialViajes');
+        if (historialGuardado) {
+            historial = JSON.parse(historialGuardado);
+            console.log('💾 Historial local cargado:', historial.length, 'viajes');
+        }
+        
+        // Cargar datos generales
         const datosGuardados = localStorage.getItem('DIBER_data');
         if (datosGuardados) {
             const datos = JSON.parse(datosGuardados);
             perfiles = datos.perfiles || [];
             perfilActual = datos.perfilActual || null;
-            historial = datos.historial || [];
-            console.log('💾 Datos locales cargados');
+            console.log('💾 Datos generales cargados');
         }
     } catch (error) {
         console.error('Error cargando datos locales:', error);
@@ -1546,22 +1577,48 @@ async function cargarDatos() {
     // Intentar cargar desde Firebase
     if (firebaseSync && firebaseSync.initialized) {
         try {
+            console.log('☁️ Intentando cargar desde Firebase...');
+            
             const cloudProfiles = await firebaseSync.loadProfiles();
             if (cloudProfiles && cloudProfiles.length > 0) {
+                console.log('✅ Perfiles de Firebase cargados:', cloudProfiles.length);
                 perfiles = cloudProfiles;
-                console.log('✅ Perfiles de Firebase cargados:', perfiles.length);
+                
+                // Actualizar perfil actual si es necesario
+                if (!perfilActual && perfiles.length > 0) {
+                    perfilActual = perfiles[0];
+                }
             }
             
             const cloudTrips = await firebaseSync.loadTrips();
             if (cloudTrips && cloudTrips.length > 0) {
-                historial = cloudTrips;
-                console.log('✅ Viajes de Firebase cargados:', historial.length);
+                console.log('✅ Viajes de Firebase cargados:', cloudTrips.length);
+                
+                // Combinar historial local con cloud, evitando duplicados
+                const combinedHistorial = [...historial];
+                cloudTrips.forEach(cloudTrip => {
+                    const exists = combinedHistorial.some(localTrip => localTrip.id === cloudTrip.id);
+                    if (!exists) {
+                        combinedHistorial.push(cloudTrip);
+                    }
+                });
+                
+                // Ordenar por timestamp y limitar
+                historial = combinedHistorial
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    .slice(0, 100);
+                
+                console.log('🔄 Historial combinado:', historial.length, 'viajes');
+                
+                // Guardar el historial combinado localmente
+                localStorage.setItem('historialViajes', JSON.stringify(historial));
             }
         } catch (error) {
             console.error('❌ Error cargando Firebase:', error);
         }
     }
 
+    // Asegurar que tenemos un perfil
     if (!perfilActual && perfiles.length > 0) {
         perfilActual = perfiles[0];
     }
@@ -1570,21 +1627,61 @@ async function cargarDatos() {
     actualizarEstadisticas();
     actualizarHistorialConFiltros();
     
-    guardarDatos();
+    guardarDatos(); // Sincronizar datos locales
+    
+    console.log('🎉 Carga de datos completada');
+    console.log('📊 Resumen final:', {
+        perfiles: perfiles.length,
+        historial: historial.length,
+        perfilActual: perfilActual?.nombre
+    });
 }
 
 function guardarDatos() {
     console.log('💾 Guardando datos...');
     
+    // Guardar historial específico
+    localStorage.setItem('historialViajes', JSON.stringify(historial));
+    
+    // Guardar datos generales
     localStorage.setItem('DIBER_data', JSON.stringify({
         perfiles,
         perfilActual,
-        historial,
+        historial, // También guardar historial aquí por si acaso
         version: '2.0',
         ultimaActualizacion: new Date().toISOString()
     }));
 
     console.log('✅ Datos guardados localmente');
+    console.log('📊 Resumen guardado:', {
+        perfiles: perfiles.length,
+        historial: historial.length,
+        perfilActual: perfilActual?.nombre
+    });
+}
+
+function verificarEliminacion(viajeId) {
+    console.log('🔍 VERIFICANDO ELIMINACIÓN:');
+    console.log('ID a eliminar:', viajeId);
+    
+    // Verificar si existe en el historial
+    const existe = historial.find(viaje => viaje.id === viajeId);
+    console.log('¿Existe en historial?:', !!existe);
+    
+    if (existe) {
+        console.log('Viaje encontrado:', existe);
+    }
+    
+    // Verificar localStorage
+    const historialLocal = localStorage.getItem('historialViajes');
+    const historialParsed = historialLocal ? JSON.parse(historialLocal) : [];
+    const existeEnLocalStorage = historialParsed.find(v => v.id === viajeId);
+    console.log('¿Existe en localStorage?:', !!existeEnLocalStorage);
+    
+    return {
+        existeEnHistorial: !!existe,
+        existeEnLocalStorage: !!existeEnLocalStorage
+    };
 }
 
 // =============================================
@@ -2259,3 +2356,4 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
