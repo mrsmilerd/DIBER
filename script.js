@@ -2338,6 +2338,30 @@ function aplicarTemaGuardado() {
     }
 }
 
+// ✅ EJECUTAR ESTO EN LA CONSOLA para limpiar duplicados
+function limpiarElementosDuplicados() {
+    const elementos = document.querySelectorAll('[id*="ganancia-hora"], [id*="eficiencia"], [id*="distancia"]');
+    const idsVistos = new Set();
+    const duplicados = [];
+    
+    elementos.forEach(el => {
+        if (idsVistos.has(el.id)) {
+            duplicados.push(el);
+            el.remove(); // Eliminar duplicados
+        } else {
+            idsVistos.add(el.id);
+        }
+    });
+    
+    console.log(`🗑️ Eliminados ${duplicados.length} elementos duplicados`);
+    return duplicados;
+}
+
+// Ejecutar al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(limpiarElementosDuplicados, 1000);
+});
+
 // =============================================
 // FUNCIONES DE SINCRONIZACIÓN
 // =============================================
@@ -2545,6 +2569,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
