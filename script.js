@@ -1764,7 +1764,6 @@ function actualizarEstadisticas() {
         return;
     }
     
-    // ✅ CORREGIDO: Usar solo viajes de HOY para el modal de resumen
     const hoy = new Date().toDateString();
     const viajesHoy = historial.filter(item => {
         if (!item.aceptado) return false;
@@ -1781,11 +1780,11 @@ function actualizarEstadisticas() {
     const tiempoTotal = viajesHoy.reduce((sum, item) => sum + (item.minutos || 0), 0);
     const distanciaTotal = viajesHoy.reduce((sum, item) => sum + (item.distancia || 0), 0);
     
-    // ✅ CORREGIDO: Calcular viajes rentables correctamente para HOY
     const viajesRentables = viajesHoy.filter(item => {
         return item.rentable === true || item.rentabilidad === 'rentable';
     }).length;
     
+    // ✅ ACTUALIZAR ESTADÍSTICAS PRINCIPALES
     elementos['stats-viajes'].textContent = totalViajes;
     elementos['stats-ganancia'].textContent = formatearMoneda(gananciaTotal);
     
@@ -1799,66 +1798,68 @@ function actualizarEstadisticas() {
     
     const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
     const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
-    
-    // ✅ CORREGIDO: Cálculo de eficiencia seguro para HOY
     const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
     
-    if (elementos['stats-ganancia-hora']) {
-        elementos['stats-ganancia-hora'].textContent = formatearMoneda(gananciaPorHora);
-    }
-    
-    if (elementos['stats-viaje-promedio']) {
-        elementos['stats-viaje-promedio'].textContent = formatearMoneda(viajePromedio);
-    }
-    
-    // ✅ NUEVO: Actualizar también las estadísticas de rendimiento específicas
-    actualizarEstadisticasRendimientoDia(totalViajes, viajesRentables, gananciaTotal, tiempoTotal, distanciaTotal, gananciaPorHora, eficiencia);
+    // ✅ ACTUALIZAR SOLO UNA SECCIÓN DE RENDIMIENTO - ELIMINAR DUPLICADOS
+    actualizarSeccionRendimiento(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia);
     
     console.log('📈 Estadísticas de HOY actualizadas:', {
         totalViajes,
         viajesRentables,
         eficiencia: `${eficiencia.toFixed(1)}%`,
         gananciaTotal: formatearMoneda(gananciaTotal),
+        gananciaPorHora: formatearMoneda(gananciaPorHora),
         distanciaTotal: `${distanciaTotal} km`,
         fecha: hoy
     });
 }
 
-// ✅ NUEVA FUNCIÓN: Actualizar estadísticas de rendimiento del DÍA
-function actualizarEstadisticasRendimientoDia(totalViajes, viajesRentables, gananciaTotal, tiempoTotal, distanciaTotal, gananciaPorHora, eficiencia) {
-    // Actualizar métricas de rendimiento específicas del día
-    const statsGananciaHoraRendimiento = document.getElementById('stats-ganancia-hora-rendimiento');
-    const statsViajePromedioRendimiento = document.getElementById('stats-viaje-promedio-rendimiento');
-    const statsDistanciaTotalRendimiento = document.getElementById('stats-distancia-total-rendimiento');
-    const statsEficienciaRendimiento = document.getElementById('stats-eficiencia-rendimiento');
-    const statsEficienciaBadgeRendimiento = document.getElementById('stats-eficiencia-badge-rendimiento');
+// ✅ FUNCIÓN ÚNICA para actualizar la sección de rendimiento
+function actualizarSeccionRendimiento(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia) {
+    console.log('🎯 Actualizando sección de rendimiento...');
     
-    if (statsGananciaHoraRendimiento) {
-        statsGananciaHoraRendimiento.textContent = formatearMoneda(gananciaPorHora);
+    // ✅ USAR LOS MISMOS IDs en TODA la aplicación
+    const elementosRendimiento = {
+        gananciaHoraLinea: document.getElementById('rendimiento-ganancia-hora-linea'),
+        viajePromedioLinea: document.getElementById('rendimiento-viaje-promedio-linea'),
+        gananciaHoraCard: document.getElementById('rendimiento-ganancia-hora-card'),
+        distanciaTotalCard: document.getElementById('rendimiento-distancia-total-card'),
+        eficienciaCard: document.getElementById('rendimiento-eficiencia-card'),
+        eficienciaBadge: document.getElementById('rendimiento-eficiencia-badge')
+    };
+    
+    // ✅ Actualizar elementos de línea (Ganancia/hora: RD$1800.00)
+    if (elementosRendimiento.gananciaHoraLinea) {
+        elementosRendimiento.gananciaHoraLinea.textContent = formatearMoneda(gananciaPorHora);
     }
     
-    if (statsViajePromedioRendimiento) {
-        const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
-        statsViajePromedioRendimiento.textContent = formatearMoneda(viajePromedio);
+    if (elementosRendimiento.viajePromedioLinea) {
+        elementosRendimiento.viajePromedioLinea.textContent = formatearMoneda(viajePromedio);
     }
     
-    if (statsDistanciaTotalRendimiento) {
+    // ✅ Actualizar cards (RD$0.00 Ganancia/Hora)
+    if (elementosRendimiento.gananciaHoraCard) {
+        elementosRendimiento.gananciaHoraCard.textContent = formatearMoneda(gananciaPorHora);
+    }
+    
+    if (elementosRendimiento.distanciaTotalCard) {
         const unidad = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
-        statsDistanciaTotalRendimiento.textContent = `${distanciaTotal} ${unidad}`;
+        elementosRendimiento.distanciaTotalCard.textContent = `${distanciaTotal} ${unidad}`;
     }
     
-    if (statsEficienciaRendimiento) {
-        statsEficienciaRendimiento.textContent = `${eficiencia.toFixed(1)}%`;
+    if (elementosRendimiento.eficienciaCard) {
+        elementosRendimiento.eficienciaCard.textContent = `${eficiencia.toFixed(1)}%`;
     }
     
-    if (statsEficienciaBadgeRendimiento) {
-        statsEficienciaBadgeRendimiento.textContent = `Eficiencia: ${eficiencia.toFixed(1)}%`;
+    if (elementosRendimiento.eficienciaBadge) {
+        elementosRendimiento.eficienciaBadge.textContent = `Eficiencia: ${eficiencia.toFixed(1)}%`;
     }
     
-    console.log('🎯 Rendimiento del DÍA actualizado:', {
-        gananciaPorHora: formatearMoneda(gananciaPorHora),
-        distanciaTotal: `${distanciaTotal} km`,
-        eficiencia: `${eficiencia.toFixed(1)}%`
+    // ✅ VERIFICAR que no hay elementos duplicados
+    const seccionesRendimiento = document.querySelectorAll('[id*="rendimiento"], [id*="ganancia"], [id*="eficiencia"]');
+    console.log('🔍 Elementos de rendimiento encontrados:', seccionesRendimiento.length);
+    seccionesRendimiento.forEach(el => {
+        console.log(`   - ${el.id}: ${el.textContent}`);
     });
 }
 
@@ -2544,5 +2545,6 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
