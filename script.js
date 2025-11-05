@@ -116,7 +116,7 @@ function exportarHistorial() {
 
 // Función para exportar como PDF (más avanzada)
 function exportarHistorialPDF() {
-    console.log('📄 Generando PDF...');
+    console.log('📄 Generando PDF con resumen...');
     
     if (!historial || historial.length === 0) {
         mostrarError('No hay historial para exportar');
@@ -124,94 +124,379 @@ function exportarHistorialPDF() {
     }
 
     try {
-        // Crear contenido del PDF
-        let pdfContent = `
-            <html>
-            <head>
-                <title>Historial UberCalc</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    h1 { color: #1a73e8; text-align: center; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    th { background-color: #f5f5f7; }
-                    .rentable { background-color: #d4edda; }
-                    .no-rentable { background-color: #f8d7da; }
-                    .oportunidad { background-color: #fff3cd; }
-                    .summary { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
-                </style>
-            </head>
-            <body>
-                <h1>📊 Historial UberCalc</h1>
-                <p><strong>Generado:</strong> ${new Date().toLocaleString('es-DO')}</p>
-                <p><strong>Total de viajes:</strong> ${historial.length}</p>
-        `;
-
-        // Estadísticas
-        const viajesAceptados = historial.filter(v => v.aceptado).length;
-        const viajesRentables = historial.filter(v => v.rentable).length;
-        const gananciaTotal = historial.reduce((sum, v) => sum + (v.ganancia || 0), 0);
+        // Calcular estadísticas completas
+        const viajesAceptados = historial.filter(v => v.aceptado);
+        const totalViajes = viajesAceptados.length;
+        const viajesRentables = viajesAceptados.filter(v => v.rentable).length;
         
-        pdfContent += `
-            <div class="summary">
-                <h3>📈 Resumen General</h3>
-                <p><strong>Viajes aceptados:</strong> ${viajesAceptados}</p>
-                <p><strong>Viajes rentables:</strong> ${viajesRentables}</p>
-                <p><strong>Ganancia total:</strong> RD$${gananciaTotal.toFixed(2)}</p>
+        const gananciaTotal = viajesAceptados.reduce((sum, v) => sum + (v.ganancia || v.tarifa || 0), 0);
+        const tiempoTotal = viajesAceptados.reduce((sum, v) => sum + (v.minutos || 0), 0);
+        const distanciaTotal = viajesAceptados.reduce((sum, v) => sum + (v.distancia || 0), 0);
+        
+        // Calcular costos totales
+        const costoCombustibleTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoCombustible || 0), 0);
+        const costoMantenimientoTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoMantenimiento || 0), 0);
+        const costoSeguroTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoSeguro || 0), 0);
+        const costoTotal = costoCombustibleTotal + costoMantenimientoTotal + costoSeguroTotal;
+        
+        const gananciaNeta = gananciaTotal - costoTotal;
+        const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
+        const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
+        const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
+
+        // Crear contenido del PDF mejorado
+        const pdfContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>UberCalc - Reporte Completo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1a73e8, #1565c0);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .title {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .section {
+            margin-bottom: 35px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #1a73e8;
+        }
+        
+        .section-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #1a73e8;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 2px solid #e9ecef;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #1a73e8;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .costs-breakdown {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+        
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .cost-item:last-child {
+            border-bottom: none;
+        }
+        
+        .cost-label {
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .cost-value {
+            font-weight: 600;
+            color: #1a73e8;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .summary-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .summary-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .performance-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .efficiency-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 25px;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 0.9em;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .highlight {
+            color: #1a73e8;
+            font-weight: 600;
+        }
+        
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+            }
+            .container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                max-width: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚗</div>
+            <h1 class="title">UberCalc - Reporte Completo</h1>
+            <p class="subtitle">Análisis detallado de tu actividad</p>
+        </div>
+        
+        <div class="content">
+            <!-- Información General -->
+            <div class="section">
+                <h2 class="section-title">📊 Información General</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${totalViajes}</div>
+                        <div class="stat-label">Total de Viajes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${viajesRentables}</div>
+                        <div class="stat-label">Viajes Rentables</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${formatearMoneda(gananciaTotal)}</div>
+                        <div class="stat-label">Ganancia Total</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${tiempoTotal} min</div>
+                        <div class="stat-label">Tiempo Total</div>
+                    </div>
+                </div>
+                <p><strong>Generado el:</strong> ${new Date().toLocaleString('es-DO')}</p>
+                <p><strong>Perfil activo:</strong> ${perfilActual?.nombre || 'No especificado'}</p>
             </div>
-        `;
-
-        // Tabla de viajes
-        pdfContent += `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Ganancia</th>
-                        <th>Tiempo</th>
-                        <th>Distancia</th>
-                        <th>RD$/min</th>
-                        <th>RD$/km</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        historial.forEach(viaje => {
-            const claseRentabilidad = viaje.rentabilidad || (viaje.rentable ? 'rentable' : 'no-rentable');
-            const textoRentabilidad = viaje.texto || (viaje.rentable ? 'RENTABLE' : 'NO RENTABLE');
-            const emoji = viaje.emoji || (viaje.rentable ? '✅' : '❌');
             
-            pdfContent += `
-                <tr class="${claseRentabilidad}">
-                    <td>${viaje.fecha || 'N/A'}</td>
-                    <td>RD$${(viaje.ganancia || 0).toFixed(2)}</td>
-                    <td>${viaje.minutos || 0} min</td>
-                    <td>${viaje.distancia || 0} km</td>
-                    <td>RD$${(viaje.gananciaPorMinuto || 0).toFixed(2)}</td>
-                    <td>RD$${(viaje.gananciaPorKm || 0).toFixed(2)}</td>
-                    <td>${emoji} ${textoRentabilidad}</td>
-                </tr>
-            `;
-        });
-
-        pdfContent += `
-                </tbody>
-            </table>
-            </body>
-            </html>
+            <!-- Ingresos -->
+            <div class="section">
+                <h2 class="section-title">💰 Ingresos</h2>
+                <div class="summary-card">
+                    <div class="summary-value">${formatearMoneda(gananciaTotal)}</div>
+                    <div class="summary-label">Ganancia Total</div>
+                </div>
+                <div class="costs-breakdown">
+                    <div class="cost-item">
+                        <span class="cost-label">Viajes Aceptados:</span>
+                        <span class="cost-value">${totalViajes}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span class="cost-label">Viaje Promedio:</span>
+                        <span class="cost-value">${formatearMoneda(viajePromedio)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span class="cost-label">Ganancia por Hora:</span>
+                        <span class="cost-value">${formatearMoneda(gananciaPorHora)}/h</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Costos -->
+            <div class="section">
+                <h2 class="section-title">📈 Costos Totales</h2>
+                <div class="summary-card" style="background: linear-gradient(135deg, #dc3545, #e83e8c);">
+                    <div class="summary-value">${formatearMoneda(costoTotal)}</div>
+                    <div class="summary-label">Costos Totales</div>
+                </div>
+                <div class="costs-breakdown">
+                    <div class="cost-item">
+                        <span class="cost-label">Combustible:</span>
+                        <span class="cost-value">${formatearMoneda(costoCombustibleTotal)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span class="cost-label">Mantenimiento:</span>
+                        <span class="cost-value">${formatearMoneda(costoMantenimientoTotal)}</span>
+                    </div>
+                    <div class="cost-item">
+                        <span class="cost-label">Seguro:</span>
+                        <span class="cost-value">${formatearMoneda(costoSeguroTotal)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rendimiento -->
+            <div class="section">
+                <h2 class="section-title">🎯 Rendimiento</h2>
+                <div class="performance-grid">
+                    <div class="performance-item">
+                        <div class="stat-value">${formatearMoneda(gananciaPorHora)}</div>
+                        <div class="stat-label">Ganancia/Hora</div>
+                    </div>
+                    <div class="performance-item">
+                        <div class="stat-value">${distanciaTotal} km</div>
+                        <div class="stat-label">Distancia Total</div>
+                    </div>
+                    <div class="performance-item">
+                        <div class="stat-value">${eficiencia.toFixed(1)}%</div>
+                        <div class="stat-label">Eficiencia</div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <span class="efficiency-badge">Eficiencia: ${eficiencia.toFixed(1)}%</span>
+                </div>
+            </div>
+            
+            <!-- Resumen Financiero -->
+            <div class="section">
+                <h2 class="section-title">💵 Resumen Financiero</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #28a745;">${formatearMoneda(gananciaTotal)}</div>
+                        <div class="stat-label">Ingresos Totales</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #dc3545;">${formatearMoneda(costoTotal)}</div>
+                        <div class="stat-label">Costos Totales</div>
+                    </div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); margin-top: 20px;">
+                    <div class="summary-value">${formatearMoneda(gananciaNeta)}</div>
+                    <div class="summary-label">GANANCIA NETA TOTAL</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Reporte generado por UberCalc • ${new Date().getFullYear()}</p>
+            <p>¡Sigue maximizando tus ganancias! 🚀</p>
+        </div>
+    </div>
+</body>
+</html>
         `;
 
-        // Abrir ventana para imprimir como PDF
+        // Crear ventana para el PDF
         const ventana = window.open('', '_blank');
         ventana.document.write(pdfContent);
         ventana.document.close();
         
-        // Esperar a que cargue el contenido y luego imprimir
+        // Esperar a que cargue y luego imprimir
         setTimeout(() => {
             ventana.print();
-        }, 500);
+            // Cerrar ventana después de imprimir (opcional)
+            // setTimeout(() => ventana.close(), 1000);
+        }, 1000);
+        
+        mostrarMensaje('✅ PDF generado correctamente', 'success');
         
     } catch (error) {
         console.error('❌ Error generando PDF:', error);
@@ -1802,6 +2087,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
