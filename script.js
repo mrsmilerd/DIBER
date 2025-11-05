@@ -1779,6 +1779,7 @@ function actualizarEstadisticas() {
     const totalViajes = viajesHoy.length;
     const gananciaTotal = viajesHoy.reduce((sum, item) => sum + (item.ganancia || item.tarifa || 0), 0);
     const tiempoTotal = viajesHoy.reduce((sum, item) => sum + (item.minutos || 0), 0);
+    const distanciaTotal = viajesHoy.reduce((sum, item) => sum + (item.distancia || 0), 0);
     
     // ✅ CORREGIDO: Calcular viajes rentables correctamente para HOY
     const viajesRentables = viajesHoy.filter(item => {
@@ -1810,12 +1811,54 @@ function actualizarEstadisticas() {
         elementos['stats-viaje-promedio'].textContent = formatearMoneda(viajePromedio);
     }
     
+    // ✅ NUEVO: Actualizar también las estadísticas de rendimiento específicas
+    actualizarEstadisticasRendimientoDia(totalViajes, viajesRentables, gananciaTotal, tiempoTotal, distanciaTotal, gananciaPorHora, eficiencia);
+    
     console.log('📈 Estadísticas de HOY actualizadas:', {
         totalViajes,
         viajesRentables,
         eficiencia: `${eficiencia.toFixed(1)}%`,
         gananciaTotal: formatearMoneda(gananciaTotal),
+        distanciaTotal: `${distanciaTotal} km`,
         fecha: hoy
+    });
+}
+
+// ✅ NUEVA FUNCIÓN: Actualizar estadísticas de rendimiento del DÍA
+function actualizarEstadisticasRendimientoDia(totalViajes, viajesRentables, gananciaTotal, tiempoTotal, distanciaTotal, gananciaPorHora, eficiencia) {
+    // Actualizar métricas de rendimiento específicas del día
+    const statsGananciaHoraRendimiento = document.getElementById('stats-ganancia-hora-rendimiento');
+    const statsViajePromedioRendimiento = document.getElementById('stats-viaje-promedio-rendimiento');
+    const statsDistanciaTotalRendimiento = document.getElementById('stats-distancia-total-rendimiento');
+    const statsEficienciaRendimiento = document.getElementById('stats-eficiencia-rendimiento');
+    const statsEficienciaBadgeRendimiento = document.getElementById('stats-eficiencia-badge-rendimiento');
+    
+    if (statsGananciaHoraRendimiento) {
+        statsGananciaHoraRendimiento.textContent = formatearMoneda(gananciaPorHora);
+    }
+    
+    if (statsViajePromedioRendimiento) {
+        const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
+        statsViajePromedioRendimiento.textContent = formatearMoneda(viajePromedio);
+    }
+    
+    if (statsDistanciaTotalRendimiento) {
+        const unidad = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
+        statsDistanciaTotalRendimiento.textContent = `${distanciaTotal} ${unidad}`;
+    }
+    
+    if (statsEficienciaRendimiento) {
+        statsEficienciaRendimiento.textContent = `${eficiencia.toFixed(1)}%`;
+    }
+    
+    if (statsEficienciaBadgeRendimiento) {
+        statsEficienciaBadgeRendimiento.textContent = `Eficiencia: ${eficiencia.toFixed(1)}%`;
+    }
+    
+    console.log('🎯 Rendimiento del DÍA actualizado:', {
+        gananciaPorHora: formatearMoneda(gananciaPorHora),
+        distanciaTotal: `${distanciaTotal} km`,
+        eficiencia: `${eficiencia.toFixed(1)}%`
     });
 }
 
@@ -2501,4 +2544,5 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
