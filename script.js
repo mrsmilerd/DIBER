@@ -66,6 +66,183 @@ function inicializarElementosDOM() {
 }
 
 // =============================================
+// SISTEMA DE EXPORTACIÓN DE HISTORIAL
+// =============================================
+
+function exportarHistorial() {
+    console.log('📤 Exportando historial...');
+    
+    if (!historial || historial.length === 0) {
+        mostrarError('No hay historial para exportar');
+        return;
+    }
+
+    try {
+        // Crear contenido CSV
+        let csvContent = "Fecha,Ganancia (RD$),Tiempo (min),Distancia (km),Ganancia/Minuto,Ganancia/Km,Rentabilidad\n";
+        
+        historial.forEach(viaje => {
+            const fecha = viaje.fecha || 'Fecha desconocida';
+            const ganancia = viaje.ganancia || viaje.tarifa || 0;
+            const minutos = viaje.minutos || 0;
+            const distancia = viaje.distancia || 0;
+            const porMinuto = viaje.gananciaPorMinuto || viaje.porMinuto || 0;
+            const porKm = viaje.gananciaPorKm || viaje.porKm || 0;
+            const rentabilidad = viaje.texto || (viaje.rentable ? 'RENTABLE' : 'NO RENTABLE');
+            
+            csvContent += `"${fecha}",${ganancia},${minutos},${distancia},${porMinuto},${porKm},"${rentabilidad}"\n`;
+        });
+
+        // Crear blob y descargar
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `ubercalc_historial_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        mostrarMensaje('✅ Historial exportado correctamente', 'success');
+        
+    } catch (error) {
+        console.error('❌ Error exportando historial:', error);
+        mostrarError('Error al exportar el historial');
+    }
+}
+
+// Función para exportar como PDF (más avanzada)
+function exportarHistorialPDF() {
+    console.log('📄 Generando PDF...');
+    
+    if (!historial || historial.length === 0) {
+        mostrarError('No hay historial para exportar');
+        return;
+    }
+
+    try {
+        // Crear contenido del PDF
+        let pdfContent = `
+            <html>
+            <head>
+                <title>Historial UberCalc</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    h1 { color: #1a73e8; text-align: center; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f5f5f7; }
+                    .rentable { background-color: #d4edda; }
+                    .no-rentable { background-color: #f8d7da; }
+                    .oportunidad { background-color: #fff3cd; }
+                    .summary { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+                </style>
+            </head>
+            <body>
+                <h1>📊 Historial UberCalc</h1>
+                <p><strong>Generado:</strong> ${new Date().toLocaleString('es-DO')}</p>
+                <p><strong>Total de viajes:</strong> ${historial.length}</p>
+        `;
+
+        // Estadísticas
+        const viajesAceptados = historial.filter(v => v.aceptado).length;
+        const viajesRentables = historial.filter(v => v.rentable).length;
+        const gananciaTotal = historial.reduce((sum, v) => sum + (v.ganancia || 0), 0);
+        
+        pdfContent += `
+            <div class="summary">
+                <h3>📈 Resumen General</h3>
+                <p><strong>Viajes aceptados:</strong> ${viajesAceptados}</p>
+                <p><strong>Viajes rentables:</strong> ${viajesRentables}</p>
+                <p><strong>Ganancia total:</strong> RD$${gananciaTotal.toFixed(2)}</p>
+            </div>
+        `;
+
+        // Tabla de viajes
+        pdfContent += `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Ganancia</th>
+                        <th>Tiempo</th>
+                        <th>Distancia</th>
+                        <th>RD$/min</th>
+                        <th>RD$/km</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        historial.forEach(viaje => {
+            const claseRentabilidad = viaje.rentabilidad || (viaje.rentable ? 'rentable' : 'no-rentable');
+            const textoRentabilidad = viaje.texto || (viaje.rentable ? 'RENTABLE' : 'NO RENTABLE');
+            const emoji = viaje.emoji || (viaje.rentable ? '✅' : '❌');
+            
+            pdfContent += `
+                <tr class="${claseRentabilidad}">
+                    <td>${viaje.fecha || 'N/A'}</td>
+                    <td>RD$${(viaje.ganancia || 0).toFixed(2)}</td>
+                    <td>${viaje.minutos || 0} min</td>
+                    <td>${viaje.distancia || 0} km</td>
+                    <td>RD$${(viaje.gananciaPorMinuto || 0).toFixed(2)}</td>
+                    <td>RD$${(viaje.gananciaPorKm || 0).toFixed(2)}</td>
+                    <td>${emoji} ${textoRentabilidad}</td>
+                </tr>
+            `;
+        });
+
+        pdfContent += `
+                </tbody>
+            </table>
+            </body>
+            </html>
+        `;
+
+        // Abrir ventana para imprimir como PDF
+        const ventana = window.open('', '_blank');
+        ventana.document.write(pdfContent);
+        ventana.document.close();
+        
+        // Esperar a que cargue el contenido y luego imprimir
+        setTimeout(() => {
+            ventana.print();
+        }, 500);
+        
+    } catch (error) {
+        console.error('❌ Error generando PDF:', error);
+        mostrarError('Error al generar el PDF');
+    }
+}
+
+// =============================================
+// FUNCIONES PARA MODAL DE EXPORTACIÓN
+// =============================================
+
+function mostrarExportModal() {
+    console.log('📤 Mostrando modal de exportación');
+    if (elementos.exportModal) {
+        elementos.exportModal.style.display = 'flex';
+    }
+}
+
+function configurarModalExportacion() {
+    console.log('🔧 Configurando modal de exportación');
+    const btnExportarPDF = document.getElementById('exportar-pdf');
+    if (btnExportarPDF) {
+        btnExportarPDF.addEventListener('click', function() {
+            console.log('📄 Click en exportar PDF');
+            exportarHistorialPDF();
+            cerrarExportModal();
+        });
+    }
+}
+
+// =============================================
 // SISTEMA DE HISTORIAL
 // =============================================
 
@@ -1358,6 +1535,11 @@ function configurarEventListeners() {
         elementos['clear-history'].addEventListener('click', limpiarHistorialCompleto);
     }
     
+     // ✅ NUEVO: Botón de exportar historial
+    if (elementos['exportar-historial']) {
+    elementos['exportar-historial'].addEventListener('click', mostrarExportModal);
+}
+    
     // Perfiles
     if (elementos['nuevo-perfil-btn']) {
         elementos['nuevo-perfil-btn'].addEventListener('click', () => mostrarConfigPerfil());
@@ -1379,18 +1561,18 @@ function configurarEventListeners() {
     if (elementos['theme-toggle']) {
         elementos['theme-toggle'].addEventListener('click', alternarTema);
     }
-
-    // Filtros de historial
-document.querySelectorAll('.filtro-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        cambiarFiltroHistorial(btn.dataset.filtro);
-    });
-});
-    
+  
     // Sincronización
     if (elementos['sync-status-btn']) {
         elementos['sync-status-btn'].addEventListener('click', mostrarPanelSync);
     }
+    
+    // ✅ NUEVO: Filtros de historial
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            cambiarFiltroHistorial(btn.dataset.filtro);
+        });
+    });
     
     console.log('✅ Event listeners configurados');
 }
@@ -1527,6 +1709,9 @@ window.forzarSincronizacion = forzarSincronizacion;
 window.mostrarInfoSync = mostrarInfoSync;
 window.diagnosticarSync = diagnosticarSync;
 window.showUserCodeModal = showUserCodeModal;
+window.exportarHistorial = exportarHistorial;
+window.exportarHistorialPDF = exportarHistorialPDF;
+window.mostrarExportModal = mostrarExportModal;
 
 function cambiarUsuario() {
     if (confirm('¿Estás seguro de que quieres cambiar de usuario?')) {
@@ -1564,6 +1749,7 @@ async function inicializarApp() {
         
         aplicarTemaGuardado();
         configurarEventListeners();
+        configurarModalExportacion();
         
         if (perfiles.length === 0) {
             mostrarPantalla('perfil');
@@ -1616,6 +1802,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
