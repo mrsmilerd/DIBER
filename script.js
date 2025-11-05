@@ -1800,8 +1800,8 @@ function actualizarEstadisticas() {
     const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
     const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
     
-    // ✅ ACTUALIZAR SOLO UNA SECCIÓN DE RENDIMIENTO - ELIMINAR DUPLICADOS
-    actualizarSeccionRendimiento(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia);
+    // ✅ ACTUALIZAR SOLO UNA VEZ - USAR IDs CONSISTENTES
+    actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia);
     
     console.log('📈 Estadísticas de HOY actualizadas:', {
         totalViajes,
@@ -1814,53 +1814,72 @@ function actualizarEstadisticas() {
     });
 }
 
-// ✅ FUNCIÓN ÚNICA para actualizar la sección de rendimiento
-function actualizarSeccionRendimiento(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia) {
-    console.log('🎯 Actualizando sección de rendimiento...');
+// ✅ FUNCIÓN ÚNICA Y SIMPLIFICADA
+function actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia) {
+    console.log('🎯 Actualizando rendimiento unificado...');
     
-    // ✅ USAR LOS MISMOS IDs en TODA la aplicación
-    const elementosRendimiento = {
-        gananciaHoraLinea: document.getElementById('rendimiento-ganancia-hora-linea'),
-        viajePromedioLinea: document.getElementById('rendimiento-viaje-promedio-linea'),
-        gananciaHoraCard: document.getElementById('rendimiento-ganancia-hora-card'),
-        distanciaTotalCard: document.getElementById('rendimiento-distancia-total-card'),
-        eficienciaCard: document.getElementById('rendimiento-eficiencia-card'),
-        eficienciaBadge: document.getElementById('rendimiento-eficiencia-badge')
-    };
+    // ✅ SOLO ESTOS IDs DEBEN EXISTIR EN TU HTML
+    const ids = [
+        'rendimiento-ganancia-hora-linea',    // "Ganancia/hora: RD$1800.00"
+        'rendimiento-viaje-promedio-linea',   // "Viaje promedio: RD$150.00"  
+        'stats-ganancia-hora',                // "RD$1800.00" en card
+        'stats-distancia-total',              // "5 km" en card
+        'stats-eficiencia',                   // "100.0%" en card
+        'stats-eficiencia-badge'              // "Eficiencia: 100.0%"
+    ];
     
-    // ✅ Actualizar elementos de línea (Ganancia/hora: RD$1800.00)
-    if (elementosRendimiento.gananciaHoraLinea) {
-        elementosRendimiento.gananciaHoraLinea.textContent = formatearMoneda(gananciaPorHora);
-    }
-    
-    if (elementosRendimiento.viajePromedioLinea) {
-        elementosRendimiento.viajePromedioLinea.textContent = formatearMoneda(viajePromedio);
-    }
-    
-    // ✅ Actualizar cards (RD$0.00 Ganancia/Hora)
-    if (elementosRendimiento.gananciaHoraCard) {
-        elementosRendimiento.gananciaHoraCard.textContent = formatearMoneda(gananciaPorHora);
-    }
-    
-    if (elementosRendimiento.distanciaTotalCard) {
-        const unidad = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
-        elementosRendimiento.distanciaTotalCard.textContent = `${distanciaTotal} ${unidad}`;
-    }
-    
-    if (elementosRendimiento.eficienciaCard) {
-        elementosRendimiento.eficienciaCard.textContent = `${eficiencia.toFixed(1)}%`;
-    }
-    
-    if (elementosRendimiento.eficienciaBadge) {
-        elementosRendimiento.eficienciaBadge.textContent = `Eficiencia: ${eficiencia.toFixed(1)}%`;
-    }
-    
-    // ✅ VERIFICAR que no hay elementos duplicados
-    const seccionesRendimiento = document.querySelectorAll('[id*="rendimiento"], [id*="ganancia"], [id*="eficiencia"]');
-    console.log('🔍 Elementos de rendimiento encontrados:', seccionesRendimiento.length);
-    seccionesRendimiento.forEach(el => {
-        console.log(`   - ${el.id}: ${el.textContent}`);
+    const elementosRendimiento = {};
+    ids.forEach(id => {
+        elementosRendimiento[id] = document.getElementById(id);
+        if (!elementosRendimiento[id]) {
+            console.warn(`⚠️ Elemento no encontrado: ${id}`);
+        }
     });
+    
+    // ✅ Actualizar elementos de LÍNEA
+    if (elementosRendimiento['rendimiento-ganancia-hora-linea']) {
+        elementosRendimiento['rendimiento-ganancia-hora-linea'].textContent = formatearMoneda(gananciaPorHora);
+    }
+    
+    if (elementosRendimiento['rendimiento-viaje-promedio-linea']) {
+        elementosRendimiento['rendimiento-viaje-promedio-linea'].textContent = formatearMoneda(viajePromedio);
+    }
+    
+    // ✅ Actualizar CARDS
+    if (elementosRendimiento['stats-ganancia-hora']) {
+        elementosRendimiento['stats-ganancia-hora'].textContent = formatearMoneda(gananciaPorHora);
+    }
+    
+    if (elementosRendimiento['stats-distancia-total']) {
+        const unidad = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
+        elementosRendimiento['stats-distancia-total'].textContent = `${distanciaTotal} ${unidad}`;
+    }
+    
+    if (elementosRendimiento['stats-eficiencia']) {
+        elementosRendimiento['stats-eficiencia'].textContent = `${eficiencia.toFixed(1)}%`;
+    }
+    
+    if (elementosRendimiento['stats-eficiencia-badge']) {
+        elementosRendimiento['stats-eficiencia-badge'].textContent = `Eficiencia: ${eficiencia.toFixed(1)}%`;
+    }
+    
+    // ✅ VERIFICAR duplicados
+    const elementosDuplicados = document.querySelectorAll('[id*="ganancia"], [id*="eficiencia"], [id*="distancia"]');
+    const idsUnicos = new Set();
+    const duplicados = [];
+    
+    elementosDuplicados.forEach(el => {
+        if (idsUnicos.has(el.id)) {
+            duplicados.push({id: el.id, text: el.textContent});
+            console.warn(`🗑️ DUPLICADO: ${el.id} - "${el.textContent}"`);
+        } else {
+            idsUnicos.add(el.id);
+        }
+    });
+    
+    if (duplicados.length > 0) {
+        console.warn(`⚠️ Se encontraron ${duplicados.length} elementos duplicados:`, duplicados);
+    }
 }
 
 // ✅ NUEVA FUNCIÓN: Obtener estadísticas para PDF (todos los viajes)
@@ -2569,6 +2588,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
