@@ -782,7 +782,7 @@ function actualizarHistorialConFiltros() {
     console.log('✅ Historial actualizado correctamente');
 }
 
-function eliminarDelHistorial(viajeId) {
+async function eliminarDelHistorial(viajeId) {
     console.log('🗑️ Intentando eliminar viaje con ID:', viajeId);
     
     // Buscar el índice del viaje por ID
@@ -2356,4 +2356,5 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
