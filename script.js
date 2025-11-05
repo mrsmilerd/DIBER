@@ -492,8 +492,6 @@ function exportarHistorialPDF() {
         // Esperar a que cargue y luego imprimir
         setTimeout(() => {
             ventana.print();
-            // Cerrar ventana después de imprimir (opcional)
-            // setTimeout(() => ventana.close(), 1000);
         }, 1000);
         
         mostrarMensaje('✅ PDF generado correctamente', 'success');
@@ -548,14 +546,14 @@ function diagnosticarSincronizacion() {
     console.log('• Perfil actual:', perfilActual?.nombre);
     
     // Verificar localStorage
-    const localData = localStorage.getItem('diber_data');
+    const localData = localStorage.getItem('DIBER_data');
     const historialLocal = localStorage.getItem('historialViajes');
-    const userCode = localStorage.getItem('diber_user_code');
+    const userCode = localStorage.getItem('DIBER_user_code');
     
     console.log('📦 LOCALSTORAGE:');
-    console.log('• diber_data:', localData ? JSON.parse(localData).historial?.length + ' viajes' : 'No hay datos');
+    console.log('• DIBER_data:', localData ? JSON.parse(localData).historial?.length + ' viajes' : 'No hay datos');
     console.log('• historialViajes:', historialLocal ? JSON.parse(historialLocal).length + ' viajes' : 'No hay datos');
-    console.log('• diber_user_code:', userCode || 'No hay código');
+    console.log('• DIBER_user_code:', userCode || 'No hay código');
     
     // Verificar viajes recientes
     console.log('📅 VIAJES RECIENTES:');
@@ -597,7 +595,7 @@ function diagnosticarSincronizacion() {
 // Inicializar historial
 historial = JSON.parse(localStorage.getItem('historialViajes')) || [];
 
-function agregarAlHistorial(viaje) {
+async function agregarAlHistorial(viaje) {
     console.log('➕ agregarAlHistorial() llamado con:', viaje);
     
     // Validar datos esenciales
@@ -612,16 +610,14 @@ function agregarAlHistorial(viaje) {
     const porMinuto = viaje.gananciaPorMinuto || (minutos > 0 ? (tarifa / minutos) : 0);
     const porKm = viaje.gananciaPorKm || (distancia > 0 ? (tarifa / distancia) : 0);
     
-    // DETERMINAR RENTABILIDAD CORRECTAMENTE - ESTA ES LA CLAVE
+    // DETERMINAR RENTABILIDAD CORRECTAMENTE
     let rentabilidad, emoji, texto;
     
     if (viaje.rentabilidad) {
-        // Si ya viene con rentabilidad del cálculo, usarla
         rentabilidad = viaje.rentabilidad;
         emoji = viaje.emoji;
         texto = viaje.texto;
     } else if (perfilActual) {
-        // Calcular rentabilidad basada en los umbrales del perfil
         if (porMinuto >= perfilActual.umbralMinutoRentable && 
             porKm >= perfilActual.umbralKmRentable) {
             rentabilidad = 'rentable';
@@ -638,14 +634,13 @@ function agregarAlHistorial(viaje) {
             texto = 'NO RENTABLE';
         }
     } else {
-        // Sin perfil, marcar como no rentable por defecto
         rentabilidad = 'no-rentable';
         emoji = '❌';
         texto = 'NO RENTABLE';
     }
 
     const nuevoViaje = {
-        id: viaje.id || 'viaje_' + Date.now(),
+        id: 'viaje_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         ganancia: tarifa,
         tarifa: tarifa,
         minutos: minutos,
@@ -654,8 +649,8 @@ function agregarAlHistorial(viaje) {
         porKm: parseFloat(porKm.toFixed(2)),
         gananciaPorMinuto: parseFloat(porMinuto.toFixed(2)),
         gananciaPorKm: parseFloat(porKm.toFixed(2)),
-        rentable: rentabilidad === 'rentable', // ← ESTO ES IMPORTANTE
-        rentabilidad: rentabilidad, // ← Y ESTO TAMBIÉN
+        rentable: rentabilidad === 'rentable',
+        rentabilidad: rentabilidad,
         emoji: emoji,
         texto: texto,
         aceptado: viaje.aceptado !== undefined ? viaje.aceptado : true,
@@ -666,7 +661,7 @@ function agregarAlHistorial(viaje) {
             hour: '2-digit',
             minute: '2-digit'
         }),
-        timestamp: viaje.timestamp || new Date().toISOString(),
+        timestamp: new Date().toISOString(),
         gananciaNeta: viaje.gananciaNeta || 0,
         costoCombustible: viaje.costoCombustible || 0,
         costoMantenimiento: viaje.costoMantenimiento || 0,
@@ -677,8 +672,8 @@ function agregarAlHistorial(viaje) {
     };
     
     console.log('📝 Viaje procesado para historial:', nuevoViaje);
-    console.log('🎯 Estado de rentabilidad:', rentabilidad, 'Rentable:', nuevoViaje.rentable);
 
+    // AGREGAR AL HISTORIAL LOCAL
     historial.unshift(nuevoViaje);
     
     // Limitar historial a 100 elementos
@@ -686,8 +681,32 @@ function agregarAlHistorial(viaje) {
         historial = historial.slice(0, 100);
     }
     
+    // GUARDAR LOCALMENTE INMEDIATAMENTE
     localStorage.setItem('historialViajes', JSON.stringify(historial));
-    console.log('💾 Historial guardado. Total viajes:', historial.length);
+    guardarDatos();
+    
+    console.log('💾 Historial guardado localmente. Total viajes:', historial.length);
+    
+    // SINCRONIZAR CON FIREBASE SI ESTÁ DISPONIBLE
+    if (firebaseSync && firebaseSync.initialized && nuevoViaje.aceptado) {
+        try {
+            console.log('☁️ Intentando sincronizar con Firebase...');
+            const exito = await firebaseSync.saveTrip(nuevoViaje);
+            if (exito) {
+                console.log('✅ Viaje sincronizado con Firebase');
+                mostrarStatus('✅ Viaje guardado y sincronizado', 'success');
+            } else {
+                console.log('⚠️ Viaje guardado localmente (Firebase falló)');
+                mostrarStatus('✅ Viaje guardado localmente', 'success');
+            }
+        } catch (error) {
+            console.error('❌ Error sincronizando con Firebase:', error);
+            mostrarStatus('✅ Viaje guardado localmente', 'success');
+        }
+    } else {
+        console.log('📱 Viaje guardado localmente (Firebase no disponible)');
+        mostrarStatus('✅ Viaje guardado localmente', 'success');
+    }
     
     if (nuevoViaje.aceptado) {
         actualizarEstadisticasDia(nuevoViaje);
@@ -763,12 +782,15 @@ function actualizarHistorialConFiltros() {
     console.log('✅ Historial actualizado correctamente');
 }
 
-function eliminarDelHistorial(index) {
-    if (confirm('¿Estás seguro de que quieres eliminar este viaje del historial?')) {
+function eliminarDelHistorial(viajeId) {
+    const index = historial.findIndex(viaje => viaje.id === viajeId);
+    
+    if (index !== -1 && confirm('¿Estás seguro de que quieres eliminar este viaje del historial?')) {
         historial.splice(index, 1);
         localStorage.setItem('historialViajes', JSON.stringify(historial));
         actualizarHistorialConFiltros();
         actualizarEstadisticas();
+        mostrarMensaje('Viaje eliminado correctamente', 'success');
     }
 }
 
@@ -842,22 +864,6 @@ function cambiarFiltroHistorial(nuevoFiltro) {
     });
     
     actualizarHistorialConFiltros();
-}
-
-// =============================================
-// CORREGIR FUNCIÓN DE ELIMINACIÓN
-// =============================================
-
-function eliminarDelHistorial(viajeId) {
-    const index = historial.findIndex(viaje => viaje.id === viajeId);
-    
-    if (index !== -1 && confirm('¿Estás seguro de que quieres eliminar este viaje del historial?')) {
-        historial.splice(index, 1);
-        localStorage.setItem('historialViajes', JSON.stringify(historial));
-        actualizarHistorialConFiltros();
-        actualizarEstadisticas();
-        mostrarMensaje('Viaje eliminado correctamente', 'success');
-    }
 }
 
 // =============================================
@@ -1266,6 +1272,38 @@ class FirebaseSync {
         }
     }
 
+    async loadTrips() {
+        if (!this.initialized) return null;
+
+        try {
+            const tripsRef = this.db.collection('users').doc(this.userId)
+                .collection('trips');
+            
+            const snapshot = await tripsRef.orderBy('timestamp', 'desc').limit(100).get();
+            
+            if (!snapshot.empty) {
+                const trips = [];
+                snapshot.forEach(doc => {
+                    trips.push(doc.data());
+                });
+                
+                console.log('✅ Viajes cargados desde Firebase:', trips.length);
+                return trips;
+            } else {
+                return [];
+            }
+            
+        } catch (error) {
+            console.error('❌ Error cargando viajes desde Firebase:', error);
+            return null;
+        }
+    }
+}
+
+// =============================================
+// FUNCIONES DE SINCRONIZACIÓN MEJORADAS
+// =============================================
+
 async function verificarConexionFirebase() {
     console.log('📡 Verificando conexión Firebase...');
     
@@ -1333,32 +1371,16 @@ async function resincronizarCompleta() {
         mostrarStatus('❌ Error en sincronización', 'error');
     }
 }
-    
-    async loadTrips() {
-        if (!this.initialized) return null;
 
-        try {
-            const tripsRef = this.db.collection('users').doc(this.userId)
-                .collection('trips');
-            
-            const snapshot = await tripsRef.orderBy('timestamp', 'desc').limit(100).get();
-            
-            if (!snapshot.empty) {
-                const trips = [];
-                snapshot.forEach(doc => {
-                    trips.push(doc.data());
-                });
-                
-                console.log('✅ Viajes cargados desde Firebase:', trips.length);
-                return trips;
-            } else {
-                return [];
-            }
-            
-        } catch (error) {
-            console.error('❌ Error cargando viajes desde Firebase:', error);
-            return null;
-        }
+async function resetearSincronizacion() {
+    console.log('🔄 RESETEANDO SISTEMA DE SINCRONIZACIÓN...');
+    
+    if (confirm('¿Estás seguro de que quieres resetear la sincronización? Esto no borrará tus datos locales.')) {
+        // Limpiar instancia de Firebase
+        firebaseSync = null;
+        
+        // Recargar la página para reinicializar todo
+        location.reload();
     }
 }
 
@@ -1369,7 +1391,7 @@ async function resincronizarCompleta() {
 async function initializeUserCodeSystem() {
     console.log('🔐 Inicializando sistema de código de usuario...');
     
-    const savedCode = localStorage.getItem('diber_user_code');
+    const savedCode = localStorage.getItem('DIBER_user_code');
     
     if (savedCode) {
         userCodeSystem.userCode = savedCode;
@@ -1501,7 +1523,6 @@ async function initializeFirebaseSync() {
         return false;
     }
 }
-
 
 async function cargarDatos() {
     console.log('🔄 Cargando datos...');
@@ -1717,18 +1738,6 @@ function cerrarSyncPanel() {
     console.log('❌ Cerrando panel de sincronización');
     if (elementos.syncPanel) {
         elementos.syncPanel.style.display = 'none';
-    }
-}
-
-async function resetearSincronizacion() {
-    console.log('🔄 RESETEANDO SISTEMA DE SINCRONIZACIÓN...');
-    
-    if (confirm('¿Estás seguro de que quieres resetear la sincronización? Esto no borrará tus datos locales.')) {
-        // Limpiar instancia de Firebase
-        firebaseSync = null;
-        
-        // Recargar la página para reinicializar todo
-        location.reload();
     }
 }
 
@@ -1979,10 +1988,10 @@ function configurarEventListeners() {
         elementos['clear-history'].addEventListener('click', limpiarHistorialCompleto);
     }
     
-     // ✅ NUEVO: Botón de exportar historial
+    // ✅ NUEVO: Botón de exportar historial
     if (elementos['exportar-historial']) {
-    elementos['exportar-historial'].addEventListener('click', mostrarExportModal);
-}
+        elementos['exportar-historial'].addEventListener('click', mostrarExportModal);
+    }
     
     // Perfiles
     if (elementos['nuevo-perfil-btn']) {
@@ -2250,11 +2259,3 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
-
-
-
-
-
-
-
-
