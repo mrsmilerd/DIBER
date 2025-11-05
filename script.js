@@ -1773,21 +1773,17 @@ function actualizarEstadisticas() {
         return;
     }
     
-    const hoy = new Date().toDateString();
-    const viajesHoy = historial.filter(item => {
-        if (!item.aceptado) return false;
-        try {
-            const itemDate = new Date(item.timestamp).toDateString();
-            return itemDate === hoy;
-        } catch (error) {
-            return false;
-        }
-    });
+    // ✅ CORREGIDO: Usar TODOS los viajes aceptados, no solo los de hoy
+    const viajesAceptados = historial.filter(item => item.aceptado === true);
     
-    const totalViajes = viajesHoy.length;
-    const gananciaTotal = viajesHoy.reduce((sum, item) => sum + (item.tarifa || 0), 0);
-    const tiempoTotal = viajesHoy.reduce((sum, item) => sum + (item.minutos || 0), 0);
-    const viajesRentables = viajesHoy.filter(item => item.rentabilidad === 'rentable').length;
+    const totalViajes = viajesAceptados.length;
+    const gananciaTotal = viajesAceptados.reduce((sum, item) => sum + (item.ganancia || item.tarifa || 0), 0);
+    const tiempoTotal = viajesAceptados.reduce((sum, item) => sum + (item.minutos || 0), 0);
+    
+    // ✅ CORREGIDO: Usar rentabilidad correctamente
+    const viajesRentables = viajesAceptados.filter(item => {
+        return item.rentable === true || item.rentabilidad === 'rentable';
+    }).length;
     
     elementos['stats-viajes'].textContent = totalViajes;
     elementos['stats-ganancia'].textContent = formatearMoneda(gananciaTotal);
@@ -1803,6 +1799,9 @@ function actualizarEstadisticas() {
     const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
     const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
     
+    // ✅ CORREGIDO: Cálculo de eficiencia seguro
+    const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
+    
     if (elementos['stats-ganancia-hora']) {
         elementos['stats-ganancia-hora'].textContent = formatearMoneda(gananciaPorHora);
     }
@@ -1810,6 +1809,48 @@ function actualizarEstadisticas() {
     if (elementos['stats-viaje-promedio']) {
         elementos['stats-viaje-promedio'].textContent = formatearMoneda(viajePromedio);
     }
+    
+    // ✅ ACTUALIZAR ESTADÍSTICAS DE RENDIMIENTO SI EXISTEN
+    actualizarEstadisticasRendimiento(totalViajes, viajesRentables, gananciaTotal, tiempoTotal, gananciaPorHora, eficiencia);
+}
+
+// ✅ NUEVA FUNCIÓN: Actualizar estadísticas de rendimiento específicas
+function actualizarEstadisticasRendimiento(totalViajes, viajesRentables, gananciaTotal, tiempoTotal, gananciaPorHora, eficiencia) {
+    // Actualizar métricas de rendimiento si existen
+    const statsGananciaHora = document.getElementById('stats-ganancia-hora');
+    const statsDistanciaTotal = document.getElementById('stats-distancia-total');
+    const statsEficiencia = document.getElementById('stats-eficiencia');
+    const statsEficienciaBadge = document.getElementById('stats-eficiencia-badge');
+    
+    if (statsGananciaHora) {
+        statsGananciaHora.textContent = formatearMoneda(gananciaPorHora);
+    }
+    
+    // Calcular distancia total
+    const distanciaTotal = historial
+        .filter(item => item.aceptado === true)
+        .reduce((sum, item) => sum + (item.distancia || 0), 0);
+    
+    if (statsDistanciaTotal) {
+        const unidad = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
+        statsDistanciaTotal.textContent = `${distanciaTotal} ${unidad}`;
+    }
+    
+    if (statsEficiencia) {
+        statsEficiencia.textContent = `${eficiencia.toFixed(1)}%`;
+    }
+    
+    if (statsEficienciaBadge) {
+        statsEficienciaBadge.textContent = `Eficiencia: ${eficiencia.toFixed(1)}%`;
+    }
+    
+    console.log('📈 Estadísticas de rendimiento actualizadas:', {
+        totalViajes,
+        viajesRentables,
+        eficiencia: `${eficiencia.toFixed(1)}%`,
+        gananciaTotal: formatearMoneda(gananciaTotal),
+        gananciaPorHora: formatearMoneda(gananciaPorHora)
+    });
 }
 
 function actualizarEstadisticasDia(viaje) {
@@ -2412,3 +2453,4 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
