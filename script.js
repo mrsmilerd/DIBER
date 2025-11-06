@@ -2196,83 +2196,143 @@ function debugHistorial() {
 // SISTEMA DE RESULTADO RÁPIDO
 // =============================================
 
+// ✅ FUNCIÓN MEJORADA para mostrar el popup
 function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
-    
-    // Ocultar el resultado rápido normal temporalmente
-    if (elementos['resultado-rapido']) {
-        elementos['resultado-rapido'].classList.add('hidden');
+
+    let modal = document.getElementById('modal-rapido');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-rapido';
+        modal.className = 'modal-rapido-mejorado hidden';
+        document.body.appendChild(modal);
     }
+
+    // Preparar datos de tráfico
+    const tieneTrafico = resultado.trafficAnalysis;
+    const trafficInfo = tieneTrafico ? resultado.trafficAnalysis.trafficInfo : trafficAnalyzer.congestionLevels.low;
+    const tiempoReal = tieneTrafico ? resultado.trafficAnalysis.adjustedTime : resultado.tiempoOriginal;
     
-    let modalRapido = document.getElementById('modal-rapido');
-    if (!modalRapido) {
-        modalRapido = document.createElement('div');
-        modalRapido.id = 'modal-rapido';
-        modalRapido.className = 'modal-rapido hidden';
-        document.body.appendChild(modalRapido);
-    }
-    
-    // ✅ NUEVO: Preparar contenido con tráfico
-    let contenidoTrafico = '';
-    
-    if (resultado.trafficAnalysis) {
-        const traffic = resultado.trafficAnalysis;
-        contenidoTrafico = `
-            <div class="trafico-badge">
-                <div class="trafico-indicador trafico-${traffic.trafficCondition}">
-                    <span class="trafico-emoji">${traffic.trafficInfo.emoji}</span>
-                    <span class="trafico-texto">Tráfico ${traffic.trafficInfo.text}</span>
-                    <span class="trafico-tiempo">${traffic.adjustedTime} min</span>
-                </div>
-            </div>
-        `;
-    }
-    
-    modalRapido.innerHTML = `
-        <div class="modal-rapido-contenido">
-            <button class="modal-rapido-cerrar" onclick="cerrarModalRapido()">×</button>
-            
-            ${contenidoTrafico}
-            
-            <div class="modal-rapido-header">
-                <div class="modal-rapido-badge ${resultado.rentabilidad}">
-                    <span class="modal-rapido-emoji">${resultado.emoji}</span>
-                    <span class="modal-rapido-texto">${resultado.texto}</span>
-                </div>
-            </div>
-            
-            <div class="modal-rapido-metricas">
-                <div class="modal-rapido-metrica">
-                    <div class="modal-rapido-metrica-icono">⏱️</div>
-                    <div class="modal-rapido-metrica-valor">
-                        ${formatearMoneda(resultado.gananciaPorMinuto)}/min
+    // Actualizar contenido
+    modal.innerHTML = `
+        <div class="modal-rapido-contenido-mejorado">
+            <!-- Header con tráfico -->
+            <div class="modal-trafico-header ${tieneTrafico ? 'trafico-' + resultado.trafficAnalysis.trafficCondition : 'trafico-low'}">
+                <div class="trafico-status">
+                    <span class="trafico-emoji-big">${tieneTrafico ? trafficInfo.emoji : '🚦'}</span>
+                    <div class="trafico-info">
+                        <div class="trafico-title">Análisis de Tráfico</div>
+                        <div class="trafico-condition">${tieneTrafico ? trafficInfo.text.toUpperCase() : 'SIN DATOS'}</div>
                     </div>
-                    <div class="modal-rapido-metrica-label">Por minuto</div>
                 </div>
-                <div class="modal-rapido-metrica">
-                    <div class="modal-rapido-metrica-icono">🛣️</div>
-                    <div class="modal-rapido-metrica-valor">
-                        ${formatearMoneda(resultado.gananciaPorKm)}/${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}
-                    </div>
-                    <div class="modal-rapido-metrica-label">Por distancia</div>
-                </div>
-            </div>
-            
-            <div class="modal-rapido-acciones">
-                <button class="secondary-button" onclick="procesarViajeRapido(false)">
-                    <span class="button-icon">❌</span>
-                    Rechazar Viaje
+                <button class="modal-cerrar-elegante" onclick="cerrarModalRapido()">
+                    <span>×</span>
                 </button>
-                <button class="primary-button ${resultado.rentabilidad}" id="modal-rapido-aceptar" onclick="procesarViajeRapido(true)">
-                    <span class="button-icon">✅</span>
-                    Aceptar Viaje
+            </div>
+
+            <!-- Tiempo ajustado -->
+            <div class="tiempo-ajustado-section">
+                <div class="tiempo-original">
+                    <span class="tiempo-label">Tiempo estimado:</span>
+                    <span class="tiempo-valor">${resultado.tiempoOriginal || 0} min</span>
+                </div>
+                <div class="flecha-ajuste">↓</div>
+                <div class="tiempo-real">
+                    <span class="tiempo-label">Con tráfico real:</span>
+                    <span class="tiempo-valor destacado">${tiempoReal} min</span>
+                </div>
+            </div>
+
+            <!-- Resultado principal -->
+            <div class="resultado-principal">
+                <div class="badge-rentabilidad ${resultado.rentabilidad}">
+                    <div class="badge-emoji">${resultado.emoji}</div>
+                    <div class="badge-content">
+                        <div class="badge-title">${resultado.texto}</div>
+                        <div class="badge-subtitle">${obtenerSubtituloRentabilidad(resultado)}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Métricas -->
+            <div class="metricas-grid-mejorado">
+                <div class="metrica-card">
+                    <div class="metrica-icono">💸</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
+                        <div class="metrica-label">Por minuto</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">🛣️</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
+                        <div class="metrica-label">Por km</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">📊</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor">${calcularEficiencia(resultado)}%</div>
+                        <div class="metrica-label">Eficiencia</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Impacto del tráfico -->
+            ${tieneTrafico ? `
+            <div class="impacto-trafico">
+                <div class="impacto-header">
+                    <span class="impacto-icon">📈</span>
+                    <span class="impacto-title">Impacto del Tráfico</span>
+                </div>
+                <div class="impacto-content">
+                    ${obtenerMensajeImpacto(resultado.trafficAnalysis)}
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Acciones -->
+            <div class="acciones-mejoradas">
+                <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
+                    <span class="btn-icon">❌</span>
+                    <span class="btn-text">Rechazar Viaje</span>
+                    <span class="btn-badge">No rentable</span>
+                </button>
+                <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)">
+                    <span class="btn-icon">✅</span>
+                    <span class="btn-text">Aceptar Viaje</span>
+                    <span class="btn-badge">${resultado.rentabilidad === 'rentable' ? 'Recomendado' : 'Con cuidado'}</span>
                 </button>
             </div>
         </div>
     `;
-    
-    modalRapido.classList.remove('hidden');
+
+    modal.classList.remove('hidden');
     calculoActual = resultado;
+}
+
+// Funciones auxiliares
+function obtenerSubtituloRentabilidad(resultado) {
+    const porMinuto = resultado.gananciaPorMinuto;
+    if (porMinuto >= 20) return 'Excelentes ganancias';
+    if (porMinuto >= 15) return 'Buenas condiciones';
+    if (porMinuto >= 10) return 'Condiciones regulares';
+    return 'Ganancias bajas';
+}
+
+function calcularEficiencia(resultado) {
+    // Simular eficiencia basada en ganancia por minuto
+    const eficiencia = Math.min((resultado.gananciaPorMinuto / 25) * 100, 100);
+    return eficiencia.toFixed(0);
+}
+
+function obtenerMensajeImpacto(trafficAnalysis) {
+    const ajuste = trafficAnalysis.adjustment;
+    if (ajuste > 50) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Viaje significativamente afectado`;
+    if (ajuste > 20) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Considerar el impacto`;
+    if (ajuste > 0) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Impacto mínimo`;
+    return 'Tráfico fluido - Sin impacto en el tiempo';
 }
 
 // =============================================
@@ -3087,6 +3147,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
