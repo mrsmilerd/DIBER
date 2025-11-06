@@ -395,7 +395,7 @@
     <!-- AQUÍ FALTABA CERRAR EL DIV DE LA PESTAÑA CALCULAR -->
 </div>
 
-<!-- Pestaña Resumen -->
+<!-- Pestaña Resumen CORREGIDA -->
 <div class="tab-content" id="tab-resumen">
     <!-- Estadísticas del Día -->
     <div class="estadisticas-container">
@@ -420,70 +420,42 @@
         </div>
     </div>
 
-    <!-- Rendimiento -->
-    <div class="rendimiento-container">
+     <!-- Rendimiento - VERSIÓN CORREGIDA -->
+    <div class="rendimiento-section">
         <h3>🎯 Rendimiento</h3>
-        <div class="rendimiento-grid">
-            <div class="rendimiento-item">
+        
+        <!-- Líneas de texto -->
+        <div class="rendimiento-lineas">
+            <div class="rendimiento-linea">
                 <span class="rendimiento-label">Ganancia/hora:</span>
-                <span class="rendimiento-valor" id="stats-ganancia-hora">RD$0</span>
+                <span class="rendimiento-value" id="rendimiento-ganancia-hora-linea">RD$0.00</span>
             </div>
-            <div class="rendimiento-item">
+            <div class="rendimiento-linea">
                 <span class="rendimiento-label">Viaje promedio:</span>
-                <span class="rendimiento-valor" id="stats-viaje-promedio">RD$0</span>
+                <span class="rendimiento-value" id="rendimiento-viaje-promedio-linea">RD$0.00</span>
             </div>
-            <!-- En tu sección de Rendimiento -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-value" id="stats-ganancia-hora">RD$0.00</div>
-        <div class="stat-label">Ganancia/Hora</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" id="stats-distancia-total">0 km</div>
-        <div class="stat-label">Distancia Total</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" id="stats-eficiencia">0.0%</div>
-        <div class="stat-label">Eficiencia</div>
-    </div>
-</div>
-<div style="text-align: center; margin-top: 20px;">
-    <span class="efficiency-badge" id="stats-eficiencia-badge">Eficiencia: 0.0%</span>
-</div>
-            <div class="rendimiento-section">
-    <h3>🎯 Rendimiento</h3>
+        </div>
     
-    <!-- Líneas de texto -->
-    <div class="rendimiento-lineas">
-        <div class="rendimiento-linea">
-            <span class="rendimiento-label">Ganancia/hora:</span>
-            <span class="rendimiento-value" id="rendimiento-ganancia-hora-linea">RD$0.00</span>
+   <!-- Cards de métricas - IDs ÚNICOS -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="rendimiento-ganancia-hora-card">RD$0.00</div>
+                <div class="stat-label">Ganancia/Hora</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="rendimiento-distancia-total-card">0 km</div>
+                <div class="stat-label">Distancia Total</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="rendimiento-eficiencia-card">0.0%</div>
+                <div class="stat-label">Eficiencia</div>
+            </div>
         </div>
-        <div class="rendimiento-linea">
-            <span class="rendimiento-label">Viaje promedio:</span>
-            <span class="rendimiento-value" id="rendimiento-viaje-promedio-linea">RD$0.00</span>
+        
+        <!-- Badge de eficiencia -->
+        <div style="text-align: center; margin-top: 20px;">
+            <span class="efficiency-badge" id="rendimiento-eficiencia-badge">Eficiencia: 0.0%</span>
         </div>
-    </div>
-    
-    <!-- Cards de métricas -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-value" id="rendimiento-ganancia-hora-card">RD$0.00</div>
-            <div class="stat-label">Ganancia/Hora</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="rendimiento-distancia-total-card">0 km</div>
-            <div class="stat-label">Distancia Total</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="rendimiento-eficiencia-card">0.0%</div>
-            <div class="stat-label">Eficiencia</div>
-        </div>
-    </div>
-    
-    <!-- Badge de eficiencia -->
-    <div style="text-align: center; margin-top: 20px;">
-        <span class="efficiency-badge" id="rendimiento-eficiencia-badge">Eficiencia: 0.0%</span>
     </div>
 </div>
 
@@ -904,6 +876,7 @@
     </style>
 </body>
 </html>
+
 
 
 
