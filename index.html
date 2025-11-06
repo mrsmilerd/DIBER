@@ -444,7 +444,7 @@
         <!-- Métricas Principales en Grid -->
         <div class="metricas-principales-grid">
             <div class="metrica-principal">
-                <div class="metrica-icono">💸</div>
+                <div class="metica-icono">💸</div>
                 <div class="metrica-contenido">
                     <div class="metrica-valor" id="rendimiento-ganancia-hora-card">RD$0.00</div>
                     <div class="metrica-label">Ganancia por Hora</div>
@@ -547,6 +547,99 @@
             <p class="modal-footer small-info">
                 💡 Los viajes aceptados se guardan en tu historial semanal
             </p>
+        </div>
+    </div>
+
+    <!-- Modal Rápido Mejorado -->
+    <div id="modal-rapido" class="modal-rapido-mejorado hidden">
+        <div class="modal-rapido-contenido-mejorado">
+            <!-- Header con tráfico -->
+            <div class="modal-trafico-header" id="modal-trafico-header">
+                <div class="trafico-status" id="modal-trafico-status">
+                    <span class="trafico-emoji-big">🚦</span>
+                    <div class="trafico-info">
+                        <div class="trafico-title">Análisis de Tráfico</div>
+                        <div class="trafico-condition" id="modal-trafico-condition">Calculando...</div>
+                    </div>
+                </div>
+                <button class="modal-cerrar-elegante" onclick="cerrarModalRapido()">
+                    <span>×</span>
+                </button>
+            </div>
+
+            <!-- Tiempo ajustado -->
+            <div class="tiempo-ajustado-section">
+                <div class="tiempo-original">
+                    <span class="tiempo-label">Tiempo estimado:</span>
+                    <span class="tiempo-valor" id="modal-tiempo-original">-- min</span>
+                </div>
+                <div class="flecha-ajuste">↓</div>
+                <div class="tiempo-real">
+                    <span class="tiempo-label">Con tráfico real:</span>
+                    <span class="tiempo-valor destacado" id="modal-tiempo-real">-- min</span>
+                </div>
+            </div>
+
+            <!-- Resultado principal -->
+            <div class="resultado-principal" id="modal-resultado-principal">
+                <div class="badge-rentabilidad" id="modal-badge-rentabilidad">
+                    <div class="badge-emoji">✅</div>
+                    <div class="badge-content">
+                        <div class="badge-title">VIAJE RENTABLE</div>
+                        <div class="badge-subtitle" id="modal-badge-subtitle">Buenas condiciones</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Métricas -->
+            <div class="metricas-grid-mejorado">
+                <div class="metrica-card">
+                    <div class="metrica-icono">💸</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-ganancia-minuto">--/min</div>
+                        <div class="metrica-label">Por minuto</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">🛣️</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-ganancia-km">--/km</div>
+                        <div class="metrica-label">Por km</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">📊</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-eficiencia">--%</div>
+                        <div class="metrica-label">Eficiencia</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Impacto del tráfico -->
+            <div class="impacto-trafico" id="modal-impacto-trafico">
+                <div class="impacto-header">
+                    <span class="impacto-icon">📈</span>
+                    <span class="impacto-title">Impacto del Tráfico</span>
+                </div>
+                <div class="impacto-content" id="modal-impacto-content">
+                    El tráfico aumenta el tiempo en un <strong>0%</strong>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="acciones-mejoradas">
+                <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
+                    <span class="btn-icon">❌</span>
+                    <span class="btn-text">Rechazar Viaje</span>
+                    <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
+                </button>
+                <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)" id="modal-btn-aceptar">
+                    <span class="btn-icon">✅</span>
+                    <span class="btn-text">Aceptar Viaje</span>
+                    <span class="btn-badge" id="modal-badge-aceptar">Recomendado</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -903,20 +996,289 @@
             font-size: 0.85em;
             color: var(--text-secondary);
         }
+
+        /* Estilos para el modal rápido mejorado */
+        .modal-rapido-mejorado {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10002;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-rapido-mejorado.hidden {
+            display: none;
+        }
+
+        .modal-rapido-contenido-mejorado {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: modalAppear 0.3s ease-out;
+        }
+
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-trafico-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .trafico-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .trafico-emoji-big {
+            font-size: 2.5em;
+        }
+
+        .trafico-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .trafico-title {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .trafico-condition {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .modal-cerrar-elegante {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .modal-cerrar-elegante:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .tiempo-ajustado-section {
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        .tiempo-original, .tiempo-real {
+            margin: 10px 0;
+        }
+
+        .tiempo-label {
+            display: block;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .tiempo-valor {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .tiempo-valor.destacado {
+            color: #007cba;
+            font-size: 1.4em;
+        }
+
+        .flecha-ajuste {
+            font-size: 1.5em;
+            color: #007cba;
+            margin: 5px 0;
+        }
+
+        .resultado-principal {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .badge-rentabilidad {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 25px;
+            border-radius: 15px;
+            background: #e8f5e8;
+            border: 2px solid #4caf50;
+        }
+
+        .badge-emoji {
+            font-size: 2em;
+        }
+
+        .badge-content {
+            text-align: left;
+        }
+
+        .badge-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2e7d32;
+        }
+
+        .badge-subtitle {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .metricas-grid-mejorado {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 0 20px 20px;
+        }
+
+        .metrica-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .metrica-icono {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+        }
+
+        .metrica-valor {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .metrica-label {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .impacto-trafico {
+            padding: 15px 20px;
+            background: #fff3cd;
+            margin: 0 20px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .impacto-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .impacto-icon {
+            font-size: 1.2em;
+        }
+
+        .impacto-title {
+            font-weight: bold;
+        }
+
+        .impacto-content {
+            font-size: 0.9em;
+        }
+
+        .acciones-mejoradas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 0 20px 20px;
+        }
+
+        .btn-rechazar-elegante, .btn-aceptar-elegante {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-rechazar-elegante {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #ffcdd2;
+        }
+
+        .btn-aceptar-elegante {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 2px solid #c8e6c9;
+        }
+
+        .btn-rechazar-elegante:hover {
+            background: #ffcdd2;
+        }
+
+        .btn-aceptar-elegante:hover {
+            background: #c8e6c9;
+        }
+
+        .btn-icon {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .btn-text {
+            margin-bottom: 5px;
+        }
+
+        .btn-badge {
+            font-size: 0.8em;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: normal;
+        }
+
+        .btn-rechazar-elegante .btn-badge {
+            background: #ffcdd2;
+        }
+
+        .btn-aceptar-elegante .btn-badge {
+            background: #c8e6c9;
+        }
     </style>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
