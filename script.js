@@ -55,7 +55,8 @@ function inicializarElementosDOM() {
         'theme-toggle', 'exportModal', 'exportar-pdf', 'sync-panel',
         'sync-status-btn', 'sync-btn-icon',
         'rendimiento-ganancia-hora-linea', 'rendimiento-viaje-promedio-linea',
-        'stats-distancia-total', 'stats-eficiencia', 'stats-eficiencia-badge'
+        'rendimiento-ganancia-hora-card', 'rendimiento-distancia-total-card',
+        'rendimiento-eficiencia-card', 'rendimiento-eficiencia-badge'
     ];
 
     ids.forEach(id => {
@@ -1782,6 +1783,10 @@ function mostrarPantalla(pantalla) {
     }
 }
 
+// =============================================
+// FUNCIONES DE UTILIDAD - ACTUALIZADAS
+// =============================================
+
 function actualizarEstadisticas() {
     console.log('📊 Actualizando estadísticas...');
     
@@ -1825,7 +1830,7 @@ function actualizarEstadisticas() {
     const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
     const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
     
-    // ✅ ACTUALIZAR SOLO UNA VEZ - USAR IDs CONSISTENTES
+    // ✅ ACTUALIZAR RENDIMIENTO CON NUEVOS IDs
     actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia);
     
     console.log('📈 Estadísticas de HOY actualizadas:', {
@@ -2615,4 +2620,5 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
