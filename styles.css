@@ -2529,3 +2529,79 @@ select:focus-visible {
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
+
+/* ============================================= */
+/* ESTILOS PARA ANÁLISIS DE TRÁFICO AUTOMÁTICO */
+/* ============================================= */
+
+/* Badge de tráfico en resultado rápido */
+.trafico-badge {
+    margin-bottom: 15px;
+    animation: slideDown 0.3s ease;
+}
+
+.trafico-indicador {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border-left: 4px solid #FF9800;
+    font-size: 0.85em;
+    justify-content: space-between;
+}
+
+.trafico-emoji {
+    font-size: 1.2em;
+}
+
+.trafico-texto {
+    flex: 1;
+    font-weight: 600;
+}
+
+.trafico-tiempo {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.9em;
+}
+
+/* Indicador de análisis activo */
+.auto-calc-indicator.traffic-analysis {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.auto-calc-indicator.traffic-analysis .auto-calc-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.auto-calc-indicator.traffic-analysis .auto-calc-icon {
+    animation: pulse 1s infinite;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ajustes para el resultado rápido con tráfico */
+.resultado-rapido.con-trafico .resultado-badge {
+    margin-top: 0;
+}
+
+/* Estados de tráfico específicos */
+.trafico-low { border-color: #4CAF50 !important; }
+.trafico-moderate { border-color: #FF9800 !important; }
+.trafico-heavy { border-color: #F44336 !important; }
+.trafico-severe { border-color: #D32F2F !important; }
