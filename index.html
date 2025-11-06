@@ -361,6 +361,18 @@
             <span class="error-message" id="distancia-error"></span>
         </div>
 
+<!-- ✅ AQUÍ VA EL BOTÓN DE ACTIVAR UBICACIÓN -->
+        <div class="location-permission-section">
+            <button type="button" id="activar-ubicacion-btn" class="location-permission-btn">
+                <span class="button-icon">📍</span>
+                Activar Análisis de Tráfico
+            </button>
+            <div id="location-status" class="location-status hidden">
+                <span class="status-icon">✅</span>
+                <span class="status-text">Ubicación activa - Tráfico monitoreado</span>
+            </div>
+        </div>
+        
         <!-- Indicador de Cálculo Automático -->
         <div id="auto-calc-indicator" class="auto-calc-indicator hidden">
             <div class="auto-calc-content">
@@ -387,12 +399,11 @@
                     <div class="metrica-rapida">
                         <span class="metrica-label">Por km:</span>
                         <span id="metrica-km" class="metrica-valor">--</span>
-                    </div>
+                   </div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- AQUÍ FALTABA CERRAR EL DIV DE LA PESTAÑA CALCULAR -->
 </div>
 
 <!-- Pestaña Resumen - VERSIÓN MEJORADA -->
@@ -895,6 +906,7 @@
     </style>
 </body>
 </html>
+
 
 
 
