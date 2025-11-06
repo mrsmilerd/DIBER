@@ -1846,60 +1846,46 @@ function actualizarEstadisticas() {
     });
 }
 
-// ✅ FUNCIÓN ACTUALIZADA con los nuevos IDs
+// ✅ FUNCIÓN ACTUALIZADA con el nuevo diseño
 function actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia) {
     console.log('🎯 Actualizando rendimiento unificado...');
     
-    // ✅ LISTA ACTUALIZADA con los nuevos IDs únicos
-    const idsPermitidos = [
-        'rendimiento-ganancia-hora-linea',
-        'rendimiento-viaje-promedio-linea',  
-        'rendimiento-ganancia-hora-card',
-        'rendimiento-distancia-total-card', 
-        'rendimiento-eficiencia-card',
-        'rendimiento-eficiencia-badge'
-    ];
+    // Actualizar métricas principales
+    const elementos = {
+        'rendimiento-ganancia-hora-card': formatearMoneda(gananciaPorHora),
+        'rendimiento-viaje-promedio-linea': formatearMoneda(viajePromedio),
+        'rendimiento-distancia-total-card': `${distanciaTotal} ${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}`,
+        'rendimiento-ganancia-hora-linea': `${formatearMoneda(gananciaPorHora)} por hora`,
+        'rendimiento-eficiencia-card': `${eficiencia.toFixed(1)}%`,
+        'rendimiento-eficiencia-badge': `Eficiencia: ${eficiencia.toFixed(1)}%`
+    };
     
-    const elementosRendimiento = {};
-    
-    // ✅ Solo procesar elementos que existen
-    idsPermitidos.forEach(id => {
+    // Actualizar todos los elementos
+    Object.entries(elementos).forEach(([id, valor]) => {
         const elemento = document.getElementById(id);
         if (elemento) {
-            elementosRendimiento[id] = elemento;
-        } else {
-            console.warn(`⚠️ Elemento no encontrado: ${id}`);
+            elemento.textContent = valor;
         }
     });
     
-    // ✅ Actualizar elementos de LÍNEA
-    if (elementosRendimiento['rendimiento-ganancia-hora-linea']) {
-        elementosRendimiento['rendimiento-ganancia-hora-linea'].textContent = formatearMoneda(gananciaPorHora);
+    // ✅ ACTUALIZAR BARRA DE PROGRESO
+    const progresoFill = document.getElementById('progreso-eficiencia-fill');
+    if (progresoFill) {
+        progresoFill.style.width = `${Math.min(eficiencia, 100)}%`;
+        
+        // Cambiar color según la eficiencia
+        if (eficiencia >= 80) {
+            progresoFill.style.background = 'linear-gradient(90deg, #00b09b 0%, #96c93d 100%)';
+        } else if (eficiencia >= 60) {
+            progresoFill.style.background = 'linear-gradient(90deg, #4facfe 0%, #00f2fe 100%)';
+        } else if (eficiencia >= 40) {
+            progresoFill.style.background = 'linear-gradient(90deg, #ff9a9e 0%, #fecfef 100%)';
+        } else {
+            progresoFill.style.background = 'linear-gradient(90deg, #ff6b6b 0%, #ffa8a8 100%)';
+        }
     }
     
-    if (elementosRendimiento['rendimiento-viaje-promedio-linea']) {
-        elementosRendimiento['rendimiento-viaje-promedio-linea'].textContent = formatearMoneda(viajePromedio);
-    }
-    
-    // ✅ Actualizar CARDS con nuevos IDs
-    if (elementosRendimiento['rendimiento-ganancia-hora-card']) {
-        elementosRendimiento['rendimiento-ganancia-hora-card'].textContent = formatearMoneda(gananciaPorHora);
-    }
-    
-    if (elementosRendimiento['rendimiento-distancia-total-card']) {
-        const unidad = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
-        elementosRendimiento['rendimiento-distancia-total-card'].textContent = `${distanciaTotal} ${unidad}`;
-    }
-    
-    if (elementosRendimiento['rendimiento-eficiencia-card']) {
-        elementosRendimiento['rendimiento-eficiencia-card'].textContent = `${eficiencia.toFixed(1)}%`;
-    }
-    
-    if (elementosRendimiento['rendimiento-eficiencia-badge']) {
-        elementosRendimiento['rendimiento-eficiencia-badge'].textContent = `Eficiencia: ${eficiencia.toFixed(1)}%`;
-    }
-    
-    console.log('✅ Rendimiento unificado actualizado sin duplicados');
+    console.log('✅ Rendimiento unificado actualizado con diseño mejorado');
 }
 
 // ✅ NUEVA FUNCIÓN: Obtener estadísticas para PDF (todos los viajes)
@@ -2622,6 +2608,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
