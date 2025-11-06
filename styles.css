@@ -2778,3 +2778,373 @@ function agregarEstilosTrafico() {
     styleSheet.textContent = styles;
     document.head.appendChild(styleSheet);
 }
+
+/* ============================================= */
+/* DISEÑO MEJORADO PARA POPUP DE TRÁFICO */
+/* ============================================= */
+
+.modal-rapido-mejorado {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-rapido-contenido-mejorado {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    animation: slideUp 0.4s ease;
+    color: white;
+    position: relative;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Header con tráfico */
+.modal-trafico-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 25px 25px 15px 25px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px 20px 0 0;
+    backdrop-filter: blur(10px);
+}
+
+.trafico-status {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.trafico-emoji-big {
+    font-size: 2.5em;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
+
+.trafico-info {
+    flex: 1;
+}
+
+.trafico-title {
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.trafico-condition {
+    font-size: 1.3em;
+    font-weight: 800;
+    background: linear-gradient(45deg, #fff, #a5b4fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.modal-cerrar-elegante {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.5em;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.modal-cerrar-elegante:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+/* Tiempo ajustado */
+.tiempo-ajustado-section {
+    padding: 20px 25px;
+    text-align: center;
+}
+
+.tiempo-original, .tiempo-real {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+}
+
+.tiempo-label {
+    opacity: 0.8;
+    font-size: 0.9em;
+}
+
+.tiempo-valor {
+    font-weight: 700;
+    font-size: 1.1em;
+}
+
+.tiempo-valor.destacado {
+    background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.3em;
+}
+
+.flecha-ajuste {
+    font-size: 1.5em;
+    opacity: 0.6;
+    margin: 5px 0;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-5px); }
+    60% { transform: translateY(-3px); }
+}
+
+/* Resultado principal */
+.resultado-principal {
+    padding: 0 25px 20px 25px;
+}
+
+.badge-rentabilidad {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.badge-rentabilidad:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.badge-emoji {
+    font-size: 2.5em;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
+
+.badge-content {
+    flex: 1;
+}
+
+.badge-title {
+    font-size: 1.4em;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.badge-subtitle {
+    opacity: 0.8;
+    font-size: 0.9em;
+}
+
+/* Métricas */
+.metricas-grid-mejorado {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 0 25px 20px 25px;
+}
+
+.metrica-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 15px 10px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.metrica-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.metrica-icono {
+    font-size: 1.5em;
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+.metrica-valor {
+    font-weight: 700;
+    font-size: 0.95em;
+    margin-bottom: 4px;
+}
+
+.metrica-label {
+    font-size: 0.75em;
+    opacity: 0.7;
+}
+
+/* Impacto del tráfico */
+.impacto-trafico {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    margin: 0 25px 20px 25px;
+    padding: 15px;
+    border-left: 4px solid #4facfe;
+}
+
+.impacto-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.impacto-icon {
+    font-size: 1.2em;
+}
+
+.impacto-title {
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.impacto-content {
+    font-size: 0.85em;
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+/* Acciones */
+.acciones-mejoradas {
+    padding: 0 25px 25px 25px;
+    display: flex;
+    gap: 12px;
+}
+
+.btn-rechazar-elegante, .btn-aceptar-elegante {
+    flex: 1;
+    padding: 16px 20px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-rechazar-elegante {
+    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+    color: white;
+}
+
+.btn-aceptar-elegante {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: white;
+}
+
+.btn-rechazar-elegante:hover, .btn-aceptar-elegante:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.btn-rechazar-elegante:active, .btn-aceptar-elegante:active {
+    transform: translateY(0);
+}
+
+.btn-icon {
+    font-size: 1.2em;
+}
+
+.btn-text {
+    flex: 1;
+    text-align: center;
+}
+
+.btn-badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.7em;
+    font-weight: 600;
+}
+
+/* Estados de tráfico */
+.trafico-low .trafico-condition {
+    background: linear-gradient(45deg, #4CAF50, #8BC34A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.trafico-moderate .trafico-condition {
+    background: linear-gradient(45deg, #FF9800, #FFB74D);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.trafico-heavy .trafico-condition {
+    background: linear-gradient(45deg, #F44336, #EF5350);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.trafico-severe .trafico-condition {
+    background: linear-gradient(45deg, #D32F2F, #E57373);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .modal-rapido-contenido-mejorado {
+        margin: 10px;
+        max-width: none;
+    }
+    
+    .metricas-grid-mejorado {
+        grid-template-columns: 1fr;
+    }
+    
+    .acciones-mejoradas {
+        flex-direction: column;
+    }
+}
