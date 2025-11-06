@@ -19,6 +19,11 @@ let userCodeSystem = {
     initialized: false
 };
 
+// --- Variables de Control de Inicialización ---
+let firebaseInitialized = false;
+let loadingData = false;
+let appInitialized = false;
+
 // --- Configuración Firebase ---
 const firebaseConfig = {
   apiKey: "AIzaSyCf5j5Pu-go6ipUw2EnTO2OnKgvYLzkonY",
@@ -48,7 +53,9 @@ function inicializarElementosDOM() {
         'stats-viajes', 'stats-ganancia', 'stats-tiempo', 'stats-rentables', 'stats-ganancia-hora', 'stats-viaje-promedio',
         'perfiles-lista', 'nuevo-perfil-btn', 'perfil-form', 'volver-perfiles', 'cancelar-perfil', 'cambiar-perfil',
         'theme-toggle', 'exportModal', 'exportar-pdf', 'sync-panel',
-        'sync-status-btn', 'sync-btn-icon'
+        'sync-status-btn', 'sync-btn-icon',
+        'rendimiento-ganancia-hora-linea', 'rendimiento-viaje-promedio-linea',
+        'stats-distancia-total', 'stats-eficiencia', 'stats-eficiencia-badge'
     ];
 
     ids.forEach(id => {
@@ -493,6 +500,7 @@ function exportarHistorialPDF() {
         mostrarError('Error al generar el PDF');
     }
 }
+
 // =============================================
 // FUNCIONES PARA MODAL DE EXPORTACIÓN
 // =============================================
@@ -1448,6 +1456,7 @@ async function resetearSincronizacion() {
     if (confirm('¿Estás seguro de que quieres resetear la sincronización? Esto no borrará tus datos locales.')) {
         // Limpiar instancia de Firebase
         firebaseSync = null;
+        firebaseInitialized = false;
         
         // Recargar la página para reinicializar todo
         location.reload();
@@ -1564,14 +1573,14 @@ function showUserCodeBanner() {
 }
 
 // =============================================
-// FUNCIONES PRINCIPALES
+// FUNCIONES PRINCIPALES - CORREGIDAS
 // =============================================
 
 async function initializeFirebaseSync() {
     console.log('🔄 Inicializando Firebase Sync...');
     
-    // Si ya está inicializado, no hacer nada
-    if (firebaseSync && firebaseSync.initialized) {
+    // ✅ CORREGIDO: Prevenir inicialización múltiple
+    if (firebaseInitialized && firebaseSync && firebaseSync.initialized) {
         console.log('✅ Firebase Sync ya estaba inicializado');
         return true;
     }
@@ -1581,106 +1590,122 @@ async function initializeFirebaseSync() {
     
     if (success) {
         console.log('✅ Firebase Sync inicializado CORRECTAMENTE');
+        firebaseInitialized = true;
         
-        // Intentar cargar datos inmediatamente
-        setTimeout(async () => {
-            await cargarDatos();
-        }, 1000);
+        // ✅ CORREGIDO: Solo cargar datos si no se están cargando ya
+        if (!loadingData) {
+            setTimeout(async () => {
+                await cargarDatos();
+            }, 1000);
+        }
         
         return true;
     } else {
         console.log('📱 Usando almacenamiento local solamente');
+        firebaseInitialized = false;
         return false;
     }
 }
 
 async function cargarDatos() {
+    // ✅ CORREGIDO: Prevenir múltiples ejecuciones
+    if (loadingData) {
+        console.log('⏳ Carga de datos en progreso, omitiendo...');
+        return;
+    }
+    
+    loadingData = true;
     console.log('🔄 Cargando datos...');
     
-    // Cargar de localStorage primero
     try {
-        // Cargar historial específico
-        const historialGuardado = localStorage.getItem('historialViajes');
-        if (historialGuardado) {
-            historial = JSON.parse(historialGuardado);
-            console.log('💾 Historial local cargado:', historial.length, 'viajes');
-        }
-        
-        // Cargar datos generales
-        const datosGuardados = localStorage.getItem('DIBER_data');
-        if (datosGuardados) {
-            const datos = JSON.parse(datosGuardados);
-            perfiles = datos.perfiles || [];
-            perfilActual = datos.perfilActual || null;
-            console.log('💾 Datos generales cargados');
-        }
-    } catch (error) {
-        console.error('Error cargando datos locales:', error);
-        perfiles = [];
-        historial = [];
-    }
-
-    // Intentar cargar desde Firebase
-    if (firebaseSync && firebaseSync.initialized) {
+        // Cargar de localStorage primero
         try {
-            console.log('☁️ Intentando cargar desde Firebase...');
-            
-            const cloudProfiles = await firebaseSync.loadProfiles();
-            if (cloudProfiles && cloudProfiles.length > 0) {
-                console.log('✅ Perfiles de Firebase cargados:', cloudProfiles.length);
-                perfiles = cloudProfiles;
-                
-                // Actualizar perfil actual si es necesario
-                if (!perfilActual && perfiles.length > 0) {
-                    perfilActual = perfiles[0];
-                }
+            // Cargar historial específico
+            const historialGuardado = localStorage.getItem('historialViajes');
+            if (historialGuardado) {
+                historial = JSON.parse(historialGuardado);
+                console.log('💾 Historial local cargado:', historial.length, 'viajes');
             }
             
-            const cloudTrips = await firebaseSync.loadTrips();
-            if (cloudTrips && cloudTrips.length > 0) {
-                console.log('✅ Viajes de Firebase cargados:', cloudTrips.length);
-                
-                // Combinar historial local con cloud, evitando duplicados
-                const combinedHistorial = [...historial];
-                cloudTrips.forEach(cloudTrip => {
-                    const exists = combinedHistorial.some(localTrip => localTrip.id === cloudTrip.id);
-                    if (!exists) {
-                        combinedHistorial.push(cloudTrip);
-                    }
-                });
-                
-                // Ordenar por timestamp y limitar
-                historial = combinedHistorial
-                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                    .slice(0, 100);
-                
-                console.log('🔄 Historial combinado:', historial.length, 'viajes');
-                
-                // Guardar el historial combinado localmente
-                localStorage.setItem('historialViajes', JSON.stringify(historial));
+            // Cargar datos generales
+            const datosGuardados = localStorage.getItem('DIBER_data');
+            if (datosGuardados) {
+                const datos = JSON.parse(datosGuardados);
+                perfiles = datos.perfiles || [];
+                perfilActual = datos.perfilActual || null;
+                console.log('💾 Datos generales cargados');
             }
         } catch (error) {
-            console.error('❌ Error cargando Firebase:', error);
+            console.error('Error cargando datos locales:', error);
+            perfiles = [];
+            historial = [];
         }
-    }
 
-    // Asegurar que tenemos un perfil
-    if (!perfilActual && perfiles.length > 0) {
-        perfilActual = perfiles[0];
-    }
+        // ✅ CORREGIDO: Solo cargar desde Firebase si está inicializado
+        if (firebaseSync && firebaseSync.initialized) {
+            try {
+                console.log('☁️ Intentando cargar desde Firebase...');
+                
+                const cloudProfiles = await firebaseSync.loadProfiles();
+                if (cloudProfiles && cloudProfiles.length > 0) {
+                    console.log('✅ Perfiles de Firebase cargados:', cloudProfiles.length);
+                    perfiles = cloudProfiles;
+                    
+                    // Actualizar perfil actual si es necesario
+                    if (!perfilActual && perfiles.length > 0) {
+                        perfilActual = perfiles[0];
+                    }
+                }
+                
+                const cloudTrips = await firebaseSync.loadTrips();
+                if (cloudTrips && cloudTrips.length > 0) {
+                    console.log('✅ Viajes de Firebase cargados:', cloudTrips.length);
+                    
+                    // Combinar historial local con cloud, evitando duplicados
+                    const combinedHistorial = [...historial];
+                    cloudTrips.forEach(cloudTrip => {
+                        const exists = combinedHistorial.some(localTrip => localTrip.id === cloudTrip.id);
+                        if (!exists) {
+                            combinedHistorial.push(cloudTrip);
+                        }
+                    });
+                    
+                    // Ordenar por timestamp y limitar
+                    historial = combinedHistorial
+                        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                        .slice(0, 100);
+                    
+                    console.log('🔄 Historial combinado:', historial.length, 'viajes');
+                    
+                    // Guardar el historial combinado localmente
+                    localStorage.setItem('historialViajes', JSON.stringify(historial));
+                }
+            } catch (error) {
+                console.error('❌ Error cargando Firebase:', error);
+            }
+        }
 
-    actualizarInterfazPerfiles();
-    actualizarEstadisticas();
-    actualizarHistorialConFiltros();
-    
-    guardarDatos(); // Sincronizar datos locales
-    
-    console.log('🎉 Carga de datos completada');
-    console.log('📊 Resumen final:', {
-        perfiles: perfiles.length,
-        historial: historial.length,
-        perfilActual: perfilActual?.nombre
-    });
+        // Asegurar que tenemos un perfil
+        if (!perfilActual && perfiles.length > 0) {
+            perfilActual = perfiles[0];
+        }
+
+        actualizarInterfazPerfiles();
+        actualizarEstadisticas();
+        actualizarHistorialConFiltros();
+        
+        guardarDatos(); // Sincronizar datos locales
+        
+        console.log('🎉 Carga de datos completada');
+        console.log('📊 Resumen final:', {
+            perfiles: perfiles.length,
+            historial: historial.length,
+            perfilActual: perfilActual?.nombre
+        });
+        
+    } finally {
+        loadingData = false;
+    }
 }
 
 function guardarDatos() {
@@ -1814,7 +1839,7 @@ function actualizarEstadisticas() {
     });
 }
 
-// ✅ FUNCIÓN ÚNICA Y SIMPLIFICADA
+// ✅ FUNCIÓN CORREGIDA: Sin duplicados
 function actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia) {
     console.log('🎯 Actualizando rendimiento unificado...');
     
@@ -1863,7 +1888,7 @@ function actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanci
         elementosRendimiento['stats-eficiencia-badge'].textContent = `Eficiencia: ${eficiencia.toFixed(1)}%`;
     }
     
-    // ✅ VERIFICAR duplicados
+    // ✅ VERIFICAR Y ELIMINAR duplicados
     const elementosDuplicados = document.querySelectorAll('[id*="ganancia"], [id*="eficiencia"], [id*="distancia"]');
     const idsUnicos = new Set();
     const duplicados = [];
@@ -1872,13 +1897,15 @@ function actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanci
         if (idsUnicos.has(el.id)) {
             duplicados.push({id: el.id, text: el.textContent});
             console.warn(`🗑️ DUPLICADO: ${el.id} - "${el.textContent}"`);
+            // ✅ CORREGIDO: Eliminar elementos duplicados
+            el.remove();
         } else {
             idsUnicos.add(el.id);
         }
     });
     
     if (duplicados.length > 0) {
-        console.warn(`⚠️ Se encontraron ${duplicados.length} elementos duplicados:`, duplicados);
+        console.warn(`⚠️ Se encontraron y eliminaron ${duplicados.length} elementos duplicados:`, duplicados);
     }
 }
 
@@ -2521,10 +2548,16 @@ function cambiarUsuario() {
 }
 
 // =============================================
-// INICIALIZACIÓN FINAL
+// INICIALIZACIÓN FINAL - CORREGIDA
 // =============================================
 
 async function inicializarApp() {
+    // ✅ CORREGIDO: Prevenir inicialización múltiple
+    if (appInitialized) {
+        console.log('🚫 App ya inicializada, omitiendo...');
+        return;
+    }
+    
     console.log('🚀 Inicializando DIBER...');
     
     inicializarElementosDOM();
@@ -2553,6 +2586,7 @@ async function inicializarApp() {
             mostrarPantalla('perfil');
         }
         
+        appInitialized = true;
         console.log('🎉 DIBER inicializado correctamente');
         
     } catch (error) {
@@ -2595,10 +2629,3 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
-
-
-
-
-
-
-
