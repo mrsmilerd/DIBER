@@ -395,7 +395,7 @@
     <!-- AQUÍ FALTABA CERRAR EL DIV DE LA PESTAÑA CALCULAR -->
 </div>
 
-<!-- Pestaña Resumen CORREGIDA -->
+<!-- Pestaña Resumen - VERSIÓN MEJORADA -->
 <div class="tab-content" id="tab-resumen">
     <!-- Estadísticas del Día -->
     <div class="estadisticas-container">
@@ -420,41 +420,60 @@
         </div>
     </div>
 
-    <!-- Rendimiento - VERSIÓN SIMPLIFICADA Y CORREGIDA -->
-    <div class="rendimiento-section">
-        <h3>🎯 Rendimiento</h3>
-        
-        <!-- Líneas de texto -->
-        <div class="rendimiento-lineas">
-            <div class="rendimiento-linea">
-                <span class="rendimiento-label">Ganancia/hora:</span>
-                <span class="rendimiento-value" id="rendimiento-ganancia-hora-linea">RD$0.00</span>
-            </div>
-            <div class="rendimiento-linea">
-                <span class="rendimiento-label">Viaje promedio:</span>
-                <span class="rendimiento-value" id="rendimiento-viaje-promedio-linea">RD$0.00</span>
+    <!-- Rendimiento - DISEÑO MEJORADO -->
+    <div class="rendimiento-section-mejorada">
+        <div class="rendimiento-header">
+            <h3>🚀 Rendimiento</h3>
+            <div class="eficiencia-global" id="rendimiento-eficiencia-badge">
+                <span class="eficiencia-icon">📊</span>
+                <span class="eficiencia-texto">Eficiencia: <strong>0.0%</strong></span>
             </div>
         </div>
         
-        <!-- Cards de métricas - IDs ÚNICOS -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value" id="rendimiento-ganancia-hora-card">RD$0.00</div>
-                <div class="stat-label">Ganancia/Hora</div>
+        <!-- Métricas Principales en Grid -->
+        <div class="metricas-principales-grid">
+            <div class="metrica-principal">
+                <div class="metrica-icono">💸</div>
+                <div class="metrica-contenido">
+                    <div class="metrica-valor" id="rendimiento-ganancia-hora-card">RD$0.00</div>
+                    <div class="metrica-label">Ganancia por Hora</div>
+                    <div class="metrica-subtexto" id="rendimiento-ganancia-hora-linea">RD$0.00 por hora</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="rendimiento-distancia-total-card">0 km</div>
-                <div class="stat-label">Distancia Total</div>
+            
+            <div class="metrica-principal">
+                <div class="metrica-icono">📦</div>
+                <div class="metrica-contenido">
+                    <div class="metrica-valor" id="rendimiento-viaje-promedio-linea">RD$0.00</div>
+                    <div class="metrica-label">Viaje Promedio</div>
+                    <div class="metrica-subtexto">Por viaje aceptado</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="rendimiento-eficiencia-card">0.0%</div>
-                <div class="stat-label">Eficiencia</div>
+            
+            <div class="metrica-principal">
+                <div class="metrica-icono">🛣️</div>
+                <div class="metrica-contenido">
+                    <div class="metrica-valor" id="rendimiento-distancia-total-card">0 km</div>
+                    <div class="metrica-label">Distancia Total</div>
+                    <div class="metrica-subtexto">Recorrido hoy</div>
+                </div>
             </div>
         </div>
         
-        <!-- Badge de eficiencia -->
-        <div style="text-align: center; margin-top: 20px;">
-            <span class="efficiency-badge" id="rendimiento-eficiencia-badge">Eficiencia: 0.0%</span>
+        <!-- Barra de Progreso de Eficiencia -->
+        <div class="progreso-eficiencia">
+            <div class="progreso-header">
+                <span class="progreso-label">Nivel de Eficiencia</span>
+                <span class="progreso-porcentaje" id="rendimiento-eficiencia-card">0.0%</span>
+            </div>
+            <div class="progreso-barra">
+                <div class="progreso-fill" id="progreso-eficiencia-fill" style="width: 0%"></div>
+            </div>
+            <div class="progreso-marcadores">
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
+            </div>
         </div>
     </div>
 </div>
@@ -876,6 +895,7 @@
     </style>
 </body>
 </html>
+
 
 
 
