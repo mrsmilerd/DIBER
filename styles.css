@@ -2605,3 +2605,176 @@ select:focus-visible {
 .trafico-moderate { border-color: #FF9800 !important; }
 .trafico-heavy { border-color: #F44336 !important; }
 .trafico-severe { border-color: #D32F2F !important; }
+
+/* Estilos para el sistema de ubicación */
+.location-permission-section {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.location-permission-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.location-permission-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.location-permission-btn:active {
+    transform: translateY(0);
+}
+
+.location-status {
+    background: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+.location-status.hidden {
+    display: none;
+}
+
+/* Estilos para el badge de tráfico en resultados */
+.trafico-badge {
+    margin-bottom: 15px;
+    animation: slideDown 0.3s ease;
+}
+
+.trafico-indicador {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border-left: 4px solid #FF9800;
+    font-size: 0.9em;
+    justify-content: space-between;
+}
+
+.trafico-emoji {
+    font-size: 1.3em;
+}
+
+.trafico-texto {
+    flex: 1;
+    font-weight: 600;
+    text-align: left;
+}
+
+.trafico-tiempo {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.95em;
+}
+
+/* Estados de tráfico */
+.trafico-low { border-left-color: #4CAF50 !important; }
+.trafico-moderate { border-left-color: #FF9800 !important; }
+.trafico-heavy { border-left-color: #F44336 !important; }
+.trafico-severe { border-left-color: #D32F2F !important; }
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// =============================================
+// CSS PARA EL SISTEMA DE TRÁFICO (agregar a tu styles.css)
+// =============================================
+
+function agregarEstilosTrafico() {
+    const styles = `
+        /* Indicador de análisis de tráfico */
+        .auto-calc-indicator.traffic-analysis {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white;
+        }
+        
+        .auto-calc-indicator.traffic-analysis .auto-calc-icon {
+            animation: pulse 1s infinite;
+        }
+        
+        /* Badge de tráfico en resultados */
+        .trafico-badge {
+            margin-bottom: 15px;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .trafico-indicador {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #FF9800;
+            font-size: 0.85em;
+            justify-content: space-between;
+        }
+        
+        .trafico-emoji {
+            font-size: 1.2em;
+        }
+        
+        .trafico-texto {
+            flex: 1;
+            font-weight: 600;
+        }
+        
+        .trafico-tiempo {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+        
+        /* Estados de tráfico */
+        .trafico-low { border-left-color: #4CAF50 !important; }
+        .trafico-moderate { border-left-color: #FF9800 !important; }
+        .trafico-heavy { border-left-color: #F44336 !important; }
+        .trafico-severe { border-left-color: #D32F2F !important; }
+        
+        /* Animaciones */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    `;
+    
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+}
