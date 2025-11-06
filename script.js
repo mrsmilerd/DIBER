@@ -50,13 +50,15 @@ function inicializarElementosDOM() {
         'aceptar-viaje', 'rechazar-viaje',
         'modalFondo', 'modalContenido', 'modalResultadosDoble', 'modal-badge', 'modal-emoji', 'modal-texto',
         'history-list', 'clear-history', 'exportar-historial',
-        'stats-viajes', 'stats-ganancia', 'stats-tiempo', 'stats-rentables', 'stats-ganancia-hora', 'stats-viaje-promedio',
+        'stats-viajes', 'stats-ganancia', 'stats-tiempo', 'stats-rentables', // ✅ Mantener estos
         'perfiles-lista', 'nuevo-perfil-btn', 'perfil-form', 'volver-perfiles', 'cancelar-perfil', 'cambiar-perfil',
         'theme-toggle', 'exportModal', 'exportar-pdf', 'sync-panel',
         'sync-status-btn', 'sync-btn-icon',
+        // ✅ NUEVOS IDs para rendimiento
         'rendimiento-ganancia-hora-linea', 'rendimiento-viaje-promedio-linea',
         'rendimiento-ganancia-hora-card', 'rendimiento-distancia-total-card',
         'rendimiento-eficiencia-card', 'rendimiento-eficiencia-badge'
+        // ❌ ELIMINAR: 'stats-ganancia-hora', 'stats-viaje-promedio' (estos ya no existen)
     ];
 
     ids.forEach(id => {
@@ -2620,5 +2622,6 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
