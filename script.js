@@ -2395,223 +2395,6 @@ function diagnosticarRendimiento() {
 }
 
 // =============================================
-// SISTEMA DE ANÁLISIS DE TRÁFICO AUTOMÁTICO
-// =============================================
-
-class TrafficRadiusAnalyzer {
-    constructor() {
-        this.radiusKm = 10;
-        this.congestionLevels = {
-            low: { factor: 1.0, emoji: '✅', color: '#4CAF50', text: 'Fluido' },
-            moderate: { factor: 1.3, emoji: '⚠️', color: '#FF9800', text: 'Moderado' },
-            heavy: { factor: 1.7, emoji: '🚗', color: '#F44336', text: 'Pesado' },
-            severe: { factor: 2.2, emoji: '🚨', color: '#D32F2F', text: 'Muy Pesado' }
-        };
-        this.lastLocation = null;
-    }
-
-    // 🔍 Análisis SUPER RÁPIDO - Optimizado para tu uso
-    async quickTrafficAnalysis(userMinutes) {
-        console.log('⚡ Análisis rápido de tráfico...');
-        
-        try {
-            // 1. Ubicación rápida (cacheada si es posible)
-            const location = await this.getQuickLocation();
-            
-            // 2. Análisis instantáneo basado en hora/ubicación
-            const trafficCondition = this.instantTrafficCheck();
-            
-            // 3. Cálculo inmediato
-            const adjustedTime = Math.ceil(userMinutes * this.congestionLevels[trafficCondition].factor);
-            
-            return {
-                originalTime: userMinutes,
-                adjustedTime: adjustedTime,
-                trafficCondition: trafficCondition,
-                trafficInfo: this.congestionLevels[trafficCondition],
-                adjustment: ((this.congestionLevels[trafficCondition].factor - 1) * 100).toFixed(0),
-                isSignificant: adjustedTime > userMinutes * 1.2
-            };
-            
-        } catch (error) {
-            console.log('🔄 Usando estimación conservadora');
-            return this.getConservativeEstimate(userMinutes);
-        }
-    }
-
-    // 📍 Obtención RÁPIDA de ubicación
-    async getQuickLocation() {
-        // Si ya tenemos ubicación reciente, usarla
-        if (this.lastLocation && Date.now() - this.lastLocation.timestamp < 30000) { // 30 seg cache
-            return this.lastLocation.coords;
-        }
-        
-        return new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const coords = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                        accuracy: position.coords.accuracy
-                    };
-                    
-                    this.lastLocation = {
-                        coords: coords,
-                        timestamp: Date.now()
-                    };
-                    
-                    resolve(coords);
-                },
-                (error) => {
-                    reject(error);
-                },
-                { 
-                    enableHighAccuracy: false, // Más rápido
-                    timeout: 3000,            // Solo 3 segundos
-                    maximumAge: 60000         // Aceptar datos de hasta 1 minuto
-                }
-            );
-        });
-    }
-
-    // 🕒 Detección INSTANTÁNEA de tráfico
-    instantTrafficCheck() {
-        const now = new Date();
-        const hour = now.getHours();
-        const day = now.getDay();
-        const isWeekend = day === 0 || day === 6;
-        
-        // Lógica optimizada para República Dominicana
-        if (isWeekend) {
-            // Fin de semana en RD - tráfico en áreas comerciales
-            if (hour >= 11 && hour <= 20) return 'moderate';
-            return 'low';
-        } else {
-            // Semana en RD - horarios pico típicos
-            if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) return 'heavy';
-            if ((hour >= 12 && hour <= 14)) return 'moderate';
-            return 'low';
-        }
-    }
-
-    getConservativeEstimate(userMinutes) {
-        const hour = new Date().getHours();
-        const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
-        const factor = isPeak ? 1.6 : 1.2;
-        
-        return {
-            originalTime: userMinutes,
-            adjustedTime: Math.ceil(userMinutes * factor),
-            trafficCondition: isPeak ? 'heavy' : 'moderate',
-            trafficInfo: this.congestionLevels[isPeak ? 'heavy' : 'moderate'],
-            adjustment: ((factor - 1) * 100).toFixed(0),
-            isSignificant: true
-        };
-    }
-}
-
-// =============================================
-// INTEGRACIÓN CON EL CÁLCULO ACTUAL
-// =============================================
-
-let trafficAnalyzer = new TrafficRadiusAnalyzer();
-
-// 🔄 REEMPLAZO de la función de cálculo automático
-async function calcularAutomaticoConTrafico() {
-    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
-    
-    const tarifa = parseFloat(elementos.tarifa.value) || 0;
-    const minutos = parseFloat(elementos.minutos.value) || 0;
-    const distancia = parseFloat(elementos.distancia.value) || 0;
-    
-    const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
-    
-    if (datosCompletos) {
-        // Mostrar indicador de análisis
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.remove('hidden');
-            elementos['auto-calc-indicator'].classList.add('traffic-analysis');
-        }
-        
-        // ✅ ANÁLISIS AUTOMÁTICO DE TRÁFICO
-        let resultadoFinal;
-        
-        if (minutos > 3) { // Solo analizar viajes de más de 3 minutos
-            const trafficResult = await analizarTraficoAutomatico(tarifa, minutos, distancia);
-            resultadoFinal = trafficResult;
-        } else {
-            // Viajes muy cortos - cálculo normal
-            resultadoFinal = calcularRentabilidad(tarifa, minutos, distancia);
-        }
-        
-        if (resultadoFinal) {
-            calculoActual = resultadoFinal;
-            mostrarResultadoRapido(resultadoFinal);
-        }
-        
-        // Restaurar indicador normal
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.remove('traffic-analysis');
-        }
-        
-    } else {
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.add('hidden');
-        }
-        if (elementos['resultado-rapido']) {
-            elementos['resultado-rapido'].classList.add('hidden');
-        }
-        cerrarModalRapido();
-    }
-}
-
-// 🚦 Función principal de análisis
-async function analizarTraficoAutomatico(tarifa, minutos, distancia) {
-    try {
-        const trafficAnalysis = await trafficAnalyzer.quickTrafficAnalysis(minutos);
-        const resultado = calcularRentabilidad(tarifa, trafficAnalysis.adjustedTime, distancia);
-        
-        if (resultado && trafficAnalysis.isSignificant) {
-            // Agregar info de tráfico al resultado
-            resultado.trafficAnalysis = trafficAnalysis;
-            resultado.tiempoOriginal = minutos;
-            resultado.tiempoConTrafico = trafficAnalysis.adjustedTime;
-            
-            // Mostrar advertencia si el tráfico afecta significativamente
-            mostrarInfoTraficoEnResultado(resultado, trafficAnalysis);
-        }
-        
-        return resultado;
-        
-    } catch (error) {
-        console.warn('Error en análisis de tráfico:', error);
-        return calcularRentabilidad(tarifa, minutos, distancia);
-    }
-}
-
-// 💡 Mostrar info de tráfico en el resultado
-function mostrarInfoTraficoEnResultado(resultado, trafficAnalysis) {
-    // Modificar el resultado rápido para mostrar info de tráfico
-    const resultadoRapido = elementos['resultado-rapido'];
-    if (resultadoRapido && !resultadoRapido.classList.contains('hidden')) {
-        // Agregar badge de tráfico
-        const existingBadge = resultadoRapido.querySelector('.trafico-badge');
-        if (!existingBadge) {
-            const traficoBadge = document.createElement('div');
-            traficoBadge.className = 'trafico-badge';
-            traficoBadge.innerHTML = `
-                <div class="trafico-indicador" style="border-color: ${trafficAnalysis.trafficInfo.color}">
-                    <span class="trafico-emoji">${trafficAnalysis.trafficInfo.emoji}</span>
-                    <span class="trafico-texto">Tráfico ${trafficAnalysis.trafficInfo.text}</span>
-                    <span class="trafico-tiempo">${trafficAnalysis.adjustedTime} min</span>
-                </div>
-            `;
-            resultadoRapido.querySelector('.resultado-content').prepend(traficoBadge);
-        }
-    }
-}
-
-// =============================================
 // CONFIGURACIÓN INICIAL
 // =============================================
 
@@ -2769,21 +2552,27 @@ function cambiarUsuario() {
 }
 
 // =============================================
-// INICIALIZACIÓN FINAL - CORREGIDA
+// INICIALIZACIÓN COMPLETA CON ANÁLISIS DE TRÁFICO
 // =============================================
 
+// Variables globales para el sistema de tráfico
+let trafficAnalyzer = null;
+let trafficInitialized = false;
+
 async function inicializarApp() {
-    // ✅ CORREGIDO: Prevenir inicialización múltiple
-    if (appInitialized) {
+    // Prevenir inicialización múltiple
+    if (window.appInitialized) {
         console.log('🚫 App ya inicializada, omitiendo...');
         return;
     }
     
     console.log('🚀 Inicializando DIBER...');
     
+    // 1. Inicializar elementos DOM
     inicializarElementosDOM();
     
     try {
+        // 2. Sistema de código de usuario
         const userCodeInitialized = await initializeUserCodeSystem();
         
         if (!userCodeInitialized) {
@@ -2791,13 +2580,21 @@ async function inicializarApp() {
             return;
         }
         
+        // 3. Firebase Sync
         await initializeFirebaseSync();
+        
+        // 4. ✅ INICIALIZAR SISTEMA DE TRÁFICO AUTOMÁTICO
+        await inicializarSistemaTrafico();
+        
+        // 5. Cargar datos
         await cargarDatos();
         
+        // 6. Configuración de UI
         aplicarTemaGuardado();
         configurarEventListeners();
         configurarModalExportacion();
         
+        // 7. Mostrar pantalla adecuada
         if (perfiles.length === 0) {
             mostrarPantalla('perfil');
             mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
@@ -2807,8 +2604,10 @@ async function inicializarApp() {
             mostrarPantalla('perfil');
         }
         
-        appInitialized = true;
+        // Marcar como inicializado
+        window.appInitialized = true;
         console.log('🎉 DIBER inicializado correctamente');
+        console.log('✅ Sistema de tráfico automático activado');
         
     } catch (error) {
         console.error('❌ Error crítico en inicialización:', error);
@@ -2816,6 +2615,430 @@ async function inicializarApp() {
         mostrarStatus('Error al cargar la aplicación. Por favor, recarga la página.', 'error');
     }
 }
+
+// =============================================
+// SISTEMA DE ANÁLISIS DE TRÁFICO AUTOMÁTICO
+// =============================================
+
+class TrafficRadiusAnalyzer {
+    constructor() {
+        this.radiusKm = 10;
+        this.congestionLevels = {
+            low: { factor: 1.0, emoji: '✅', color: '#4CAF50', text: 'Fluido' },
+            moderate: { factor: 1.3, emoji: '⚠️', color: '#FF9800', text: 'Moderado' },
+            heavy: { factor: 1.7, emoji: '🚗', color: '#F44336', text: 'Pesado' },
+            severe: { factor: 2.2, emoji: '🚨', color: '#D32F2F', text: 'Muy Pesado' }
+        };
+        this.lastLocation = null;
+    }
+
+    // 🔍 Análisis SUPER RÁPIDO
+    async quickTrafficAnalysis(userMinutes) {
+        console.log('⚡ Análisis rápido de tráfico...');
+        
+        try {
+            // 1. Ubicación rápida
+            const location = await this.getQuickLocation();
+            
+            // 2. Análisis instantáneo
+            const trafficCondition = this.instantTrafficCheck();
+            
+            // 3. Cálculo inmediato
+            const adjustedTime = Math.ceil(userMinutes * this.congestionLevels[trafficCondition].factor);
+            
+            return {
+                originalTime: userMinutes,
+                adjustedTime: adjustedTime,
+                trafficCondition: trafficCondition,
+                trafficInfo: this.congestionLevels[trafficCondition],
+                adjustment: ((this.congestionLevels[trafficCondition].factor - 1) * 100).toFixed(0),
+                isSignificant: adjustedTime > userMinutes * 1.2,
+                location: location
+            };
+            
+        } catch (error) {
+            console.log('🔄 Usando estimación conservadora');
+            return this.getConservativeEstimate(userMinutes);
+        }
+    }
+
+    // 📍 Obtención RÁPIDA de ubicación
+    async getQuickLocation() {
+        // Cache de 30 segundos para mayor velocidad
+        if (this.lastLocation && Date.now() - this.lastLocation.timestamp < 30000) {
+            return this.lastLocation.coords;
+        }
+        
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const coords = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+                    
+                    this.lastLocation = {
+                        coords: coords,
+                        timestamp: Date.now()
+                    };
+                    
+                    resolve(coords);
+                },
+                (error) => {
+                    console.warn('Error obteniendo ubicación:', error);
+                    reject(error);
+                },
+                { 
+                    enableHighAccuracy: false, // Más rápido
+                    timeout: 3000,            // Solo 3 segundos
+                    maximumAge: 60000         // Aceptar datos de hasta 1 minuto
+                }
+            );
+        });
+    }
+
+    // 🕒 Detección INSTANTÁNEA de tráfico
+    instantTrafficCheck() {
+        const now = new Date();
+        const hour = now.getHours();
+        const day = now.getDay();
+        const isWeekend = day === 0 || day === 6;
+        
+        // Lógica optimizada para República Dominicana
+        if (isWeekend) {
+            // Fin de semana en RD
+            if (hour >= 11 && hour <= 20) return 'moderate';
+            return 'low';
+        } else {
+            // Semana en RD - horarios pico
+            if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) return 'heavy';
+            if ((hour >= 12 && hour <= 14)) return 'moderate';
+            return 'low';
+        }
+    }
+
+    getConservativeEstimate(userMinutes) {
+        const hour = new Date().getHours();
+        const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
+        const factor = isPeak ? 1.6 : 1.2;
+        
+        return {
+            originalTime: userMinutes,
+            adjustedTime: Math.ceil(userMinutes * factor),
+            trafficCondition: isPeak ? 'heavy' : 'moderate',
+            trafficInfo: this.congestionLevels[isPeak ? 'heavy' : 'moderate'],
+            adjustment: ((factor - 1) * 100).toFixed(0),
+            isSignificant: true,
+            location: null
+        };
+    }
+}
+
+// =============================================
+// FUNCIONES DE CONFIGURACIÓN DEL SISTEMA DE TRÁFICO
+// =============================================
+
+async function inicializarSistemaTrafico() {
+    console.log('🚗 Inicializando sistema de análisis de tráfico...');
+    
+    try {
+        // Crear instancia del analizador
+        trafficAnalyzer = new TrafficRadiusAnalyzer();
+        
+        // Configurar event listeners para tráfico
+        configurarSistemaTrafico();
+        
+        // Verificar permisos de ubicación
+        await verificarPermisosUbicacion();
+        
+        trafficInitialized = true;
+        console.log('✅ Sistema de tráfico inicializado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error inicializando sistema de tráfico:', error);
+        // El sistema seguirá funcionando sin análisis de tráfico
+    }
+}
+
+function configurarSistemaTrafico() {
+    console.log('🔧 Configurando event listeners de tráfico...');
+    
+    // Reemplazar los event listeners existentes
+    const inputs = ['tarifa', 'minutos', 'distancia'];
+    
+    inputs.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            // Remover listener antiguo si existe
+            elemento.removeEventListener('input', manejarCalculoAutomatico);
+            
+            // Agregar nuevo listener con tráfico
+            elemento.addEventListener('input', manejarCalculoConTrafico);
+        }
+    });
+    
+    console.log('✅ Event listeners de tráfico configurados');
+}
+
+function manejarCalculoConTrafico() {
+    if (timeoutCalculo) {
+        clearTimeout(timeoutCalculo);
+    }
+    timeoutCalculo = setTimeout(calcularAutomaticoConTrafico, 600);
+}
+
+// 🔄 FUNCIÓN PRINCIPAL DE CÁLCULO CON TRÁFICO
+async function calcularAutomaticoConTrafico() {
+    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
+    
+    const tarifa = parseFloat(elementos.tarifa.value) || 0;
+    const minutos = parseFloat(elementos.minutos.value) || 0;
+    const distancia = parseFloat(elementos.distancia.value) || 0;
+    
+    const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
+    
+    if (datosCompletos) {
+        // Mostrar indicador de análisis
+        if (elementos['auto-calc-indicator']) {
+            elementos['auto-calc-indicator'].classList.remove('hidden');
+            elementos['auto-calc-indicator'].classList.add('traffic-analysis');
+        }
+        
+        let resultadoFinal;
+        
+        // ✅ SOLO analizar tráfico para viajes > 3 minutos y si el sistema está activo
+        if (minutos > 3 && trafficInitialized && trafficAnalyzer) {
+            try {
+                resultadoFinal = await analizarTraficoAutomatico(tarifa, minutos, distancia);
+            } catch (error) {
+                console.warn('Error en análisis de tráfico, usando cálculo normal:', error);
+                resultadoFinal = calcularRentabilidad(tarifa, minutos, distancia);
+            }
+        } else {
+            // Cálculo normal para viajes cortos o sin sistema de tráfico
+            resultadoFinal = calcularRentabilidad(tarifa, minutos, distancia);
+        }
+        
+        if (resultadoFinal) {
+            calculoActual = resultadoFinal;
+            mostrarResultadoRapido(resultadoFinal);
+        }
+        
+        // Restaurar indicador normal
+        if (elementos['auto-calc-indicator']) {
+            elementos['auto-calc-indicator'].classList.remove('traffic-analysis');
+        }
+        
+    } else {
+        // Ocultar elementos si no hay datos completos
+        if (elementos['auto-calc-indicator']) {
+            elementos['auto-calc-indicator'].classList.add('hidden');
+        }
+        if (elementos['resultado-rapido']) {
+            elementos['resultado-rapido'].classList.add('hidden');
+        }
+        cerrarModalRapido();
+    }
+}
+
+// 🚦 ANÁLISIS AUTOMÁTICO DE TRÁFICO
+async function analizarTraficoAutomatico(tarifa, minutos, distancia) {
+    console.log(`🚦 Analizando tráfico para ${minutos}min, ${distancia}km...`);
+    
+    const trafficAnalysis = await trafficAnalyzer.quickTrafficAnalysis(minutos);
+    const resultado = calcularRentabilidad(tarifa, trafficAnalysis.adjustedTime, distancia);
+    
+    if (resultado) {
+        // Agregar información de tráfico al resultado
+        resultado.trafficAnalysis = trafficAnalysis;
+        resultado.tiempoOriginal = minutos;
+        resultado.tiempoConTrafico = trafficAnalysis.adjustedTime;
+        resultado.esAjustadoPorTrafico = trafficAnalysis.isSignificant;
+        
+        // Mostrar información de tráfico en la UI
+        if (trafficAnalysis.isSignificant) {
+            mostrarInfoTraficoEnResultado(resultado, trafficAnalysis);
+        }
+        
+        console.log('✅ Análisis de tráfico completado:', {
+            original: minutos + 'min',
+            conTrafico: trafficAnalysis.adjustedTime + 'min', 
+            condicion: trafficAnalysis.trafficCondition,
+            rentabilidad: resultado.rentabilidad
+        });
+    }
+    
+    return resultado;
+}
+
+// 💡 MOSTRAR INFO DE TRÁFICO EN EL RESULTADO
+function mostrarInfoTraficoEnResultado(resultado, trafficAnalysis) {
+    const resultadoRapido = elementos['resultado-rapido'];
+    
+    if (resultadoRapido && !resultadoRapido.classList.contains('hidden')) {
+        // Limpiar badge anterior si existe
+        const existingBadge = resultadoRapido.querySelector('.trafico-badge');
+        if (existingBadge) {
+            existingBadge.remove();
+        }
+        
+        // Crear nuevo badge de tráfico
+        const traficoBadge = document.createElement('div');
+        traficoBadge.className = 'trafico-badge';
+        traficoBadge.innerHTML = `
+            <div class="trafico-indicador trafico-${trafficAnalysis.trafficCondition}" 
+                 style="border-left-color: ${trafficAnalysis.trafficInfo.color}">
+                <span class="trafico-emoji">${trafficAnalysis.trafficInfo.emoji}</span>
+                <span class="trafico-texto">Tráfico ${trafficAnalysis.trafficInfo.text}</span>
+                <span class="trafico-tiempo">${trafficAnalysis.adjustedTime} min</span>
+            </div>
+        `;
+        
+        // Insertar al inicio del contenido del resultado
+        const resultadoContent = resultadoRapido.querySelector('.resultado-content');
+        if (resultadoContent) {
+            resultadoContent.insertBefore(traficoBadge, resultadoContent.firstChild);
+        }
+    }
+}
+
+// 🔍 VERIFICAR PERMISOS DE UBICACIÓN
+async function verificarPermisosUbicacion() {
+    return new Promise((resolve) => {
+        if (!navigator.permissions) {
+            console.log('🔶 API de permisos no disponible');
+            resolve(false);
+            return;
+        }
+        
+        navigator.permissions.query({ name: 'geolocation' })
+            .then((result) => {
+                console.log('📍 Estado permisos ubicación:', result.state);
+                
+                if (result.state === 'granted') {
+                    console.log('✅ Permisos de ubicación concedidos');
+                    resolve(true);
+                } else if (result.state === 'prompt') {
+                    console.log('🔶 Permisos de ubicación pendientes');
+                    resolve(false);
+                } else {
+                    console.log('❌ Permisos de ubicación denegados');
+                    resolve(false);
+                }
+            })
+            .catch((error) => {
+                console.warn('Error verificando permisos:', error);
+                resolve(false);
+            });
+    });
+}
+
+// =============================================
+// CSS PARA EL SISTEMA DE TRÁFICO (agregar a tu styles.css)
+// =============================================
+
+function agregarEstilosTrafico() {
+    const styles = `
+        /* Indicador de análisis de tráfico */
+        .auto-calc-indicator.traffic-analysis {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white;
+        }
+        
+        .auto-calc-indicator.traffic-analysis .auto-calc-icon {
+            animation: pulse 1s infinite;
+        }
+        
+        /* Badge de tráfico en resultados */
+        .trafico-badge {
+            margin-bottom: 15px;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .trafico-indicador {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #FF9800;
+            font-size: 0.85em;
+            justify-content: space-between;
+        }
+        
+        .trafico-emoji {
+            font-size: 1.2em;
+        }
+        
+        .trafico-texto {
+            flex: 1;
+            font-weight: 600;
+        }
+        
+        .trafico-tiempo {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+        
+        /* Estados de tráfico */
+        .trafico-low { border-left-color: #4CAF50 !important; }
+        .trafico-moderate { border-left-color: #FF9800 !important; }
+        .trafico-heavy { border-left-color: #F44336 !important; }
+        .trafico-severe { border-left-color: #D32F2F !important; }
+        
+        /* Animaciones */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    `;
+    
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+}
+
+// =============================================
+// EJECUCIÓN PRINCIPAL
+// =============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM cargado, inicializando aplicación...');
+    
+    // Agregar estilos del sistema de tráfico
+    agregarEstilosTrafico();
+    
+    // Inicializar la aplicación
+    inicializarApp();
+});
+
+// Prevenir cierre accidental
+window.addEventListener('beforeunload', function(e) {
+    const tieneDatosPendientes = (elementos.tarifa && elementos.tarifa.value) || 
+                                 (elementos.minutos && elementos.minutos.value) || 
+                                 (elementos.distancia && elementos.distancia.value);
+    
+    if (tieneDatosPendientes) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
 
 // =============================================
 // EJECUCIÓN PRINCIPAL
@@ -2850,6 +3073,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
