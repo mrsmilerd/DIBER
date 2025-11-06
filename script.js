@@ -2199,6 +2199,7 @@ function debugHistorial() {
 function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
     
+    // Ocultar el resultado rápido normal temporalmente
     if (elementos['resultado-rapido']) {
         elementos['resultado-rapido'].classList.add('hidden');
     }
@@ -2208,59 +2209,69 @@ function mostrarResultadoRapido(resultado) {
         modalRapido = document.createElement('div');
         modalRapido.id = 'modal-rapido';
         modalRapido.className = 'modal-rapido hidden';
-        modalRapido.innerHTML = `
-            <div class="modal-rapido-contenido">
-                <button class="modal-rapido-cerrar" onclick="cerrarModalRapido()">×</button>
-                <div class="modal-rapido-header">
-                    <div class="modal-rapido-badge" id="modal-rapido-badge">
-                        <span class="modal-rapido-emoji" id="modal-rapido-emoji">✅</span>
-                        <span class="modal-rapido-texto" id="modal-rapido-texto">RENTABLE</span>
-                    </div>
-                </div>
-                <div class="modal-rapido-metricas">
-                    <div class="modal-rapido-metrica">
-                        <div class="modal-rapido-metrica-icono">⏱️</div>
-                        <div class="modal-rapido-metrica-valor" id="modal-rapido-minuto">--/min</div>
-                        <div class="modal-rapido-metrica-label">Por minuto</div>
-                    </div>
-                    <div class="modal-rapido-metrica">
-                        <div class="modal-rapido-metrica-icono">🛣️</div>
-                        <div class="modal-rapido-metrica-valor" id="modal-rapido-km">--/km</div>
-                        <div class="modal-rapido-metrica-label">Por distancia</div>
-                    </div>
-                </div>
-                <div class="modal-rapido-acciones">
-                    <button class="secondary-button" onclick="procesarViajeRapido(false)">
-                        <span class="button-icon">❌</span>
-                        Rechazar Viaje
-                    </button>
-                    <button class="primary-button" id="modal-rapido-aceptar" onclick="procesarViajeRapido(true)">
-                        <span class="button-icon">✅</span>
-                        Aceptar Viaje
-                    </button>
-                </div>
-            </div>
-        `;
         document.body.appendChild(modalRapido);
     }
     
-    const modalBadge = document.getElementById('modal-rapido-badge');
-    document.getElementById('modal-rapido-emoji').textContent = resultado.emoji;
-    document.getElementById('modal-rapido-texto').textContent = resultado.texto;
-    document.getElementById('modal-rapido-minuto').textContent = `${formatearMoneda(resultado.gananciaPorMinuto)}/min`;
+    // ✅ NUEVO: Preparar contenido con tráfico
+    let contenidoTrafico = '';
     
-    const distanciaLabel = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
-    document.getElementById('modal-rapido-km').textContent = `${formatearMoneda(resultado.gananciaPorKm)}/${distanciaLabel}`;
+    if (resultado.trafficAnalysis) {
+        const traffic = resultado.trafficAnalysis;
+        contenidoTrafico = `
+            <div class="trafico-badge">
+                <div class="trafico-indicador trafico-${traffic.trafficCondition}">
+                    <span class="trafico-emoji">${traffic.trafficInfo.emoji}</span>
+                    <span class="trafico-texto">Tráfico ${traffic.trafficInfo.text}</span>
+                    <span class="trafico-tiempo">${traffic.adjustedTime} min</span>
+                </div>
+            </div>
+        `;
+    }
     
-    modalBadge.className = 'modal-rapido-badge';
-    modalBadge.classList.add(resultado.rentabilidad);
-    
-    const btnAceptar = document.getElementById('modal-rapido-aceptar');
-    btnAceptar.className = 'primary-button';
-    btnAceptar.classList.add(resultado.rentabilidad);
+    modalRapido.innerHTML = `
+        <div class="modal-rapido-contenido">
+            <button class="modal-rapido-cerrar" onclick="cerrarModalRapido()">×</button>
+            
+            ${contenidoTrafico}
+            
+            <div class="modal-rapido-header">
+                <div class="modal-rapido-badge ${resultado.rentabilidad}">
+                    <span class="modal-rapido-emoji">${resultado.emoji}</span>
+                    <span class="modal-rapido-texto">${resultado.texto}</span>
+                </div>
+            </div>
+            
+            <div class="modal-rapido-metricas">
+                <div class="modal-rapido-metrica">
+                    <div class="modal-rapido-metrica-icono">⏱️</div>
+                    <div class="modal-rapido-metrica-valor">
+                        ${formatearMoneda(resultado.gananciaPorMinuto)}/min
+                    </div>
+                    <div class="modal-rapido-metrica-label">Por minuto</div>
+                </div>
+                <div class="modal-rapido-metrica">
+                    <div class="modal-rapido-metrica-icono">🛣️</div>
+                    <div class="modal-rapido-metrica-valor">
+                        ${formatearMoneda(resultado.gananciaPorKm)}/${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}
+                    </div>
+                    <div class="modal-rapido-metrica-label">Por distancia</div>
+                </div>
+            </div>
+            
+            <div class="modal-rapido-acciones">
+                <button class="secondary-button" onclick="procesarViajeRapido(false)">
+                    <span class="button-icon">❌</span>
+                    Rechazar Viaje
+                </button>
+                <button class="primary-button ${resultado.rentabilidad}" id="modal-rapido-aceptar" onclick="procesarViajeRapido(true)">
+                    <span class="button-icon">✅</span>
+                    Aceptar Viaje
+                </button>
+            </div>
+        </div>
+    `;
     
     modalRapido.classList.remove('hidden');
-    
     calculoActual = resultado;
 }
 
@@ -2274,15 +2285,21 @@ function configurarEventListeners() {
     // Sistema de Pestañas
     inicializarTabs();
     
-    // Cálculo Automático
+    // Cálculo Automático CON TRÁFICO
     if (elementos.tarifa) {
-        elementos.tarifa.addEventListener('input', manejarCalculoAutomatico);
+        elementos.tarifa.addEventListener('input', manejarCalculoConTrafico);
     }
     if (elementos.minutos) {
-        elementos.minutos.addEventListener('input', manejarCalculoAutomatico);
+        elementos.minutos.addEventListener('input', manejarCalculoConTrafico);
     }
     if (elementos.distancia) {
-        elementos.distancia.addEventListener('input', manejarCalculoAutomatico);
+        elementos.distancia.addEventListener('input', manejarCalculoConTrafico);
+    }
+    
+    // ✅ NUEVO: Botón de activar ubicación
+    const btnUbicacion = document.getElementById('activar-ubicacion-btn');
+    if (btnUbicacion) {
+        btnUbicacion.addEventListener('click', activarUbicacion);
     }
     
     // Botones de Acción
@@ -2934,84 +2951,81 @@ async function verificarPermisosUbicacion() {
     });
 }
 
-// =============================================
-// CSS PARA EL SISTEMA DE TRÁFICO (agregar a tu styles.css)
-// =============================================
-
-function agregarEstilosTrafico() {
-    const styles = `
-        /* Indicador de análisis de tráfico */
-        .auto-calc-indicator.traffic-analysis {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            color: white;
-        }
-        
-        .auto-calc-indicator.traffic-analysis .auto-calc-icon {
-            animation: pulse 1s infinite;
-        }
-        
-        /* Badge de tráfico en resultados */
-        .trafico-badge {
-            margin-bottom: 15px;
-            animation: slideDown 0.3s ease;
-        }
-        
-        .trafico-indicador {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            border-left: 4px solid #FF9800;
-            font-size: 0.85em;
-            justify-content: space-between;
-        }
-        
-        .trafico-emoji {
-            font-size: 1.2em;
-        }
-        
-        .trafico-texto {
-            flex: 1;
-            font-weight: 600;
-        }
-        
-        .trafico-tiempo {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.9em;
-        }
-        
-        /* Estados de tráfico */
-        .trafico-low { border-left-color: #4CAF50 !important; }
-        .trafico-moderate { border-left-color: #FF9800 !important; }
-        .trafico-heavy { border-left-color: #F44336 !important; }
-        .trafico-severe { border-left-color: #D32F2F !important; }
-        
-        /* Animaciones */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    `;
+// ✅ FUNCIÓN PARA ACTIVAR UBICACIÓN MANUALMENTE
+function activarUbicacion() {
+    console.log('📍 Activando sistema de ubicación...');
     
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = styles;
-    document.head.appendChild(styleSheet);
+    const btn = document.getElementById('activar-ubicacion-btn');
+    const status = document.getElementById('location-status');
+    
+    if (btn) {
+        btn.innerHTML = '<span class="button-icon">🔄</span> Obteniendo ubicación...';
+        btn.disabled = true;
+    }
+    
+    // Solicitar permisos de ubicación
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            console.log('✅ Ubicación obtenida correctamente');
+            
+            if (btn) {
+                btn.style.display = 'none';
+            }
+            if (status) {
+                status.classList.remove('hidden');
+            }
+            
+            // Forzar que el sistema use esta ubicación
+            if (trafficAnalyzer) {
+                trafficAnalyzer.lastLocation = {
+                    coords: {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    },
+                    timestamp: Date.now()
+                };
+            }
+            
+            mostrarMensaje('📍 Ubicación activada - Análisis de tráfico funcionando', 'success');
+            
+            // Re-calcular si hay datos en el formulario
+            const minutos = parseFloat(elementos.minutos?.value) || 0;
+            if (minutos > 0) {
+                setTimeout(calcularAutomaticoConTrafico, 500);
+            }
+        },
+        (error) => {
+            console.error('❌ Error obteniendo ubicación:', error);
+            
+            if (btn) {
+                btn.innerHTML = '<span class="button-icon">📍</span> Activar Análisis de Tráfico';
+                btn.disabled = false;
+            }
+            
+            let mensaje = 'No se pudo obtener la ubicación. ';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    mensaje += 'Permiso denegado.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    mensaje += 'Ubicación no disponible.';
+                    break;
+                case error.TIMEOUT:
+                    mensaje += 'Tiempo de espera agotado.';
+                    break;
+                default:
+                    mensaje += 'Error desconocido.';
+            }
+            
+            mostrarError(mensaje);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
 }
 
 // =============================================
@@ -3073,6 +3087,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
