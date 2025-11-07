@@ -3096,7 +3096,10 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 DOM cargado, inicializando aplicación...');
     
     // Agregar estilos del sistema de tráfico
+ if (typeof agregarEstilosTrafico === 'function') {
     agregarEstilosTrafico();
+} else {
+    console.log('La función agregarEstilosTrafico se cargará pronto...');
     
     // Inicializar la aplicación
     inicializarApp();
@@ -3726,6 +3729,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
