@@ -3674,7 +3674,8 @@ function guardarEnHistorial(aceptado) {
     // guardarViajeEnHistorial(viaje);
 }
 
-// FUNCIONES FALTANTES QUE NECESITAS AGREGAR
+// FUNCIONES PARA EL ANÁLISIS DE TRÁFICO Y ESTILOS
+
 function agregarEstilosTrafico() {
     const styles = `
         .modal-rapido-compacto {
@@ -3691,9 +3692,11 @@ function agregarEstilosTrafico() {
             padding: 15px;
             box-sizing: border-box;
         }
+
         .modal-rapido-compacto.hidden {
             display: none;
         }
+
         .modal-compacto-contenido {
             background: white;
             border-radius: 12px;
@@ -3703,10 +3706,18 @@ function agregarEstilosTrafico() {
             overflow: hidden;
             animation: modalAparece 0.25s ease-out;
         }
+
         @keyframes modalAparece {
-            from { opacity: 0; transform: scale(0.95) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
+
         .modal-header-compacto {
             display: flex;
             justify-content: space-between;
@@ -3715,10 +3726,12 @@ function agregarEstilosTrafico() {
             background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
             color: white;
         }
+
         .modal-titulo-compacto {
             font-size: 1.1em;
             font-weight: bold;
         }
+
         .btn-cerrar-compacto {
             background: rgba(255, 255, 255, 0.2);
             border: none;
@@ -3733,12 +3746,15 @@ function agregarEstilosTrafico() {
             cursor: pointer;
             transition: background 0.2s;
         }
+
         .btn-cerrar-compacto:hover {
             background: rgba(255, 255, 255, 0.3);
         }
+
         .modal-cuerpo-compacto {
             padding: 15px;
         }
+
         .estado-viaje {
             text-align: center;
             margin-bottom: 15px;
@@ -3746,6 +3762,7 @@ function agregarEstilosTrafico() {
             border-radius: 8px;
             background: #f8f9fa;
         }
+
         .badge-estado {
             display: inline-flex;
             align-items: center;
@@ -3755,24 +3772,29 @@ function agregarEstilosTrafico() {
             font-weight: bold;
             font-size: 0.9em;
         }
+
         .badge-rentable {
             background: #e8f5e8;
             color: #2e7d32;
             border: 1px solid #c8e6c9;
         }
+
         .badge-oportunidad {
             background: #fff3cd;
             color: #856404;
             border: 1px solid #ffeaa7;
         }
+
         .badge-no-rentable {
             background: #ffebee;
             color: #c62828;
             border: 1px solid #ffcdd2;
         }
+
         .emoji-estado {
             font-size: 1.2em;
         }
+
         .tiempo-trafico {
             display: flex;
             justify-content: space-between;
@@ -3783,32 +3805,39 @@ function agregarEstilosTrafico() {
             border-radius: 8px;
             border-left: 3px solid #007cba;
         }
+
         .tiempo-item {
             text-align: center;
         }
+
         .tiempo-label {
             display: block;
             font-size: 0.75em;
             color: #666;
             margin-bottom: 3px;
         }
+
         .tiempo-valor {
             font-weight: bold;
             font-size: 0.9em;
         }
+
         .tiempo-real {
             color: #007cba;
         }
+
         .flecha-ajuste {
             color: #007cba;
             font-size: 1.2em;
         }
+
         .metricas-compactas {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 8px;
             margin-bottom: 15px;
         }
+
         .metrica-compacta {
             background: white;
             border: 1px solid #e0e0e0;
@@ -3816,19 +3845,23 @@ function agregarEstilosTrafico() {
             padding: 10px 5px;
             text-align: center;
         }
+
         .metrica-icono {
             font-size: 1.1em;
             margin-bottom: 5px;
         }
+
         .metrica-valor {
             font-weight: bold;
             font-size: 0.85em;
             margin-bottom: 3px;
         }
+
         .metrica-label {
             font-size: 0.7em;
             color: #666;
         }
+
         .impacto-trafico-compacto {
             background: #fff3cd;
             padding: 10px;
@@ -3838,14 +3871,17 @@ function agregarEstilosTrafico() {
             text-align: center;
             border-left: 3px solid #ffc107;
         }
+
         .impacto-texto {
             color: #856404;
         }
+
         .acciones-compactas {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
         }
+
         .btn-accion-compacto {
             padding: 10px;
             border: none;
@@ -3859,24 +3895,77 @@ function agregarEstilosTrafico() {
             justify-content: center;
             gap: 5px;
         }
+
         .btn-rechazar-compacto {
             background: #ffebee;
             color: #c62828;
             border: 1px solid #ffcdd2;
         }
+
         .btn-rechazar-compacto:hover {
             background: #ffcdd2;
         }
+
         .btn-aceptar-compacto {
             background: #e8f5e8;
             color: #2e7d32;
             border: 1px solid #c8e6c9;
         }
+
         .btn-aceptar-compacto:hover {
             background: #c8e6c9;
         }
+
         .btn-icono {
             font-size: 1.1em;
+        }
+
+        .location-permission-section {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .location-permission-btn {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.3s;
+        }
+
+        .location-permission-btn:hover {
+            background: #005a87;
+        }
+
+        .location-status {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #e8f5e8;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #2e7d32;
+        }
+
+        .location-status.hidden {
+            display: none;
+        }
+
+        .status-icon {
+            font-size: 14px;
+        }
+
+        .status-text {
+            font-weight: 500;
         }
     `;
 
@@ -3885,58 +3974,176 @@ function agregarEstilosTrafico() {
     document.head.appendChild(styleSheet);
 }
 
+// FUNCIONES PARA EL MODAL RÁPIDO COMPACTO
+
 function mostrarModalRapido(datos) {
     const modal = document.getElementById('modal-rapido');
+    
     if (!modal) {
-        console.error('Modal rápido no encontrado');
+        console.error('Modal rápido no encontrado en el DOM');
         return;
     }
     
-    // Actualizar contenido
-    const elementos = {
-        'modal-tiempo-original': datos.tiempoEstimado + ' min',
-        'modal-tiempo-real': datos.tiempoReal + ' min',
-        'modal-ganancia-minuto': datos.gananciaMinuto,
-        'modal-ganancia-km': datos.gananciaKm,
-        'modal-eficiencia': datos.eficiencia + '%',
-        'modal-impacto-texto': datos.impactoTrafico
-    };
+    // Actualizar contenido del modal con los datos
+    const tiempoOriginalElem = document.getElementById('modal-tiempo-original');
+    const tiempoRealElem = document.getElementById('modal-tiempo-real');
+    const gananciaMinutoElem = document.getElementById('modal-ganancia-minuto');
+    const gananciaKmElem = document.getElementById('modal-ganancia-km');
+    const eficienciaElem = document.getElementById('modal-eficiencia');
+    const impactoTextElem = document.getElementById('modal-impacto-texto');
     
-    for (const [id, valor] of Object.entries(elementos)) {
-        const elem = document.getElementById(id);
-        if (elem) elem.textContent = valor;
-    }
+    if (tiempoOriginalElem) tiempoOriginalElem.textContent = datos.tiempoEstimado + ' min';
+    if (tiempoRealElem) tiempoRealElem.textContent = datos.tiempoReal + ' min';
+    if (gananciaMinutoElem) gananciaMinutoElem.textContent = datos.gananciaMinuto;
+    if (gananciaKmElem) gananciaKmElem.textContent = datos.gananciaKm;
+    if (eficienciaElem) eficienciaElem.textContent = datos.eficiencia + '%';
+    if (impactoTextElem) impactoTextElem.textContent = datos.impactoTrafico;
     
-    // Actualizar badge
+    // Configurar badge según rentabilidad
     const badge = document.getElementById('modal-badge-estado');
     if (badge) {
         badge.className = 'badge-estado ' + datos.claseBadge;
         badge.innerHTML = `<span class="emoji-estado">${datos.emoji}</span><span>${datos.estado}</span>`;
     }
     
+    // Mostrar modal
     modal.classList.remove('hidden');
 }
 
 function cerrarModalRapido() {
     const modal = document.getElementById('modal-rapido');
-    if (modal) modal.classList.add('hidden');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
 }
 
 function procesarViajeRapido(aceptado) {
+    // Lógica para procesar la decisión del viaje
     console.log('Viaje ' + (aceptado ? 'aceptado' : 'rechazado'));
-    guardarEnHistorial(aceptado);
+    
+    // Aquí puedes agregar lógica adicional como guardar en historial, etc.
+    if (aceptado) {
+        // Guardar en historial como viaje aceptado
+        guardarEnHistorial(true);
+    } else {
+        // Guardar en historial como viaje rechazado
+        guardarEnHistorial(false);
+    }
+    
+    // Cerrar modal
     cerrarModalRapido();
 }
 
+// FUNCIONES PARA LA GESTIÓN DE UBICACIÓN Y TRÁFICO
+
 function inicializarGestionUbicacion() {
-    const btn = document.getElementById('activar-ubicacion-btn');
-    if (btn) {
-        btn.addEventListener('click', function() {
-            console.log('Solicitando ubicación...');
-            // Aquí iría la lógica real de ubicación
-            simularAnalisisRapido(); // Temporal para testing
+    const activarUbicacionBtn = document.getElementById('activar-ubicacion-btn');
+    const locationStatus = document.getElementById('location-status');
+    
+    if (activarUbicacionBtn) {
+        activarUbicacionBtn.addEventListener('click', function() {
+            solicitarPermisoUbicacion();
         });
     }
+}
+
+function solicitarPermisoUbicacion() {
+    if (!navigator.geolocation) {
+        mostrarEstadoUbicacion('error', 'La geolocalización no es soportada por este navegador');
+        return;
+    }
+
+    mostrarEstadoUbicacion('loading', 'Solicitando permiso de ubicación...');
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            // Permiso concedido
+            mostrarEstadoUbicacion('success', 'Ubicación activa - Tráfico monitoreado');
+            activarAnalisisTrafico();
+        },
+        function(error) {
+            // Permiso denegado o error
+            let mensaje = 'Error al obtener la ubicación';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    mensaje = 'Permiso de ubicación denegado';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    mensaje = 'Información de ubicación no disponible';
+                    break;
+                case error.TIMEOUT:
+                    mensaje = 'Tiempo de espera agotado';
+                    break;
+            }
+            mostrarEstadoUbicacion('error', mensaje);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+        }
+    );
+}
+
+function mostrarEstadoUbicacion(estado, mensaje) {
+    const locationStatus = document.getElementById('location-status');
+    const statusIcon = locationStatus.querySelector('.status-icon');
+    const statusText = locationStatus.querySelector('.status-text');
+    
+    if (!locationStatus) return;
+    
+    locationStatus.className = 'location-status';
+    
+    switch(estado) {
+        case 'loading':
+            statusIcon.textContent = '🔄';
+            statusText.textContent = mensaje;
+            locationStatus.style.background = '#e7f3ff';
+            locationStatus.style.color = '#007cba';
+            break;
+        case 'success':
+            statusIcon.textContent = '✅';
+            statusText.textContent = mensaje;
+            locationStatus.style.background = '#e8f5e8';
+            locationStatus.style.color = '#2e7d32';
+            break;
+        case 'error':
+            statusIcon.textContent = '❌';
+            statusText.textContent = mensaje;
+            locationStatus.style.background = '#ffebee';
+            locationStatus.style.color = '#c62828';
+            break;
+    }
+    
+    locationStatus.classList.remove('hidden');
+}
+
+function activarAnalisisTrafico() {
+    // Simular análisis de tráfico (en una implementación real, esto se conectaría a una API)
+    console.log('Análisis de tráfico activado');
+    
+    // Ejemplo: simular datos de tráfico después de 2 segundos
+    setTimeout(() => {
+        const datosTrafico = {
+            tiempoEstimado: parseInt(document.getElementById('minutos').value) || 15,
+            tiempoReal: 0,
+            gananciaMinuto: 'RD$0/min',
+            gananciaKm: 'RD$0/km',
+            eficiencia: 0,
+            impactoTrafico: 'Calculando tráfico...',
+            claseBadge: 'badge-oportunidad',
+            emoji: '🔄',
+            estado: 'CALCULANDO'
+        };
+        
+        // Calcular tiempo real basado en condiciones de tráfico simuladas
+        const factorTrafico = 1 + (Math.random() * 0.5); // +0% a +50%
+        datosTrafico.tiempoReal = Math.round(datosTrafico.tiempoEstimado * factorTrafico);
+        
+        // Calcular métricas basadas en el perfil actual
+        calcularMetricasConTrafico(datosTrafico);
+        
+    }, 2000);
 }
 
 // Función para simular la activación del modal rápido (para testing)
@@ -3999,3 +4206,15 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
+// Prevenir cierre accidental
+window.addEventListener('beforeunload', function(e) {
+    const tieneDatosPendientes = (elementos.tarifa && elementos.tarifa.value) || 
+                                 (elementos.minutos && elementos.minutos.value) || 
+                                 (elementos.distancia && elementos.distancia.value);
+    
+    if (tieneDatosPendientes) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
