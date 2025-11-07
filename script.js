@@ -3674,6 +3674,288 @@ function guardarEnHistorial(aceptado) {
     // guardarViajeEnHistorial(viaje);
 }
 
+// FUNCIONES FALTANTES QUE NECESITAS AGREGAR
+function agregarEstilosTrafico() {
+    const styles = `
+        .modal-rapido-compacto {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10002;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .modal-rapido-compacto.hidden {
+            display: none;
+        }
+        .modal-compacto-contenido {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 320px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: modalAparece 0.25s ease-out;
+        }
+        @keyframes modalAparece {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-header-compacto {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+            color: white;
+        }
+        .modal-titulo-compacto {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .btn-cerrar-compacto {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-cerrar-compacto:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .modal-cuerpo-compacto {
+            padding: 15px;
+        }
+        .estado-viaje {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .badge-estado {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .badge-rentable {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+        .badge-oportunidad {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .badge-no-rentable {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        .emoji-estado {
+            font-size: 1.2em;
+        }
+        .tiempo-trafico {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            border-left: 3px solid #007cba;
+        }
+        .tiempo-item {
+            text-align: center;
+        }
+        .tiempo-label {
+            display: block;
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        .tiempo-valor {
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .tiempo-real {
+            color: #007cba;
+        }
+        .flecha-ajuste {
+            color: #007cba;
+            font-size: 1.2em;
+        }
+        .metricas-compactas {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .metrica-compacta {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px 5px;
+            text-align: center;
+        }
+        .metrica-icono {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        .metrica-valor {
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 3px;
+        }
+        .metrica-label {
+            font-size: 0.7em;
+            color: #666;
+        }
+        .impacto-trafico-compacto {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.8em;
+            text-align: center;
+            border-left: 3px solid #ffc107;
+        }
+        .impacto-texto {
+            color: #856404;
+        }
+        .acciones-compactas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .btn-accion-compacto {
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .btn-rechazar-compacto {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        .btn-rechazar-compacto:hover {
+            background: #ffcdd2;
+        }
+        .btn-aceptar-compacto {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+        .btn-aceptar-compacto:hover {
+            background: #c8e6c9;
+        }
+        .btn-icono {
+            font-size: 1.1em;
+        }
+    `;
+
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+}
+
+function mostrarModalRapido(datos) {
+    const modal = document.getElementById('modal-rapido');
+    if (!modal) {
+        console.error('Modal rápido no encontrado');
+        return;
+    }
+    
+    // Actualizar contenido
+    const elementos = {
+        'modal-tiempo-original': datos.tiempoEstimado + ' min',
+        'modal-tiempo-real': datos.tiempoReal + ' min',
+        'modal-ganancia-minuto': datos.gananciaMinuto,
+        'modal-ganancia-km': datos.gananciaKm,
+        'modal-eficiencia': datos.eficiencia + '%',
+        'modal-impacto-texto': datos.impactoTrafico
+    };
+    
+    for (const [id, valor] of Object.entries(elementos)) {
+        const elem = document.getElementById(id);
+        if (elem) elem.textContent = valor;
+    }
+    
+    // Actualizar badge
+    const badge = document.getElementById('modal-badge-estado');
+    if (badge) {
+        badge.className = 'badge-estado ' + datos.claseBadge;
+        badge.innerHTML = `<span class="emoji-estado">${datos.emoji}</span><span>${datos.estado}</span>`;
+    }
+    
+    modal.classList.remove('hidden');
+}
+
+function cerrarModalRapido() {
+    const modal = document.getElementById('modal-rapido');
+    if (modal) modal.classList.add('hidden');
+}
+
+function procesarViajeRapido(aceptado) {
+    console.log('Viaje ' + (aceptado ? 'aceptado' : 'rechazado'));
+    guardarEnHistorial(aceptado);
+    cerrarModalRapido();
+}
+
+function inicializarGestionUbicacion() {
+    const btn = document.getElementById('activar-ubicacion-btn');
+    if (btn) {
+        btn.addEventListener('click', function() {
+            console.log('Solicitando ubicación...');
+            // Aquí iría la lógica real de ubicación
+            simularAnalisisRapido(); // Temporal para testing
+        });
+    }
+}
+
+// Función para simular la activación del modal rápido (para testing)
+function simularAnalisisRapido() {
+    const datosEjemplo = {
+        tiempoEstimado: 15,
+        tiempoReal: 18,
+        gananciaMinuto: 'RD$19.45/min',
+        gananciaKm: 'RD$41.18/km',
+        eficiencia: 85,
+        impactoTrafico: '⚠️ Tráfico aumenta +20% el tiempo',
+        claseBadge: 'badge-rentable',
+        emoji: '✅',
+        estado: 'VIAJE RENTABLE'
+    };
+    
+    mostrarModalRapido(datosEjemplo);
+}
+
 // INICIALIZACIÓN CUANDO EL DOCUMENTO ESTÉ LISTO
 document.addEventListener('DOMContentLoaded', function() {
     // Agregar estilos para el sistema de tráfico
@@ -3699,34 +3981,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Función para simular la activación del modal rápido (para testing)
-function simularAnalisisRapido() {
-    const datosEjemplo = {
-        tiempoEstimado: 15,
-        tiempoReal: 18,
-        gananciaMinuto: 'RD$19.45/min',
-        gananciaKm: 'RD$41.18/km',
-        eficiencia: 85,
-        impactoTrafico: '⚠️ Tráfico aumenta +20% el tiempo',
-        claseBadge: 'badge-rentable',
-        emoji: '✅',
-        estado: 'VIAJE RENTABLE'
-    };
-    
-    mostrarModalRapido(datosEjemplo);
-}
-    
 // Cerrar modal al hacer clic fuera
 window.onclick = function(event) {
-    if (elementos.modalFondo && event.target === elementos.modalFondo) {
+    const modalRapido = document.getElementById('modal-rapido');
+    if (modalRapido && event.target === modalRapido) {
+        cerrarModalRapido();
+    }
+    
+    // Tus otros modales existentes
+    if (typeof elementos !== 'undefined' && elementos.modalFondo && event.target === elementos.modalFondo) {
         cerrarModal();
     }
-    if (elementos.exportModal && event.target === elementos.exportModal) {
+    if (typeof elementos !== 'undefined' && elementos.exportModal && event.target === elementos.exportModal) {
         cerrarExportModal();
     }
-    if (elementos.syncPanel && event.target === elementos.syncPanel) {
+    if (typeof elementos !== 'undefined' && elementos.syncPanel && event.target === elementos.syncPanel) {
         cerrarSyncPanel();
     }
 };
-
-});
