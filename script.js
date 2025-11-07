@@ -3716,8 +3716,6 @@ function simularAnalisisRapido() {
     mostrarModalRapido(datosEjemplo);
 }
     
-});
-
 // Cerrar modal al hacer clic fuera
 window.onclick = function(event) {
     if (elementos.modalFondo && event.target === elementos.modalFondo) {
@@ -3731,13 +3729,4 @@ window.onclick = function(event) {
     }
 };
 
-
-
-
-
-
-
-
-
-
-
+});
