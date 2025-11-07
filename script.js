@@ -3133,6 +3133,585 @@ window.addEventListener('beforeunload', function(e) {
         e.preventDefault();
         e.returnValue = '';
     }
+// FUNCIONES PARA EL ANÁLISIS DE TRÁFICO Y ESTILOS
+
+function agregarEstilosTrafico() {
+    const styles = `
+        .modal-rapido-compacto {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10002;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .modal-rapido-compacto.hidden {
+            display: none;
+        }
+
+        .modal-compacto-contenido {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 320px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: modalAparece 0.25s ease-out;
+        }
+
+        @keyframes modalAparece {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header-compacto {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+            color: white;
+        }
+
+        .modal-titulo-compacto {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .btn-cerrar-compacto {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-cerrar-compacto:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-cuerpo-compacto {
+            padding: 15px;
+        }
+
+        .estado-viaje {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .badge-estado {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .badge-rentable {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .badge-oportunidad {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .badge-no-rentable {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .emoji-estado {
+            font-size: 1.2em;
+        }
+
+        .tiempo-trafico {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            border-left: 3px solid #007cba;
+        }
+
+        .tiempo-item {
+            text-align: center;
+        }
+
+        .tiempo-label {
+            display: block;
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .tiempo-valor {
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .tiempo-real {
+            color: #007cba;
+        }
+
+        .flecha-ajuste {
+            color: #007cba;
+            font-size: 1.2em;
+        }
+
+        .metricas-compactas {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .metrica-compacta {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px 5px;
+            text-align: center;
+        }
+
+        .metrica-icono {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .metrica-valor {
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 3px;
+        }
+
+        .metrica-label {
+            font-size: 0.7em;
+            color: #666;
+        }
+
+        .impacto-trafico-compacto {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.8em;
+            text-align: center;
+            border-left: 3px solid #ffc107;
+        }
+
+        .impacto-texto {
+            color: #856404;
+        }
+
+        .acciones-compactas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .btn-accion-compacto {
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .btn-rechazar-compacto {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .btn-rechazar-compacto:hover {
+            background: #ffcdd2;
+        }
+
+        .btn-aceptar-compacto {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .btn-aceptar-compacto:hover {
+            background: #c8e6c9;
+        }
+
+        .btn-icono {
+            font-size: 1.1em;
+        }
+
+        .location-permission-section {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .location-permission-btn {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.3s;
+        }
+
+        .location-permission-btn:hover {
+            background: #005a87;
+        }
+
+        .location-status {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #e8f5e8;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #2e7d32;
+        }
+
+        .location-status.hidden {
+            display: none;
+        }
+
+        .status-icon {
+            font-size: 14px;
+        }
+
+        .status-text {
+            font-weight: 500;
+        }
+    `;
+
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+}
+
+// FUNCIONES PARA EL MODAL RÁPIDO COMPACTO
+
+function mostrarModalRapido(datos) {
+    const modal = document.getElementById('modal-rapido');
+    
+    if (!modal) {
+        console.error('Modal rápido no encontrado en el DOM');
+        return;
+    }
+    
+    // Actualizar contenido del modal con los datos
+    const tiempoOriginalElem = document.getElementById('modal-tiempo-original');
+    const tiempoRealElem = document.getElementById('modal-tiempo-real');
+    const gananciaMinutoElem = document.getElementById('modal-ganancia-minuto');
+    const gananciaKmElem = document.getElementById('modal-ganancia-km');
+    const eficienciaElem = document.getElementById('modal-eficiencia');
+    const impactoTextElem = document.getElementById('modal-impacto-texto');
+    
+    if (tiempoOriginalElem) tiempoOriginalElem.textContent = datos.tiempoEstimado + ' min';
+    if (tiempoRealElem) tiempoRealElem.textContent = datos.tiempoReal + ' min';
+    if (gananciaMinutoElem) gananciaMinutoElem.textContent = datos.gananciaMinuto;
+    if (gananciaKmElem) gananciaKmElem.textContent = datos.gananciaKm;
+    if (eficienciaElem) eficienciaElem.textContent = datos.eficiencia + '%';
+    if (impactoTextElem) impactoTextElem.textContent = datos.impactoTrafico;
+    
+    // Configurar badge según rentabilidad
+    const badge = document.getElementById('modal-badge-estado');
+    if (badge) {
+        badge.className = 'badge-estado ' + datos.claseBadge;
+        badge.innerHTML = `<span class="emoji-estado">${datos.emoji}</span><span>${datos.estado}</span>`;
+    }
+    
+    // Mostrar modal
+    modal.classList.remove('hidden');
+}
+
+function cerrarModalRapido() {
+    const modal = document.getElementById('modal-rapido');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function procesarViajeRapido(aceptado) {
+    // Lógica para procesar la decisión del viaje
+    console.log('Viaje ' + (aceptado ? 'aceptado' : 'rechazado'));
+    
+    // Aquí puedes agregar lógica adicional como guardar en historial, etc.
+    if (aceptado) {
+        // Guardar en historial como viaje aceptado
+        guardarEnHistorial(true);
+    } else {
+        // Guardar en historial como viaje rechazado
+        guardarEnHistorial(false);
+    }
+    
+    // Cerrar modal
+    cerrarModalRapido();
+}
+
+// FUNCIONES PARA LA GESTIÓN DE UBICACIÓN Y TRÁFICO
+
+function inicializarGestionUbicacion() {
+    const activarUbicacionBtn = document.getElementById('activar-ubicacion-btn');
+    const locationStatus = document.getElementById('location-status');
+    
+    if (activarUbicacionBtn) {
+        activarUbicacionBtn.addEventListener('click', function() {
+            solicitarPermisoUbicacion();
+        });
+    }
+}
+
+function solicitarPermisoUbicacion() {
+    if (!navigator.geolocation) {
+        mostrarEstadoUbicacion('error', 'La geolocalización no es soportada por este navegador');
+        return;
+    }
+
+    mostrarEstadoUbicacion('loading', 'Solicitando permiso de ubicación...');
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            // Permiso concedido
+            mostrarEstadoUbicacion('success', 'Ubicación activa - Tráfico monitoreado');
+            activarAnalisisTrafico();
+        },
+        function(error) {
+            // Permiso denegado o error
+            let mensaje = 'Error al obtener la ubicación';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    mensaje = 'Permiso de ubicación denegado';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    mensaje = 'Información de ubicación no disponible';
+                    break;
+                case error.TIMEOUT:
+                    mensaje = 'Tiempo de espera agotado';
+                    break;
+            }
+            mostrarEstadoUbicacion('error', mensaje);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+        }
+    );
+}
+
+function mostrarEstadoUbicacion(estado, mensaje) {
+    const locationStatus = document.getElementById('location-status');
+    const statusIcon = locationStatus.querySelector('.status-icon');
+    const statusText = locationStatus.querySelector('.status-text');
+    
+    if (!locationStatus) return;
+    
+    locationStatus.className = 'location-status';
+    
+    switch(estado) {
+        case 'loading':
+            statusIcon.textContent = '🔄';
+            statusText.textContent = mensaje;
+            locationStatus.style.background = '#e7f3ff';
+            locationStatus.style.color = '#007cba';
+            break;
+        case 'success':
+            statusIcon.textContent = '✅';
+            statusText.textContent = mensaje;
+            locationStatus.style.background = '#e8f5e8';
+            locationStatus.style.color = '#2e7d32';
+            break;
+        case 'error':
+            statusIcon.textContent = '❌';
+            statusText.textContent = mensaje;
+            locationStatus.style.background = '#ffebee';
+            locationStatus.style.color = '#c62828';
+            break;
+    }
+    
+    locationStatus.classList.remove('hidden');
+}
+
+function activarAnalisisTrafico() {
+    // Simular análisis de tráfico (en una implementación real, esto se conectaría a una API)
+    console.log('Análisis de tráfico activado');
+    
+    // Ejemplo: simular datos de tráfico después de 2 segundos
+    setTimeout(() => {
+        const datosTrafico = {
+            tiempoEstimado: parseInt(document.getElementById('minutos').value) || 15,
+            tiempoReal: 0,
+            gananciaMinuto: 'RD$0/min',
+            gananciaKm: 'RD$0/km',
+            eficiencia: 0,
+            impactoTrafico: 'Calculando tráfico...',
+            claseBadge: 'badge-oportunidad',
+            emoji: '🔄',
+            estado: 'CALCULANDO'
+        };
+        
+        // Calcular tiempo real basado en condiciones de tráfico simuladas
+        const factorTrafico = 1 + (Math.random() * 0.5); // +0% a +50%
+        datosTrafico.tiempoReal = Math.round(datosTrafico.tiempoEstimado * factorTrafico);
+        
+        // Calcular métricas basadas en el perfil actual
+        calcularMetricasConTrafico(datosTrafico);
+        
+    }, 2000);
+}
+
+function calcularMetricasConTrafico(datosTrafico) {
+    const tarifa = parseFloat(document.getElementById('tarifa').value) || 0;
+    const minutosReales = datosTrafico.tiempoReal;
+    const distancia = parseFloat(document.getElementById('distancia').value) || 1;
+    
+    if (tarifa > 0 && minutosReales > 0 && distancia > 0) {
+        // Calcular ganancias por minuto y km
+        const gananciaPorMinuto = tarifa / minutosReales;
+        const gananciaPorKm = tarifa / distancia;
+        
+        datosTrafico.gananciaMinuto = `RD$${gananciaPorMinuto.toFixed(2)}/min`;
+        datosTrafico.gananciaKm = `RD$${gananciaPorKm.toFixed(2)}/km`;
+        
+        // Calcular eficiencia (simplificado)
+        const eficiencia = Math.min(100, Math.max(0, (gananciaPorMinuto / 10) * 100));
+        datosTrafico.eficiencia = Math.round(eficiencia);
+        
+        // Determinar estado del viaje
+        const umbralMinutoRentable = parseFloat(document.getElementById('umbral-minuto-rentable').value) || 6.00;
+        const umbralKmRentable = parseFloat(document.getElementById('umbral-km-rentable').value) || 25.00;
+        const umbralMinutoOportunidad = parseFloat(document.getElementById('umbral-minuto-oportunidad').value) || 5.00;
+        const umbralKmOportunidad = parseFloat(document.getElementById('umbral-km-oportunidad').value) || 23.00;
+        
+        if (gananciaPorMinuto >= umbralMinutoRentable && gananciaPorKm >= umbralKmRentable) {
+            datosTrafico.claseBadge = 'badge-rentable';
+            datosTrafico.emoji = '✅';
+            datosTrafico.estado = 'VIAJE RENTABLE';
+        } else if (gananciaPorMinuto >= umbralMinutoOportunidad && gananciaPorKm >= umbralKmOportunidad) {
+            datosTrafico.claseBadge = 'badge-oportunidad';
+            datosTrafico.emoji = '⚠️';
+            datosTrafico.estado = 'OPORTUNIDAD';
+        } else {
+            datosTrafico.claseBadge = 'badge-no-rentable';
+            datosTrafico.emoji = '❌';
+            datosTrafico.estado = 'NO RENTABLE';
+        }
+        
+        // Calcular impacto del tráfico
+        const incrementoPorcentaje = Math.round(((datosTrafico.tiempoReal - datosTrafico.tiempoEstimado) / datosTrafico.tiempoEstimado) * 100);
+        datosTrafico.impactoTrafico = `⚠️ Tráfico aumenta +${incrementoPorcentaje}% el tiempo`;
+    }
+    
+    // Mostrar el modal con los datos calculados
+    mostrarModalRapido(datosTrafico);
+}
+
+function guardarEnHistorial(aceptado) {
+    // Aquí iría la lógica para guardar el viaje en el historial
+    console.log(`Viaje ${aceptado ? 'aceptado' : 'rechazado'} guardado en historial`);
+    
+    // Ejemplo de implementación:
+    const viaje = {
+        fecha: new Date().toISOString(),
+        tarifa: parseFloat(document.getElementById('tarifa').value) || 0,
+        minutos: parseInt(document.getElementById('minutos').value) || 0,
+        minutosReales: 0, // Se calcularía con el tráfico
+        distancia: parseFloat(document.getElementById('distancia').value) || 0,
+        aceptado: aceptado,
+        rentable: aceptado // Simplificado
+    };
+    
+    // Aquí llamarías a tu función existente para guardar en el historial
+    // guardarViajeEnHistorial(viaje);
+}
+
+// INICIALIZACIÓN CUANDO EL DOCUMENTO ESTÉ LISTO
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar estilos para el sistema de tráfico
+    agregarEstilosTrafico();
+    
+    // Inicializar gestión de ubicación
+    inicializarGestionUbicacion();
+    
+    // También inicializar cuando se cambie a la pantalla principal
+    const mainScreen = document.getElementById('main-screen');
+    if (mainScreen) {
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    if (mainScreen.classList.contains('active')) {
+                        inicializarGestionUbicacion();
+                    }
+                }
+            });
+        });
+        
+        observer.observe(mainScreen, { attributes: true });
+    }
+});
+
+// Función para simular la activación del modal rápido (para testing)
+function simularAnalisisRapido() {
+    const datosEjemplo = {
+        tiempoEstimado: 15,
+        tiempoReal: 18,
+        gananciaMinuto: 'RD$19.45/min',
+        gananciaKm: 'RD$41.18/km',
+        eficiencia: 85,
+        impactoTrafico: '⚠️ Tráfico aumenta +20% el tiempo',
+        claseBadge: 'badge-rentable',
+        emoji: '✅',
+        estado: 'VIAJE RENTABLE'
+    };
+    
+    mostrarModalRapido(datosEjemplo);
+}
+    
 });
 
 // Cerrar modal al hacer clic fuera
@@ -3147,6 +3726,7 @@ window.onclick = function(event) {
         cerrarSyncPanel();
     }
 };
+
 
 
 
