@@ -195,9 +195,9 @@ function hideUserCodeModal() {
 }
 
 function showUserCodeBanner() {
-    const headerActions = document.querySelector('.header-actions');
-    if (!headerActions) {
-        console.error('❌ No se encontró header-actions');
+    const headerLeft = document.querySelector('.header-left');
+    if (!headerLeft) {
+        console.error('❌ No se encontró header-left');
         return;
     }
     
@@ -221,12 +221,13 @@ function showUserCodeBanner() {
             transition: all 0.3s;
             color: var(--text-primary);
             font-size: 0.9em;
+            min-width: auto;
         `;
         
-        // Insertar al inicio de header-actions (primera posición)
-        headerActions.insertBefore(codeButton, headerActions.firstChild);
+        // Insertar en header-left
+        headerLeft.appendChild(codeButton);
         
-        console.log('✅ Botón de código creado en header');
+        console.log('✅ Botón de código creado en header-left');
         elementos['user-code-button'] = codeButton; // Guardar referencia
     }
     
@@ -2468,5 +2469,6 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
