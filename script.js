@@ -1025,6 +1025,7 @@ function mostrarConfigPerfil(perfil = null) {
     if (!form) return;
     
     if (perfil) {
+        // Cargar TODOS los valores del perfil, incluyendo los umbrales
         document.getElementById('perfil-id').value = perfil.id;
         document.getElementById('nombre-perfil').value = perfil.nombre;
         document.getElementById('tipo-medida').value = perfil.tipoMedida;
@@ -1032,13 +1033,17 @@ function mostrarConfigPerfil(perfil = null) {
         document.getElementById('rendimiento').value = perfil.rendimiento;
         document.getElementById('precio-combustible').value = perfil.precioCombustible;
         document.getElementById('moneda').value = perfil.moneda;
-        document.getElementById('umbral-minuto-rentable').value = perfil.umbralMinutoRentable;
-        document.getElementById('umbral-km-rentable').value = perfil.umbralKmRentable;
-        document.getElementById('umbral-minuto-oportunidad').value = perfil.umbralMinutoOportunidad;
-        document.getElementById('umbral-km-oportunidad').value = perfil.umbralKmOportunidad;
+        
+        // ESTAS SON LAS LÍNEAS IMPORTANTES - Cargar los umbrales guardados
+        document.getElementById('umbral-minuto-rentable').value = perfil.umbralMinutoRentable || 6.00;
+        document.getElementById('umbral-km-rentable').value = perfil.umbralKmRentable || 25.00;
+        document.getElementById('umbral-minuto-oportunidad').value = perfil.umbralMinutoOportunidad || 5.00;
+        document.getElementById('umbral-km-oportunidad').value = perfil.umbralKmOportunidad || 23.00;
+        
         document.getElementById('costo-seguro').value = perfil.costoSeguro || 0;
         document.getElementById('costo-mantenimiento').value = perfil.costoMantenimiento || 0;
     } else {
+        // Para nuevo perfil, usar valores por defecto
         form.reset();
         document.getElementById('perfil-id').value = '';
         document.getElementById('umbral-minuto-rentable').value = '6.00';
@@ -1064,6 +1069,7 @@ function guardarPerfil(event) {
         rendimiento: parseFloat(document.getElementById('rendimiento').value),
         precioCombustible: parseFloat(document.getElementById('precio-combustible').value),
         moneda: document.getElementById('moneda').value,
+        // Asegurar que se guarden los valores actuales de los umbrales
         umbralMinutoRentable: parseFloat(document.getElementById('umbral-minuto-rentable').value),
         umbralKmRentable: parseFloat(document.getElementById('umbral-km-rentable').value),
         umbralMinutoOportunidad: parseFloat(document.getElementById('umbral-minuto-oportunidad').value),
@@ -1078,6 +1084,15 @@ function guardarPerfil(event) {
         mostrarError('Por favor, completa todos los campos requeridos');
         return;
     }
+    
+    // Verificar que los valores se están guardando correctamente
+    console.log('💾 Guardando perfil con rendimiento:', perfil.rendimiento);
+    console.log('💾 Umbrales guardados:', {
+        minRent: perfil.umbralMinutoRentable,
+        kmRent: perfil.umbralKmRentable,
+        minOport: perfil.umbralMinutoOportunidad,
+        kmOport: perfil.umbralKmOportunidad
+    });
     
     if (perfilId) {
         const index = perfiles.findIndex(p => p.id === perfilId);
@@ -2468,6 +2483,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
