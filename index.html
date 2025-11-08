@@ -4,287 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DIBER - Calculadora Inteligente para Conductores</title>
+    <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="logo_b.png" type="image/png">
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <style>
-        /* Estilos base y variables */
-        :root {
-            --primary-blue: #007cba;
-            --secondary-blue: #005a87;
-            --success-green: #28a745;
-            --warning-orange: #ffc107;
-            --danger-red: #dc3545;
-            --light-grey: #f8f9fa;
-            --border-color: #dee2e6;
-            --text-primary: #333;
-            --text-secondary: #666;
-            --card-bg: #ffffff;
-            --background: #f5f7fa;
-        }
-
-        .dark-mode {
-            --primary-blue: #4dabf7;
-            --secondary-blue: #339af0;
-            --success-green: #51cf66;
-            --warning-orange: #ffd43b;
-            --danger-red: #ff6b6b;
-            --light-grey: #2d3748;
-            --border-color: #4a5568;
-            --text-primary: #e2e8f0;
-            --text-secondary: #a0aec0;
-            --card-bg: #2d3748;
-            --background: #1a202c;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--background);
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-        }
-
-        /* HEADER MEJORADO - OPCIÓN 1 */
-        .app-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            background: var(--card-bg);
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-            border-radius: 16px;
-            margin: 15px 20px 25px 20px;
-            border: 1px solid var(--border-color);
-        }
-
-        .header-section {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-        }
-
-        .header-section.left {
-            justify-content: flex-start;
-        }
-
-        .header-section.right {
-            justify-content: flex-end;
-        }
-
-        .logo-container {
-            flex: 0 0 auto;
-            text-align: center;
-        }
-
-        .app-logo {
-            height: 42px;
-            width: auto;
-            max-width: 140px;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-        }
-
-        .header-button {
-            width: 46px;
-            height: 46px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--light-grey);
-            border: 2px solid var(--border-color);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 18px;
-            color: var(--text-primary);
-        }
-
-        .header-button:hover {
-            background: var(--primary-blue);
-            border-color: var(--primary-blue);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 124, 186, 0.3);
-        }
-
-        .header-button.active {
-            background: var(--primary-blue);
-            border-color: var(--primary-blue);
-            color: white;
-        }
-
-        /* Estilos generales */
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .screen {
-            display: none;
-            min-height: 100vh;
-            padding: 20px 0;
-        }
-
-        .screen.active {
-            display: block;
-        }
-
-        .primary-button {
-            background: var(--primary-blue);
-            color: white;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 124, 186, 0.2);
-        }
-
-        .primary-button:hover {
-            background: var(--secondary-blue);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 124, 186, 0.3);
-        }
-
-        .secondary-button {
-            background: var(--card-bg);
-            color: var(--text-primary);
-            border: 2px solid var(--border-color);
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .secondary-button:hover {
-            background: var(--light-grey);
-            border-color: var(--primary-blue);
-            transform: translateY(-1px);
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 14px;
-        }
-
-        .input-group input,
-        .input-group select {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid var(--border-color);
-            border-radius: 10px;
-            font-size: 16px;
-            background: var(--card-bg);
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-        }
-
-        .input-group input:focus,
-        .input-group select:focus {
-            outline: none;
-            border-color: var(--primary-blue);
-            box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
-        }
-
-        .required {
-            color: var(--danger-red);
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        /* Estilos para pantallas específicas */
-        .perfil-section {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            margin-top: 20px;
-            border: 1px solid var(--border-color);
-        }
-
-        .perfil-section h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            color: var(--text-primary);
-            font-size: 24px;
-        }
-
-        /* Responsive */
-        @media (max-width: 480px) {
-            .app-header {
-                padding: 12px 15px;
-                margin: 10px 15px 20px 15px;
-                border-radius: 14px;
-            }
-            
-            .header-button {
-                width: 42px;
-                height: 42px;
-                font-size: 16px;
-                border-radius: 10px;
-            }
-            
-            .app-logo {
-                height: 38px;
-            }
-
-            .container {
-                padding: 0 15px;
-            }
-
-            .perfil-section {
-                padding: 20px;
-                margin-top: 15px;
-            }
-        }
-
-        /* Estilos adicionales para compatibilidad */
-        .button-icon {
-            font-size: 16px;
-        }
-
-        .sync-info-small {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 20px;
-            padding: 12px;
-            background: var(--light-grey);
-            border-radius: 10px;
-            font-size: 14px;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-        }
-    </style>
 </head>
 <body>
     <!-- Modal de Código de Usuario -->
@@ -370,7 +95,7 @@
                     <!-- Los perfiles se cargarán aquí -->
                 </div>
                 
-                <button id="nuevo-perfil-btn" class="primary-button" style="margin-top: 20px;">
+                <button id="nuevo-perfil-btn" class="primary-button">
                     <span class="button-icon">➕</span>
                     Crear Nuevo Perfil
                 </button>
@@ -554,95 +279,1103 @@
     <!-- Pantalla Principal de Cálculos -->
     <div id="main-screen" class="screen">
         <div class="container">
-            <!-- HEADER MEJORADO - OPCIÓN 1 -->
-            <div class="app-header">
-                <!-- Sección izquierda: 2 iconos -->
-                <div class="header-section left">
-                    <button id="cambiar-perfil" class="header-button" title="Cambiar perfil">
-                        👤
-                    </button>
-                    <button id="sync-status-btn" class="header-button" title="Estado de sincronización">
-                        🌐
-                    </button>
-                </div>
-                
-                <!-- Logo centrado -->
-                <div class="logo-container">
-                    <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
-                </div>
-                
-                <!-- Sección derecha: 2 iconos -->
-                <div class="header-section right">
-                    <button id="theme-toggle" class="header-button" title="Cambiar tema">
-                        🌙
-                    </button>
-                    <button id="config-button" class="header-button" title="Configuración">
-                        🔑
-                    </button>
-                </div>
+  <div class="app-header">
+    <div class="header-section left">
+        <button id="cambiar-perfil" class="header-button" title="Cambiar perfil">
+            <span class="button-icon">👤</span>
+        </button>
+        <button id="sync-status-btn" class="header-button" title="Estado de sincronización">
+            <span class="button-icon" id="sync-btn-icon">🌐</span>
+        </button>
+    </div>
+    
+    <div class="logo-container">
+        <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
+    </div>
+    
+    <div class="header-section right">
+        <button id="theme-toggle" class="header-button" title="Cambiar tema">
+            <span class="theme-icon">🌙</span>
+        </button>
+        <button id="config-button" class="header-button" title="Configuración">
+            <span class="button-icon">🔑</span>
+        </button>
+    </div>
+</div>
+
+            <!-- Indicador de Estado -->
+            <div id="status-indicator" class="status-indicator hidden">
+                <span id="status-text">Calculando...</span>
             </div>
 
-            <!-- El resto de tu contenido permanece igual -->
-            <div style="text-align: center; padding: 40px 20px; background: var(--card-bg); border-radius: 16px; margin-top: 20px;">
-                <h2>🚗 Pantalla Principal</h2>
-                <p style="color: var(--text-secondary); margin-top: 10px;">
-                    Contenido de la aplicación aquí...
-                </p>
+            <!-- Sistema de Pestañas -->
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-button active" data-tab="calcular">
+                        <span class="tab-icon">🧮</span>
+                        <span class="tab-text">CALCULAR</span>
+                    </button>
+                    <button class="tab-button" data-tab="resumen">
+                        <span class="tab-icon">📊</span>
+                        <span class="tab-text">RESUMEN</span>
+                    </button>
+                    <button class="tab-button" data-tab="historial">
+                        <span class="tab-icon">📋</span>
+                        <span class="tab-text">HISTORIAL</span>
+                    </button>
+                </div>
+
+                <!-- Contenido de Pestañas -->
+<div class="tab-content active" id="tab-calcular">
+    <!-- Formulario Principal -->
+    <div class="form-section">
+        <h2 class="section-title centered">📊 Datos del Viaje</h2>
+        
+        <div class="input-group">
+            <label for="tarifa">
+                💰 Ganancia Ofrecida
+                <span class="required">*</span>
+            </label>
+            <div class="input-with-unit">
+                <input type="number" id="tarifa" min="0" step="0.01" placeholder="350.00" required inputmode="decimal">
+                <span id="moneda-tarifa" class="input-unit">DOP</span>
+            </div>
+            <span class="error-message" id="tarifa-error"></span>
+        </div>
+
+        <div class="input-group">
+            <label for="minutos">
+                ⏱️ Tiempo Estimado (Minutos)
+                <span class="required">*</span>
+            </label>
+            <div class="input-with-unit">
+                <input type="number" id="minutos" min="1" step="1" placeholder="25" required inputmode="numeric">
+                <span class="input-unit">min</span>
+            </div>
+            <span class="error-message" id="minutos-error"></span>
+        </div>
+
+        <div class="input-group">
+            <label for="distancia">
+                🛣️ Distancia Estimada
+                <span class="required">*</span>
+            </label>
+            <div class="input-with-unit">
+                <input type="number" id="distancia" min="0" step="0.1" placeholder="8.5" required inputmode="decimal">
+                <span id="distancia-unit" class="input-unit">Km</span>
+            </div>
+            <span class="error-message" id="distancia-error"></span>
+        </div>
+
+<!-- ✅ AQUÍ VA EL BOTÓN DE ACTIVAR UBICACIÓN -->
+        <div class="location-permission-section">
+            <button type="button" id="activar-ubicacion-btn" class="location-permission-btn">
+                <span class="button-icon">📍</span>
+                Activar Análisis de Tráfico
+            </button>
+            <div id="location-status" class="location-status hidden">
+                <span class="status-icon">✅</span>
+                <span class="status-text">Ubicación activa - Tráfico monitoreado</span>
+            </div>
+        </div>
+        
+        <!-- Indicador de Cálculo Automático -->
+        <div id="auto-calc-indicator" class="auto-calc-indicator hidden">
+            <div class="auto-calc-content">
+                <span class="auto-calc-icon">🔄</span>
+                <span class="auto-calc-text">CÁLCULO AUTOMÁTICO ACTIVO</span>
+            </div>
+        </div>
+
+        <!-- Resultado Rápido -->
+        <div id="resultado-rapido" class="resultado-rapido hidden">
+            <div class="resultado-header">
+                <h3>🎯 Resultado Instantáneo</h3>
+            </div>
+            <div class="resultado-content">
+                <div class="resultado-badge" id="resultado-badge">
+                    <span id="resultado-emoji">✅</span>
+                    <span id="resultado-texto">RENTABLE</span>
+                </div>
+                <div class="resultado-metricas">
+                    <div class="metrica-rapida">
+                        <span class="metrica-label">Por minuto:</span>
+                        <span id="metrica-minuto" class="metrica-valor">--</span>
+                    </div>
+                    <div class="metrica-rapida">
+                        <span class="metrica-label">Por km:</span>
+                        <span id="metrica-km" class="metrica-valor">--</span>
+                   </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pestaña Resumen - VERSIÓN MEJORADA -->
+<div class="tab-content" id="tab-resumen">
+    <!-- Estadísticas del Día -->
+    <div class="estadisticas-container">
+        <h3>📈 Estadísticas del Día</h3>
+        <div class="estadisticas-grid">
+            <div class="estadistica-item">
+                <span class="estadistica-valor" id="stats-viajes">0</span>
+                <span class="estadistica-label">Viajes</span>
+            </div>
+            <div class="estadistica-item">
+                <span class="estadistica-valor" id="stats-ganancia">RD$0</span>
+                <span class="estadistica-label">Ganancia</span>
+            </div>
+            <div class="estadistica-item">
+                <span class="estadistica-valor" id="stats-tiempo">0min</span>
+                <span class="estadistica-label">Tiempo</span>
+            </div>
+            <div class="estadistica-item">
+                <span class="estadistica-valor" id="stats-rentables">0</span>
+                <span class="estadistica-label">Rentables</span>
             </div>
         </div>
     </div>
 
-    <script>
-        // Script básico para demostración
-        document.addEventListener('DOMContentLoaded', function() {
-            // Navegación entre pantallas
-            const screens = document.querySelectorAll('.screen');
-            const showScreen = (screenId) => {
-                screens.forEach(screen => screen.classList.remove('active'));
-                document.getElementById(screenId).classList.add('active');
-            };
+    <!-- Rendimiento - DISEÑO MEJORADO -->
+    <div class="rendimiento-section-mejorada">
+        <div class="rendimiento-header">
+            <h3>🚀 Rendimiento</h3>
+            <div class="eficiencia-global" id="rendimiento-eficiencia-badge">
+                <span class="eficiencia-icon">📊</span>
+                <span class="eficiencia-texto">Eficiencia: <strong>0.0%</strong></span>
+            </div>
+        </div>
+        
+        <!-- Métricas Principales en Grid -->
+        <div class="metricas-principales-grid">
+            <div class="metrica-principal">
+                <div class="metica-icono">💸</div>
+                <div class="metrica-contenido">
+                    <div class="metrica-valor" id="rendimiento-ganancia-hora-card">RD$0.00</div>
+                    <div class="metrica-label">Ganancia por Hora</div>
+                    <div class="metrica-subtexto" id="rendimiento-ganancia-hora-linea">RD$0.00 por hora</div>
+                </div>
+            </div>
+            
+            <div class="metrica-principal">
+                <div class="metrica-icono">📦</div>
+                <div class="metrica-contenido">
+                    <div class="metrica-valor" id="rendimiento-viaje-promedio-linea">RD$0.00</div>
+                    <div class="metrica-label">Viaje Promedio</div>
+                    <div class="metrica-subtexto">Por viaje aceptado</div>
+                </div>
+            </div>
+            
+            <div class="metrica-principal">
+                <div class="metrica-icono">🛣️</div>
+                <div class="metrica-contenido">
+                    <div class="metrica-valor" id="rendimiento-distancia-total-card">0 km</div>
+                    <div class="metrica-label">Distancia Total</div>
+                    <div class="metrica-subtexto">Recorrido hoy</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Barra de Progreso de Eficiencia -->
+        <div class="progreso-eficiencia">
+            <div class="progreso-header">
+                <span class="progreso-label">Nivel de Eficiencia</span>
+                <span class="progreso-porcentaje" id="rendimiento-eficiencia-card">0.0%</span>
+            </div>
+            <div class="progreso-barra">
+                <div class="progreso-fill" id="progreso-eficiencia-fill" style="width: 0%"></div>
+            </div>
+            <div class="progreso-marcadores">
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
+            </div>
+        </div>
+    </div>
+</div>
 
-            // Botones de navegación
-            document.getElementById('nuevo-perfil-btn')?.addEventListener('click', () => showScreen('config-perfil-screen'));
-            document.getElementById('volver-perfiles')?.addEventListener('click', () => showScreen('perfil-screen'));
-            document.getElementById('cancelar-perfil')?.addEventListener('click', () => showScreen('perfil-screen'));
-            document.getElementById('cambiar-perfil')?.addEventListener('click', () => showScreen('perfil-screen'));
+<!-- Pestaña Historial -->
+<div class="tab-content" id="tab-historial">
+    <!-- FILTROS NUEVOS -->
+    <div class="filtros-historial">
+        <h3>📋 Historial de Viajes</h3>
+        <div class="filtros-container">
+            <button class="filtro-btn active" data-filtro="hoy">Hoy</button>
+            <button class="filtro-btn" data-filtro="semana">Esta Semana</button>
+            <button class="filtro-btn" data-filtro="mes">Este Mes</button>
+            <button class="filtro-btn" data-filtro="todos">Todos</button>
+        </div>
+    </div>
 
-            // Efectos para botones del header
-            document.querySelectorAll('.header-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    this.style.transform = 'scale(0.95)';
-                    setTimeout(() => {
-                        this.style.transform = '';
-                    }, 150);
-                });
-            });
+    <!-- Historial de Cálculos -->
+    <div class="history-section">
+        <div id="history-list" class="history-list">
+            <!-- Los cálculos aparecerán aquí -->
+        </div>
+        <div class="history-actions">
+            <button id="exportar-historial" class="secondary-button small">
+                📤 Exportar Historial
+            </button>
+            <button id="clear-history" class="secondary-button small">
+                🗑️ Limpiar Historial
+            </button>
+        </div>
+    </div>
+</div>
 
-            // Toggle tema oscuro
-            document.getElementById('theme-toggle')?.addEventListener('click', function() {
-                document.body.classList.toggle('dark-mode');
-                this.innerHTML = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
-            });
-        });
+    <!-- Modal de Resultados Mejorado -->
+    <div id="modalFondo" class="modal-fondo">
+        <div id="modalContenido" class="modal-contenido">
+            <span class="cerrar-btn" onclick="cerrarModal()">&times;</span>
+            
+            <div class="modal-header">
+                <h2>📊 Resultado del Análisis</h2>
+                <div id="modal-badge" class="result-badge">
+                    <span id="modal-emoji">✅</span>
+                    <span id="modal-texto">RENTABLE</span>
+                </div>
+            </div>
 
-        // Funciones de ejemplo para modales
-        function generateUserCode() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let code = '';
-            for (let i = 0; i < 6; i++) {
-                code += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            document.getElementById('user-code-input').value = code;
+            <div id="modalResultadosDoble" class="modal-resultados-doble">
+                <!-- Los resultados aparecerán aquí -->
+            </div>
+
+            <div class="modal-actions">
+                <button id="rechazar-viaje" class="secondary-button">
+                    ❌ Rechazar Viaje
+                </button>
+                <button id="aceptar-viaje" class="primary-button">
+                    ✅ Aceptar Viaje
+                </button>
+            </div>
+
+            <p class="modal-footer small-info">
+                💡 Los viajes aceptados se guardan en tu historial semanal
+            </p>
+        </div>
+    </div>
+
+    <!-- Modal Rápido Mejorado -->
+    <div id="modal-rapido" class="modal-rapido-mejorado hidden">
+        <div class="modal-rapido-contenido-mejorado">
+            <!-- Header con tráfico -->
+            <div class="modal-trafico-header" id="modal-trafico-header">
+                <div class="trafico-status" id="modal-trafico-status">
+                    <span class="trafico-emoji-big">🚦</span>
+                    <div class="trafico-info">
+                        <div class="trafico-title">Análisis de Tráfico</div>
+                        <div class="trafico-condition" id="modal-trafico-condition">Calculando...</div>
+                    </div>
+                </div>
+                <button class="modal-cerrar-elegante" onclick="cerrarModalRapido()">
+                    <span>×</span>
+                </button>
+            </div>
+
+            <!-- Tiempo ajustado -->
+            <div class="tiempo-ajustado-section">
+                <div class="tiempo-original">
+                    <span class="tiempo-label">Tiempo estimado:</span>
+                    <span class="tiempo-valor" id="modal-tiempo-original">-- min</span>
+                </div>
+                <div class="flecha-ajuste">↓</div>
+                <div class="tiempo-real">
+                    <span class="tiempo-label">Con tráfico real:</span>
+                    <span class="tiempo-valor destacado" id="modal-tiempo-real">-- min</span>
+                </div>
+            </div>
+
+            <!-- Resultado principal -->
+            <div class="resultado-principal" id="modal-resultado-principal">
+                <div class="badge-rentabilidad" id="modal-badge-rentabilidad">
+                    <div class="badge-emoji">✅</div>
+                    <div class="badge-content">
+                        <div class="badge-title">VIAJE RENTABLE</div>
+                        <div class="badge-subtitle" id="modal-badge-subtitle">Buenas condiciones</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Métricas -->
+            <div class="metricas-grid-mejorado">
+                <div class="metrica-card">
+                    <div class="metrica-icono">💸</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-ganancia-minuto">--/min</div>
+                        <div class="metrica-label">Por minuto</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">🛣️</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-ganancia-km">--/km</div>
+                        <div class="metrica-label">Por km</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">📊</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-eficiencia">--%</div>
+                        <div class="metrica-label">Eficiencia</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Impacto del tráfico -->
+            <div class="impacto-trafico" id="modal-impacto-trafico">
+                <div class="impacto-header">
+                    <span class="impacto-icon">📈</span>
+                    <span class="impacto-title">Impacto del Tráfico</span>
+                </div>
+                <div class="impacto-content" id="modal-impacto-content">
+                    El tráfico aumenta el tiempo en un <strong>0%</strong>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="acciones-mejoradas">
+                <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
+                    <span class="btn-icon">❌</span>
+                    <span class="btn-text">Rechazar Viaje</span>
+                    <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
+                </button>
+                <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)" id="modal-btn-aceptar">
+                    <span class="btn-icon">✅</span>
+                    <span class="btn-text">Aceptar Viaje</span>
+                    <span class="btn-badge" id="modal-badge-aceptar">Recomendado</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Exportación Mejorado -->
+    <div id="exportModal" class="modal-fondo">
+        <div class="modal-contenido">
+            <span class="cerrar-btn" onclick="cerrarExportModal()">&times;</span>
+            <div class="modal-header">
+                <h2>📤 Exportar Historial</h2>
+            </div>
+            <div class="modal-body">
+                <p>¿Deseas generar un reporte PDF con todo tu historial?</p>
+                <p class="small-info">El reporte incluirá estadísticas completas y desglose de costos</p>
+                <div class="export-options" style="justify-content: center;">
+                    <button id="exportar-pdf" class="primary-button" style="max-width: 200px;">
+                        📄 Generar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Sincronización Firebase -->
+    <div id="sync-panel" class="modal-fondo">
+        <div class="modal-contenido">
+            <span class="cerrar-btn" onclick="cerrarSyncPanel()">&times;</span>
+            <div class="modal-header">
+                <h2>🌐 Sincronización Multi-Dispositivo</h2>
+                <div class="sync-status-badge" id="sync-panel-status">
+                    <span class="sync-icon">🔄</span>
+                    <span>Conectando...</span>
+                </div>
+            </div>
+            
+            <div class="sync-panel-content">
+                <div class="sync-info-section">
+                    <h3>📱 Dispositivo Actual</h3>
+                    <div class="device-info-current">
+                        <span class="device-icon" id="current-device-icon">📱</span>
+                        <div class="device-details">
+                            <strong id="current-device-name">Teléfono Principal</strong>
+                            <span class="device-id" id="current-device-id">ID: cargando...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sync-status-section">
+                    <h3>🔗 Estado de Conexión</h3>
+                    <div class="connection-status">
+                        <div class="status-item">
+                            <span class="status-label">Firebase:</span>
+                            <span class="status-value" id="firebase-status">Conectando...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Última sync:</span>
+                            <span class="status-value" id="last-sync-time">--</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Perfiles en nube:</span>
+                            <span class="status-value" id="cloud-profiles-count">--</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Historial en nube:</span>
+                            <span class="status-value" id="cloud-history-count">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sync-actions-panel">
+                    <button id="force-sync-btn" class="primary-button" onclick="forzarSincronizacion()">
+                        <span class="button-icon">🔄</span>
+                        Sincronizar Ahora
+                    </button>
+                    
+                    <button class="secondary-button" onclick="mostrarInfoSync()">
+                        <span class="button-icon">ℹ️</span>
+                        Cómo Funciona
+                    </button>
+                    <button class="secondary-button" onclick="showUserCodeModal()">
+                        <span class="button-icon">🔑</span>
+                        Cambiar Código
+                    </button>
+                    <button class="secondary-button" onclick="diagnosticarSync()">
+                        <span class="button-icon">🔧</span>
+                        Diagnóstico
+                    </button>
+                </div>
+
+                <div class="sync-tips">
+                    <h4>💡 Tips de Sincronización</h4>
+                    <ul>
+                        <li>Los perfiles se sincronizan automáticamente entre dispositivos</li>
+                        <li>Usa el MISMO código en todos tus dispositivos</li>
+                        <li>Los datos se mantienen seguros en Firebase</li>
+                        <li>Funciona sin conexión con respaldo local</li>
+                        <li>Sincronización en tiempo real</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    
+    <!-- Estilos adicionales para el sistema de código -->
+    <style>
+        /* Estilos para el modal de código de usuario */
+        #user-code-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #user-code-modal.active {
+            display: flex !important;
+        }
+        
+        #user-code-modal.hidden {
+            display: none !important;
+        }
+        
+        .modal-contenido {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+            margin: 20px;
+        }
+        
+        #user-code-input:focus {
+            outline: none;
+            border-color: #007cba;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+        
+        #user-code-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin: 10px 0;
+            padding: 10px 15px;
+        }
+        
+        #user-code-banner .sync-info {
+            color: white;
+        }
+        
+        #user-code-banner .sync-details-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        #user-code-banner .sync-details-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* Asegurar que los modales tengan buen z-index */
+        .modal-fondo {
+            z-index: 10000;
+        }
+        
+        #user-code-modal {
+            z-index: 10001;
+        }
+        
+        /* Estilos para el botón Conectar */
+        #user-code-modal button {
+            background: #007cba !important;
+            color: white !important;
+            border: none !important;
+            padding: 15px !important;
+            border-radius: 10px !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            cursor: pointer !important;
+            width: 100% !important;
+        }
+        
+        #user-code-modal button:hover {
+            background: #005a87 !important;
         }
 
-        function setUserCode() {
-            const code = document.getElementById('user-code-input').value;
-            if (code) {
-                alert(`Código establecido: ${code}`);
-            } else {
-                alert('Por favor, ingresa o genera un código');
+        /* Estilos para el panel de sincronización */
+        .sync-panel-content {
+            padding: 20px;
+        }
+
+        .sync-info-section,
+        .sync-status-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #007cba;
+        }
+
+        .device-info-current {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .device-icon {
+            font-size: 24px;
+        }
+
+        .device-details {
+            flex: 1;
+        }
+
+        .device-id {
+            font-size: 12px;
+            color: #666;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .connection-status {
+            display: grid;
+            gap: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-value {
+            color: #007cba;
+            font-weight: 500;
+        }
+
+        .sync-actions-panel {
+            display: grid;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .sync-tips {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .sync-tips h4 {
+            margin: 0 0 10px 0;
+            color: #856404;
+        }
+
+        .sync-tips ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #856404;
+        }
+
+        .sync-tips li {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .sync-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: #e7f3ff;
+            border-radius: 20px;
+            color: #007cba;
+            font-weight: 500;
+        }
+
+        /* Barra de estado de sincronización */
+        .sync-status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--light-grey);
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-blue);
+        }
+
+        .sync-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+
+        .sync-icon {
+            font-size: 1.1em;
+        }
+
+        .sync-text {
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .sync-details-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s;
+        }
+
+        .sync-details-btn:hover {
+            border-color: var(--primary-blue);
+            background: rgba(26, 115, 232, 0.1);
+        }
+
+        .sync-info-small {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: var(--light-grey);
+            border-radius: 8px;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        /* Estilos para el modal rápido mejorado */
+        .modal-rapido-mejorado {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10002;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-rapido-mejorado.hidden {
+            display: none;
+        }
+
+        .modal-rapido-contenido-mejorado {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: modalAppear 0.3s ease-out;
+        }
+
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
             }
         }
-    </script>
+
+        .modal-trafico-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .trafico-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .trafico-emoji-big {
+            font-size: 2.5em;
+        }
+
+        .trafico-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .trafico-title {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .trafico-condition {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .modal-cerrar-elegante {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .modal-cerrar-elegante:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .tiempo-ajustado-section {
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        .tiempo-original, .tiempo-real {
+            margin: 10px 0;
+        }
+
+        .tiempo-label {
+            display: block;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .tiempo-valor {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .tiempo-valor.destacado {
+            color: #007cba;
+            font-size: 1.4em;
+        }
+
+        .flecha-ajuste {
+            font-size: 1.5em;
+            color: #007cba;
+            margin: 5px 0;
+        }
+
+        .resultado-principal {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .badge-rentabilidad {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 25px;
+            border-radius: 15px;
+            background: #e8f5e8;
+            border: 2px solid #4caf50;
+        }
+
+        .badge-emoji {
+            font-size: 2em;
+        }
+
+        .badge-content {
+            text-align: left;
+        }
+
+        .badge-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2e7d32;
+        }
+
+        .badge-subtitle {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .metricas-grid-mejorado {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 0 20px 20px;
+        }
+
+        .metrica-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .metrica-icono {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+        }
+
+        .metrica-valor {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .metrica-label {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .impacto-trafico {
+            padding: 15px 20px;
+            background: #fff3cd;
+            margin: 0 20px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .impacto-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .impacto-icon {
+            font-size: 1.2em;
+        }
+
+        .impacto-title {
+            font-weight: bold;
+        }
+
+        .impacto-content {
+            font-size: 0.9em;
+        }
+
+        .acciones-mejoradas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 0 20px 20px;
+        }
+
+        .btn-rechazar-elegante, .btn-aceptar-elegante {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-rechazar-elegante {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #ffcdd2;
+        }
+
+        .btn-aceptar-elegante {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 2px solid #c8e6c9;
+        }
+
+        .btn-rechazar-elegante:hover {
+            background: #ffcdd2;
+        }
+
+        .btn-aceptar-elegante:hover {
+            background: #c8e6c9;
+        }
+
+        .btn-icon {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .btn-text {
+            margin-bottom: 5px;
+        }
+
+        .btn-badge {
+            font-size: 0.8em;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: normal;
+        }
+
+        .btn-rechazar-elegante .btn-badge {
+            background: #ffcdd2;
+        }
+
+        .btn-aceptar-elegante .btn-badge {
+            background: #c8e6c9;
+        }
+        
+  /* HEADER MEJORADO - SOLO ESTOS ESTILOS NUEVOS */
+    .app-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        background: var(--card-bg);
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        border-radius: 16px;
+        margin: 15px 20px 25px 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    .header-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+    }
+
+    .header-section.left {
+        justify-content: flex-start;
+    }
+
+    .header-section.right {
+        justify-content: flex-end;
+    }
+
+    .logo-container {
+        flex: 0 0 auto;
+        text-align: center;
+    }
+
+    .app-logo {
+        height: 42px;
+        width: auto;
+        max-width: 140px;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
+
+    .header-button {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--light-grey);
+        border: 2px solid var(--border-color);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 18px;
+        color: var(--text-primary);
+    }
+
+    .header-button:hover {
+        background: var(--primary-blue);
+        border-color: var(--primary-blue);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 124, 186, 0.3);
+    }
+
+    .header-button.active {
+        background: var(--primary-blue);
+        border-color: var(--primary-blue);
+        color: white;
+    }
+
+    /* Responsive para el header */
+    @media (max-width: 480px) {
+        .app-header {
+            padding: 12px 15px;
+            margin: 10px 15px 20px 15px;
+            border-radius: 14px;
+        }
+        
+        .header-button {
+            width: 42px;
+            height: 42px;
+            font-size: 16px;
+            border-radius: 10px;
+        }
+        
+        .app-logo {
+            height: 38px;
+        }
+    }
+</style>
 </body>
 </html>
+
+
