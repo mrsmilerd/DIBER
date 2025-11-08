@@ -48,7 +48,6 @@ const elementos = {};
 function inicializarElementosDOM() {
     console.log('🔍 Inicializando elementos DOM...');
     
-    // SOLO los IDs que existen en tu HTML
     const ids = [
         'perfil-screen', 'config-perfil-screen', 'main-screen',
         'status-indicator', 'status-text', 'auto-calc-indicator',
@@ -75,7 +74,7 @@ function inicializarElementosDOM() {
         'code-status', 'sync-perfil-info', 'sync-panel-status', 'current-device-icon',
         'current-device-name', 'current-device-id', 'firebase-status', 'last-sync-time',
         'cloud-profiles-count', 'cloud-history-count', 'force-sync-btn'
-        // 'user-code-banner' removido - se creará dinámicamente
+        // 'user-code-banner' removido - se integrará en header-actions
     ];
 
     ids.forEach(id => {
@@ -85,7 +84,6 @@ function inicializarElementosDOM() {
         }
     });
 
-    // Elementos adicionales que usan selectores de clase
     elementos.tabButtons = document.querySelectorAll('.tab-button');
     elementos.tabContents = document.querySelectorAll('.tab-content');
     
@@ -162,9 +160,8 @@ function setUserCode() {
     
     localStorage.setItem('DIBER_user_code', code);
     
-    // CORREGIDO: Usar hideUserCodeModal() en lugar de referencia directa
     hideUserCodeModal();
-    showUserCodeBanner();
+    showUserCodeBanner(); // Ahora se integra en el header
     
     mostrarStatus('✅ Código de usuario establecido', 'success');
     
@@ -197,109 +194,78 @@ function hideUserCodeModal() {
     }
 }
 
-// CORREGIDO: Función mejorada para mostrar el banner de código
 function showUserCodeBanner() {
-    let banner = document.getElementById('user-code-banner');
+    const headerActions = document.querySelector('.header-actions');
+    if (!headerActions) {
+        console.error('❌ No se encontró header-actions');
+        return;
+    }
     
-    // Si el banner no existe, crearlo dinámicamente
-    if (!banner) {
-        banner = document.createElement('div');
-        banner.id = 'user-code-banner';
-        banner.className = 'user-code-banner';
-        banner.style.cssText = `
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            margin: 10px 0;
-            padding: 10px 15px;
-            display: none;
-            justify-content: space-between;
+    let codeButton = document.getElementById('user-code-button');
+    
+    // Si el botón no existe, crearlo
+    if (!codeButton) {
+        codeButton = document.createElement('button');
+        codeButton.id = 'user-code-button';
+        codeButton.className = 'secondary-button small user-code-button';
+        codeButton.title = 'Código de sincronización';
+        codeButton.style.cssText = `
+            display: flex;
             align-items: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            position: fixed;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            min-width: 300px;
-            max-width: 90%;
+            gap: 5px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-primary);
+            font-size: 0.9em;
         `;
         
-        // Insertar al inicio del body
-        document.body.insertBefore(banner, document.body.firstChild);
+        // Insertar al inicio de header-actions (primera posición)
+        headerActions.insertBefore(codeButton, headerActions.firstChild);
         
-        console.log('✅ Banner de código de usuario creado dinámicamente');
-        elementos['user-code-banner'] = banner; // Guardar referencia
+        console.log('✅ Botón de código creado en header');
+        elementos['user-code-button'] = codeButton; // Guardar referencia
     }
     
     if (userCodeSystem.userCode) {
-        // Limpiar contenido existente
-        banner.innerHTML = '';
-        
-        // Crear elemento de display
-        const display = document.createElement('span');
-        display.className = 'user-code-display';
-        display.style.cssText = 'font-weight: bold; font-size: 1.1em;';
-        display.textContent = `Código: ${userCodeSystem.userCode}`;
-        
-        // Crear botón de cambiar
-        const changeBtn = document.createElement('button');
-        changeBtn.className = 'secondary-button small';
-        changeBtn.innerHTML = '<span class="button-icon">🔄</span> Cambiar';
-        changeBtn.onclick = cambiarUsuario;
-        changeBtn.style.cssText = `
-            background: rgba(255,255,255,0.2) !important;
-            color: white !important;
-            border: 1px solid rgba(255,255,255,0.3) !important;
-            padding: 5px 10px !important;
-            border-radius: 5px !important;
-            cursor: pointer !important;
-            font-size: 0.9em !important;
+        // Actualizar contenido del botón
+        codeButton.innerHTML = `
+            <span class="button-icon">🔑</span>
+            <span class="user-code-display">${userCodeSystem.userCode}</span>
         `;
         
-        // Agregar elementos al banner
-        banner.appendChild(display);
-        banner.appendChild(changeBtn);
+        codeButton.style.display = 'flex';
+        codeButton.onclick = mostrarInfoUserCode;
         
-        banner.style.display = 'flex';
-        
-        console.log('✅ Banner de código mostrado:', userCodeSystem.userCode);
+        console.log('✅ Botón de código actualizado:', userCodeSystem.userCode);
     }
 }
-    const banner = document.getElementById('user-code-banner');
-    
-    if (banner && userCodeSystem.userCode) {
-        // Buscar o crear el elemento de display
-        let display = banner.querySelector('.user-code-display');
-        if (!display) {
-            display = document.createElement('span');
-            display.className = 'user-code-display';
-            banner.insertBefore(display, banner.firstChild);
-        }
-        
-        display.textContent = `Código: ${userCodeSystem.userCode}`;
-        banner.style.display = 'flex';
-        
-        // Asegurar que el botón de cambiar existe
-        let changeBtn = banner.querySelector('button');
-        if (!changeBtn) {
-            changeBtn = document.createElement('button');
-            changeBtn.className = 'secondary-button small';
-            changeBtn.innerHTML = '<span class="button-icon">🔄</span> Cambiar';
-            changeBtn.onclick = cambiarUsuario;
-            banner.appendChild(changeBtn);
-        }
-    }
 
 function hideUserCodeBanner() {
-    const banner = document.getElementById('user-code-banner');
-    if (banner) {
-        banner.style.display = 'none';
+    const codeButton = document.getElementById('user-code-button');
+    if (codeButton) {
+        codeButton.style.display = 'none';
+    }
+}
+
+function mostrarInfoUserCode() {
+    if (userCodeSystem.userCode) {
+        mostrarStatus(`🔑 Código: ${userCodeSystem.userCode} - Haz clic para cambiar`, 'info');
+        
+        // Mostrar opción para cambiar después de 2 segundos
+        setTimeout(() => {
+            if (confirm(`Tu código actual es: ${userCodeSystem.userCode}\n\n¿Quieres cambiar de código?`)) {
+                cambiarUsuario();
+            }
+        }, 2000);
     }
 }
 
 function cambiarUsuario() {
-    if (confirm('¿Estás seguro de que quieres cambiar de usuario?')) {
+    if (confirm('¿Estás seguro de que quieres cambiar de usuario?\n\nEsto cerrará tu sesión actual.')) {
         localStorage.removeItem('DIBER_user_code');
         userCodeSystem.userCode = null;
         userCodeSystem.userId = null;
@@ -2502,4 +2468,5 @@ window.onclick = function(event) {
         }
     }
 };
+
 
