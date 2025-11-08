@@ -24,6 +24,10 @@ let firebaseInitialized = false;
 let loadingData = false;
 let appInitialized = false;
 
+// --- Sistema de Tráfico ---
+let trafficAnalyzer = null;
+let trafficInitialized = false;
+
 // --- Configuración Firebase ---
 const firebaseConfig = {
   apiKey: "AIzaSyCf5j5Pu-go6ipUw2EnTO2OnKgvYLzkonY",
@@ -37,7 +41,10 @@ const firebaseConfig = {
 // --- Elementos DOM ---
 const elementos = {};
 
-// Inicializar elementos DOM de forma segura
+// =============================================
+// INICIALIZACIÓN DE ELEMENTOS DOM
+// =============================================
+
 function inicializarElementosDOM() {
     console.log('🔍 Inicializando elementos DOM...');
     
@@ -50,15 +57,14 @@ function inicializarElementosDOM() {
         'aceptar-viaje', 'rechazar-viaje',
         'modalFondo', 'modalContenido', 'modalResultadosDoble', 'modal-badge', 'modal-emoji', 'modal-texto',
         'history-list', 'clear-history', 'exportar-historial',
-        'stats-viajes', 'stats-ganancia', 'stats-tiempo', 'stats-rentables', // ✅ Mantener estos
+        'stats-viajes', 'stats-ganancia', 'stats-tiempo', 'stats-rentables',
         'perfiles-lista', 'nuevo-perfil-btn', 'perfil-form', 'volver-perfiles', 'cancelar-perfil', 'cambiar-perfil',
         'theme-toggle', 'exportModal', 'exportar-pdf', 'sync-panel',
         'sync-status-btn', 'sync-btn-icon',
-        // ✅ NUEVOS IDs para rendimiento
         'rendimiento-ganancia-hora-linea', 'rendimiento-viaje-promedio-linea',
         'rendimiento-ganancia-hora-card', 'rendimiento-distancia-total-card',
-        'rendimiento-eficiencia-card', 'rendimiento-eficiencia-badge'
-        // ❌ ELIMINAR: 'stats-ganancia-hora', 'stats-viaje-promedio' (estos ya no existen)
+        'rendimiento-eficiencia-card', 'rendimiento-eficiencia-badge',
+        'user-code-modal', 'user-code-input', 'user-code-banner', 'user-code-display'
     ];
 
     ids.forEach(id => {
@@ -88,7 +94,6 @@ function exportarHistorial() {
     }
 
     try {
-        // Crear contenido CSV
         let csvContent = "Fecha,Ganancia (RD$),Tiempo (min),Distancia (km),Ganancia/Minuto,Ganancia/Km,Rentabilidad\n";
         
         historial.forEach(viaje => {
@@ -103,7 +108,6 @@ function exportarHistorial() {
             csvContent += `"${fecha}",${ganancia},${minutos},${distancia},${porMinuto},${porKm},"${rentabilidad}"\n`;
         });
 
-        // Crear blob y descargar
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
@@ -124,7 +128,6 @@ function exportarHistorial() {
     }
 }
 
-// Función para exportar como PDF (más avanzada) - CORREGIDA
 function exportarHistorialPDF() {
     console.log('📄 Generando PDF con resumen COMPLETO...');
     
@@ -134,7 +137,6 @@ function exportarHistorialPDF() {
     }
 
     try {
-        // ✅ USA estadísticas completas (todos los viajes)
         const stats = obtenerEstadisticasCompletas();
         
         console.log('📊 Datos para PDF (COMPLETO):', {
@@ -145,7 +147,6 @@ function exportarHistorialPDF() {
             periodo: 'Todos los viajes del historial'
         });
 
-        // Crear contenido del PDF mejorado
         const pdfContent = `
 <!DOCTYPE html>
 <html>
@@ -486,12 +487,10 @@ function exportarHistorialPDF() {
 </html>
         `;
 
-        // Crear ventana para el PDF
         const ventana = window.open('', '_blank');
         ventana.document.write(pdfContent);
         ventana.document.close();
         
-        // Esperar a que cargue y luego imprimir
         setTimeout(() => {
             ventana.print();
         }, 1000);
@@ -528,79 +527,14 @@ function configurarModalExportacion() {
 }
 
 // =============================================
-// DIAGNÓSTICO DE SINCRONIZACIÓN
-// =============================================
-
-function diagnosticarSincronizacion() {
-    console.log('🔍 DIAGNÓSTICO DE SINCRONIZACIÓN COMPLETO');
-    console.log('=========================================');
-    
-    // Estado de Firebase
-    console.log('🌐 FIREBASE:');
-    console.log('• Inicializado:', firebaseSync?.initialized);
-    console.log('• User ID:', userCodeSystem.userId);
-    console.log('• User Code:', userCodeSystem.userCode);
-    
-    // Datos locales
-    console.log('💾 DATOS LOCALES:');
-    console.log('• Perfiles:', perfiles.length);
-    console.log('• Historial:', historial.length, 'viajes');
-    console.log('• Perfil actual:', perfilActual?.nombre);
-    
-    // Verificar localStorage
-    const localData = localStorage.getItem('DIBER_data');
-    const historialLocal = localStorage.getItem('historialViajes');
-    const userCode = localStorage.getItem('DIBER_user_code');
-    
-    console.log('📦 LOCALSTORAGE:');
-    console.log('• DIBER_data:', localData ? JSON.parse(localData).historial?.length + ' viajes' : 'No hay datos');
-    console.log('• historialViajes:', historialLocal ? JSON.parse(historialLocal).length + ' viajes' : 'No hay datos');
-    console.log('• DIBER_user_code:', userCode || 'No hay código');
-    
-    // Verificar viajes recientes
-    console.log('📅 VIAJES RECIENTES:');
-    const viajesHoy = historial.filter(viaje => {
-        try {
-            const fechaViaje = new Date(viaje.timestamp);
-            const hoy = new Date();
-            return fechaViaje.toDateString() === hoy.toDateString();
-        } catch (error) {
-            return false;
-        }
-    });
-    
-    console.log('• Viajes hoy:', viajesHoy.length);
-    viajesHoy.forEach((viaje, index) => {
-        console.log(`  ${index + 1}. ${viaje.fecha} - ${viaje.ganancia} - ${viaje.rentabilidad}`);
-    });
-    
-    // Problemas comunes
-    console.log('🔧 PROBLEMAS COMUNES:');
-    console.log('• User Code válido:', userCodeSystem.userCode && userCodeSystem.userCode.length >= 3);
-    console.log('• Firebase disponible:', typeof firebase !== 'undefined');
-    console.log('• Perfil seleccionado:', !!perfilActual);
-    console.log('• Viajes con timestamp:', historial.every(v => v.timestamp));
-    
-    return {
-        firebaseInicializado: firebaseSync?.initialized,
-        userCode: userCodeSystem.userCode,
-        perfilesCount: perfiles.length,
-        historialCount: historial.length,
-        viajesHoyCount: viajesHoy.length
-    };
-}
-
-// =============================================
 // SISTEMA DE HISTORIAL
 // =============================================
 
-// Inicializar historial
 historial = JSON.parse(localStorage.getItem('historialViajes')) || [];
 
 async function agregarAlHistorial(viaje) {
     console.log('➕ agregarAlHistorial() llamado con:', viaje);
     
-    // Validar datos esenciales
     if (!viaje || (!viaje.tarifa && !viaje.ganancia)) {
         console.error('❌ Error: Viaje sin datos esenciales');
         return;
@@ -612,7 +546,6 @@ async function agregarAlHistorial(viaje) {
     const porMinuto = viaje.gananciaPorMinuto || (minutos > 0 ? (tarifa / minutos) : 0);
     const porKm = viaje.gananciaPorKm || (distancia > 0 ? (tarifa / distancia) : 0);
     
-    // DETERMINAR RENTABILIDAD CORRECTAMENTE
     let rentabilidad, emoji, texto;
     
     if (viaje.rentabilidad) {
@@ -675,21 +608,17 @@ async function agregarAlHistorial(viaje) {
     
     console.log('📝 Viaje procesado para historial:', nuevoViaje);
 
-    // AGREGAR AL HISTORIAL LOCAL
     historial.unshift(nuevoViaje);
     
-    // Limitar historial a 100 elementos
     if (historial.length > 100) {
         historial = historial.slice(0, 100);
     }
     
-    // GUARDAR LOCALMENTE INMEDIATAMENTE
     localStorage.setItem('historialViajes', JSON.stringify(historial));
     guardarDatos();
     
     console.log('💾 Historial guardado localmente. Total viajes:', historial.length);
     
-    // SINCRONIZAR CON FIREBASE SI ESTÁ DISPONIBLE
     if (firebaseSync && firebaseSync.initialized && nuevoViaje.aceptado) {
         try {
             console.log('☁️ Intentando sincronizar con Firebase...');
@@ -728,7 +657,6 @@ function actualizarHistorialConFiltros() {
         return;
     }
 
-    // Filtrar historial según el filtro activo
     const viajesFiltrados = filtrarHistorial(historial, filtroActual);
     
     if (!viajesFiltrados || viajesFiltrados.length === 0) {
@@ -784,11 +712,9 @@ function actualizarHistorialConFiltros() {
     console.log('✅ Historial actualizado correctamente');
 }
 
-// CORREGIDO: Función ahora es async
 async function eliminarDelHistorial(viajeId) {
     console.log('🗑️ Intentando eliminar viaje con ID:', viajeId);
     
-    // Buscar el índice del viaje por ID
     const index = historial.findIndex(viaje => viaje.id === viajeId);
     
     if (index === -1) {
@@ -798,26 +724,21 @@ async function eliminarDelHistorial(viajeId) {
     }
     
     if (confirm('¿Estás seguro de que quieres eliminar este viaje del historial?')) {
-        // Eliminar del historial local
         historial.splice(index, 1);
         
-        // Guardar cambios en localStorage
         localStorage.setItem('historialViajes', JSON.stringify(historial));
         guardarDatos();
         
         console.log('✅ Viaje eliminado correctamente. Nuevo total:', historial.length);
         
-        // Actualizar la interfaz
         actualizarHistorialConFiltros();
         actualizarEstadisticas();
         
         mostrarMensaje('Viaje eliminado correctamente', 'success');
         
-        // Intentar eliminar también de Firebase si está disponible
         if (firebaseSync && firebaseSync.initialized) {
             try {
                 console.log('☁️ Intentando eliminar de Firebase...');
-                // Firebase no tiene un método delete en nuestra clase, así que lo manejamos directamente
                 const tripRef = firebaseSync.db.collection('users').doc(userCodeSystem.userId)
                     .collection('trips').doc(viajeId);
                 
@@ -825,17 +746,11 @@ async function eliminarDelHistorial(viajeId) {
                 console.log('✅ Viaje eliminado de Firebase');
             } catch (error) {
                 console.error('❌ Error eliminando de Firebase:', error);
-                // No mostrar error al usuario, ya se eliminó localmente
             }
         }
     }
 }
 
-// =============================================
-// FUNCIÓN LIMPIAR HISTORIAL COMPLETO
-// =============================================
-
-// CORREGIDO: Función ahora es async
 async function limpiarHistorialCompleto() {
     console.log('🗑️ Solicitando limpiar historial completo...');
     
@@ -845,26 +760,21 @@ async function limpiarHistorialCompleto() {
     }
     
     if (confirm(`¿Estás seguro de que quieres limpiar TODO el historial?\n\nSe eliminarán ${historial.length} viajes.\n\n⚠️ Esta acción NO se puede deshacer.`)) {
-        // Limpiar historial local
         historial = [];
         
-        // Guardar cambios en localStorage
         localStorage.setItem('historialViajes', JSON.stringify(historial));
         guardarDatos();
         
         console.log('✅ Historial completo limpiado');
         
-        // Actualizar la interfaz
         actualizarHistorialConFiltros();
         actualizarEstadisticas();
         
         mostrarMensaje(`✅ Historial limpiado correctamente (${historial.length} viajes)`, 'success');
         
-        // Intentar limpiar también de Firebase si está disponible
         if (firebaseSync && firebaseSync.initialized) {
             try {
                 console.log('☁️ Intentando limpiar Firebase...');
-                // Obtener todos los viajes de Firebase y eliminarlos uno por uno
                 const tripsRef = firebaseSync.db.collection('users').doc(userCodeSystem.userId)
                     .collection('trips');
                 
@@ -879,7 +789,6 @@ async function limpiarHistorialCompleto() {
                 console.log('✅ Historial de Firebase limpiado');
             } catch (error) {
                 console.error('❌ Error limpiando Firebase:', error);
-                // No mostrar error al usuario, ya se limpió localmente
             }
         }
     }
@@ -939,7 +848,6 @@ function filtrarHistorial(historial, filtro) {
 function cambiarFiltroHistorial(nuevoFiltro) {
     filtroActual = nuevoFiltro;
     
-    // Actualizar botones activos
     document.querySelectorAll('.filtro-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.filtro === nuevoFiltro);
     });
@@ -1382,91 +1290,6 @@ class FirebaseSync {
 }
 
 // =============================================
-// FUNCIONES DE SINCRONIZACIÓN MEJORADAS
-// =============================================
-
-async function verificarConexionFirebase() {
-    console.log('📡 Verificando conexión Firebase...');
-    
-    if (!firebaseSync) {
-        console.log('❌ FirebaseSync no está inicializado');
-        return false;
-    }
-    
-    try {
-        // Intentar una operación simple de Firebase
-        const testRef = firebaseSync.db.collection('test').doc('connection_test');
-        await testRef.set({
-            test: true,
-            timestamp: new Date().toISOString()
-        }, { merge: true });
-        
-        console.log('✅ Conexión Firebase OK');
-        return true;
-    } catch (error) {
-        console.error('❌ Error de conexión Firebase:', error);
-        return false;
-    }
-}
-
-async function resincronizarCompleta() {
-    console.log('🔄 INICIANDO RESINCRONIZACIÓN COMPLETA...');
-    
-    // Verificar Firebase primero
-    const firebaseOk = await verificarConexionFirebase();
-    if (!firebaseOk) {
-        mostrarError('No hay conexión con Firebase. Verifica tu internet.');
-        return;
-    }
-    
-    mostrarStatus('🔄 Sincronizando todos los datos...', 'info');
-    
-    try {
-        // 1. Subir perfiles a Firebase
-        console.log('📤 Subiendo perfiles...');
-        for (const perfil of perfiles) {
-            await firebaseSync.saveProfile(perfil);
-        }
-        console.log('✅ Perfiles sincronizados:', perfiles.length);
-        
-        // 2. Subir viajes a Firebase
-        console.log('📤 Subiendo viajes...');
-        const viajesParaSincronizar = historial.filter(item => item.aceptado).slice(0, 50);
-        let viajesSubidos = 0;
-        
-        for (const viaje of viajesParaSincronizar) {
-            const exito = await firebaseSync.saveTrip(viaje);
-            if (exito) viajesSubidos++;
-        }
-        console.log('✅ Viajes sincronizados:', viajesSubidos, 'de', viajesParaSincronizar.length);
-        
-        // 3. Recargar datos de Firebase
-        console.log('📥 Recargando datos...');
-        await cargarDatos();
-        
-        console.log('✅ Resincronización completada');
-        mostrarStatus(`✅ Sincronizado: ${viajesSubidos} viajes, ${perfiles.length} perfiles`, 'success');
-        
-    } catch (error) {
-        console.error('❌ Error en resincronización:', error);
-        mostrarStatus('❌ Error en sincronización', 'error');
-    }
-}
-
-async function resetearSincronizacion() {
-    console.log('🔄 RESETEANDO SISTEMA DE SINCRONIZACIÓN...');
-    
-    if (confirm('¿Estás seguro de que quieres resetear la sincronización? Esto no borrará tus datos locales.')) {
-        // Limpiar instancia de Firebase
-        firebaseSync = null;
-        firebaseInitialized = false;
-        
-        // Recargar la página para reinicializar todo
-        location.reload();
-    }
-}
-
-// =============================================
 // SISTEMA DE CÓDIGO DE USUARIO
 // =============================================
 
@@ -1484,7 +1307,6 @@ async function initializeUserCodeSystem() {
         hideUserCodeModal();
         showUserCodeBanner();
         
-        // Verificar conexión Firebase inmediatamente
         await initializeFirebaseSync();
         return true;
     } else {
@@ -1582,7 +1404,6 @@ function showUserCodeBanner() {
 async function initializeFirebaseSync() {
     console.log('🔄 Inicializando Firebase Sync...');
     
-    // ✅ CORREGIDO: Prevenir inicialización múltiple
     if (firebaseInitialized && firebaseSync && firebaseSync.initialized) {
         console.log('✅ Firebase Sync ya estaba inicializado');
         return true;
@@ -1595,7 +1416,6 @@ async function initializeFirebaseSync() {
         console.log('✅ Firebase Sync inicializado CORRECTAMENTE');
         firebaseInitialized = true;
         
-        // ✅ CORREGIDO: Solo cargar datos si no se están cargando ya
         if (!loadingData) {
             setTimeout(async () => {
                 await cargarDatos();
@@ -1611,7 +1431,6 @@ async function initializeFirebaseSync() {
 }
 
 async function cargarDatos() {
-    // ✅ CORREGIDO: Prevenir múltiples ejecuciones
     if (loadingData) {
         console.log('⏳ Carga de datos en progreso, omitiendo...');
         return;
@@ -1621,16 +1440,13 @@ async function cargarDatos() {
     console.log('🔄 Cargando datos...');
     
     try {
-        // Cargar de localStorage primero
         try {
-            // Cargar historial específico
             const historialGuardado = localStorage.getItem('historialViajes');
             if (historialGuardado) {
                 historial = JSON.parse(historialGuardado);
                 console.log('💾 Historial local cargado:', historial.length, 'viajes');
             }
             
-            // Cargar datos generales
             const datosGuardados = localStorage.getItem('DIBER_data');
             if (datosGuardados) {
                 const datos = JSON.parse(datosGuardados);
@@ -1644,7 +1460,6 @@ async function cargarDatos() {
             historial = [];
         }
 
-        // ✅ CORREGIDO: Solo cargar desde Firebase si está inicializado
         if (firebaseSync && firebaseSync.initialized) {
             try {
                 console.log('☁️ Intentando cargar desde Firebase...');
@@ -1654,7 +1469,6 @@ async function cargarDatos() {
                     console.log('✅ Perfiles de Firebase cargados:', cloudProfiles.length);
                     perfiles = cloudProfiles;
                     
-                    // Actualizar perfil actual si es necesario
                     if (!perfilActual && perfiles.length > 0) {
                         perfilActual = perfiles[0];
                     }
@@ -1664,7 +1478,6 @@ async function cargarDatos() {
                 if (cloudTrips && cloudTrips.length > 0) {
                     console.log('✅ Viajes de Firebase cargados:', cloudTrips.length);
                     
-                    // Combinar historial local con cloud, evitando duplicados
                     const combinedHistorial = [...historial];
                     cloudTrips.forEach(cloudTrip => {
                         const exists = combinedHistorial.some(localTrip => localTrip.id === cloudTrip.id);
@@ -1673,14 +1486,12 @@ async function cargarDatos() {
                         }
                     });
                     
-                    // Ordenar por timestamp y limitar
                     historial = combinedHistorial
                         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
                         .slice(0, 100);
                     
                     console.log('🔄 Historial combinado:', historial.length, 'viajes');
                     
-                    // Guardar el historial combinado localmente
                     localStorage.setItem('historialViajes', JSON.stringify(historial));
                 }
             } catch (error) {
@@ -1688,7 +1499,6 @@ async function cargarDatos() {
             }
         }
 
-        // Asegurar que tenemos un perfil
         if (!perfilActual && perfiles.length > 0) {
             perfilActual = perfiles[0];
         }
@@ -1697,7 +1507,7 @@ async function cargarDatos() {
         actualizarEstadisticas();
         actualizarHistorialConFiltros();
         
-        guardarDatos(); // Sincronizar datos locales
+        guardarDatos();
         
         console.log('🎉 Carga de datos completada');
         console.log('📊 Resumen final:', {
@@ -1714,14 +1524,12 @@ async function cargarDatos() {
 function guardarDatos() {
     console.log('💾 Guardando datos...');
     
-    // Guardar historial específico
     localStorage.setItem('historialViajes', JSON.stringify(historial));
     
-    // Guardar datos generales
     localStorage.setItem('DIBER_data', JSON.stringify({
         perfiles,
         perfilActual,
-        historial, // También guardar historial aquí por si acaso
+        historial,
         version: '2.0',
         ultimaActualizacion: new Date().toISOString()
     }));
@@ -1734,32 +1542,8 @@ function guardarDatos() {
     });
 }
 
-function verificarEliminacion(viajeId) {
-    console.log('🔍 VERIFICANDO ELIMINACIÓN:');
-    console.log('ID a eliminar:', viajeId);
-    
-    // Verificar si existe en el historial
-    const existe = historial.find(viaje => viaje.id === viajeId);
-    console.log('¿Existe en historial?:', !!existe);
-    
-    if (existe) {
-        console.log('Viaje encontrado:', existe);
-    }
-    
-    // Verificar localStorage
-    const historialLocal = localStorage.getItem('historialViajes');
-    const historialParsed = historialLocal ? JSON.parse(historialLocal) : [];
-    const existeEnLocalStorage = historialParsed.find(v => v.id === viajeId);
-    console.log('¿Existe en localStorage?:', !!existeEnLocalStorage);
-    
-    return {
-        existeEnHistorial: !!existe,
-        existeEnLocalStorage: !!existeEnLocalStorage
-    };
-}
-
 // =============================================
-// FUNCIONES DE UTILIDAD
+// FUNCIONES DE UTILIDAD - ACTUALIZADAS
 // =============================================
 
 function mostrarPantalla(pantalla) {
@@ -1784,10 +1568,6 @@ function mostrarPantalla(pantalla) {
         actualizarHistorialConFiltros();
     }
 }
-
-// =============================================
-// FUNCIONES DE UTILIDAD - ACTUALIZADAS
-// =============================================
 
 function actualizarEstadisticas() {
     console.log('📊 Actualizando estadísticas...');
@@ -1816,7 +1596,6 @@ function actualizarEstadisticas() {
         return item.rentable === true || item.rentabilidad === 'rentable';
     }).length;
     
-    // ✅ ACTUALIZAR ESTADÍSTICAS PRINCIPALES
     elementos['stats-viajes'].textContent = totalViajes;
     elementos['stats-ganancia'].textContent = formatearMoneda(gananciaTotal);
     
@@ -1832,7 +1611,6 @@ function actualizarEstadisticas() {
     const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
     const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
     
-    // ✅ ACTUALIZAR RENDIMIENTO CON NUEVOS IDs
     actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia);
     
     console.log('📈 Estadísticas de HOY actualizadas:', {
@@ -1846,12 +1624,10 @@ function actualizarEstadisticas() {
     });
 }
 
-// ✅ FUNCIÓN ACTUALIZADA con el nuevo diseño
 function actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia) {
     console.log('🎯 Actualizando rendimiento unificado...');
     
-    // Actualizar métricas principales
-    const elementos = {
+    const elementosRendimiento = {
         'rendimiento-ganancia-hora-card': formatearMoneda(gananciaPorHora),
         'rendimiento-viaje-promedio-linea': formatearMoneda(viajePromedio),
         'rendimiento-distancia-total-card': `${distanciaTotal} ${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}`,
@@ -1860,20 +1636,17 @@ function actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanci
         'rendimiento-eficiencia-badge': `Eficiencia: ${eficiencia.toFixed(1)}%`
     };
     
-    // Actualizar todos los elementos
-    Object.entries(elementos).forEach(([id, valor]) => {
+    Object.entries(elementosRendimiento).forEach(([id, valor]) => {
         const elemento = document.getElementById(id);
         if (elemento) {
             elemento.textContent = valor;
         }
     });
     
-    // ✅ ACTUALIZAR BARRA DE PROGRESO
     const progresoFill = document.getElementById('progreso-eficiencia-fill');
     if (progresoFill) {
         progresoFill.style.width = `${Math.min(eficiencia, 100)}%`;
         
-        // Cambiar color según la eficiencia
         if (eficiencia >= 80) {
             progresoFill.style.background = 'linear-gradient(90deg, #00b09b 0%, #96c93d 100%)';
         } else if (eficiencia >= 60) {
@@ -1888,9 +1661,7 @@ function actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanci
     console.log('✅ Rendimiento unificado actualizado con diseño mejorado');
 }
 
-// ✅ NUEVA FUNCIÓN: Obtener estadísticas para PDF (todos los viajes)
 function obtenerEstadisticasCompletas() {
-    // Usar TODOS los viajes aceptados del historial completo para PDF
     const viajesAceptados = historial.filter(v => v.aceptado === true);
     const totalViajes = viajesAceptados.length;
     
@@ -1902,7 +1673,6 @@ function obtenerEstadisticasCompletas() {
     const tiempoTotal = viajesAceptados.reduce((sum, v) => sum + (v.minutos || 0), 0);
     const distanciaTotal = viajesAceptados.reduce((sum, v) => sum + (v.distancia || 0), 0);
     
-    // Calcular costos totales
     const costoCombustibleTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoCombustible || 0), 0);
     const costoMantenimientoTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoMantenimiento || 0), 0);
     const costoSeguroTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoSeguro || 0), 0);
@@ -1929,45 +1699,6 @@ function obtenerEstadisticasCompletas() {
         viajePromedio,
         gananciaPorHora
     };
-}
-
-// ✅ NUEVA FUNCIÓN: Actualizar estadísticas de rendimiento específicas
-function actualizarEstadisticasRendimiento(totalViajes, viajesRentables, gananciaTotal, tiempoTotal, gananciaPorHora, eficiencia) {
-    // Actualizar métricas de rendimiento si existen
-    const statsGananciaHora = document.getElementById('stats-ganancia-hora');
-    const statsDistanciaTotal = document.getElementById('stats-distancia-total');
-    const statsEficiencia = document.getElementById('stats-eficiencia');
-    const statsEficienciaBadge = document.getElementById('stats-eficiencia-badge');
-    
-    if (statsGananciaHora) {
-        statsGananciaHora.textContent = formatearMoneda(gananciaPorHora);
-    }
-    
-    // Calcular distancia total
-    const distanciaTotal = historial
-        .filter(item => item.aceptado === true)
-        .reduce((sum, item) => sum + (item.distancia || 0), 0);
-    
-    if (statsDistanciaTotal) {
-        const unidad = perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km';
-        statsDistanciaTotal.textContent = `${distanciaTotal} ${unidad}`;
-    }
-    
-    if (statsEficiencia) {
-        statsEficiencia.textContent = `${eficiencia.toFixed(1)}%`;
-    }
-    
-    if (statsEficienciaBadge) {
-        statsEficienciaBadge.textContent = `Eficiencia: ${eficiencia.toFixed(1)}%`;
-    }
-    
-    console.log('📈 Estadísticas de rendimiento actualizadas:', {
-        totalViajes,
-        viajesRentables,
-        eficiencia: `${eficiencia.toFixed(1)}%`,
-        gananciaTotal: formatearMoneda(gananciaTotal),
-        gananciaPorHora: formatearMoneda(gananciaPorHora)
-    });
 }
 
 function actualizarEstadisticasDia(viaje) {
@@ -2099,11 +1830,9 @@ function procesarViajeRapido(aceptado) {
 
     cerrarModalRapido();
     
-    // Asegurarnos de que el cálculo actual tenga todos los datos necesarios
     const viajeParaHistorial = {
         ...calculoActual,
         aceptado: aceptado,
-        // Forzar la inclusión de todos los campos de rentabilidad
         rentable: calculoActual.rentabilidad === 'rentable',
         emoji: calculoActual.emoji,
         texto: calculoActual.texto
@@ -2131,7 +1860,6 @@ function guardarEnHistorial(resultado, aceptado) {
         return;
     }
 
-    // Asegurarnos de que el resultado tenga la rentabilidad correcta
     const historialItem = {
         ...resultado,
         aceptado: aceptado,
@@ -2139,7 +1867,6 @@ function guardarEnHistorial(resultado, aceptado) {
         perfilId: perfilActual?.id,
         perfilNombre: perfilActual?.nombre,
         timestamp: new Date().toISOString(),
-        // Forzar la actualización de los campos de rentabilidad
         rentable: resultado.rentabilidad === 'rentable',
         emoji: resultado.emoji,
         texto: resultado.texto
@@ -2170,33 +1897,10 @@ function guardarEnHistorial(resultado, aceptado) {
     console.log('🎉 Proceso de guardado completado');
 }
 
-// Función para debuggear el historial (puedes llamarla desde la consola)
-function debugHistorial() {
-    console.log('🐛 DEBUG DEL HISTORIAL:');
-    historial.forEach((viaje, index) => {
-        console.log(`Viaje ${index + 1}:`, {
-            id: viaje.id,
-            ganancia: viaje.ganancia,
-            rentabilidad: viaje.rentabilidad,
-            rentable: viaje.rentable,
-            emoji: viaje.emoji,
-            texto: viaje.texto
-        });
-    });
-    
-    // También mostrar en un alert para fácil visualización
-    const resumen = historial.map((v, i) => 
-        `Viaje ${i+1}: ${v.ganancia} - ${v.rentabilidad} (${v.rentable ? 'SÍ' : 'NO'})`
-    ).join('\n');
-    
-    alert(`DEBUG HISTORIAL (${historial.length} viajes):\n\n${resumen}`);
-}
-
 // =============================================
 // SISTEMA DE RESULTADO RÁPIDO
 // =============================================
 
-// ✅ FUNCIÓN MEJORADA para mostrar el popup
 function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
 
@@ -2208,21 +1912,18 @@ function mostrarResultadoRapido(resultado) {
         document.body.appendChild(modal);
     }
 
-    // Preparar datos de tráfico
     const tieneTrafico = resultado.trafficAnalysis;
-    const trafficInfo = tieneTrafico ? resultado.trafficAnalysis.trafficInfo : trafficAnalyzer.congestionLevels.low;
-    const tiempoReal = tieneTrafico ? resultado.trafficAnalysis.adjustedTime : resultado.tiempoOriginal;
+    const trafficInfo = tieneTrafico ? resultado.trafficAnalysis.trafficInfo : { emoji: '🚦', text: 'SIN DATOS' };
+    const tiempoReal = tieneTrafico ? resultado.trafficAnalysis.adjustedTime : resultado.minutos;
     
-    // Actualizar contenido
     modal.innerHTML = `
         <div class="modal-rapido-contenido-mejorado">
-            <!-- Header con tráfico -->
             <div class="modal-trafico-header ${tieneTrafico ? 'trafico-' + resultado.trafficAnalysis.trafficCondition : 'trafico-low'}">
                 <div class="trafico-status">
-                    <span class="trafico-emoji-big">${tieneTrafico ? trafficInfo.emoji : '🚦'}</span>
+                    <span class="trafico-emoji-big">${trafficInfo.emoji}</span>
                     <div class="trafico-info">
                         <div class="trafico-title">Análisis de Tráfico</div>
-                        <div class="trafico-condition">${tieneTrafico ? trafficInfo.text.toUpperCase() : 'SIN DATOS'}</div>
+                        <div class="trafico-condition">${trafficInfo.text.toUpperCase()}</div>
                     </div>
                 </div>
                 <button class="modal-cerrar-elegante" onclick="cerrarModalRapido()">
@@ -2230,11 +1931,10 @@ function mostrarResultadoRapido(resultado) {
                 </button>
             </div>
 
-            <!-- Tiempo ajustado -->
             <div class="tiempo-ajustado-section">
                 <div class="tiempo-original">
                     <span class="tiempo-label">Tiempo estimado:</span>
-                    <span class="tiempo-valor">${resultado.tiempoOriginal || 0} min</span>
+                    <span class="tiempo-valor">${resultado.minutos || 0} min</span>
                 </div>
                 <div class="flecha-ajuste">↓</div>
                 <div class="tiempo-real">
@@ -2243,7 +1943,6 @@ function mostrarResultadoRapido(resultado) {
                 </div>
             </div>
 
-            <!-- Resultado principal -->
             <div class="resultado-principal">
                 <div class="badge-rentabilidad ${resultado.rentabilidad}">
                     <div class="badge-emoji">${resultado.emoji}</div>
@@ -2254,7 +1953,6 @@ function mostrarResultadoRapido(resultado) {
                 </div>
             </div>
 
-            <!-- Métricas -->
             <div class="metricas-grid-mejorado">
                 <div class="metrica-card">
                     <div class="metrica-icono">💸</div>
@@ -2279,7 +1977,6 @@ function mostrarResultadoRapido(resultado) {
                 </div>
             </div>
 
-            <!-- Impacto del tráfico -->
             ${tieneTrafico ? `
             <div class="impacto-trafico">
                 <div class="impacto-header">
@@ -2292,7 +1989,6 @@ function mostrarResultadoRapido(resultado) {
             </div>
             ` : ''}
 
-            <!-- Acciones -->
             <div class="acciones-mejoradas">
                 <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
                     <span class="btn-icon">❌</span>
@@ -2312,7 +2008,6 @@ function mostrarResultadoRapido(resultado) {
     calculoActual = resultado;
 }
 
-// Funciones auxiliares
 function obtenerSubtituloRentabilidad(resultado) {
     const porMinuto = resultado.gananciaPorMinuto;
     if (porMinuto >= 20) return 'Excelentes ganancias';
@@ -2322,7 +2017,6 @@ function obtenerSubtituloRentabilidad(resultado) {
 }
 
 function calcularEficiencia(resultado) {
-    // Simular eficiencia basada en ganancia por minuto
     const eficiencia = Math.min((resultado.gananciaPorMinuto / 25) * 100, 100);
     return eficiencia.toFixed(0);
 }
@@ -2342,27 +2036,18 @@ function obtenerMensajeImpacto(trafficAnalysis) {
 function configurarEventListeners() {
     console.log('🎯 Configurando event listeners...');
     
-    // Sistema de Pestañas
     inicializarTabs();
     
-    // Cálculo Automático CON TRÁFICO
     if (elementos.tarifa) {
-        elementos.tarifa.addEventListener('input', manejarCalculoConTrafico);
+        elementos.tarifa.addEventListener('input', manejarCalculoAutomatico);
     }
     if (elementos.minutos) {
-        elementos.minutos.addEventListener('input', manejarCalculoConTrafico);
+        elementos.minutos.addEventListener('input', manejarCalculoAutomatico);
     }
     if (elementos.distancia) {
-        elementos.distancia.addEventListener('input', manejarCalculoConTrafico);
+        elementos.distancia.addEventListener('input', manejarCalculoAutomatico);
     }
     
-    // ✅ NUEVO: Botón de activar ubicación
-    const btnUbicacion = document.getElementById('activar-ubicacion-btn');
-    if (btnUbicacion) {
-        btnUbicacion.addEventListener('click', activarUbicacion);
-    }
-    
-    // Botones de Acción
     if (elementos['aceptar-viaje']) {
         elementos['aceptar-viaje'].addEventListener('click', () => procesarViaje(true));
     }
@@ -2370,17 +2055,14 @@ function configurarEventListeners() {
         elementos['rechazar-viaje'].addEventListener('click', () => procesarViaje(false));
     }
     
-    // Historial
     if (elementos['clear-history']) {
         elementos['clear-history'].addEventListener('click', limpiarHistorialCompleto);
     }
     
-    // ✅ NUEVO: Botón de exportar historial
     if (elementos['exportar-historial']) {
         elementos['exportar-historial'].addEventListener('click', mostrarExportModal);
     }
     
-    // Perfiles
     if (elementos['nuevo-perfil-btn']) {
         elementos['nuevo-perfil-btn'].addEventListener('click', () => mostrarConfigPerfil());
     }
@@ -2397,17 +2079,14 @@ function configurarEventListeners() {
         elementos['perfil-form'].addEventListener('submit', guardarPerfil);
     }
     
-    // Tema
     if (elementos['theme-toggle']) {
         elementos['theme-toggle'].addEventListener('click', alternarTema);
     }
   
-    // Sincronización
     if (elementos['sync-status-btn']) {
         elementos['sync-status-btn'].addEventListener('click', mostrarPanelSync);
     }
     
-    // ✅ NUEVO: Filtros de historial
     document.querySelectorAll('.filtro-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             cambiarFiltroHistorial(btn.dataset.filtro);
@@ -2440,60 +2119,124 @@ function aplicarTemaGuardado() {
     }
 }
 
-// EJECUTA ESTO EN LA CONSOLA para ver qué elementos tienes
-function diagnosticarRendimiento() {
-    console.log('🔍 DIAGNÓSTICO DE RENDIMIENTO');
-    console.log('==============================');
-    
-    const elementosClave = [
-        'rendimiento-ganancia-hora-linea',
-        'rendimiento-viaje-promedio-linea', 
-        'stats-ganancia-hora',
-        'stats-distancia-total',
-        'stats-eficiencia',
-        'stats-eficiencia-badge'
-    ];
-    
-    elementosClave.forEach(id => {
-        const el = document.getElementById(id);
-        console.log(`${id}:`, el ? `✅ "${el.textContent}"` : '❌ NO EXISTE');
-    });
-    
-    // Buscar duplicados
-    const todosElementos = document.querySelectorAll('[id]');
-    const conteoIds = {};
-    
-    todosElementos.forEach(el => {
-        conteoIds[el.id] = (conteoIds[el.id] || 0) + 1;
-    });
-    
-    const duplicados = Object.entries(conteoIds).filter(([id, count]) => count > 1);
-    console.log('🔁 Elementos duplicados:', duplicados);
-}
-
 // =============================================
-// CONFIGURACIÓN INICIAL
+// SISTEMA DE ANÁLISIS DE TRÁFICO
 // =============================================
 
-function configurarSistemaTrafico() {
-    console.log('🚗 Configurando análisis automático de tráfico...');
-    
-    // Reemplazar el event listener del cálculo automático
-    const inputs = ['tarifa', 'minutos', 'distancia'];
-    inputs.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            elemento.removeEventListener('input', manejarCalculoAutomatico);
-            elemento.addEventListener('input', manejarCalculoConTrafico);
-        }
-    });
-}
-
-function manejarCalculoConTrafico() {
-    if (timeoutCalculo) {
-        clearTimeout(timeoutCalculo);
+class TrafficRadiusAnalyzer {
+    constructor() {
+        this.radiusKm = 10;
+        this.congestionLevels = {
+            low: { factor: 1.0, emoji: '✅', color: '#4CAF50', text: 'Fluido' },
+            moderate: { factor: 1.3, emoji: '⚠️', color: '#FF9800', text: 'Moderado' },
+            heavy: { factor: 1.7, emoji: '🚗', color: '#F44336', text: 'Pesado' },
+            severe: { factor: 2.2, emoji: '🚨', color: '#D32F2F', text: 'Muy Pesado' }
+        };
+        this.lastLocation = null;
     }
-    timeoutCalculo = setTimeout(calcularAutomaticoConTrafico, 600); // Más rápido
+
+    async quickTrafficAnalysis(userMinutes) {
+        console.log('⚡ Análisis rápido de tráfico...');
+        
+        try {
+            const location = await this.getQuickLocation();
+            const trafficCondition = this.instantTrafficCheck();
+            const adjustedTime = Math.ceil(userMinutes * this.congestionLevels[trafficCondition].factor);
+            
+            return {
+                originalTime: userMinutes,
+                adjustedTime: adjustedTime,
+                trafficCondition: trafficCondition,
+                trafficInfo: this.congestionLevels[trafficCondition],
+                adjustment: ((this.congestionLevels[trafficCondition].factor - 1) * 100).toFixed(0),
+                isSignificant: adjustedTime > userMinutes * 1.2,
+                location: location
+            };
+            
+        } catch (error) {
+            console.log('🔄 Usando estimación conservadora');
+            return this.getConservativeEstimate(userMinutes);
+        }
+    }
+
+    async getQuickLocation() {
+        if (this.lastLocation && Date.now() - this.lastLocation.timestamp < 30000) {
+            return this.lastLocation.coords;
+        }
+        
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const coords = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+                    
+                    this.lastLocation = {
+                        coords: coords,
+                        timestamp: Date.now()
+                    };
+                    
+                    resolve(coords);
+                },
+                (error) => {
+                    console.warn('Error obteniendo ubicación:', error);
+                    reject(error);
+                },
+                { 
+                    enableHighAccuracy: false,
+                    timeout: 3000,
+                    maximumAge: 60000
+                }
+            );
+        });
+    }
+
+    instantTrafficCheck() {
+        const now = new Date();
+        const hour = now.getHours();
+        const day = now.getDay();
+        const isWeekend = day === 0 || day === 6;
+        
+        if (isWeekend) {
+            if (hour >= 11 && hour <= 20) return 'moderate';
+            return 'low';
+        } else {
+            if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) return 'heavy';
+            if ((hour >= 12 && hour <= 14)) return 'moderate';
+            return 'low';
+        }
+    }
+
+    getConservativeEstimate(userMinutes) {
+        const hour = new Date().getHours();
+        const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
+        const factor = isPeak ? 1.6 : 1.2;
+        
+        return {
+            originalTime: userMinutes,
+            adjustedTime: Math.ceil(userMinutes * factor),
+            trafficCondition: isPeak ? 'heavy' : 'moderate',
+            trafficInfo: this.congestionLevels[isPeak ? 'heavy' : 'moderate'],
+            adjustment: ((factor - 1) * 100).toFixed(0),
+            isSignificant: true,
+            location: null
+        };
+    }
+}
+
+async function inicializarSistemaTrafico() {
+    console.log('🚗 Inicializando sistema de análisis de tráfico...');
+    
+    try {
+        trafficAnalyzer = new TrafficRadiusAnalyzer();
+        trafficInitialized = true;
+        console.log('✅ Sistema de tráfico inicializado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error inicializando sistema de tráfico:', error);
+    }
 }
 
 // =============================================
@@ -2555,32 +2298,162 @@ function mostrarInfoSync() {
 🔒 Tus datos son privados y solo tú puedes acceder a ellos`);
 }
 
-function diagnosticarSync() {
-    console.log('🔧 INICIANDO DIAGNÓSTICO...');
+async function verificarConexionFirebase() {
+    console.log('📡 Verificando conexión Firebase...');
     
-    const diagnostico = `
-🎉 DIAGNÓSTICO COMPLETADO
-
-📊 DATOS LOCALES:
-• Perfiles: ${perfiles.length}
-• Historial total: ${historial.length}
-• Viajes aceptados: ${historial.filter(item => item.aceptado).length}
-• Perfil actual: ${perfilActual?.nombre || 'Ninguno'}
-
-☁️ FIREBASE:
-• Estado: ${firebaseSync?.initialized ? 'Conectado' : 'No conectado'}
-
-📱 INTERFAZ:
-• Estadísticas: ${elementos.statsViajes ? 'OK' : 'ERROR'}
-• Historial: ${elementos.historyList ? 'OK' : 'ERROR'}
-
-🔧 ACCIONES RECOMENDADAS:
-1. Usa "Sincronizar Ahora" para subir datos
-2. Verifica que los viajes tengan "aceptado: true"
-3. Los viajes RECHAZADOS no se muestran en el historial
-    `;
+    if (!firebaseSync) {
+        console.log('❌ FirebaseSync no está inicializado');
+        return false;
+    }
     
-    alert(diagnostico);
+    try {
+        const testRef = firebaseSync.db.collection('test').doc('connection_test');
+        await testRef.set({
+            test: true,
+            timestamp: new Date().toISOString()
+        }, { merge: true });
+        
+        console.log('✅ Conexión Firebase OK');
+        return true;
+    } catch (error) {
+        console.error('❌ Error de conexión Firebase:', error);
+        return false;
+    }
+}
+
+async function resincronizarCompleta() {
+    console.log('🔄 INICIANDO RESINCRONIZACIÓN COMPLETA...');
+    
+    const firebaseOk = await verificarConexionFirebase();
+    if (!firebaseOk) {
+        mostrarError('No hay conexión con Firebase. Verifica tu internet.');
+        return;
+    }
+    
+    mostrarStatus('🔄 Sincronizando todos los datos...', 'info');
+    
+    try {
+        console.log('📤 Subiendo perfiles...');
+        for (const perfil of perfiles) {
+            await firebaseSync.saveProfile(perfil);
+        }
+        console.log('✅ Perfiles sincronizados:', perfiles.length);
+        
+        console.log('📤 Subiendo viajes...');
+        const viajesParaSincronizar = historial.filter(item => item.aceptado).slice(0, 50);
+        let viajesSubidos = 0;
+        
+        for (const viaje of viajesParaSincronizar) {
+            const exito = await firebaseSync.saveTrip(viaje);
+            if (exito) viajesSubidos++;
+        }
+        console.log('✅ Viajes sincronizados:', viajesSubidos, 'de', viajesParaSincronizar.length);
+        
+        console.log('📥 Recargando datos...');
+        await cargarDatos();
+        
+        console.log('✅ Resincronización completada');
+        mostrarStatus(`✅ Sincronizado: ${viajesSubidos} viajes, ${perfiles.length} perfiles`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Error en resincronización:', error);
+        mostrarStatus('❌ Error en sincronización', 'error');
+    }
+}
+
+async function resetearSincronizacion() {
+    console.log('🔄 RESETEANDO SISTEMA DE SINCRONIZACIÓN...');
+    
+    if (confirm('¿Estás seguro de que quieres resetear la sincronización? Esto no borrará tus datos locales.')) {
+        firebaseSync = null;
+        firebaseInitialized = false;
+        location.reload();
+    }
+}
+
+function diagnosticarSincronizacion() {
+    console.log('🔍 DIAGNÓSTICO DE SINCRONIZACIÓN COMPLETO');
+    console.log('=========================================');
+    
+    console.log('🌐 FIREBASE:');
+    console.log('• Inicializado:', firebaseSync?.initialized);
+    console.log('• User ID:', userCodeSystem.userId);
+    console.log('• User Code:', userCodeSystem.userCode);
+    
+    console.log('💾 DATOS LOCALES:');
+    console.log('• Perfiles:', perfiles.length);
+    console.log('• Historial:', historial.length, 'viajes');
+    console.log('• Perfil actual:', perfilActual?.nombre);
+    
+    const localData = localStorage.getItem('DIBER_data');
+    const historialLocal = localStorage.getItem('historialViajes');
+    const userCode = localStorage.getItem('DIBER_user_code');
+    
+    console.log('📦 LOCALSTORAGE:');
+    console.log('• DIBER_data:', localData ? JSON.parse(localData).historial?.length + ' viajes' : 'No hay datos');
+    console.log('• historialViajes:', historialLocal ? JSON.parse(historialLocal).length + ' viajes' : 'No hay datos');
+    console.log('• DIBER_user_code:', userCode || 'No hay código');
+    
+    console.log('🔧 PROBLEMAS COMUNES:');
+    console.log('• User Code válido:', userCodeSystem.userCode && userCodeSystem.userCode.length >= 3);
+    console.log('• Firebase disponible:', typeof firebase !== 'undefined');
+    console.log('• Perfil seleccionado:', !!perfilActual);
+    
+    return {
+        firebaseInicializado: firebaseSync?.initialized,
+        userCode: userCodeSystem.userCode,
+        perfilesCount: perfiles.length,
+        historialCount: historial.length
+    };
+}
+
+// =============================================
+// INICIALIZACIÓN COMPLETA
+// =============================================
+
+async function inicializarApp() {
+    if (window.appInitialized) {
+        console.log('🚫 App ya inicializada, omitiendo...');
+        return;
+    }
+    
+    console.log('🚀 Inicializando DIBER...');
+    
+    inicializarElementosDOM();
+    
+    try {
+        const userCodeInitialized = await initializeUserCodeSystem();
+        
+        if (!userCodeInitialized) {
+            console.log('⏳ Esperando que el usuario ingrese código...');
+            return;
+        }
+        
+        await initializeFirebaseSync();
+        await inicializarSistemaTrafico();
+        await cargarDatos();
+        
+        aplicarTemaGuardado();
+        configurarEventListeners();
+        configurarModalExportacion();
+        
+        if (perfiles.length === 0) {
+            mostrarPantalla('perfil');
+            mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
+        } else if (perfilActual) {
+            mostrarPantalla('main');
+        } else {
+            mostrarPantalla('perfil');
+        }
+        
+        window.appInitialized = true;
+        console.log('🎉 DIBER inicializado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error crítico en inicialización:', error);
+        mostrarPantalla('perfil');
+        mostrarStatus('Error al cargar la aplicación. Por favor, recarga la página.', 'error');
+    }
 }
 
 // =============================================
@@ -2604,8 +2477,7 @@ window.procesarViajeRapido = procesarViajeRapido;
 window.mostrarPanelSync = mostrarPanelSync;
 window.forzarSincronizacion = forzarSincronizacion;
 window.mostrarInfoSync = mostrarInfoSync;
-window.diagnosticarSync = diagnosticarSync;
-window.showUserCodeModal = showUserCodeModal;
+window.diagnosticarSync = diagnosticarSincronizacion;
 window.exportarHistorial = exportarHistorial;
 window.exportarHistorialPDF = exportarHistorialPDF;
 window.mostrarExportModal = mostrarExportModal;
@@ -2629,484 +2501,14 @@ function cambiarUsuario() {
 }
 
 // =============================================
-// INICIALIZACIÓN COMPLETA CON ANÁLISIS DE TRÁFICO
-// =============================================
-
-// Variables globales para el sistema de tráfico
-let trafficAnalyzer = null;
-let trafficInitialized = false;
-
-async function inicializarApp() {
-    // Prevenir inicialización múltiple
-    if (window.appInitialized) {
-        console.log('🚫 App ya inicializada, omitiendo...');
-        return;
-    }
-    
-    console.log('🚀 Inicializando DIBER...');
-    
-    // 1. Inicializar elementos DOM
-    inicializarElementosDOM();
-    
-    try {
-        // 2. Sistema de código de usuario
-        const userCodeInitialized = await initializeUserCodeSystem();
-        
-        if (!userCodeInitialized) {
-            console.log('⏳ Esperando que el usuario ingrese código...');
-            return;
-        }
-        
-        // 3. Firebase Sync
-        await initializeFirebaseSync();
-        
-        // 4. ✅ INICIALIZAR SISTEMA DE TRÁFICO AUTOMÁTICO
-        await inicializarSistemaTrafico();
-        
-        // 5. Cargar datos
-        await cargarDatos();
-        
-        // 6. Configuración de UI
-        aplicarTemaGuardado();
-        configurarEventListeners();
-        configurarModalExportacion();
-        
-        // 7. Mostrar pantalla adecuada
-        if (perfiles.length === 0) {
-            mostrarPantalla('perfil');
-            mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
-        } else if (perfilActual) {
-            mostrarPantalla('main');
-        } else {
-            mostrarPantalla('perfil');
-        }
-        
-        // Marcar como inicializado
-        window.appInitialized = true;
-        console.log('🎉 DIBER inicializado correctamente');
-        console.log('✅ Sistema de tráfico automático activado');
-        
-    } catch (error) {
-        console.error('❌ Error crítico en inicialización:', error);
-        mostrarPantalla('perfil');
-        mostrarStatus('Error al cargar la aplicación. Por favor, recarga la página.', 'error');
-    }
-}
-
-// =============================================
-// SISTEMA DE ANÁLISIS DE TRÁFICO AUTOMÁTICO
-// =============================================
-
-class TrafficRadiusAnalyzer {
-    constructor() {
-        this.radiusKm = 10;
-        this.congestionLevels = {
-            low: { factor: 1.0, emoji: '✅', color: '#4CAF50', text: 'Fluido' },
-            moderate: { factor: 1.3, emoji: '⚠️', color: '#FF9800', text: 'Moderado' },
-            heavy: { factor: 1.7, emoji: '🚗', color: '#F44336', text: 'Pesado' },
-            severe: { factor: 2.2, emoji: '🚨', color: '#D32F2F', text: 'Muy Pesado' }
-        };
-        this.lastLocation = null;
-    }
-
-    // 🔍 Análisis SUPER RÁPIDO
-    async quickTrafficAnalysis(userMinutes) {
-        console.log('⚡ Análisis rápido de tráfico...');
-        
-        try {
-            // 1. Ubicación rápida
-            const location = await this.getQuickLocation();
-            
-            // 2. Análisis instantáneo
-            const trafficCondition = this.instantTrafficCheck();
-            
-            // 3. Cálculo inmediato
-            const adjustedTime = Math.ceil(userMinutes * this.congestionLevels[trafficCondition].factor);
-            
-            return {
-                originalTime: userMinutes,
-                adjustedTime: adjustedTime,
-                trafficCondition: trafficCondition,
-                trafficInfo: this.congestionLevels[trafficCondition],
-                adjustment: ((this.congestionLevels[trafficCondition].factor - 1) * 100).toFixed(0),
-                isSignificant: adjustedTime > userMinutes * 1.2,
-                location: location
-            };
-            
-        } catch (error) {
-            console.log('🔄 Usando estimación conservadora');
-            return this.getConservativeEstimate(userMinutes);
-        }
-    }
-
-    // 📍 Obtención RÁPIDA de ubicación
-    async getQuickLocation() {
-        // Cache de 30 segundos para mayor velocidad
-        if (this.lastLocation && Date.now() - this.lastLocation.timestamp < 30000) {
-            return this.lastLocation.coords;
-        }
-        
-        return new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const coords = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                        accuracy: position.coords.accuracy
-                    };
-                    
-                    this.lastLocation = {
-                        coords: coords,
-                        timestamp: Date.now()
-                    };
-                    
-                    resolve(coords);
-                },
-                (error) => {
-                    console.warn('Error obteniendo ubicación:', error);
-                    reject(error);
-                },
-                { 
-                    enableHighAccuracy: false, // Más rápido
-                    timeout: 3000,            // Solo 3 segundos
-                    maximumAge: 60000         // Aceptar datos de hasta 1 minuto
-                }
-            );
-        });
-    }
-
-    // 🕒 Detección INSTANTÁNEA de tráfico
-    instantTrafficCheck() {
-        const now = new Date();
-        const hour = now.getHours();
-        const day = now.getDay();
-        const isWeekend = day === 0 || day === 6;
-        
-        // Lógica optimizada para República Dominicana
-        if (isWeekend) {
-            // Fin de semana en RD
-            if (hour >= 11 && hour <= 20) return 'moderate';
-            return 'low';
-        } else {
-            // Semana en RD - horarios pico
-            if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) return 'heavy';
-            if ((hour >= 12 && hour <= 14)) return 'moderate';
-            return 'low';
-        }
-    }
-
-    getConservativeEstimate(userMinutes) {
-        const hour = new Date().getHours();
-        const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
-        const factor = isPeak ? 1.6 : 1.2;
-        
-        return {
-            originalTime: userMinutes,
-            adjustedTime: Math.ceil(userMinutes * factor),
-            trafficCondition: isPeak ? 'heavy' : 'moderate',
-            trafficInfo: this.congestionLevels[isPeak ? 'heavy' : 'moderate'],
-            adjustment: ((factor - 1) * 100).toFixed(0),
-            isSignificant: true,
-            location: null
-        };
-    }
-}
-
-// =============================================
-// FUNCIONES DE CONFIGURACIÓN DEL SISTEMA DE TRÁFICO
-// =============================================
-
-async function inicializarSistemaTrafico() {
-    console.log('🚗 Inicializando sistema de análisis de tráfico...');
-    
-    try {
-        // Crear instancia del analizador
-        trafficAnalyzer = new TrafficRadiusAnalyzer();
-        
-        // Configurar event listeners para tráfico
-        configurarSistemaTrafico();
-        
-        // Verificar permisos de ubicación
-        await verificarPermisosUbicacion();
-        
-        trafficInitialized = true;
-        console.log('✅ Sistema de tráfico inicializado correctamente');
-        
-    } catch (error) {
-        console.error('❌ Error inicializando sistema de tráfico:', error);
-        // El sistema seguirá funcionando sin análisis de tráfico
-    }
-}
-
-function configurarSistemaTrafico() {
-    console.log('🔧 Configurando event listeners de tráfico...');
-    
-    // Reemplazar los event listeners existentes
-    const inputs = ['tarifa', 'minutos', 'distancia'];
-    
-    inputs.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            // Remover listener antiguo si existe
-            elemento.removeEventListener('input', manejarCalculoAutomatico);
-            
-            // Agregar nuevo listener con tráfico
-            elemento.addEventListener('input', manejarCalculoConTrafico);
-        }
-    });
-    
-    console.log('✅ Event listeners de tráfico configurados');
-}
-
-function manejarCalculoConTrafico() {
-    if (timeoutCalculo) {
-        clearTimeout(timeoutCalculo);
-    }
-    timeoutCalculo = setTimeout(calcularAutomaticoConTrafico, 600);
-}
-
-// 🔄 FUNCIÓN PRINCIPAL DE CÁLCULO CON TRÁFICO
-async function calcularAutomaticoConTrafico() {
-    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
-    
-    const tarifa = parseFloat(elementos.tarifa.value) || 0;
-    const minutos = parseFloat(elementos.minutos.value) || 0;
-    const distancia = parseFloat(elementos.distancia.value) || 0;
-    
-    const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
-    
-    if (datosCompletos) {
-        // Mostrar indicador de análisis
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.remove('hidden');
-            elementos['auto-calc-indicator'].classList.add('traffic-analysis');
-        }
-        
-        let resultadoFinal;
-        
-        // ✅ SOLO analizar tráfico para viajes > 3 minutos y si el sistema está activo
-        if (minutos > 3 && trafficInitialized && trafficAnalyzer) {
-            try {
-                resultadoFinal = await analizarTraficoAutomatico(tarifa, minutos, distancia);
-            } catch (error) {
-                console.warn('Error en análisis de tráfico, usando cálculo normal:', error);
-                resultadoFinal = calcularRentabilidad(tarifa, minutos, distancia);
-            }
-        } else {
-            // Cálculo normal para viajes cortos o sin sistema de tráfico
-            resultadoFinal = calcularRentabilidad(tarifa, minutos, distancia);
-        }
-        
-        if (resultadoFinal) {
-            calculoActual = resultadoFinal;
-            mostrarResultadoRapido(resultadoFinal);
-        }
-        
-        // Restaurar indicador normal
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.remove('traffic-analysis');
-        }
-        
-    } else {
-        // Ocultar elementos si no hay datos completos
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.add('hidden');
-        }
-        if (elementos['resultado-rapido']) {
-            elementos['resultado-rapido'].classList.add('hidden');
-        }
-        cerrarModalRapido();
-    }
-}
-
-// 🚦 ANÁLISIS AUTOMÁTICO DE TRÁFICO
-async function analizarTraficoAutomatico(tarifa, minutos, distancia) {
-    console.log(`🚦 Analizando tráfico para ${minutos}min, ${distancia}km...`);
-    
-    const trafficAnalysis = await trafficAnalyzer.quickTrafficAnalysis(minutos);
-    const resultado = calcularRentabilidad(tarifa, trafficAnalysis.adjustedTime, distancia);
-    
-    if (resultado) {
-        // Agregar información de tráfico al resultado
-        resultado.trafficAnalysis = trafficAnalysis;
-        resultado.tiempoOriginal = minutos;
-        resultado.tiempoConTrafico = trafficAnalysis.adjustedTime;
-        resultado.esAjustadoPorTrafico = trafficAnalysis.isSignificant;
-        
-        // Mostrar información de tráfico en la UI
-        if (trafficAnalysis.isSignificant) {
-            mostrarInfoTraficoEnResultado(resultado, trafficAnalysis);
-        }
-        
-        console.log('✅ Análisis de tráfico completado:', {
-            original: minutos + 'min',
-            conTrafico: trafficAnalysis.adjustedTime + 'min', 
-            condicion: trafficAnalysis.trafficCondition,
-            rentabilidad: resultado.rentabilidad
-        });
-    }
-    
-    return resultado;
-}
-
-// 💡 MOSTRAR INFO DE TRÁFICO EN EL RESULTADO
-function mostrarInfoTraficoEnResultado(resultado, trafficAnalysis) {
-    const resultadoRapido = elementos['resultado-rapido'];
-    
-    if (resultadoRapido && !resultadoRapido.classList.contains('hidden')) {
-        // Limpiar badge anterior si existe
-        const existingBadge = resultadoRapido.querySelector('.trafico-badge');
-        if (existingBadge) {
-            existingBadge.remove();
-        }
-        
-        // Crear nuevo badge de tráfico
-        const traficoBadge = document.createElement('div');
-        traficoBadge.className = 'trafico-badge';
-        traficoBadge.innerHTML = `
-            <div class="trafico-indicador trafico-${trafficAnalysis.trafficCondition}" 
-                 style="border-left-color: ${trafficAnalysis.trafficInfo.color}">
-                <span class="trafico-emoji">${trafficAnalysis.trafficInfo.emoji}</span>
-                <span class="trafico-texto">Tráfico ${trafficAnalysis.trafficInfo.text}</span>
-                <span class="trafico-tiempo">${trafficAnalysis.adjustedTime} min</span>
-            </div>
-        `;
-        
-        // Insertar al inicio del contenido del resultado
-        const resultadoContent = resultadoRapido.querySelector('.resultado-content');
-        if (resultadoContent) {
-            resultadoContent.insertBefore(traficoBadge, resultadoContent.firstChild);
-        }
-    }
-}
-
-// 🔍 VERIFICAR PERMISOS DE UBICACIÓN
-async function verificarPermisosUbicacion() {
-    return new Promise((resolve) => {
-        if (!navigator.permissions) {
-            console.log('🔶 API de permisos no disponible');
-            resolve(false);
-            return;
-        }
-        
-        navigator.permissions.query({ name: 'geolocation' })
-            .then((result) => {
-                console.log('📍 Estado permisos ubicación:', result.state);
-                
-                if (result.state === 'granted') {
-                    console.log('✅ Permisos de ubicación concedidos');
-                    resolve(true);
-                } else if (result.state === 'prompt') {
-                    console.log('🔶 Permisos de ubicación pendientes');
-                    resolve(false);
-                } else {
-                    console.log('❌ Permisos de ubicación denegados');
-                    resolve(false);
-                }
-            })
-            .catch((error) => {
-                console.warn('Error verificando permisos:', error);
-                resolve(false);
-            });
-    });
-}
-
-// ✅ FUNCIÓN PARA ACTIVAR UBICACIÓN MANUALMENTE
-function activarUbicacion() {
-    console.log('📍 Activando sistema de ubicación...');
-    
-    const btn = document.getElementById('activar-ubicacion-btn');
-    const status = document.getElementById('location-status');
-    
-    if (btn) {
-        btn.innerHTML = '<span class="button-icon">🔄</span> Obteniendo ubicación...';
-        btn.disabled = true;
-    }
-    
-    // Solicitar permisos de ubicación
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            console.log('✅ Ubicación obtenida correctamente');
-            
-            if (btn) {
-                btn.style.display = 'none';
-            }
-            if (status) {
-                status.classList.remove('hidden');
-            }
-            
-            // Forzar que el sistema use esta ubicación
-            if (trafficAnalyzer) {
-                trafficAnalyzer.lastLocation = {
-                    coords: {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                        accuracy: position.coords.accuracy
-                    },
-                    timestamp: Date.now()
-                };
-            }
-            
-            mostrarMensaje('📍 Ubicación activada - Análisis de tráfico funcionando', 'success');
-            
-            // Re-calcular si hay datos en el formulario
-            const minutos = parseFloat(elementos.minutos?.value) || 0;
-            if (minutos > 0) {
-                setTimeout(calcularAutomaticoConTrafico, 500);
-            }
-        },
-        (error) => {
-            console.error('❌ Error obteniendo ubicación:', error);
-            
-            if (btn) {
-                btn.innerHTML = '<span class="button-icon">📍</span> Activar Análisis de Tráfico';
-                btn.disabled = false;
-            }
-            
-            let mensaje = 'No se pudo obtener la ubicación. ';
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    mensaje += 'Permiso denegado.';
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    mensaje += 'Ubicación no disponible.';
-                    break;
-                case error.TIMEOUT:
-                    mensaje += 'Tiempo de espera agotado.';
-                    break;
-                default:
-                    mensaje += 'Error desconocido.';
-            }
-            
-            mostrarError(mensaje);
-        },
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        }
-    );
-}
-
-// =============================================
 // EJECUCIÓN PRINCIPAL
 // =============================================
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 DOM cargado, inicializando aplicación...');
-    
-    // Agregar estilos del sistema de tráfico
- // Agregar estilos del sistema de tráfico
-    if (typeof agregarEstilosTrafico === 'function') {
-        agregarEstilosTrafico();
-    } else {
-        console.log('La función agregarEstilosTrafico se cargará pronto...');
-    }
-    
-    // Inicializar la aplicación
     inicializarApp();
+});
 
-// Prevenir cierre accidental
 window.addEventListener('beforeunload', function(e) {
     const tieneDatosPendientes = (elementos.tarifa && elementos.tarifa.value) || 
                                  (elementos.minutos && elementos.minutos.value) || 
@@ -3118,904 +2520,6 @@ window.addEventListener('beforeunload', function(e) {
     }
 });
 
-// =============================================
-// EJECUCIÓN PRINCIPAL
-// =============================================
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 DOM cargado, inicializando aplicación...');
-    inicializarApp();
-});
-
-// Prevenir cierre accidental
-window.addEventListener('beforeunload', function(e) {
-    const tieneDatosPendientes = (elementos.tarifa && elementos.tarifa.value) || 
-                                 (elementos.minutos && elementos.minutos.value) || 
-                                 (elementos.distancia && elementos.distancia.value);
-    
-    if (tieneDatosPendientes) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-// FUNCIONES PARA EL ANÁLISIS DE TRÁFICO Y ESTILOS
-
-function agregarEstilosTrafico() {
-    const styles = `
-        .modal-rapido-compacto {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10002;
-            padding: 15px;
-            box-sizing: border-box;
-        }
-
-        .modal-rapido-compacto.hidden {
-            display: none;
-        }
-
-        .modal-compacto-contenido {
-            background: white;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 320px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            animation: modalAparece 0.25s ease-out;
-        }
-
-        @keyframes modalAparece {
-            from {
-                opacity: 0;
-                transform: scale(0.95) translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        .modal-header-compacto {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
-            color: white;
-        }
-
-        .modal-titulo-compacto {
-            font-size: 1.1em;
-            font-weight: bold;
-        }
-
-        .btn-cerrar-compacto {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-cerrar-compacto:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .modal-cuerpo-compacto {
-            padding: 15px;
-        }
-
-        .estado-viaje {
-            text-align: center;
-            margin-bottom: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            background: #f8f9fa;
-        }
-
-        .badge-estado {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9em;
-        }
-
-        .badge-rentable {
-            background: #e8f5e8;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
-        }
-
-        .badge-oportunidad {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .badge-no-rentable {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
-        }
-
-        .emoji-estado {
-            font-size: 1.2em;
-        }
-
-        .tiempo-trafico {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 10px;
-            background: #e7f3ff;
-            border-radius: 8px;
-            border-left: 3px solid #007cba;
-        }
-
-        .tiempo-item {
-            text-align: center;
-        }
-
-        .tiempo-label {
-            display: block;
-            font-size: 0.75em;
-            color: #666;
-            margin-bottom: 3px;
-        }
-
-        .tiempo-valor {
-            font-weight: bold;
-            font-size: 0.9em;
-        }
-
-        .tiempo-real {
-            color: #007cba;
-        }
-
-        .flecha-ajuste {
-            color: #007cba;
-            font-size: 1.2em;
-        }
-
-        .metricas-compactas {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        .metrica-compacta {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 10px 5px;
-            text-align: center;
-        }
-
-        .metrica-icono {
-            font-size: 1.1em;
-            margin-bottom: 5px;
-        }
-
-        .metrica-valor {
-            font-weight: bold;
-            font-size: 0.85em;
-            margin-bottom: 3px;
-        }
-
-        .metrica-label {
-            font-size: 0.7em;
-            color: #666;
-        }
-
-        .impacto-trafico-compacto {
-            background: #fff3cd;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            font-size: 0.8em;
-            text-align: center;
-            border-left: 3px solid #ffc107;
-        }
-
-        .impacto-texto {
-            color: #856404;
-        }
-
-        .acciones-compactas {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .btn-accion-compacto {
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 0.85em;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-
-        .btn-rechazar-compacto {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
-        }
-
-        .btn-rechazar-compacto:hover {
-            background: #ffcdd2;
-        }
-
-        .btn-aceptar-compacto {
-            background: #e8f5e8;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
-        }
-
-        .btn-aceptar-compacto:hover {
-            background: #c8e6c9;
-        }
-
-        .btn-icono {
-            font-size: 1.1em;
-        }
-
-        .location-permission-section {
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .location-permission-btn {
-            background: #007cba;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.3s;
-        }
-
-        .location-permission-btn:hover {
-            background: #005a87;
-        }
-
-        .location-status {
-            margin-top: 10px;
-            padding: 8px 12px;
-            background: #e8f5e8;
-            border-radius: 6px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: #2e7d32;
-        }
-
-        .location-status.hidden {
-            display: none;
-        }
-
-        .status-icon {
-            font-size: 14px;
-        }
-
-        .status-text {
-            font-weight: 500;
-        }
-    `;
-
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = styles;
-    document.head.appendChild(styleSheet);
-}
-
-// FUNCIONES PARA EL MODAL RÁPIDO COMPACTO
-
-function mostrarModalRapido(datos) {
-    const modal = document.getElementById('modal-rapido');
-    
-    if (!modal) {
-        console.error('Modal rápido no encontrado en el DOM');
-        return;
-    }
-    
-    // Actualizar contenido del modal con los datos
-    const tiempoOriginalElem = document.getElementById('modal-tiempo-original');
-    const tiempoRealElem = document.getElementById('modal-tiempo-real');
-    const gananciaMinutoElem = document.getElementById('modal-ganancia-minuto');
-    const gananciaKmElem = document.getElementById('modal-ganancia-km');
-    const eficienciaElem = document.getElementById('modal-eficiencia');
-    const impactoTextElem = document.getElementById('modal-impacto-texto');
-    
-    if (tiempoOriginalElem) tiempoOriginalElem.textContent = datos.tiempoEstimado + ' min';
-    if (tiempoRealElem) tiempoRealElem.textContent = datos.tiempoReal + ' min';
-    if (gananciaMinutoElem) gananciaMinutoElem.textContent = datos.gananciaMinuto;
-    if (gananciaKmElem) gananciaKmElem.textContent = datos.gananciaKm;
-    if (eficienciaElem) eficienciaElem.textContent = datos.eficiencia + '%';
-    if (impactoTextElem) impactoTextElem.textContent = datos.impactoTrafico;
-    
-    // Configurar badge según rentabilidad
-    const badge = document.getElementById('modal-badge-estado');
-    if (badge) {
-        badge.className = 'badge-estado ' + datos.claseBadge;
-        badge.innerHTML = `<span class="emoji-estado">${datos.emoji}</span><span>${datos.estado}</span>`;
-    }
-    
-    // Mostrar modal
-    modal.classList.remove('hidden');
-}
-
-function cerrarModalRapido() {
-    const modal = document.getElementById('modal-rapido');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-}
-
-function procesarViajeRapido(aceptado) {
-    // Lógica para procesar la decisión del viaje
-    console.log('Viaje ' + (aceptado ? 'aceptado' : 'rechazado'));
-    
-    // Aquí puedes agregar lógica adicional como guardar en historial, etc.
-    if (aceptado) {
-        // Guardar en historial como viaje aceptado
-        guardarEnHistorial(true);
-    } else {
-        // Guardar en historial como viaje rechazado
-        guardarEnHistorial(false);
-    }
-    
-    // Cerrar modal
-    cerrarModalRapido();
-}
-
-// FUNCIONES PARA LA GESTIÓN DE UBICACIÓN Y TRÁFICO
-
-function inicializarGestionUbicacion() {
-    const activarUbicacionBtn = document.getElementById('activar-ubicacion-btn');
-    const locationStatus = document.getElementById('location-status');
-    
-    if (activarUbicacionBtn) {
-        activarUbicacionBtn.addEventListener('click', function() {
-            solicitarPermisoUbicacion();
-        });
-    }
-}
-
-function solicitarPermisoUbicacion() {
-    if (!navigator.geolocation) {
-        mostrarEstadoUbicacion('error', 'La geolocalización no es soportada por este navegador');
-        return;
-    }
-
-    mostrarEstadoUbicacion('loading', 'Solicitando permiso de ubicación...');
-
-    navigator.geolocation.getCurrentPosition(
-        function(position) {
-            // Permiso concedido
-            mostrarEstadoUbicacion('success', 'Ubicación activa - Tráfico monitoreado');
-            activarAnalisisTrafico();
-        },
-        function(error) {
-            // Permiso denegado o error
-            let mensaje = 'Error al obtener la ubicación';
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    mensaje = 'Permiso de ubicación denegado';
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    mensaje = 'Información de ubicación no disponible';
-                    break;
-                case error.TIMEOUT:
-                    mensaje = 'Tiempo de espera agotado';
-                    break;
-            }
-            mostrarEstadoUbicacion('error', mensaje);
-        },
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 60000
-        }
-    );
-}
-
-function mostrarEstadoUbicacion(estado, mensaje) {
-    const locationStatus = document.getElementById('location-status');
-    const statusIcon = locationStatus.querySelector('.status-icon');
-    const statusText = locationStatus.querySelector('.status-text');
-    
-    if (!locationStatus) return;
-    
-    locationStatus.className = 'location-status';
-    
-    switch(estado) {
-        case 'loading':
-            statusIcon.textContent = '🔄';
-            statusText.textContent = mensaje;
-            locationStatus.style.background = '#e7f3ff';
-            locationStatus.style.color = '#007cba';
-            break;
-        case 'success':
-            statusIcon.textContent = '✅';
-            statusText.textContent = mensaje;
-            locationStatus.style.background = '#e8f5e8';
-            locationStatus.style.color = '#2e7d32';
-            break;
-        case 'error':
-            statusIcon.textContent = '❌';
-            statusText.textContent = mensaje;
-            locationStatus.style.background = '#ffebee';
-            locationStatus.style.color = '#c62828';
-            break;
-    }
-    
-    locationStatus.classList.remove('hidden');
-}
-
-function activarAnalisisTrafico() {
-    // Simular análisis de tráfico (en una implementación real, esto se conectaría a una API)
-    console.log('Análisis de tráfico activado');
-    
-    // Ejemplo: simular datos de tráfico después de 2 segundos
-    setTimeout(() => {
-        const datosTrafico = {
-            tiempoEstimado: parseInt(document.getElementById('minutos').value) || 15,
-            tiempoReal: 0,
-            gananciaMinuto: 'RD$0/min',
-            gananciaKm: 'RD$0/km',
-            eficiencia: 0,
-            impactoTrafico: 'Calculando tráfico...',
-            claseBadge: 'badge-oportunidad',
-            emoji: '🔄',
-            estado: 'CALCULANDO'
-        };
-        
-        // Calcular tiempo real basado en condiciones de tráfico simuladas
-        const factorTrafico = 1 + (Math.random() * 0.5); // +0% a +50%
-        datosTrafico.tiempoReal = Math.round(datosTrafico.tiempoEstimado * factorTrafico);
-        
-        // Calcular métricas basadas en el perfil actual
-        calcularMetricasConTrafico(datosTrafico);
-        
-    }, 2000);
-}
-
-// ... TODO TU CÓDIGO ANTERIOR PERMANECE IGUAL ...
-
-function calcularMetricasConTrafico(datosTrafico) {
-    const tarifa = parseFloat(document.getElementById('tarifa').value) || 0;
-    const minutosReales = datosTrafico.tiempoReal;
-    const distancia = parseFloat(document.getElementById('distancia').value) || 1;
-    
-    if (tarifa > 0 && minutosReales > 0 && distancia > 0) {
-        // Calcular ganancias por minuto y km
-        const gananciaPorMinuto = tarifa / minutosReales;
-        const gananciaPorKm = tarifa / distancia;
-        
-        datosTrafico.gananciaMinuto = `RD$${gananciaPorMinuto.toFixed(2)}/min`;
-        datosTrafico.gananciaKm = `RD$${gananciaPorKm.toFixed(2)}/km`;
-        
-        // Calcular eficiencia (simplificado)
-        const eficiencia = Math.min(100, Math.max(0, (gananciaPorMinuto / 10) * 100));
-        datosTrafico.eficiencia = Math.round(eficiencia);
-        
-        // Determinar estado del viaje
-        const umbralMinutoRentable = parseFloat(document.getElementById('umbral-minuto-rentable').value) || 6.00;
-        const umbralKmRentable = parseFloat(document.getElementById('umbral-km-rentable').value) || 25.00;
-        const umbralMinutoOportunidad = parseFloat(document.getElementById('umbral-minuto-oportunidad').value) || 5.00;
-        const umbralKmOportunidad = parseFloat(document.getElementById('umbral-km-oportunidad').value) || 23.00;
-        
-        if (gananciaPorMinuto >= umbralMinutoRentable && gananciaPorKm >= umbralKmRentable) {
-            datosTrafico.claseBadge = 'badge-rentable';
-            datosTrafico.emoji = '✅';
-            datosTrafico.estado = 'VIAJE RENTABLE';
-        } else if (gananciaPorMinuto >= umbralMinutoOportunidad && gananciaPorKm >= umbralKmOportunidad) {
-            datosTrafico.claseBadge = 'badge-oportunidad';
-            datosTrafico.emoji = '⚠️';
-            datosTrafico.estado = 'OPORTUNIDAD';
-        } else {
-            datosTrafico.claseBadge = 'badge-no-rentable';
-            datosTrafico.emoji = '❌';
-            datosTrafico.estado = 'NO RENTABLE';
-        }
-        
-        // Calcular impacto del tráfico
-        const incrementoPorcentaje = Math.round(((datosTrafico.tiempoReal - datosTrafico.tiempoEstimado) / datosTrafico.tiempoEstimado) * 100);
-        datosTrafico.impactoTrafico = `⚠️ Tráfico aumenta +${incrementoPorcentaje}% el tiempo`;
-    }
-    
-    // Mostrar el modal con los datos calculados
-    mostrarModalRapido(datosTrafico);
-}
-
-function guardarEnHistorial(aceptado) {
-    // Aquí iría la lógica para guardar el viaje en el historial
-    console.log(`Viaje ${aceptado ? 'aceptado' : 'rechazado'} guardado en historial`);
-    
-    // Ejemplo de implementación:
-    const viaje = {
-        fecha: new Date().toISOString(),
-        tarifa: parseFloat(document.getElementById('tarifa').value) || 0,
-        minutos: parseInt(document.getElementById('minutos').value) || 0,
-        minutosReales: 0,
-        distancia: parseFloat(document.getElementById('distancia').value) || 0,
-        aceptado: aceptado,
-        rentable: aceptado
-    };
-    
-    // Aquí llamarías a tu función existente para guardar en el historial
-    // guardarViajeEnHistorial(viaje);
-}
-
-// FUNCIONES PARA EL ANÁLISIS DE TRÁFICO Y ESTILOS
-function agregarEstilosTrafico() {
-    const styles = `
-        .modal-rapido-compacto {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10002;
-            padding: 15px;
-            box-sizing: border-box;
-        }
-        .modal-rapido-compacto.hidden {
-            display: none;
-        }
-        .modal-compacto-contenido {
-            background: white;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 320px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            animation: modalAparece 0.25s ease-out;
-        }
-        @keyframes modalAparece {
-            from { opacity: 0; transform: scale(0.95) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .modal-header-compacto {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
-            color: white;
-        }
-        .modal-titulo-compacto {
-            font-size: 1.1em;
-            font-weight: bold;
-        }
-        .btn-cerrar-compacto {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-cerrar-compacto:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        .modal-cuerpo-compacto {
-            padding: 15px;
-        }
-        .estado-viaje {
-            text-align: center;
-            margin-bottom: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            background: #f8f9fa;
-        }
-        .badge-estado {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9em;
-        }
-        .badge-rentable {
-            background: #e8f5e8;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
-        }
-        .badge-oportunidad {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-        .badge-no-rentable {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
-        }
-        .emoji-estado {
-            font-size: 1.2em;
-        }
-        .tiempo-trafico {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 10px;
-            background: #e7f3ff;
-            border-radius: 8px;
-            border-left: 3px solid #007cba;
-        }
-        .tiempo-item {
-            text-align: center;
-        }
-        .tiempo-label {
-            display: block;
-            font-size: 0.75em;
-            color: #666;
-            margin-bottom: 3px;
-        }
-        .tiempo-valor {
-            font-weight: bold;
-            font-size: 0.9em;
-        }
-        .tiempo-real {
-            color: #007cba;
-        }
-        .flecha-ajuste {
-            color: #007cba;
-            font-size: 1.2em;
-        }
-        .metricas-compactas {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-        .metrica-compacta {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 10px 5px;
-            text-align: center;
-        }
-        .metrica-icono {
-            font-size: 1.1em;
-            margin-bottom: 5px;
-        }
-        .metrica-valor {
-            font-weight: bold;
-            font-size: 0.85em;
-            margin-bottom: 3px;
-        }
-        .metrica-label {
-            font-size: 0.7em;
-            color: #666;
-        }
-        .impacto-trafico-compacto {
-            background: #fff3cd;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            font-size: 0.8em;
-            text-align: center;
-            border-left: 3px solid #ffc107;
-        }
-        .impacto-texto {
-            color: #856404;
-        }
-        .acciones-compactas {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-        .btn-accion-compacto {
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 0.85em;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-        .btn-rechazar-compacto {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
-        }
-        .btn-rechazar-compacto:hover {
-            background: #ffcdd2;
-        }
-        .btn-aceptar-compacto {
-            background: #e8f5e8;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
-        }
-        .btn-aceptar-compacto:hover {
-            background: #c8e6c9;
-        }
-        .btn-icono {
-            font-size: 1.1em;
-        }
-        .location-permission-section {
-            margin: 20px 0;
-            text-align: center;
-        }
-        .location-permission-btn {
-            background: #007cba;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.3s;
-        }
-        .location-permission-btn:hover {
-            background: #005a87;
-        }
-        .location-status {
-            margin-top: 10px;
-            padding: 8px 12px;
-            background: #e8f5e8;
-            border-radius: 6px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: #2e7d32;
-        }
-        .location-status.hidden {
-            display: none;
-        }
-        .status-icon {
-            font-size: 14px;
-        }
-        .status-text {
-            font-weight: 500;
-        }
-    `;
-
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = styles;
-    document.head.appendChild(styleSheet);
-}
-
-function mostrarModalRapido(datos) {
-    const modal = document.getElementById('modal-rapido');
-    if (!modal) {
-        console.error('Modal rápido no encontrado');
-        return;
-    }
-    
-    const elementos = {
-        'modal-tiempo-original': datos.tiempoEstimado + ' min',
-        'modal-tiempo-real': datos.tiempoReal + ' min',
-        'modal-ganancia-minuto': datos.gananciaMinuto,
-        'modal-ganancia-km': datos.gananciaKm,
-        'modal-eficiencia': datos.eficiencia + '%',
-        'modal-impacto-texto': datos.impactoTrafico
-    };
-    
-    for (const [id, valor] of Object.entries(elementos)) {
-        const elem = document.getElementById(id);
-        if (elem) elem.textContent = valor;
-    }
-    
-    const badge = document.getElementById('modal-badge-estado');
-    if (badge) {
-        badge.className = 'badge-estado ' + datos.claseBadge;
-        badge.innerHTML = `<span class="emoji-estado">${datos.emoji}</span><span>${datos.estado}</span>`;
-    }
-    
-    modal.classList.remove('hidden');
-}
-
-function cerrarModalRapido() {
-    const modal = document.getElementById('modal-rapido');
-    if (modal) modal.classList.add('hidden');
-}
-
-function procesarViajeRapido(aceptado) {
-    console.log('Viaje ' + (aceptado ? 'aceptado' : 'rechazado'));
-    guardarEnHistorial(aceptado);
-    cerrarModalRapido();
-}
-
-function inicializarGestionUbicacion() {
-    const btn = document.getElementById('activar-ubicacion-btn');
-    if (btn) {
-        btn.addEventListener('click', function() {
-            console.log('Solicitando ubicación...');
-            simularAnalisisRapido();
-        });
-    }
-}
-
-function simularAnalisisRapido() {
-    const datosEjemplo = {
-        tiempoEstimado: 15,
-        tiempoReal: 18,
-        gananciaMinuto: 'RD$19.45/min',
-        gananciaKm: 'RD$41.18/km',
-        eficiencia: 85,
-        impactoTrafico: '⚠️ Tráfico aumenta +20% el tiempo',
-        claseBadge: 'badge-rentable',
-        emoji: '✅',
-        estado: 'VIAJE RENTABLE'
-    };
-    
-    mostrarModalRapido(datosEjemplo);
-}
-
-// INICIALIZACIÓN CUANDO EL DOCUMENTO ESTÉ LISTO
-document.addEventListener('DOMContentLoaded', function() {
-    agregarEstilosTrafico();
-    inicializarGestionUbicacion();
-    
-    const mainScreen = document.getElementById('main-screen');
-    if (mainScreen) {
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                    if (mainScreen.classList.contains('active')) {
-                        inicializarGestionUbicacion();
-                    }
-                }
-            });
-        });
-        observer.observe(mainScreen, { attributes: true });
-    }
-});
-
-// Cerrar modal al hacer clic fuera
 window.onclick = function(event) {
     const modalRapido = document.getElementById('modal-rapido');
     if (modalRapido && event.target === modalRapido) {
@@ -4034,15 +2538,3 @@ window.onclick = function(event) {
         }
     }
 };
-
-// Prevenir cierre accidental
-window.addEventListener('beforeunload', function(e) {
-    const tieneDatosPendientes = (elementos.tarifa && elementos.tarifa.value) || 
-                                 (elementos.minutos && elementos.minutos.value) || 
-                                 (elementos.distancia && elementos.distancia.value);
-    
-    if (tieneDatosPendientes) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});
