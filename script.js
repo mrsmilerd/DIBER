@@ -208,40 +208,39 @@ function showUserCodeBanner() {
         codeButton = document.createElement('button');
         codeButton.id = 'user-code-button';
         codeButton.className = 'secondary-button small user-code-button';
-        codeButton.title = 'Código de sincronización';
+        codeButton.title = 'Código de sincronización: ' + (userCodeSystem.userCode || '');
         codeButton.style.cssText = `
             display: flex;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 8px 12px;
+            padding: 8px 10px;
             cursor: pointer;
-            transition: all 0.3s;
             color: var(--text-primary);
-            font-size: 0.9em;
-            min-width: auto;
+            font-size: 1.1em;
+            width: 40px;
+            height: 40px;
+            transition: all 0.3s;
         `;
         
         // Insertar en header-left
         headerLeft.appendChild(codeButton);
         
         console.log('✅ Botón de código creado en header-left');
-        elementos['user-code-button'] = codeButton; // Guardar referencia
+        elementos['user-code-button'] = codeButton;
     }
     
     if (userCodeSystem.userCode) {
-        // Actualizar contenido del botón
-        codeButton.innerHTML = `
-            <span class="button-icon">🔑</span>
-            <span class="user-code-display">${userCodeSystem.userCode}</span>
-        `;
+        // SOLO EMOJI - sin código de texto
+        codeButton.innerHTML = `<span class="button-icon">🔑</span>`;
+        codeButton.title = 'Código de sincronización: ' + userCodeSystem.userCode;
         
         codeButton.style.display = 'flex';
         codeButton.onclick = mostrarInfoUserCode;
         
-        console.log('✅ Botón de código actualizado:', userCodeSystem.userCode);
+        console.log('✅ Botón de código actualizado (solo emoji)');
     }
 }
 
@@ -2469,6 +2468,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
