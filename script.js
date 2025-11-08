@@ -1,6 +1,6 @@
 // =============================================
 // DIBER - Calculadora Inteligente para Conductores
-// Versión Mejorada con Sistema de Pestañas Y SINCRONIZACIÓN MULTI-DISPOSITIVO
+// Versión Corregida y Sincronizada con HTML
 // =============================================
 
 // --- Variables Globales ---
@@ -42,12 +42,13 @@ const firebaseConfig = {
 const elementos = {};
 
 // =============================================
-// INICIALIZACIÓN DE ELEMENTOS DOM
+// INICIALIZACIÓN DE ELEMENTOS DOM - CORREGIDA
 // =============================================
 
 function inicializarElementosDOM() {
     console.log('🔍 Inicializando elementos DOM...');
     
+    // SOLO los IDs que existen en tu HTML
     const ids = [
         'perfil-screen', 'config-perfil-screen', 'main-screen',
         'status-indicator', 'status-text', 'auto-calc-indicator',
@@ -64,7 +65,16 @@ function inicializarElementosDOM() {
         'rendimiento-ganancia-hora-linea', 'rendimiento-viaje-promedio-linea',
         'rendimiento-ganancia-hora-card', 'rendimiento-distancia-total-card',
         'rendimiento-eficiencia-card', 'rendimiento-eficiencia-badge',
-        'user-code-modal', 'user-code-input', 'user-code-banner', 'user-code-display'
+        'user-code-modal', 'user-code-input', 'user-code-banner',
+        'activar-ubicacion-btn', 'location-status',
+        'modal-rapido', 'modal-trafico-header', 'modal-trafico-status', 'modal-trafico-condition',
+        'modal-tiempo-original', 'modal-tiempo-real', 'modal-resultado-principal',
+        'modal-badge-rentabilidad', 'modal-badge-subtitle', 'modal-ganancia-minuto',
+        'modal-ganancia-km', 'modal-eficiencia', 'modal-impacto-trafico', 'modal-impacto-content',
+        'modal-badge-rechazar', 'modal-badge-aceptar', 'modal-btn-aceptar',
+        'code-status', 'sync-perfil-info', 'sync-panel-status', 'current-device-icon',
+        'current-device-name', 'current-device-id', 'firebase-status', 'last-sync-time',
+        'cloud-profiles-count', 'cloud-history-count', 'force-sync-btn'
     ];
 
     ids.forEach(id => {
@@ -74,456 +84,435 @@ function inicializarElementosDOM() {
         }
     });
 
-    // Elementos adicionales
+    // Elementos adicionales que usan selectores de clase
     elementos.tabButtons = document.querySelectorAll('.tab-button');
     elementos.tabContents = document.querySelectorAll('.tab-content');
     
-    console.log('✅ Elementos DOM inicializados');
+    console.log('✅ Elementos DOM inicializados correctamente');
 }
 
 // =============================================
-// SISTEMA DE EXPORTACIÓN DE HISTORIAL
+// SISTEMA DE CÓDIGO DE USUARIO - CORREGIDO
 // =============================================
 
-function exportarHistorial() {
-    console.log('📤 Exportando historial...');
+async function initializeUserCodeSystem() {
+    console.log('🔐 Inicializando sistema de código de usuario...');
     
-    if (!historial || historial.length === 0) {
-        mostrarError('No hay historial para exportar');
+    const savedCode = localStorage.getItem('DIBER_user_code');
+    
+    if (savedCode) {
+        userCodeSystem.userCode = savedCode;
+        userCodeSystem.userId = 'user_' + savedCode;
+        userCodeSystem.initialized = true;
+        
+        console.log('✅ Código de usuario cargado:', userCodeSystem.userCode);
+        hideUserCodeModal();
+        showUserCodeBanner();
+        
+        await initializeFirebaseSync();
+        return true;
+    } else {
+        showUserCodeModal();
+        return false;
+    }
+}
+
+function generateUserCode() {
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const numbers = '23456789';
+    
+    let code = '';
+    for (let i = 0; i < 3; i++) {
+        code += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    for (let i = 0; i < 3; i++) {
+        code += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    }
+    
+    const input = document.getElementById('user-code-input');
+    if (input) {
+        input.value = code;
+        input.focus();
+        input.select();
+    }
+}
+
+function setUserCode() {
+    const input = document.getElementById('user-code-input');
+    if (!input) return;
+    
+    let code = input.value.trim().toUpperCase();
+    
+    const codeRegex = /^[A-Z0-9]{3,6}$/;
+    
+    if (!code) {
+        mostrarStatus('❌ Por favor escribe un código o genera uno automático', 'error');
         return;
     }
-
-    try {
-        let csvContent = "Fecha,Ganancia (RD$),Tiempo (min),Distancia (km),Ganancia/Minuto,Ganancia/Km,Rentabilidad\n";
-        
-        historial.forEach(viaje => {
-            const fecha = viaje.fecha || 'Fecha desconocida';
-            const ganancia = viaje.ganancia || viaje.tarifa || 0;
-            const minutos = viaje.minutos || 0;
-            const distancia = viaje.distancia || 0;
-            const porMinuto = viaje.gananciaPorMinuto || viaje.porMinuto || 0;
-            const porKm = viaje.gananciaPorKm || viaje.porKm || 0;
-            const rentabilidad = viaje.texto || (viaje.rentable ? 'RENTABLE' : 'NO RENTABLE');
-            
-            csvContent += `"${fecha}",${ganancia},${minutos},${distancia},${porMinuto},${porKm},"${rentabilidad}"\n`;
-        });
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        
-        link.setAttribute('href', url);
-        link.setAttribute('download', `DIBER_historial_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        mostrarMensaje('✅ Historial exportado correctamente', 'success');
-        
-    } catch (error) {
-        console.error('❌ Error exportando historial:', error);
-        mostrarError('Error al exportar el historial');
-    }
-}
-
-function exportarHistorialPDF() {
-    console.log('📄 Generando PDF con resumen COMPLETO...');
     
-    if (!historial || historial.length === 0) {
-        mostrarError('No hay historial para exportar');
+    if (!codeRegex.test(code)) {
+        mostrarStatus('❌ Formato inválido. Usa 3-6 letras/números (ej: ABC123)', 'error');
         return;
     }
+    
+    userCodeSystem.userCode = code;
+    userCodeSystem.userId = 'user_' + code;
+    userCodeSystem.initialized = true;
+    
+    localStorage.setItem('DIBER_user_code', code);
+    
+    hideUserCodeModal();
+    showUserCodeBanner();
+    
+    mostrarStatus('✅ Código de usuario establecido', 'success');
+    
+    setTimeout(async () => {
+        await initializeFirebaseSync();
+        await cargarDatos();
+        
+        if (perfiles.length === 0) {
+            mostrarPantalla('perfil');
+            mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
+        } else {
+            mostrarPantalla('main');
+        }
+    }, 1000);
+}
 
+function showUserCodeModal() {
+    const modal = document.getElementById('user-code-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
+}
+
+function hideUserCodeModal() {
+    const modal = document.getElementById('user-code-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+    }
+}
+
+// CORREGIDO: Función mejorada para mostrar el banner de código
+function showUserCodeBanner() {
+    const banner = document.getElementById('user-code-banner');
+    
+    if (banner && userCodeSystem.userCode) {
+        // Buscar o crear el elemento de display
+        let display = banner.querySelector('.user-code-display');
+        if (!display) {
+            display = document.createElement('span');
+            display.className = 'user-code-display';
+            banner.insertBefore(display, banner.firstChild);
+        }
+        
+        display.textContent = `Código: ${userCodeSystem.userCode}`;
+        banner.style.display = 'flex';
+        
+        // Asegurar que el botón de cambiar existe
+        let changeBtn = banner.querySelector('button');
+        if (!changeBtn) {
+            changeBtn = document.createElement('button');
+            changeBtn.className = 'secondary-button small';
+            changeBtn.innerHTML = '<span class="button-icon">🔄</span> Cambiar';
+            changeBtn.onclick = cambiarUsuario;
+            banner.appendChild(changeBtn);
+        }
+    }
+}
+
+function cambiarUsuario() {
+    if (confirm('¿Estás seguro de que quieres cambiar de usuario?')) {
+        localStorage.removeItem('DIBER_user_code');
+        userCodeSystem.userCode = null;
+        userCodeSystem.userId = null;
+        userCodeSystem.initialized = false;
+        
+        const banner = document.getElementById('user-code-banner');
+        if (banner) banner.style.display = 'none';
+        
+        showUserCodeModal();
+    }
+}
+
+// =============================================
+// SISTEMA DE SINCRONIZACIÓN MULTI-DISPOSITIVO
+// =============================================
+
+class FirebaseSync {
+    constructor() {
+        this.initialized = false;
+        this.userId = null;
+        this.db = null;
+    }
+
+    async initialize() {
+        if (this.initialized) return true;
+
+        try {
+            console.log('📡 Inicializando Firebase Sync...');
+            
+            if (typeof firebase === 'undefined') {
+                throw new Error('Firebase no está cargado');
+            }
+            
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            
+            this.db = firebase.firestore();
+            this.userId = userCodeSystem.userId;
+            
+            this.initialized = true;
+            console.log('✅ Firebase Sync inicializado CORRECTAMENTE');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error inicializando Firebase Sync:', error);
+            return false;
+        }
+    }
+
+    async saveProfile(profile) {
+        if (!this.initialized) return false;
+
+        try {
+            const profileRef = this.db.collection('users').doc(this.userId)
+                .collection('profiles').doc(profile.id);
+            
+            await profileRef.set({
+                ...profile,
+                lastSync: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            console.log('✅ Perfil guardado en Firebase:', profile.nombre);
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error guardando perfil en Firebase:', error);
+            return false;
+        }
+    }
+
+    async saveTrip(trip) {
+        if (!this.initialized) return false;
+
+        try {
+            const tripRef = this.db.collection('users').doc(this.userId)
+                .collection('trips').doc(trip.id);
+            
+            await tripRef.set({
+                ...trip,
+                lastSync: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            console.log('✅ Viaje guardado en Firebase');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error guardando viaje en Firebase:', error);
+            return false;
+        }
+    }
+
+    async loadProfiles() {
+        if (!this.initialized) return null;
+
+        try {
+            const profilesRef = this.db.collection('users').doc(this.userId)
+                .collection('profiles');
+            
+            const snapshot = await profilesRef.orderBy('fechaCreacion', 'desc').get();
+            
+            if (!snapshot.empty) {
+                const profiles = [];
+                snapshot.forEach(doc => {
+                    profiles.push(doc.data());
+                });
+                
+                console.log('✅ Perfiles cargados desde Firebase:', profiles.length);
+                return profiles;
+            } else {
+                return [];
+            }
+            
+        } catch (error) {
+            console.error('❌ Error cargando perfiles desde Firebase:', error);
+            return null;
+        }
+    }
+
+    async loadTrips() {
+        if (!this.initialized) return null;
+
+        try {
+            const tripsRef = this.db.collection('users').doc(this.userId)
+                .collection('trips');
+            
+            const snapshot = await tripsRef.orderBy('timestamp', 'desc').limit(100).get();
+            
+            if (!snapshot.empty) {
+                const trips = [];
+                snapshot.forEach(doc => {
+                    trips.push(doc.data());
+                });
+                
+                console.log('✅ Viajes cargados desde Firebase:', trips.length);
+                return trips;
+            } else {
+                return [];
+            }
+            
+        } catch (error) {
+            console.error('❌ Error cargando viajes desde Firebase:', error);
+            return null;
+        }
+    }
+}
+
+// =============================================
+// FUNCIONES PRINCIPALES - CORREGIDAS
+// =============================================
+
+async function initializeFirebaseSync() {
+    console.log('🔄 Inicializando Firebase Sync...');
+    
+    if (firebaseInitialized && firebaseSync && firebaseSync.initialized) {
+        console.log('✅ Firebase Sync ya estaba inicializado');
+        return true;
+    }
+    
+    firebaseSync = new FirebaseSync();
+    const success = await firebaseSync.initialize();
+    
+    if (success) {
+        console.log('✅ Firebase Sync inicializado CORRECTAMENTE');
+        firebaseInitialized = true;
+        
+        if (!loadingData) {
+            setTimeout(async () => {
+                await cargarDatos();
+            }, 1000);
+        }
+        
+        return true;
+    } else {
+        console.log('📱 Usando almacenamiento local solamente');
+        firebaseInitialized = false;
+        return false;
+    }
+}
+
+async function cargarDatos() {
+    if (loadingData) {
+        console.log('⏳ Carga de datos en progreso, omitiendo...');
+        return;
+    }
+    
+    loadingData = true;
+    console.log('🔄 Cargando datos...');
+    
     try {
-        const stats = obtenerEstadisticasCompletas();
+        // Cargar de localStorage primero
+        try {
+            const historialGuardado = localStorage.getItem('historialViajes');
+            if (historialGuardado) {
+                historial = JSON.parse(historialGuardado);
+                console.log('💾 Historial local cargado:', historial.length, 'viajes');
+            }
+            
+            const datosGuardados = localStorage.getItem('DIBER_data');
+            if (datosGuardados) {
+                const datos = JSON.parse(datosGuardados);
+                perfiles = datos.perfiles || [];
+                perfilActual = datos.perfilActual || null;
+                console.log('💾 Datos generales cargados');
+            }
+        } catch (error) {
+            console.error('Error cargando datos locales:', error);
+            perfiles = [];
+            historial = [];
+        }
+
+        // Cargar desde Firebase si está disponible
+        if (firebaseSync && firebaseSync.initialized) {
+            try {
+                console.log('☁️ Intentando cargar desde Firebase...');
+                
+                const cloudProfiles = await firebaseSync.loadProfiles();
+                if (cloudProfiles && cloudProfiles.length > 0) {
+                    console.log('✅ Perfiles de Firebase cargados:', cloudProfiles.length);
+                    perfiles = cloudProfiles;
+                    
+                    if (!perfilActual && perfiles.length > 0) {
+                        perfilActual = perfiles[0];
+                    }
+                }
+                
+                const cloudTrips = await firebaseSync.loadTrips();
+                if (cloudTrips && cloudTrips.length > 0) {
+                    console.log('✅ Viajes de Firebase cargados:', cloudTrips.length);
+                    
+                    const combinedHistorial = [...historial];
+                    cloudTrips.forEach(cloudTrip => {
+                        const exists = combinedHistorial.some(localTrip => localTrip.id === cloudTrip.id);
+                        if (!exists) {
+                            combinedHistorial.push(cloudTrip);
+                        }
+                    });
+                    
+                    historial = combinedHistorial
+                        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                        .slice(0, 100);
+                    
+                    console.log('🔄 Historial combinado:', historial.length, 'viajes');
+                    
+                    localStorage.setItem('historialViajes', JSON.stringify(historial));
+                }
+            } catch (error) {
+                console.error('❌ Error cargando Firebase:', error);
+            }
+        }
+
+        // Asegurar que tenemos un perfil
+        if (!perfilActual && perfiles.length > 0) {
+            perfilActual = perfiles[0];
+        }
+
+        actualizarInterfazPerfiles();
+        actualizarEstadisticas();
+        actualizarHistorialConFiltros();
         
-        console.log('📊 Datos para PDF (COMPLETO):', {
-            totalViajes: stats.totalViajes,
-            viajesRentables: stats.viajesRentables,
-            eficiencia: `${stats.eficiencia.toFixed(1)}%`,
-            gananciaTotal: stats.gananciaTotal,
-            periodo: 'Todos los viajes del historial'
+        guardarDatos();
+        
+        console.log('🎉 Carga de datos completada');
+        console.log('📊 Resumen final:', {
+            perfiles: perfiles.length,
+            historial: historial.length,
+            perfilActual: perfilActual?.nombre
         });
-
-        const pdfContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>DIBER - Reporte Completo</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 30px;
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #1a73e8, #1565c0);
-            color: white;
-            padding: 40px 30px;
-            text-align: center;
-        }
-        
-        .logo {
-            font-size: 3em;
-            margin-bottom: 15px;
-        }
-        
-        .title {
-            font-size: 2.2em;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            font-size: 1.1em;
-            opacity: 0.9;
-            font-weight: 400;
-        }
-        
-        .content {
-            padding: 40px 30px;
-        }
-        
-        .section {
-            margin-bottom: 35px;
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 25px;
-            border-left: 5px solid #1a73e8;
-        }
-        
-        .section-title {
-            font-size: 1.4em;
-            font-weight: 600;
-            color: #1a73e8;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            border: 2px solid #e9ecef;
-        }
-        
-        .stat-value {
-            font-size: 2em;
-            font-weight: 700;
-            color: #1a73e8;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 0.9em;
-            color: #6c757d;
-            font-weight: 500;
-        }
-        
-        .costs-breakdown {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 15px;
-        }
-        
-        .cost-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .cost-item:last-child {
-            border-bottom: none;
-        }
-        
-        .cost-label {
-            color: #495057;
-            font-weight: 500;
-        }
-        
-        .cost-value {
-            font-weight: 600;
-            color: #1a73e8;
-        }
-        
-        .summary-card {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            margin-top: 10px;
-        }
-        
-        .summary-value {
-            font-size: 2.5em;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        
-        .summary-label {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-        
-        .performance-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-top: 15px;
-        }
-        
-        .performance-item {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-        }
-        
-        .efficiency-badge {
-            display: inline-block;
-            background: #28a745;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-weight: 600;
-            font-size: 1.1em;
-        }
-        
-        .footer {
-            text-align: center;
-            padding: 25px;
-            background: #f8f9fa;
-            color: #6c757d;
-            font-size: 0.9em;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        .highlight {
-            color: #1a73e8;
-            font-weight: 600;
-        }
-        
-        @media print {
-            body {
-                background: white !important;
-                padding: 0 !important;
-            }
-            .container {
-                box-shadow: none !important;
-                margin: 0 !important;
-                max-width: none !important;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">🚗</div>
-            <h1 class="title">DIBER - Reporte Completo</h1>
-            <p class="subtitle">Análisis detallado de tu actividad</p>
-        </div>
-        
-        <div class="content">
-            <!-- Información General -->
-            <div class="section">
-                <h2 class="section-title">📊 Información General</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value">${stats.totalViajes}</div>
-                        <div class="stat-label">Total de Viajes</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${stats.viajesRentables}</div>
-                        <div class="stat-label">Viajes Rentables</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${formatearMoneda(stats.gananciaTotal)}</div>
-                        <div class="stat-label">Ganancia Total</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${stats.tiempoTotal} min</div>
-                        <div class="stat-label">Tiempo Total</div>
-                    </div>
-                </div>
-                <p><strong>Generado el:</strong> ${new Date().toLocaleString('es-DO')}</p>
-                <p><strong>Perfil activo:</strong> ${perfilActual?.nombre || 'No especificado'}</p>
-                <p><strong>Periodo:</strong> <span class="highlight">Todos los viajes del historial</span></p>
-            </div>
-            
-            <!-- Ingresos -->
-            <div class="section">
-                <h2 class="section-title">💰 Ingresos</h2>
-                <div class="summary-card">
-                    <div class="summary-value">${formatearMoneda(stats.gananciaTotal)}</div>
-                    <div class="summary-label">Ganancia Total</div>
-                </div>
-                <div class="costs-breakdown">
-                    <div class="cost-item">
-                        <span class="cost-label">Viajes Aceptados:</span>
-                        <span class="cost-value">${stats.totalViajes}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span class="cost-label">Viaje Promedio:</span>
-                        <span class="cost-value">${formatearMoneda(stats.viajePromedio)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span class="cost-label">Ganancia por Hora:</span>
-                        <span class="cost-value">${formatearMoneda(stats.gananciaPorHora)}/h</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Costos -->
-            <div class="section">
-                <h2 class="section-title">📈 Costos Totales</h2>
-                <div class="summary-card" style="background: linear-gradient(135deg, #dc3545, #e83e8c);">
-                    <div class="summary-value">${formatearMoneda(stats.costoTotal)}</div>
-                    <div class="summary-label">Costos Totales</div>
-                </div>
-                <div class="costs-breakdown">
-                    <div class="cost-item">
-                        <span class="cost-label">Combustible:</span>
-                        <span class="cost-value">${formatearMoneda(stats.costoCombustibleTotal)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span class="cost-label">Mantenimiento:</span>
-                        <span class="cost-value">${formatearMoneda(stats.costoMantenimientoTotal)}</span>
-                    </div>
-                    <div class="cost-item">
-                        <span class="cost-label">Seguro:</span>
-                        <span class="cost-value">${formatearMoneda(stats.costoSeguroTotal)}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Rendimiento -->
-            <div class="section">
-                <h2 class="section-title">🎯 Rendimiento</h2>
-                <div class="performance-grid">
-                    <div class="performance-item">
-                        <div class="stat-value">${formatearMoneda(stats.gananciaPorHora)}</div>
-                        <div class="stat-label">Ganancia/Hora</div>
-                    </div>
-                    <div class="performance-item">
-                        <div class="stat-value">${stats.distanciaTotal} km</div>
-                        <div class="stat-label">Distancia Total</div>
-                    </div>
-                    <div class="performance-item">
-                        <div class="stat-value">${stats.eficiencia.toFixed(1)}%</div>
-                        <div class="stat-label">Eficiencia</div>
-                    </div>
-                </div>
-                <div style="text-align: center; margin-top: 20px;">
-                    <span class="efficiency-badge">Eficiencia: ${stats.eficiencia.toFixed(1)}%</span>
-                </div>
-            </div>
-            
-            <!-- Resumen Financiero -->
-            <div class="section">
-                <h2 class="section-title">💵 Resumen Financiero</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" style="color: #28a745;">${formatearMoneda(stats.gananciaTotal)}</div>
-                        <div class="stat-label">Ingresos Totales</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" style="color: #dc3545;">${formatearMoneda(stats.costoTotal)}</div>
-                        <div class="stat-label">Costos Totales</div>
-                    </div>
-                </div>
-                <div class="summary-card" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); margin-top: 20px;">
-                    <div class="summary-value">${formatearMoneda(stats.gananciaNeta)}</div>
-                    <div class="summary-label">GANANCIA NETA TOTAL</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>Reporte generado por DIBER • ${new Date().getFullYear()}</p>
-            <p>¡Sigue maximizando tus ganancias! 🚀</p>
-        </div>
-    </div>
-</body>
-</html>
-        `;
-
-        const ventana = window.open('', '_blank');
-        ventana.document.write(pdfContent);
-        ventana.document.close();
-        
-        setTimeout(() => {
-            ventana.print();
-        }, 1000);
-        
-        mostrarMensaje('✅ PDF generado correctamente', 'success');
-        
-    } catch (error) {
-        console.error('❌ Error generando PDF:', error);
-        mostrarError('Error al generar el PDF');
+    } finally {
+        loadingData = false;
     }
 }
 
-// =============================================
-// FUNCIONES PARA MODAL DE EXPORTACIÓN
-// =============================================
+function guardarDatos() {
+    console.log('💾 Guardando datos...');
+    
+    localStorage.setItem('historialViajes', JSON.stringify(historial));
+    
+    localStorage.setItem('DIBER_data', JSON.stringify({
+        perfiles,
+        perfilActual,
+        historial,
+        version: '2.0',
+        ultimaActualizacion: new Date().toISOString()
+    }));
 
-function mostrarExportModal() {
-    console.log('📤 Mostrando modal de exportación');
-    if (elementos.exportModal) {
-        elementos.exportModal.style.display = 'flex';
-    }
-}
-
-function configurarModalExportacion() {
-    console.log('🔧 Configurando modal de exportación');
-    const btnExportarPDF = document.getElementById('exportar-pdf');
-    if (btnExportarPDF) {
-        btnExportarPDF.addEventListener('click', function() {
-            console.log('📄 Click en exportar PDF');
-            exportarHistorialPDF();
-            cerrarExportModal();
-        });
-    }
+    console.log('✅ Datos guardados localmente');
 }
 
 // =============================================
@@ -1155,394 +1144,6 @@ function eliminarPerfil(perfilId) {
 }
 
 // =============================================
-// SISTEMA DE SINCRONIZACIÓN MULTI-DISPOSITIVO
-// =============================================
-
-class FirebaseSync {
-    constructor() {
-        this.initialized = false;
-        this.userId = null;
-        this.db = null;
-    }
-
-    async initialize() {
-        if (this.initialized) return true;
-
-        try {
-            console.log('📡 Inicializando Firebase Sync...');
-            
-            if (typeof firebase === 'undefined') {
-                throw new Error('Firebase no está cargado');
-            }
-            
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            
-            this.db = firebase.firestore();
-            this.userId = userCodeSystem.userId;
-            
-            this.initialized = true;
-            console.log('✅ Firebase Sync inicializado CORRECTAMENTE');
-            return true;
-            
-        } catch (error) {
-            console.error('❌ Error inicializando Firebase Sync:', error);
-            return false;
-        }
-    }
-
-    async saveProfile(profile) {
-        if (!this.initialized) return false;
-
-        try {
-            const profileRef = this.db.collection('users').doc(this.userId)
-                .collection('profiles').doc(profile.id);
-            
-            await profileRef.set({
-                ...profile,
-                lastSync: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-            
-            console.log('✅ Perfil guardado en Firebase:', profile.nombre);
-            return true;
-            
-        } catch (error) {
-            console.error('❌ Error guardando perfil en Firebase:', error);
-            return false;
-        }
-    }
-
-    async saveTrip(trip) {
-        if (!this.initialized) return false;
-
-        try {
-            const tripRef = this.db.collection('users').doc(this.userId)
-                .collection('trips').doc(trip.id);
-            
-            await tripRef.set({
-                ...trip,
-                lastSync: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-            
-            console.log('✅ Viaje guardado en Firebase');
-            return true;
-            
-        } catch (error) {
-            console.error('❌ Error guardando viaje en Firebase:', error);
-            return false;
-        }
-    }
-
-    async loadProfiles() {
-        if (!this.initialized) return null;
-
-        try {
-            const profilesRef = this.db.collection('users').doc(this.userId)
-                .collection('profiles');
-            
-            const snapshot = await profilesRef.orderBy('fechaCreacion', 'desc').get();
-            
-            if (!snapshot.empty) {
-                const profiles = [];
-                snapshot.forEach(doc => {
-                    profiles.push(doc.data());
-                });
-                
-                console.log('✅ Perfiles cargados desde Firebase:', profiles.length);
-                return profiles;
-            } else {
-                return [];
-            }
-            
-        } catch (error) {
-            console.error('❌ Error cargando perfiles desde Firebase:', error);
-            return null;
-        }
-    }
-
-    async loadTrips() {
-        if (!this.initialized) return null;
-
-        try {
-            const tripsRef = this.db.collection('users').doc(this.userId)
-                .collection('trips');
-            
-            const snapshot = await tripsRef.orderBy('timestamp', 'desc').limit(100).get();
-            
-            if (!snapshot.empty) {
-                const trips = [];
-                snapshot.forEach(doc => {
-                    trips.push(doc.data());
-                });
-                
-                console.log('✅ Viajes cargados desde Firebase:', trips.length);
-                return trips;
-            } else {
-                return [];
-            }
-            
-        } catch (error) {
-            console.error('❌ Error cargando viajes desde Firebase:', error);
-            return null;
-        }
-    }
-}
-
-// =============================================
-// SISTEMA DE CÓDIGO DE USUARIO
-// =============================================
-
-async function initializeUserCodeSystem() {
-    console.log('🔐 Inicializando sistema de código de usuario...');
-    
-    const savedCode = localStorage.getItem('DIBER_user_code');
-    
-    if (savedCode) {
-        userCodeSystem.userCode = savedCode;
-        userCodeSystem.userId = 'user_' + savedCode;
-        userCodeSystem.initialized = true;
-        
-        console.log('✅ Código de usuario cargado:', userCodeSystem.userCode);
-        hideUserCodeModal();
-        showUserCodeBanner();
-        
-        await initializeFirebaseSync();
-        return true;
-    } else {
-        showUserCodeModal();
-        return false;
-    }
-}
-
-function generateUserCode() {
-    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-    const numbers = '23456789';
-    
-    let code = '';
-    for (let i = 0; i < 3; i++) {
-        code += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    for (let i = 0; i < 3; i++) {
-        code += numbers.charAt(Math.floor(Math.random() * numbers.length));
-    }
-    
-    const input = document.getElementById('user-code-input');
-    if (input) {
-        input.value = code;
-        input.focus();
-        input.select();
-    }
-}
-
-function setUserCode() {
-    const input = document.getElementById('user-code-input');
-    if (!input) return;
-    
-    let code = input.value.trim().toUpperCase();
-    
-    const codeRegex = /^[A-Z0-9]{3,6}$/;
-    
-    if (!code) {
-        mostrarStatus('❌ Por favor escribe un código o genera uno automático', 'error');
-        return;
-    }
-    
-    if (!codeRegex.test(code)) {
-        mostrarStatus('❌ Formato inválido. Usa 3-6 letras/números (ej: ABC123)', 'error');
-        return;
-    }
-    
-    userCodeSystem.userCode = code;
-    userCodeSystem.userId = 'user_' + code;
-    userCodeSystem.initialized = true;
-    
-    localStorage.setItem('DIBER_user_code', code);
-    
-    hideUserCodeModal();
-    showUserCodeBanner();
-    
-    mostrarStatus('✅ Código de usuario establecido', 'success');
-    
-    setTimeout(async () => {
-        await initializeFirebaseSync();
-        await cargarDatos();
-        
-        if (perfiles.length === 0) {
-            mostrarPantalla('perfil');
-            mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
-        } else {
-            mostrarPantalla('main');
-        }
-    }, 1000);
-}
-
-function showUserCodeModal() {
-    const modal = document.getElementById('user-code-modal');
-    if (modal) modal.style.display = 'flex';
-}
-
-function hideUserCodeModal() {
-    const modal = document.getElementById('user-code-modal');
-    if (modal) modal.style.display = 'none';
-}
-
-function showUserCodeBanner() {
-    const banner = document.getElementById('user-code-banner');
-    const display = document.getElementById('user-code-display');
-    
-    if (banner && display && userCodeSystem.userCode) {
-        display.textContent = `Código: ${userCodeSystem.userCode}`;
-        banner.style.display = 'flex';
-    }
-}
-
-// =============================================
-// FUNCIONES PRINCIPALES - CORREGIDAS
-// =============================================
-
-async function initializeFirebaseSync() {
-    console.log('🔄 Inicializando Firebase Sync...');
-    
-    if (firebaseInitialized && firebaseSync && firebaseSync.initialized) {
-        console.log('✅ Firebase Sync ya estaba inicializado');
-        return true;
-    }
-    
-    firebaseSync = new FirebaseSync();
-    const success = await firebaseSync.initialize();
-    
-    if (success) {
-        console.log('✅ Firebase Sync inicializado CORRECTAMENTE');
-        firebaseInitialized = true;
-        
-        if (!loadingData) {
-            setTimeout(async () => {
-                await cargarDatos();
-            }, 1000);
-        }
-        
-        return true;
-    } else {
-        console.log('📱 Usando almacenamiento local solamente');
-        firebaseInitialized = false;
-        return false;
-    }
-}
-
-async function cargarDatos() {
-    if (loadingData) {
-        console.log('⏳ Carga de datos en progreso, omitiendo...');
-        return;
-    }
-    
-    loadingData = true;
-    console.log('🔄 Cargando datos...');
-    
-    try {
-        try {
-            const historialGuardado = localStorage.getItem('historialViajes');
-            if (historialGuardado) {
-                historial = JSON.parse(historialGuardado);
-                console.log('💾 Historial local cargado:', historial.length, 'viajes');
-            }
-            
-            const datosGuardados = localStorage.getItem('DIBER_data');
-            if (datosGuardados) {
-                const datos = JSON.parse(datosGuardados);
-                perfiles = datos.perfiles || [];
-                perfilActual = datos.perfilActual || null;
-                console.log('💾 Datos generales cargados');
-            }
-        } catch (error) {
-            console.error('Error cargando datos locales:', error);
-            perfiles = [];
-            historial = [];
-        }
-
-        if (firebaseSync && firebaseSync.initialized) {
-            try {
-                console.log('☁️ Intentando cargar desde Firebase...');
-                
-                const cloudProfiles = await firebaseSync.loadProfiles();
-                if (cloudProfiles && cloudProfiles.length > 0) {
-                    console.log('✅ Perfiles de Firebase cargados:', cloudProfiles.length);
-                    perfiles = cloudProfiles;
-                    
-                    if (!perfilActual && perfiles.length > 0) {
-                        perfilActual = perfiles[0];
-                    }
-                }
-                
-                const cloudTrips = await firebaseSync.loadTrips();
-                if (cloudTrips && cloudTrips.length > 0) {
-                    console.log('✅ Viajes de Firebase cargados:', cloudTrips.length);
-                    
-                    const combinedHistorial = [...historial];
-                    cloudTrips.forEach(cloudTrip => {
-                        const exists = combinedHistorial.some(localTrip => localTrip.id === cloudTrip.id);
-                        if (!exists) {
-                            combinedHistorial.push(cloudTrip);
-                        }
-                    });
-                    
-                    historial = combinedHistorial
-                        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                        .slice(0, 100);
-                    
-                    console.log('🔄 Historial combinado:', historial.length, 'viajes');
-                    
-                    localStorage.setItem('historialViajes', JSON.stringify(historial));
-                }
-            } catch (error) {
-                console.error('❌ Error cargando Firebase:', error);
-            }
-        }
-
-        if (!perfilActual && perfiles.length > 0) {
-            perfilActual = perfiles[0];
-        }
-
-        actualizarInterfazPerfiles();
-        actualizarEstadisticas();
-        actualizarHistorialConFiltros();
-        
-        guardarDatos();
-        
-        console.log('🎉 Carga de datos completada');
-        console.log('📊 Resumen final:', {
-            perfiles: perfiles.length,
-            historial: historial.length,
-            perfilActual: perfilActual?.nombre
-        });
-        
-    } finally {
-        loadingData = false;
-    }
-}
-
-function guardarDatos() {
-    console.log('💾 Guardando datos...');
-    
-    localStorage.setItem('historialViajes', JSON.stringify(historial));
-    
-    localStorage.setItem('DIBER_data', JSON.stringify({
-        perfiles,
-        perfilActual,
-        historial,
-        version: '2.0',
-        ultimaActualizacion: new Date().toISOString()
-    }));
-
-    console.log('✅ Datos guardados localmente');
-    console.log('📊 Resumen guardado:', {
-        perfiles: perfiles.length,
-        historial: historial.length,
-        perfilActual: perfilActual?.nombre
-    });
-}
-
-// =============================================
 // FUNCIONES DE UTILIDAD - ACTUALIZADAS
 // =============================================
 
@@ -1919,11 +1520,11 @@ function mostrarResultadoRapido(resultado) {
     modal.innerHTML = `
         <div class="modal-rapido-contenido-mejorado">
             <div class="modal-trafico-header ${tieneTrafico ? 'trafico-' + resultado.trafficAnalysis.trafficCondition : 'trafico-low'}">
-                <div class="trafico-status">
+                <div class="trafico-status" id="modal-trafico-status">
                     <span class="trafico-emoji-big">${trafficInfo.emoji}</span>
                     <div class="trafico-info">
                         <div class="trafico-title">Análisis de Tráfico</div>
-                        <div class="trafico-condition">${trafficInfo.text.toUpperCase()}</div>
+                        <div class="trafico-condition" id="modal-trafico-condition">${trafficInfo.text.toUpperCase()}</div>
                     </div>
                 </div>
                 <button class="modal-cerrar-elegante" onclick="cerrarModalRapido()">
@@ -1934,21 +1535,21 @@ function mostrarResultadoRapido(resultado) {
             <div class="tiempo-ajustado-section">
                 <div class="tiempo-original">
                     <span class="tiempo-label">Tiempo estimado:</span>
-                    <span class="tiempo-valor">${resultado.minutos || 0} min</span>
+                    <span class="tiempo-valor" id="modal-tiempo-original">${resultado.minutos || 0} min</span>
                 </div>
                 <div class="flecha-ajuste">↓</div>
                 <div class="tiempo-real">
                     <span class="tiempo-label">Con tráfico real:</span>
-                    <span class="tiempo-valor destacado">${tiempoReal} min</span>
+                    <span class="tiempo-valor destacado" id="modal-tiempo-real">${tiempoReal} min</span>
                 </div>
             </div>
 
-            <div class="resultado-principal">
-                <div class="badge-rentabilidad ${resultado.rentabilidad}">
+            <div class="resultado-principal" id="modal-resultado-principal">
+                <div class="badge-rentabilidad ${resultado.rentabilidad}" id="modal-badge-rentabilidad">
                     <div class="badge-emoji">${resultado.emoji}</div>
                     <div class="badge-content">
                         <div class="badge-title">${resultado.texto}</div>
-                        <div class="badge-subtitle">${obtenerSubtituloRentabilidad(resultado)}</div>
+                        <div class="badge-subtitle" id="modal-badge-subtitle">${obtenerSubtituloRentabilidad(resultado)}</div>
                     </div>
                 </div>
             </div>
@@ -1957,33 +1558,33 @@ function mostrarResultadoRapido(resultado) {
                 <div class="metrica-card">
                     <div class="metrica-icono">💸</div>
                     <div class="metrica-content">
-                        <div class="metrica-valor">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
+                        <div class="metrica-valor" id="modal-ganancia-minuto">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
                         <div class="metrica-label">Por minuto</div>
                     </div>
                 </div>
                 <div class="metrica-card">
                     <div class="metrica-icono">🛣️</div>
                     <div class="metrica-content">
-                        <div class="metrica-valor">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
+                        <div class="metrica-valor" id="modal-ganancia-km">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
                         <div class="metrica-label">Por km</div>
                     </div>
                 </div>
                 <div class="metrica-card">
                     <div class="metrica-icono">📊</div>
                     <div class="metrica-content">
-                        <div class="metrica-valor">${calcularEficiencia(resultado)}%</div>
+                        <div class="metrica-valor" id="modal-eficiencia">${calcularEficiencia(resultado)}%</div>
                         <div class="metrica-label">Eficiencia</div>
                     </div>
                 </div>
             </div>
 
             ${tieneTrafico ? `
-            <div class="impacto-trafico">
+            <div class="impacto-trafico" id="modal-impacto-trafico">
                 <div class="impacto-header">
                     <span class="impacto-icon">📈</span>
                     <span class="impacto-title">Impacto del Tráfico</span>
                 </div>
-                <div class="impacto-content">
+                <div class="impacto-content" id="modal-impacto-content">
                     ${obtenerMensajeImpacto(resultado.trafficAnalysis)}
                 </div>
             </div>
@@ -1993,12 +1594,12 @@ function mostrarResultadoRapido(resultado) {
                 <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
                     <span class="btn-icon">❌</span>
                     <span class="btn-text">Rechazar Viaje</span>
-                    <span class="btn-badge">No rentable</span>
+                    <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
                 </button>
-                <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)">
+                <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)" id="modal-btn-aceptar">
                     <span class="btn-icon">✅</span>
                     <span class="btn-text">Aceptar Viaje</span>
-                    <span class="btn-badge">${resultado.rentabilidad === 'rentable' ? 'Recomendado' : 'Con cuidado'}</span>
+                    <span class="btn-badge" id="modal-badge-aceptar">${resultado.rentabilidad === 'rentable' ? 'Recomendado' : 'Con cuidado'}</span>
                 </button>
             </div>
         </div>
@@ -2027,96 +1628,6 @@ function obtenerMensajeImpacto(trafficAnalysis) {
     if (ajuste > 20) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Considerar el impacto`;
     if (ajuste > 0) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Impacto mínimo`;
     return 'Tráfico fluido - Sin impacto en el tiempo';
-}
-
-// =============================================
-// CONFIGURACIÓN DE EVENT LISTENERS
-// =============================================
-
-function configurarEventListeners() {
-    console.log('🎯 Configurando event listeners...');
-    
-    inicializarTabs();
-    
-    if (elementos.tarifa) {
-        elementos.tarifa.addEventListener('input', manejarCalculoAutomatico);
-    }
-    if (elementos.minutos) {
-        elementos.minutos.addEventListener('input', manejarCalculoAutomatico);
-    }
-    if (elementos.distancia) {
-        elementos.distancia.addEventListener('input', manejarCalculoAutomatico);
-    }
-    
-    if (elementos['aceptar-viaje']) {
-        elementos['aceptar-viaje'].addEventListener('click', () => procesarViaje(true));
-    }
-    if (elementos['rechazar-viaje']) {
-        elementos['rechazar-viaje'].addEventListener('click', () => procesarViaje(false));
-    }
-    
-    if (elementos['clear-history']) {
-        elementos['clear-history'].addEventListener('click', limpiarHistorialCompleto);
-    }
-    
-    if (elementos['exportar-historial']) {
-        elementos['exportar-historial'].addEventListener('click', mostrarExportModal);
-    }
-    
-    if (elementos['nuevo-perfil-btn']) {
-        elementos['nuevo-perfil-btn'].addEventListener('click', () => mostrarConfigPerfil());
-    }
-    if (elementos['volver-perfiles']) {
-        elementos['volver-perfiles'].addEventListener('click', () => mostrarPantalla('perfil'));
-    }
-    if (elementos['cancelar-perfil']) {
-        elementos['cancelar-perfil'].addEventListener('click', () => mostrarPantalla('perfil'));
-    }
-    if (elementos['cambiar-perfil']) {
-        elementos['cambiar-perfil'].addEventListener('click', () => mostrarPantalla('perfil'));
-    }
-    if (elementos['perfil-form']) {
-        elementos['perfil-form'].addEventListener('submit', guardarPerfil);
-    }
-    
-    if (elementos['theme-toggle']) {
-        elementos['theme-toggle'].addEventListener('click', alternarTema);
-    }
-  
-    if (elementos['sync-status-btn']) {
-        elementos['sync-status-btn'].addEventListener('click', mostrarPanelSync);
-    }
-    
-    document.querySelectorAll('.filtro-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            cambiarFiltroHistorial(btn.dataset.filtro);
-        });
-    });
-    
-    console.log('✅ Event listeners configurados');
-}
-
-function alternarTema() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('DIBER_theme', newTheme);
-    
-    const themeIcon = elementos['theme-toggle']?.querySelector('.theme-icon');
-    if (themeIcon) {
-        themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
-    }
-}
-
-function aplicarTemaGuardado() {
-    const savedTheme = localStorage.getItem('DIBER_theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    
-    const themeIcon = elementos['theme-toggle']?.querySelector('.theme-icon');
-    if (themeIcon) {
-        themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-    }
 }
 
 // =============================================
@@ -2236,6 +1747,413 @@ async function inicializarSistemaTrafico() {
         
     } catch (error) {
         console.error('❌ Error inicializando sistema de tráfico:', error);
+    }
+}
+
+// =============================================
+// CONFIGURACIÓN DE EVENT LISTENERS
+// =============================================
+
+function configurarEventListeners() {
+    console.log('🎯 Configurando event listeners...');
+    
+    inicializarTabs();
+    
+    if (elementos.tarifa) {
+        elementos.tarifa.addEventListener('input', manejarCalculoAutomatico);
+    }
+    if (elementos.minutos) {
+        elementos.minutos.addEventListener('input', manejarCalculoAutomatico);
+    }
+    if (elementos.distancia) {
+        elementos.distancia.addEventListener('input', manejarCalculoAutomatico);
+    }
+    
+    if (elementos['aceptar-viaje']) {
+        elementos['aceptar-viaje'].addEventListener('click', () => procesarViaje(true));
+    }
+    if (elementos['rechazar-viaje']) {
+        elementos['rechazar-viaje'].addEventListener('click', () => procesarViaje(false));
+    }
+    
+    if (elementos['clear-history']) {
+        elementos['clear-history'].addEventListener('click', limpiarHistorialCompleto);
+    }
+    
+    if (elementos['exportar-historial']) {
+        elementos['exportar-historial'].addEventListener('click', mostrarExportModal);
+    }
+    
+    if (elementos['nuevo-perfil-btn']) {
+        elementos['nuevo-perfil-btn'].addEventListener('click', () => mostrarConfigPerfil());
+    }
+    if (elementos['volver-perfiles']) {
+        elementos['volver-perfiles'].addEventListener('click', () => mostrarPantalla('perfil'));
+    }
+    if (elementos['cancelar-perfil']) {
+        elementos['cancelar-perfil'].addEventListener('click', () => mostrarPantalla('perfil'));
+    }
+    if (elementos['cambiar-perfil']) {
+        elementos['cambiar-perfil'].addEventListener('click', () => mostrarPantalla('perfil'));
+    }
+    if (elementos['perfil-form']) {
+        elementos['perfil-form'].addEventListener('submit', guardarPerfil);
+    }
+    
+    if (elementos['theme-toggle']) {
+        elementos['theme-toggle'].addEventListener('click', alternarTema);
+    }
+  
+    if (elementos['sync-status-btn']) {
+        elementos['sync-status-btn'].addEventListener('click', mostrarPanelSync);
+    }
+    
+    // Botón de activar ubicación
+    if (elementos['activar-ubicacion-btn']) {
+        elementos['activar-ubicacion-btn'].addEventListener('click', activarUbicacion);
+    }
+    
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            cambiarFiltroHistorial(btn.dataset.filtro);
+        });
+    });
+    
+    console.log('✅ Event listeners configurados');
+}
+
+function alternarTema() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('DIBER_theme', newTheme);
+    
+    const themeIcon = elementos['theme-toggle']?.querySelector('.theme-icon');
+    if (themeIcon) {
+        themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    }
+}
+
+function aplicarTemaGuardado() {
+    const savedTheme = localStorage.getItem('DIBER_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    const themeIcon = elementos['theme-toggle']?.querySelector('.theme-icon');
+    if (themeIcon) {
+        themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    }
+}
+
+// =============================================
+// FUNCIÓN PARA ACTIVAR UBICACIÓN
+// =============================================
+
+function activarUbicacion() {
+    console.log('📍 Activando sistema de ubicación...');
+    
+    const btn = document.getElementById('activar-ubicacion-btn');
+    const status = document.getElementById('location-status');
+    
+    if (btn) {
+        btn.innerHTML = '<span class="button-icon">🔄</span> Obteniendo ubicación...';
+        btn.disabled = true;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            console.log('✅ Ubicación obtenida correctamente');
+            
+            if (btn) {
+                btn.style.display = 'none';
+            }
+            if (status) {
+                status.classList.remove('hidden');
+            }
+            
+            if (trafficAnalyzer) {
+                trafficAnalyzer.lastLocation = {
+                    coords: {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    },
+                    timestamp: Date.now()
+                };
+            }
+            
+            mostrarMensaje('📍 Ubicación activada - Análisis de tráfico funcionando', 'success');
+            
+            const minutos = parseFloat(elementos.minutos?.value) || 0;
+            if (minutos > 0) {
+                setTimeout(calcularAutomatico, 500);
+            }
+        },
+        (error) => {
+            console.error('❌ Error obteniendo ubicación:', error);
+            
+            if (btn) {
+                btn.innerHTML = '<span class="button-icon">📍</span> Activar Análisis de Tráfico';
+                btn.disabled = false;
+            }
+            
+            let mensaje = 'No se pudo obtener la ubicación. ';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    mensaje += 'Permiso denegado.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    mensaje += 'Ubicación no disponible.';
+                    break;
+                case error.TIMEOUT:
+                    mensaje += 'Tiempo de espera agotado.';
+                    break;
+                default:
+                    mensaje += 'Error desconocido.';
+            }
+            
+            mostrarError(mensaje);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+// =============================================
+// SISTEMA DE EXPORTACIÓN DE HISTORIAL
+// =============================================
+
+function exportarHistorial() {
+    console.log('📤 Exportando historial...');
+    
+    if (!historial || historial.length === 0) {
+        mostrarError('No hay historial para exportar');
+        return;
+    }
+
+    try {
+        let csvContent = "Fecha,Ganancia (RD$),Tiempo (min),Distancia (km),Ganancia/Minuto,Ganancia/Km,Rentabilidad\n";
+        
+        historial.forEach(viaje => {
+            const fecha = viaje.fecha || 'Fecha desconocida';
+            const ganancia = viaje.ganancia || viaje.tarifa || 0;
+            const minutos = viaje.minutos || 0;
+            const distancia = viaje.distancia || 0;
+            const porMinuto = viaje.gananciaPorMinuto || viaje.porMinuto || 0;
+            const porKm = viaje.gananciaPorKm || viaje.porKm || 0;
+            const rentabilidad = viaje.texto || (viaje.rentable ? 'RENTABLE' : 'NO RENTABLE');
+            
+            csvContent += `"${fecha}",${ganancia},${minutos},${distancia},${porMinuto},${porKm},"${rentabilidad}"\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `DIBER_historial_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        mostrarMensaje('✅ Historial exportado correctamente', 'success');
+        
+    } catch (error) {
+        console.error('❌ Error exportando historial:', error);
+        mostrarError('Error al exportar el historial');
+    }
+}
+
+function exportarHistorialPDF() {
+    console.log('📄 Generando PDF con resumen COMPLETO...');
+    
+    if (!historial || historial.length === 0) {
+        mostrarError('No hay historial para exportar');
+        return;
+    }
+
+    try {
+        const stats = obtenerEstadisticasCompletas();
+        
+        const pdfContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>DIBER - Reporte Completo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1a73e8, #1565c0);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .logo { font-size: 3em; margin-bottom: 15px; }
+        .title { font-size: 2.2em; font-weight: 700; margin-bottom: 10px; }
+        .subtitle { font-size: 1.1em; opacity: 0.9; font-weight: 400; }
+        
+        .content { padding: 40px 30px; }
+        
+        .section {
+            margin-bottom: 35px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #1a73e8;
+        }
+        
+        .section-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #1a73e8;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 2px solid #e9ecef;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #1a73e8;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 25px;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 0.9em;
+            border-top: 1px solid #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚗</div>
+            <h1 class="title">DIBER - Reporte Completo</h1>
+            <p class="subtitle">Análisis detallado de tu actividad</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2 class="section-title">📊 Información General</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.totalViajes}</div>
+                        <div class="stat-label">Total de Viajes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.viajesRentables}</div>
+                        <div class="stat-label">Viajes Rentables</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${formatearMoneda(stats.gananciaTotal)}</div>
+                        <div class="stat-label">Ganancia Total</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.tiempoTotal} min</div>
+                        <div class="stat-label">Tiempo Total</div>
+                    </div>
+                </div>
+                <p><strong>Generado el:</strong> ${new Date().toLocaleString('es-DO')}</p>
+                <p><strong>Perfil activo:</strong> ${perfilActual?.nombre || 'No especificado'}</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Reporte generado por DIBER • ${new Date().getFullYear()}</p>
+            <p>¡Sigue maximizando tus ganancias! 🚀</p>
+        </div>
+    </div>
+</body>
+</html>
+        `;
+
+        const ventana = window.open('', '_blank');
+        ventana.document.write(pdfContent);
+        ventana.document.close();
+        
+        setTimeout(() => {
+            ventana.print();
+        }, 1000);
+        
+        mostrarMensaje('✅ PDF generado correctamente', 'success');
+        
+    } catch (error) {
+        console.error('❌ Error generando PDF:', error);
+        mostrarError('Error al generar el PDF');
+    }
+}
+
+function mostrarExportModal() {
+    console.log('📤 Mostrando modal de exportación');
+    if (elementos.exportModal) {
+        elementos.exportModal.style.display = 'flex';
+    }
+}
+
+function configurarModalExportacion() {
+    console.log('🔧 Configurando modal de exportación');
+    const btnExportarPDF = document.getElementById('exportar-pdf');
+    if (btnExportarPDF) {
+        btnExportarPDF.addEventListener('click', function() {
+            console.log('📄 Click en exportar PDF');
+            exportarHistorialPDF();
+            cerrarExportModal();
+        });
     }
 }
 
@@ -2373,7 +2291,6 @@ async function resetearSincronizacion() {
 
 function diagnosticarSincronizacion() {
     console.log('🔍 DIAGNÓSTICO DE SINCRONIZACIÓN COMPLETO');
-    console.log('=========================================');
     
     console.log('🌐 FIREBASE:');
     console.log('• Inicializado:', firebaseSync?.initialized);
@@ -2384,20 +2301,6 @@ function diagnosticarSincronizacion() {
     console.log('• Perfiles:', perfiles.length);
     console.log('• Historial:', historial.length, 'viajes');
     console.log('• Perfil actual:', perfilActual?.nombre);
-    
-    const localData = localStorage.getItem('DIBER_data');
-    const historialLocal = localStorage.getItem('historialViajes');
-    const userCode = localStorage.getItem('DIBER_user_code');
-    
-    console.log('📦 LOCALSTORAGE:');
-    console.log('• DIBER_data:', localData ? JSON.parse(localData).historial?.length + ' viajes' : 'No hay datos');
-    console.log('• historialViajes:', historialLocal ? JSON.parse(historialLocal).length + ' viajes' : 'No hay datos');
-    console.log('• DIBER_user_code:', userCode || 'No hay código');
-    
-    console.log('🔧 PROBLEMAS COMUNES:');
-    console.log('• User Code válido:', userCodeSystem.userCode && userCodeSystem.userCode.length >= 3);
-    console.log('• Firebase disponible:', typeof firebase !== 'undefined');
-    console.log('• Perfil seleccionado:', !!perfilActual);
     
     return {
         firebaseInicializado: firebaseSync?.initialized,
@@ -2485,20 +2388,6 @@ window.diagnosticarSincronizacion = diagnosticarSincronizacion;
 window.resincronizarCompleta = resincronizarCompleta;
 window.resetearSincronizacion = resetearSincronizacion;
 window.verificarConexionFirebase = verificarConexionFirebase;
-
-function cambiarUsuario() {
-    if (confirm('¿Estás seguro de que quieres cambiar de usuario?')) {
-        localStorage.removeItem('DIBER_user_code');
-        userCodeSystem.userCode = null;
-        userCodeSystem.userId = null;
-        userCodeSystem.initialized = false;
-        
-        const banner = document.getElementById('user-code-banner');
-        if (banner) banner.style.display = 'none';
-        
-        showUserCodeModal();
-    }
-}
 
 // =============================================
 // EJECUCIÓN PRINCIPAL
