@@ -279,32 +279,24 @@
     <!-- Pantalla Principal de Cálculos -->
     <div id="main-screen" class="screen">
         <div class="container">
- <div class="app-header">
-    <!-- Grupo izquierdo: 2 iconos -->
-    <div class="header-group header-group-left">
-        <button id="cambiar-perfil" class="header-icon-btn" title="Cambiar perfil">
-            👤
+           <div class="app-header">
+    <div class="header-actions">
+        <button id="cambiar-perfil" class="secondary-button small" title="Cambiar perfil">
+            <span class="button-icon">👤</span>
         </button>
-        <button id="sync-status-btn" class="header-icon-btn" title="Sincronización">
-            🌐
+        <!-- NUEVO BOTÓN DE SYNC -->
+        <button id="sync-status-btn" class="secondary-button small" title="Estado de sincronización">
+            <span class="button-icon" id="sync-btn-icon">🌐</span>
+        </button>
+        <button id="theme-toggle" class="theme-toggle" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
+            <span class="theme-icon">🌙</span>
         </button>
     </div>
-    
-    <!-- Logo completamente centrado -->
-    <div class="header-logo">
+    <div class="logo-container">
         <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
     </div>
-    
-    <!-- Grupo derecho: 2 iconos -->
-    <div class="header-group header-group-right">
-        <button id="theme-toggle" class="header-icon-btn" title="Cambiar tema">
-            🌙
-        </button>
-        <button class="header-icon-btn" title="Configuración">
-            ⚙️
-        </button>
-    </div>
 </div>
+
             <!-- Indicador de Estado -->
             <div id="status-indicator" class="status-indicator hidden">
                 <span id="status-text">Calculando...</span>
@@ -1287,121 +1279,8 @@
         .btn-aceptar-elegante .btn-badge {
             background: #c8e6c9;
         }
-        
-  /* HEADER CORREGIDO - ESTRUCTURA CLARA */
-    .app-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 0;
-        width: 100%;
-        max-width: 100%;
-        position: relative;
-    }
-
-    .header-group {
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        flex: 0 0 auto;
-    }
-
-    .header-group-left {
-        justify-content: flex-start;
-        margin-left: 10px;
-    }
-
-    .header-group-right {
-        justify-content: flex-end;
-        margin-right: 10px;
-    }
-
-    .header-logo {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-
-    .app-logo {
-        height: 45px;
-        width: auto;
-        max-width: 150px;
-    }
-
-    .header-icon-btn {
-        width: 50px;
-        height: 50px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f8f9fa;
-        border: 2px solid #e9ecef;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-size: 20px;
-    }
-
-    .header-icon-btn:hover {
-        background: #007cba;
-        border-color: #007cba;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 124, 186, 0.3);
-    }
-
-    /* Responsive mejorado */
-    @media (max-width: 480px) {
-        .app-header {
-            padding: 15px 0;
-        }
-        
-        .header-icon-btn {
-            width: 44px;
-            height: 44px;
-            font-size: 18px;
-        }
-        
-        .app-logo {
-            height: 40px;
-        }
-        
-        .header-group {
-            gap: 12px;
-        }
-        
-        .header-group-left {
-            margin-left: 5px;
-        }
-        
-        .header-group-right {
-            margin-right: 5px;
-        }
-    }
-
-    @media (max-width: 360px) {
-        .header-icon-btn {
-            width: 40px;
-            height: 40px;
-            font-size: 16px;
-        }
-        
-        .app-logo {
-            height: 35px;
-        }
-        
-        .header-group {
-            gap: 8px;
-        }
-    }
-</style>
+    </style>
 </body>
 </html>
-
-
 
 
