@@ -3182,17 +3182,17 @@ function agregarEstilosTrafico() {
 }
 
 /* ============================================= */
-/* ESTILOS PARA HEADER REORGANIZADO - CORRECCIÓN MEJORADA */
+/* ESTILOS PARA HEADER REORGANIZADO - VERSIÓN FINAL */
 /* ============================================= */
 
 .app-header {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    padding: 10px 0;
+    padding: 15px 0;
     position: relative;
     width: 100%;
-    gap: 15px;
+    gap: 20px;
 }
 
 .header-left {
@@ -3211,77 +3211,78 @@ function agregarEstilosTrafico() {
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     justify-content: flex-end;
 }
 
-/* Logo más pequeño y ajustado */
+/* Logo MÁS GRANDE */
 .app-logo {
-    max-height: 35px !important;
+    max-height: 60px !important;
     width: auto;
     object-fit: contain;
 }
 
-/* Estilos específicos para el botón de código de usuario */
+/* Botón de código - SOLO EMOJI */
 .user-code-button {
     display: flex;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
     background: var(--card-bg) !important;
     border: 1px solid var(--border-color) !important;
     border-radius: 8px !important;
-    padding: 6px 10px !important;
+    padding: 8px 10px !important;
     cursor: pointer !important;
     color: var(--text-primary) !important;
-    font-size: 0.85em !important;
+    font-size: 1.1em !important;
     min-width: auto !important;
     transition: all 0.3s !important;
-    white-space: nowrap;
+    width: 40px;
+    height: 40px;
 }
 
 .user-code-button:hover {
     border-color: var(--primary-blue) !important;
     background: rgba(26, 115, 232, 0.1) !important;
+    transform: scale(1.05);
 }
 
-/* Botones más compactos */
+/* Botones de acciones */
 .header-actions .secondary-button.small {
-    padding: 6px 8px !important;
+    padding: 8px 10px !important;
     min-width: auto !important;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Asegurar que los botones sean compactos */
 .header-actions button {
     min-width: auto !important;
-    padding: 6px 8px !important;
+    padding: 8px 10px !important;
 }
 
 /* Responsive para móviles */
 @media (max-width: 768px) {
     .app-header {
         grid-template-columns: auto 1fr auto;
-        gap: 10px;
-        padding: 8px 0;
-    }
-    
-    .user-code-button .user-code-display {
-        display: none;
-    }
-    
-    .user-code-button {
-        padding: 6px 8px !important;
+        gap: 15px;
+        padding: 12px 0;
     }
     
     .app-logo {
-        max-height: 30px !important;
+        max-height: 50px !important;
     }
     
     .header-actions {
-        gap: 5px;
+        gap: 8px;
     }
     
-    .header-actions button {
-        padding: 5px 7px !important;
+    .user-code-button,
+    .header-actions .secondary-button.small {
+        width: 36px;
+        height: 36px;
+        padding: 6px 8px !important;
     }
 }
 
@@ -3289,24 +3290,24 @@ function agregarEstilosTrafico() {
 @media (max-width: 480px) {
     .app-header {
         grid-template-columns: auto 1fr auto;
-        gap: 8px;
+        gap: 10px;
+        padding: 10px 0;
     }
     
     .app-logo {
-        max-height: 28px !important;
+        max-height: 45px !important;
     }
     
     .header-actions {
-        gap: 4px;
+        gap: 6px;
     }
     
-    .header-actions button {
-        padding: 4px 6px !important;
-        font-size: 0.8em;
-    }
-    
-    .user-code-button {
-        padding: 4px 6px !important;
+    .user-code-button,
+    .header-actions .secondary-button.small {
+        width: 34px;
+        height: 34px;
+        padding: 5px 7px !important;
+        font-size: 1em !important;
     }
 }
 
