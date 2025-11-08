@@ -469,7 +469,7 @@ async function cargarDatos() {
                 const datos = JSON.parse(datosGuardados);
                 perfiles = datos.perfiles || [];
                 perfilActual = datos.perfilActual || null;
-                console.log('💾 Datos generales cargados');
+                console.log('💾 Datos generales cargados LOCALMENTE');
             }
         } catch (error) {
             console.error('Error cargando datos locales:', error);
@@ -477,21 +477,23 @@ async function cargarDatos() {
             historial = [];
         }
 
-        // Cargar desde Firebase si está disponible
+        // Cargar desde Firebase solo si no hay datos locales o para sincronizar
         if (firebaseSync && firebaseSync.initialized) {
             try {
-                console.log('☁️ Intentando cargar desde Firebase...');
+                console.log('☁️ Verificando sincronización con Firebase...');
                 
-                const cloudProfiles = await firebaseSync.loadProfiles();
-                if (cloudProfiles && cloudProfiles.length > 0) {
-                    console.log('✅ Perfiles de Firebase cargados:', cloudProfiles.length);
-                    perfiles = cloudProfiles;
-                    
-                    if (!perfilActual && perfiles.length > 0) {
-                        perfilActual = perfiles[0];
+                // SOLO sincronizar si no hay datos locales
+                if (perfiles.length === 0) {
+                    const cloudProfiles = await firebaseSync.loadProfiles();
+                    if (cloudProfiles && cloudProfiles.length > 0) {
+                        console.log('✅ Perfiles de Firebase cargados (sin datos locales):', cloudProfiles.length);
+                        perfiles = cloudProfiles;
                     }
+                } else {
+                    console.log('📱 Usando datos locales, omitiendo carga de Firebase');
                 }
                 
+                // Para el historial, combinar sin reemplazar
                 const cloudTrips = await firebaseSync.loadTrips();
                 if (cloudTrips && cloudTrips.length > 0) {
                     console.log('✅ Viajes de Firebase cargados:', cloudTrips.length);
@@ -526,13 +528,12 @@ async function cargarDatos() {
         actualizarEstadisticas();
         actualizarHistorialConFiltros();
         
-        guardarDatos();
-        
         console.log('🎉 Carga de datos completada');
         console.log('📊 Resumen final:', {
             perfiles: perfiles.length,
             historial: historial.length,
-            perfilActual: perfilActual?.nombre
+            perfilActual: perfilActual?.nombre,
+            rendimiento: perfilActual?.rendimiento
         });
         
     } finally {
@@ -540,9 +541,10 @@ async function cargarDatos() {
     }
 }
 
-function guardarDatos() {
+async function guardarDatos() {
     console.log('💾 Guardando datos...');
     
+    // Guardar localmente primero
     localStorage.setItem('historialViajes', JSON.stringify(historial));
     
     localStorage.setItem('DIBER_data', JSON.stringify({
@@ -554,6 +556,19 @@ function guardarDatos() {
     }));
 
     console.log('✅ Datos guardados localmente');
+    
+    // Sincronizar inmediatamente con Firebase si está disponible
+    if (firebaseSync && firebaseSync.initialized) {
+        try {
+            console.log('☁️ Sincronizando perfiles con Firebase...');
+            for (const perfil of perfiles) {
+                await firebaseSync.saveProfile(perfil);
+            }
+            console.log('✅ Perfiles sincronizados con Firebase');
+        } catch (error) {
+            console.error('❌ Error sincronizando con Firebase:', error);
+        }
+    }
 }
 
 // =============================================
@@ -2483,6 +2498,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
