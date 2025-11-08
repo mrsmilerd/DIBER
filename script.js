@@ -2041,7 +2041,7 @@ function exportarHistorial() {
 }
 
 function exportarHistorialPDF() {
-    console.log('📄 Generando PDF con resumen COMPLETO...');
+    console.log('📄 Generando PDF con reporte COMPLETO Y DETALLADO...');
     
     if (!historial || historial.length === 0) {
         mostrarError('No hay historial para exportar');
@@ -2049,14 +2049,18 @@ function exportarHistorialPDF() {
     }
 
     try {
-        const stats = obtenerEstadisticasCompletas();
+        const viajesFiltrados = filtrarHistorial(historial, filtroActual);
+        const stats = obtenerEstadisticasCompletasConFiltro(viajesFiltrados);
+        
+        // Obtener información del filtro para el título
+        const infoFiltro = obtenerInfoFiltroPDF();
         
         const pdfContent = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>DIBER - Reporte Completo</title>
+    <title>DIBER - Reporte Detallado</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -2066,18 +2070,14 @@ function exportarHistorialPDF() {
             font-family: 'Inter', sans-serif;
             line-height: 1.6;
             color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 30px;
-            min-height: 100vh;
+            background: white;
+            padding: 25px;
         }
         
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-            overflow: hidden;
         }
         
         .header {
@@ -2085,11 +2085,13 @@ function exportarHistorialPDF() {
             color: white;
             padding: 40px 30px;
             text-align: center;
+            border-radius: 15px 15px 0 0;
         }
         
         .logo { font-size: 3em; margin-bottom: 15px; }
         .title { font-size: 2.2em; font-weight: 700; margin-bottom: 10px; }
         .subtitle { font-size: 1.1em; opacity: 0.9; font-weight: 400; }
+        .filtro-info { font-size: 1em; margin-top: 10px; opacity: 0.8; }
         
         .content { padding: 40px 30px; }
         
@@ -2111,10 +2113,11 @@ function exportarHistorialPDF() {
             gap: 10px;
         }
         
+        /* ESTADÍSTICAS PRINCIPALES */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
             margin-bottom: 25px;
         }
         
@@ -2140,6 +2143,91 @@ function exportarHistorialPDF() {
             font-weight: 500;
         }
         
+        /* MÉTRICAS DE RENDIMIENTO */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #2e7d32;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        /* TABLA DE VIAJES */
+        .viajes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .viajes-table th {
+            background: #1a73e8;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .viajes-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .viajes-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .badge-rentable { background: #e8f5e8; color: #2e7d32; }
+        .badge-oportunidad { background: #fff3cd; color: #856404; }
+        .badge-no-rentable { background: #ffebee; color: #c62828; }
+        
+        /* RESUMEN FINANCIERO */
+        .financial-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .financial-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .financial-positive { border-top: 4px solid #2e7d32; }
+        .financial-negative { border-top: 4px solid #c62828; }
+        .financial-neutral { border-top: 4px solid #ff9800; }
+        
         .footer {
             text-align: center;
             padding: 25px;
@@ -2147,6 +2235,18 @@ function exportarHistorialPDF() {
             color: #6c757d;
             font-size: 0.9em;
             border-top: 1px solid #e9ecef;
+            border-radius: 0 0 15px 15px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        @media print {
+            body { padding: 0; }
+            .container { box-shadow: none; }
         }
     </style>
 </head>
@@ -2154,39 +2254,146 @@ function exportarHistorialPDF() {
     <div class="container">
         <div class="header">
             <div class="logo">🚗</div>
-            <h1 class="title">DIBER - Reporte Completo</h1>
-            <p class="subtitle">Análisis detallado de tu actividad</p>
+            <h1 class="title">DIBER - Reporte Detallado</h1>
+            <p class="subtitle">Análisis completo de tu actividad de conducción</p>
+            <p class="filtro-info">${infoFiltro.titulo} • ${infoFiltro.subtitulo}</p>
         </div>
         
         <div class="content">
+            <!-- RESUMEN EJECUTIVO -->
             <div class="section">
-                <h2 class="section-title">📊 Información General</h2>
+                <h2 class="section-title">📊 Resumen Ejecutivo</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-value">${stats.totalViajes}</div>
-                        <div class="stat-label">Total de Viajes</div>
+                        <div class="stat-label">Total Viajes</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value">${stats.viajesRentables}</div>
                         <div class="stat-label">Viajes Rentables</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">${formatearMoneda(stats.gananciaTotal)}</div>
-                        <div class="stat-label">Ganancia Total</div>
+                        <div class="stat-value">${stats.eficiencia.toFixed(1)}%</div>
+                        <div class="stat-label">Tasa de Eficiencia</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">${stats.tiempoTotal} min</div>
-                        <div class="stat-label">Tiempo Total</div>
+                        <div class="stat-value">${formatearMonedaPDF(stats.gananciaTotal)}</div>
+                        <div class="stat-label">Ganancia Total</div>
                     </div>
                 </div>
-                <p><strong>Generado el:</strong> ${new Date().toLocaleString('es-DO')}</p>
-                <p><strong>Perfil activo:</strong> ${perfilActual?.nombre || 'No especificado'}</p>
+            </div>
+            
+            <!-- MÉTRICAS DE RENDIMIENTO -->
+            <div class="section">
+                <h2 class="section-title">🚀 Métricas de Rendimiento</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">${formatearMonedaPDF(stats.gananciaPorHora)}</div>
+                        <div class="metric-label">Ganancia por Hora</div>
+                        <div style="font-size: 0.9em; color: #6c757d; margin-top: 5px;">
+                            Basado en ${stats.tiempoTotal} minutos trabajados
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${formatearMonedaPDF(stats.viajePromedio)}</div>
+                        <div class="metric-label">Viaje Promedio</div>
+                        <div style="font-size: 0.9em; color: #6c757d; margin-top: 5px;">
+                            Por cada viaje aceptado
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${stats.distanciaTotal} ${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}</div>
+                        <div class="metric-label">Distancia Total</div>
+                        <div style="font-size: 0.9em; color: #6c757d; margin-top: 5px;">
+                            Recorrido total
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${Math.round(stats.tiempoTotal / 60)}h ${stats.tiempoTotal % 60}m</div>
+                        <div class="metric-label">Tiempo Total</div>
+                        <div style="font-size: 0.9em; color: #6c757d; margin-top: 5px;">
+                            Tiempo invertido
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- DETALLE DE VIAJES -->
+            <div class="section">
+                <h2 class="section-title">📋 Detalle de Viajes (${viajesFiltrados.length})</h2>
+                ${viajesFiltrados.length > 0 ? `
+                <table class="viajes-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Ganancia</th>
+                            <th>Tiempo</th>
+                            <th>Distancia</th>
+                            <th>Por Minuto</th>
+                            <th>Por Km</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${viajesFiltrados.map(viaje => `
+                            <tr>
+                                <td>${viaje.fecha || 'N/A'}</td>
+                                <td><strong>${formatearMonedaPDF(viaje.ganancia || viaje.tarifa)}</strong></td>
+                                <td>${viaje.minutos || 0} min</td>
+                                <td>${viaje.distancia || 0} ${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}</td>
+                                <td>${formatearMonedaPDF(viaje.gananciaPorMinuto || viaje.porMinuto)}/min</td>
+                                <td>${formatearMonedaPDF(viaje.gananciaPorKm || viaje.porKm)}/${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}</td>
+                                <td>
+                                    <span class="badge ${obtenerClaseBadge(viaje)}">
+                                        ${obtenerTextoBadge(viaje)}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                ` : `
+                <div class="empty-state">
+                    <h3>No hay viajes en este período</h3>
+                    <p>Los viajes aceptados aparecerán en el reporte</p>
+                </div>
+                `}
+            </div>
+            
+            <!-- RESUMEN FINANCIERO -->
+            <div class="section">
+                <h2 class="section-title">💰 Resumen Financiero</h2>
+                <div class="financial-grid">
+                    <div class="financial-card financial-positive">
+                        <div class="stat-value">${formatearMonedaPDF(stats.gananciaTotal)}</div>
+                        <div class="stat-label">Ingresos Totales</div>
+                    </div>
+                    <div class="financial-card financial-negative">
+                        <div class="stat-value">${formatearMonedaPDF(stats.costoTotal)}</div>
+                        <div class="stat-label">Costos Totales</div>
+                    </div>
+                    <div class="financial-card ${stats.gananciaNeta >= 0 ? 'financial-positive' : 'financial-negative'}">
+                        <div class="stat-value">${formatearMonedaPDF(stats.gananciaNeta)}</div>
+                        <div class="stat-label">Ganancia Neta</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; background: white; padding: 15px; border-radius: 10px;">
+                    <h4 style="color: #1a73e8; margin-bottom: 10px;">📈 Desglose de Costos</h4>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                        <div><strong>Combustible:</strong> ${formatearMonedaPDF(stats.costoCombustibleTotal)}</div>
+                        <div><strong>Mantenimiento:</strong> ${formatearMonedaPDF(stats.costoMantenimientoTotal)}</div>
+                        <div><strong>Seguro:</strong> ${formatearMonedaPDF(stats.costoSeguroTotal)}</div>
+                        <div><strong>Total Costos:</strong> ${formatearMonedaPDF(stats.costoTotal)}</div>
+                    </div>
+                </div>
             </div>
         </div>
         
         <div class="footer">
-            <p>Reporte generado por DIBER • ${new Date().getFullYear()}</p>
-            <p>¡Sigue maximizando tus ganancias! 🚀</p>
+            <p><strong>Reporte generado por DIBER</strong> • ${new Date().toLocaleString('es-DO')}</p>
+            <p>Perfil activo: <strong>${perfilActual?.nombre || 'No especificado'}</strong> • ${infoFiltro.titulo}</p>
+            <p style="margin-top: 10px;">¡Sigue maximizando tus ganancias! 🚀</p>
         </div>
     </div>
 </body>
@@ -2201,7 +2408,7 @@ function exportarHistorialPDF() {
             ventana.print();
         }, 1000);
         
-        mostrarMensaje('✅ PDF generado correctamente', 'success');
+        mostrarMensaje('✅ PDF generado correctamente con filtro: ' + filtroActual, 'success');
         
     } catch (error) {
         console.error('❌ Error generando PDF:', error);
@@ -2226,6 +2433,109 @@ function configurarModalExportacion() {
             cerrarExportModal();
         });
     }
+}
+
+// FUNCIONES AUXILIARES PARA EL PDF
+function obtenerEstadisticasCompletasConFiltro(viajesFiltrados) {
+    const viajesAceptados = viajesFiltrados.filter(v => v.aceptado === true);
+    const totalViajes = viajesAceptados.length;
+    
+    const viajesRentables = viajesAceptados.filter(v => {
+        return v.rentable === true || v.rentabilidad === 'rentable';
+    }).length;
+    
+    const gananciaTotal = viajesAceptados.reduce((sum, v) => sum + (v.ganancia || v.tarifa || 0), 0);
+    const tiempoTotal = viajesAceptados.reduce((sum, v) => sum + (v.minutos || 0), 0);
+    const distanciaTotal = viajesAceptados.reduce((sum, v) => sum + (v.distancia || 0), 0);
+    
+    const costoCombustibleTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoCombustible || 0), 0);
+    const costoMantenimientoTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoMantenimiento || 0), 0);
+    const costoSeguroTotal = viajesAceptados.reduce((sum, v) => sum + (v.costoSeguro || 0), 0);
+    const costoTotal = costoCombustibleTotal + costoMantenimientoTotal + costoSeguroTotal;
+    
+    const gananciaNeta = gananciaTotal - costoTotal;
+    const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
+    const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
+    const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
+
+    return {
+        viajesAceptados,
+        totalViajes,
+        viajesRentables,
+        gananciaTotal,
+        tiempoTotal,
+        distanciaTotal,
+        costoCombustibleTotal,
+        costoMantenimientoTotal,
+        costoSeguroTotal,
+        costoTotal,
+        gananciaNeta,
+        eficiencia,
+        viajePromedio,
+        gananciaPorHora
+    };
+}
+
+function obtenerInfoFiltroPDF() {
+    const ahora = new Date();
+    let titulo = '';
+    let subtitulo = '';
+    
+    switch(filtroActual) {
+        case 'hoy':
+            const hoy = ahora.toLocaleDateString('es-DO');
+            titulo = 'Reporte del Día';
+            subtitulo = `Fecha: ${hoy}`;
+            break;
+        case 'semana':
+            const inicioSemana = new Date(ahora);
+            inicioSemana.setDate(ahora.getDate() - ahora.getDay());
+            const finSemana = new Date(inicioSemana);
+            finSemana.setDate(inicioSemana.getDate() + 6);
+            titulo = 'Reporte Semanal';
+            subtitulo = `Semana: ${inicioSemana.toLocaleDateString('es-DO')} - ${finSemana.toLocaleDateString('es-DO')}`;
+            break;
+        case 'mes':
+            const mes = ahora.toLocaleDateString('es-DO', { month: 'long', year: 'numeric' });
+            titulo = 'Reporte Mensual';
+            subtitulo = `Mes: ${mes.charAt(0).toUpperCase() + mes.slice(1)}`;
+            break;
+        case 'todos':
+            titulo = 'Reporte Completo';
+            subtitulo = 'Todos los viajes registrados';
+            break;
+        default:
+            titulo = 'Reporte Personalizado';
+            subtitulo = `Filtro: ${filtroActual}`;
+    }
+    
+    return { titulo, subtitulo };
+}
+
+function formatearMonedaPDF(valor) {
+    const moneda = perfilActual?.moneda || 'DOP';
+    const simbolo = moneda === 'USD' ? '$' : 'RD$';
+    return `${simbolo}${typeof valor === 'number' ? valor.toFixed(2) : '0.00'}`;
+}
+
+function obtenerClaseBadge(viaje) {
+    const rentable = viaje.rentable !== undefined ? 
+        Boolean(viaje.rentable) : 
+        (viaje.rentabilidad === 'rentable');
+    
+    if (rentable) return 'badge-rentable';
+    if (viaje.rentabilidad === 'oportunidad') return 'badge-oportunidad';
+    return 'badge-no-rentable';
+}
+
+function obtenerTextoBadge(viaje) {
+    const rentable = viaje.rentable !== undefined ? 
+        Boolean(viaje.rentable) : 
+        (viaje.rentabilidad === 'rentable');
+    
+    if (rentable) return 'RENTABLE';
+    if (viaje.rentabilidad === 'oportunidad') return 'OPORTUNIDAD';
+    return 'NO RENTABLE';
 }
 
 // =============================================
@@ -2498,6 +2808,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
