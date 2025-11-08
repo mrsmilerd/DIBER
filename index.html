@@ -279,28 +279,28 @@
     <!-- Pantalla Principal de Cálculos -->
     <div id="main-screen" class="screen">
         <div class="container">
-  <div class="app-header">
-    <!-- Sección izquierda: 2 iconos -->
-    <div class="header-left">
-        <button id="cambiar-perfil" class="header-btn" title="Cambiar perfil">
+ <div class="app-header">
+    <!-- Grupo izquierdo: 2 iconos -->
+    <div class="header-group header-group-left">
+        <button id="cambiar-perfil" class="header-icon-btn" title="Cambiar perfil">
             👤
         </button>
-        <button id="sync-status-btn" class="header-btn" title="Sincronización">
+        <button id="sync-status-btn" class="header-icon-btn" title="Sincronización">
             🌐
         </button>
     </div>
     
-    <!-- Logo centrado -->
-    <div class="header-center">
+    <!-- Logo completamente centrado -->
+    <div class="header-logo">
         <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
     </div>
     
-    <!-- Sección derecha: 2 iconos -->
-    <div class="header-right">
-        <button id="theme-toggle" class="header-btn" title="Cambiar tema">
+    <!-- Grupo derecho: 2 iconos -->
+    <div class="header-group header-group-right">
+        <button id="theme-toggle" class="header-icon-btn" title="Cambiar tema">
             🌙
         </button>
-        <button class="header-btn" title="Configuración">
+        <button class="header-icon-btn" title="Configuración">
             ⚙️
         </button>
     </div>
@@ -1288,65 +1288,103 @@
             background: #c8e6c9;
         }
         
- /* HEADER CORREGIDO */
+  /* HEADER CORREGIDO - ESTRUCTURA CLARA */
     .app-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 15px 0;
-        position: relative;
+        padding: 20px 0;
         width: 100%;
+        max-width: 100%;
+        position: relative;
     }
 
-    .header-left,
-    .header-right {
+    .header-group {
         display: flex;
-        gap: 10px;
+        gap: 15px;
         align-items: center;
+        flex: 0 0 auto;
     }
 
-    .header-center {
+    .header-group-left {
+        justify-content: flex-start;
+        margin-left: 10px;
+    }
+
+    .header-group-right {
+        justify-content: flex-end;
+        margin-right: 10px;
+    }
+
+    .header-logo {
         flex: 1;
         display: flex;
         justify-content: center;
         align-items: center;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
     }
 
     .app-logo {
-        height: 40px;
+        height: 45px;
         width: auto;
-        max-width: 120px;
+        max-width: 150px;
     }
 
-    .header-btn {
-        width: 44px;
-        height: 44px;
+    .header-icon-btn {
+        width: 50px;
+        height: 50px;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--light-grey);
-        border: 2px solid var(--border-color);
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-size: 18px;
-        color: var(--text-primary);
+        font-size: 20px;
     }
 
-    .header-btn:hover {
-        background: var(--primary-blue);
-        border-color: var(--primary-blue);
+    .header-icon-btn:hover {
+        background: #007cba;
+        border-color: #007cba;
         color: white;
         transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 124, 186, 0.3);
     }
 
-    /* Responsive */
+    /* Responsive mejorado */
     @media (max-width: 480px) {
         .app-header {
-            padding: 12px 0;
+            padding: 15px 0;
         }
         
-        .header-btn {
+        .header-icon-btn {
+            width: 44px;
+            height: 44px;
+            font-size: 18px;
+        }
+        
+        .app-logo {
+            height: 40px;
+        }
+        
+        .header-group {
+            gap: 12px;
+        }
+        
+        .header-group-left {
+            margin-left: 5px;
+        }
+        
+        .header-group-right {
+            margin-right: 5px;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .header-icon-btn {
             width: 40px;
             height: 40px;
             font-size: 16px;
@@ -1356,14 +1394,14 @@
             height: 35px;
         }
         
-        .header-left,
-        .header-right {
+        .header-group {
             gap: 8px;
         }
     }
 </style>
 </body>
 </html>
+
 
 
 
