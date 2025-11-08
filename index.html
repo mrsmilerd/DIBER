@@ -279,21 +279,27 @@
     <!-- Pantalla Principal de Cálculos -->
     <div id="main-screen" class="screen">
         <div class="container">
-           <div class="app-header">
-    <div class="header-actions">
+ <div class="app-header">
+    <div class="header-actions left">
         <button id="cambiar-perfil" class="secondary-button small" title="Cambiar perfil">
             <span class="button-icon">👤</span>
         </button>
-        <!-- NUEVO BOTÓN DE SYNC -->
         <button id="sync-status-btn" class="secondary-button small" title="Estado de sincronización">
             <span class="button-icon" id="sync-btn-icon">🌐</span>
         </button>
+    </div>
+    
+    <div class="logo-container">
+        <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
+    </div>
+    
+    <div class="header-actions right">
         <button id="theme-toggle" class="theme-toggle" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
             <span class="theme-icon">🌙</span>
         </button>
-    </div>
-    <div class="logo-container">
-        <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
+        <button id="config-button" class="secondary-button small" title="Configuración">
+            <span class="button-icon">🔑</span>
+        </button>
     </div>
 </div>
 
@@ -1279,6 +1285,95 @@
         .btn-aceptar-elegante .btn-badge {
             background: #c8e6c9;
         }
+
+        /* Estilos para el header reorganizado */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    position: relative;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+}
+
+.header-actions.left {
+    justify-content: flex-start;
+}
+
+.header-actions.right {
+    justify-content: flex-end;
+}
+
+.logo-container {
+    flex: 0 0 auto;
+    margin: 0 20px;
+}
+
+.app-logo {
+    height: 40px;
+    width: auto;
+    max-width: 120px;
+}
+
+/* Asegurar que los botones sean consistentes */
+.secondary-button.small {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.theme-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+    background: var(--light-grey);
+    transform: scale(1.05);
+}
+
+.button-icon, .theme-icon {
+    font-size: 16px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .app-header {
+        padding: 12px 0;
+    }
+    
+    .logo-container {
+        margin: 0 15px;
+    }
+    
+    .app-logo {
+        height: 35px;
+    }
+    
+    .secondary-button.small,
+    .theme-toggle {
+        width: 36px;
+        height: 36px;
+    }
+}
     </style>
 </body>
 </html>
+
