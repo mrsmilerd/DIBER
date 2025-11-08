@@ -65,7 +65,7 @@ function inicializarElementosDOM() {
         'rendimiento-ganancia-hora-linea', 'rendimiento-viaje-promedio-linea',
         'rendimiento-ganancia-hora-card', 'rendimiento-distancia-total-card',
         'rendimiento-eficiencia-card', 'rendimiento-eficiencia-badge',
-        'user-code-modal', 'user-code-input', 'user-code-banner',
+        'user-code-modal', 'user-code-input',
         'activar-ubicacion-btn', 'location-status',
         'modal-rapido', 'modal-trafico-header', 'modal-trafico-status', 'modal-trafico-condition',
         'modal-tiempo-original', 'modal-tiempo-real', 'modal-resultado-principal',
@@ -75,6 +75,7 @@ function inicializarElementosDOM() {
         'code-status', 'sync-perfil-info', 'sync-panel-status', 'current-device-icon',
         'current-device-name', 'current-device-id', 'firebase-status', 'last-sync-time',
         'cloud-profiles-count', 'cloud-history-count', 'force-sync-btn'
+        // 'user-code-banner' removido - se creará dinámicamente
     ];
 
     ids.forEach(id => {
@@ -161,6 +162,7 @@ function setUserCode() {
     
     localStorage.setItem('DIBER_user_code', code);
     
+    // CORREGIDO: Usar hideUserCodeModal() en lugar de referencia directa
     hideUserCodeModal();
     showUserCodeBanner();
     
@@ -197,6 +199,73 @@ function hideUserCodeModal() {
 
 // CORREGIDO: Función mejorada para mostrar el banner de código
 function showUserCodeBanner() {
+    let banner = document.getElementById('user-code-banner');
+    
+    // Si el banner no existe, crearlo dinámicamente
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'user-code-banner';
+        banner.className = 'user-code-banner';
+        banner.style.cssText = `
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin: 10px 0;
+            padding: 10px 15px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 90%;
+        `;
+        
+        // Insertar al inicio del body
+        document.body.insertBefore(banner, document.body.firstChild);
+        
+        console.log('✅ Banner de código de usuario creado dinámicamente');
+        elementos['user-code-banner'] = banner; // Guardar referencia
+    }
+    
+    if (userCodeSystem.userCode) {
+        // Limpiar contenido existente
+        banner.innerHTML = '';
+        
+        // Crear elemento de display
+        const display = document.createElement('span');
+        display.className = 'user-code-display';
+        display.style.cssText = 'font-weight: bold; font-size: 1.1em;';
+        display.textContent = `Código: ${userCodeSystem.userCode}`;
+        
+        // Crear botón de cambiar
+        const changeBtn = document.createElement('button');
+        changeBtn.className = 'secondary-button small';
+        changeBtn.innerHTML = '<span class="button-icon">🔄</span> Cambiar';
+        changeBtn.onclick = cambiarUsuario;
+        changeBtn.style.cssText = `
+            background: rgba(255,255,255,0.2) !important;
+            color: white !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
+            padding: 5px 10px !important;
+            border-radius: 5px !important;
+            cursor: pointer !important;
+            font-size: 0.9em !important;
+        `;
+        
+        // Agregar elementos al banner
+        banner.appendChild(display);
+        banner.appendChild(changeBtn);
+        
+        banner.style.display = 'flex';
+        
+        console.log('✅ Banner de código mostrado:', userCodeSystem.userCode);
+    }
+}
     const banner = document.getElementById('user-code-banner');
     
     if (banner && userCodeSystem.userCode) {
@@ -221,6 +290,12 @@ function showUserCodeBanner() {
             banner.appendChild(changeBtn);
         }
     }
+
+function hideUserCodeBanner() {
+    const banner = document.getElementById('user-code-banner');
+    if (banner) {
+        banner.style.display = 'none';
+    }
 }
 
 function cambiarUsuario() {
@@ -230,10 +305,10 @@ function cambiarUsuario() {
         userCodeSystem.userId = null;
         userCodeSystem.initialized = false;
         
-        const banner = document.getElementById('user-code-banner');
-        if (banner) banner.style.display = 'none';
-        
+        hideUserCodeBanner();
         showUserCodeModal();
+        
+        mostrarStatus('🔑 Sesión cerrada. Ingresa un nuevo código.', 'info');
     }
 }
 
@@ -2427,3 +2502,4 @@ window.onclick = function(event) {
         }
     }
 };
+
