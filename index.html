@@ -280,29 +280,31 @@
     <div id="main-screen" class="screen">
         <div class="container">
   <div class="app-header">
-    <div class="header-section left">
-        <button id="cambiar-perfil" class="header-button" title="Cambiar perfil">
-            <span class="button-icon">👤</span>
+    <!-- Sección izquierda: 2 iconos -->
+    <div class="header-left">
+        <button id="cambiar-perfil" class="header-btn" title="Cambiar perfil">
+            👤
         </button>
-        <button id="sync-status-btn" class="header-button" title="Estado de sincronización">
-            <span class="button-icon" id="sync-btn-icon">🌐</span>
+        <button id="sync-status-btn" class="header-btn" title="Sincronización">
+            🌐
         </button>
     </div>
     
-    <div class="logo-container">
+    <!-- Logo centrado -->
+    <div class="header-center">
         <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
     </div>
     
-    <div class="header-section right">
-        <button id="theme-toggle" class="header-button" title="Cambiar tema">
-            <span class="theme-icon">🌙</span>
+    <!-- Sección derecha: 2 iconos -->
+    <div class="header-right">
+        <button id="theme-toggle" class="header-btn" title="Cambiar tema">
+            🌙
         </button>
-        <button id="config-button" class="header-button" title="Configuración">
-            <span class="button-icon">🔑</span>
+        <button class="header-btn" title="Configuración">
+            ⚙️
         </button>
     </div>
 </div>
-
             <!-- Indicador de Estado -->
             <div id="status-indicator" class="status-indicator hidden">
                 <span id="status-text">Calculando...</span>
@@ -1286,49 +1288,39 @@
             background: #c8e6c9;
         }
         
-  /* HEADER MEJORADO - SOLO ESTOS ESTILOS NUEVOS */
+ /* HEADER CORREGIDO */
     .app-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 15px 20px;
-        background: var(--card-bg);
-        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-        border-radius: 16px;
-        margin: 15px 20px 25px 20px;
-        border: 1px solid var(--border-color);
+        padding: 15px 0;
+        position: relative;
+        width: 100%;
     }
 
-    .header-section {
+    .header-left,
+    .header-right {
         display: flex;
+        gap: 10px;
         align-items: center;
-        gap: 12px;
+    }
+
+    .header-center {
         flex: 1;
-    }
-
-    .header-section.left {
-        justify-content: flex-start;
-    }
-
-    .header-section.right {
-        justify-content: flex-end;
-    }
-
-    .logo-container {
-        flex: 0 0 auto;
-        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     .app-logo {
-        height: 42px;
+        height: 40px;
         width: auto;
-        max-width: 140px;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        max-width: 120px;
     }
 
-    .header-button {
-        width: 46px;
-        height: 46px;
+    .header-btn {
+        width: 44px;
+        height: 44px;
         border-radius: 12px;
         display: flex;
         align-items: center;
@@ -1341,41 +1333,37 @@
         color: var(--text-primary);
     }
 
-    .header-button:hover {
+    .header-btn:hover {
         background: var(--primary-blue);
         border-color: var(--primary-blue);
         color: white;
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 124, 186, 0.3);
     }
 
-    .header-button.active {
-        background: var(--primary-blue);
-        border-color: var(--primary-blue);
-        color: white;
-    }
-
-    /* Responsive para el header */
+    /* Responsive */
     @media (max-width: 480px) {
         .app-header {
-            padding: 12px 15px;
-            margin: 10px 15px 20px 15px;
-            border-radius: 14px;
+            padding: 12px 0;
         }
         
-        .header-button {
-            width: 42px;
-            height: 42px;
+        .header-btn {
+            width: 40px;
+            height: 40px;
             font-size: 16px;
-            border-radius: 10px;
         }
         
         .app-logo {
-            height: 38px;
+            height: 35px;
+        }
+        
+        .header-left,
+        .header-right {
+            gap: 8px;
         }
     }
 </style>
 </body>
 </html>
+
 
 
