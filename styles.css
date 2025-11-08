@@ -3181,54 +3181,87 @@ function agregarEstilosTrafico() {
     font-size: 0.9em !important;
 }
 
-/* Estilos para el header reorganizado */
+/* ============================================= */
+/* ESTILOS PARA HEADER REORGANIZADO - CORRECCIÓN MEJORADA */
+/* ============================================= */
+
 .app-header {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    padding: 15px 0;
+    padding: 10px 0;
     position: relative;
+    width: 100%;
+    gap: 15px;
 }
 
 .header-left {
     display: flex;
     align-items: center;
-    flex: 1;
+    justify-content: flex-start;
 }
 
 .logo-container {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
 }
 
 .header-actions {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex: 1;
     justify-content: flex-end;
 }
 
-/* Asegurar que el logo esté siempre visible */
+/* Logo más pequeño y ajustado */
 .app-logo {
-    position: relative;
-    z-index: 20;
+    max-height: 35px !important;
+    width: auto;
+    object-fit: contain;
 }
 
-/* Responsive */
+/* Estilos específicos para el botón de código de usuario */
+.user-code-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 6px 10px !important;
+    cursor: pointer !important;
+    color: var(--text-primary) !important;
+    font-size: 0.85em !important;
+    min-width: auto !important;
+    transition: all 0.3s !important;
+    white-space: nowrap;
+}
+
+.user-code-button:hover {
+    border-color: var(--primary-blue) !important;
+    background: rgba(26, 115, 232, 0.1) !important;
+}
+
+/* Botones más compactos */
+.header-actions .secondary-button.small {
+    padding: 6px 8px !important;
+    min-width: auto !important;
+}
+
+/* Asegurar que los botones sean compactos */
+.header-actions button {
+    min-width: auto !important;
+    padding: 6px 8px !important;
+}
+
+/* Responsive para móviles */
 @media (max-width: 768px) {
     .app-header {
-        padding: 10px 0;
-    }
-    
-    .header-left {
-        flex: 0.5;
-    }
-    
-    .header-actions {
-        flex: 0.5;
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        padding: 8px 0;
     }
     
     .user-code-button .user-code-display {
@@ -3236,6 +3269,55 @@ function agregarEstilosTrafico() {
     }
     
     .user-code-button {
-        padding: 8px !important;
+        padding: 6px 8px !important;
     }
+    
+    .app-logo {
+        max-height: 30px !important;
+    }
+    
+    .header-actions {
+        gap: 5px;
+    }
+    
+    .header-actions button {
+        padding: 5px 7px !important;
+    }
+}
+
+/* Para pantallas muy pequeñas */
+@media (max-width: 480px) {
+    .app-header {
+        grid-template-columns: auto 1fr auto;
+        gap: 8px;
+    }
+    
+    .app-logo {
+        max-height: 28px !important;
+    }
+    
+    .header-actions {
+        gap: 4px;
+    }
+    
+    .header-actions button {
+        padding: 4px 6px !important;
+        font-size: 0.8em;
+    }
+    
+    .user-code-button {
+        padding: 4px 6px !important;
+    }
+}
+
+/* Asegurar que no haya superposiciones */
+.header-left,
+.logo-container,
+.header-actions {
+    position: relative;
+    z-index: 10;
+}
+
+.logo-container {
+    z-index: 20;
 }
