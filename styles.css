@@ -3180,3 +3180,62 @@ function agregarEstilosTrafico() {
     padding: 8px 12px !important;
     font-size: 0.9em !important;
 }
+
+/* Estilos para el header reorganizado */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    position: relative;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.logo-container {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    justify-content: flex-end;
+}
+
+/* Asegurar que el logo esté siempre visible */
+.app-logo {
+    position: relative;
+    z-index: 20;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .app-header {
+        padding: 10px 0;
+    }
+    
+    .header-left {
+        flex: 0.5;
+    }
+    
+    .header-actions {
+        flex: 0.5;
+    }
+    
+    .user-code-button .user-code-display {
+        display: none;
+    }
+    
+    .user-code-button {
+        padding: 8px !important;
+    }
+}
