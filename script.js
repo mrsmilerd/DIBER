@@ -953,6 +953,56 @@ function manejarCalculoAutomatico() {
     timeoutCalculo = setTimeout(verificarDatosCompletos, 500);
 }
 
+function verificarDatosCompletos() {
+    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
+    
+    const tarifa = parseFloat(elementos.tarifa.value) || 0;
+    const minutos = parseFloat(elementos.minutos.value) || 0;
+    const distancia = parseFloat(elementos.distancia.value) || 0;
+    
+    // SOLO mostrar indicador si hay datos, pero NO el modal
+    const tieneDatos = tarifa > 0 || minutos > 0 || distancia > 0;
+    
+    if (elementos['auto-calc-indicator']) {
+        if (tieneDatos) {
+            elementos['auto-calc-indicator'].classList.remove('hidden');
+        } else {
+            elementos['auto-calc-indicator'].classList.add('hidden');
+        }
+    }
+    
+    // OCULTAR cualquier resultado rápido previo
+    if (elementos['resultado-rapido']) {
+        elementos['resultado-rapido'].classList.add('hidden');
+    }
+}
+
+// NUEVA FUNCIÓN: Solo se ejecuta cuando el usuario quiere calcular
+function calcularYMostrarModal() {
+    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
+    
+    const tarifa = parseFloat(elementos.tarifa.value) || 0;
+    const minutos = parseFloat(elementos.minutos.value) || 0;
+    const distancia = parseFloat(elementos.distancia.value) || 0;
+    
+    // VERIFICAR QUE TODOS LOS CAMPOS ESTÉN COMPLETOS
+    const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
+    
+    if (!datosCompletos) {
+        mostrarError('Por favor, completa todos los campos del viaje');
+        return;
+    }
+    
+    console.log('✅ Todos los datos completos, mostrando modal...');
+    
+    const resultado = calcularRentabilidad(tarifa, minutos, distancia);
+    
+    if (resultado) {
+        calculoActual = resultado;
+        mostrarResultadoRapido(resultado);
+    }
+}
+
 function calcularAutomatico() {
     if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
     
