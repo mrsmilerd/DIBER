@@ -74,7 +74,6 @@ function inicializarElementosDOM() {
         'code-status', 'sync-perfil-info', 'sync-panel-status', 'current-device-icon',
         'current-device-name', 'current-device-id', 'firebase-status', 'last-sync-time',
         'cloud-profiles-count', 'cloud-history-count', 'force-sync-btn'
-        // 'user-code-banner' removido - se integrará en header-actions
     ];
 
     ids.forEach(id => {
@@ -161,7 +160,7 @@ function setUserCode() {
     localStorage.setItem('DIBER_user_code', code);
     
     hideUserCodeModal();
-    showUserCodeBanner(); // Ahora se integra en el header
+    showUserCodeBanner();
     
     mostrarStatus('✅ Código de usuario establecido', 'success');
     
@@ -203,7 +202,6 @@ function showUserCodeBanner() {
     
     let codeButton = document.getElementById('user-code-button');
     
-    // Si el botón no existe, crearlo
     if (!codeButton) {
         codeButton = document.createElement('button');
         codeButton.id = 'user-code-button';
@@ -225,7 +223,6 @@ function showUserCodeBanner() {
             transition: all 0.3s;
         `;
         
-        // Insertar en header-left
         headerLeft.appendChild(codeButton);
         
         console.log('✅ Botón de código creado en header-left');
@@ -233,7 +230,6 @@ function showUserCodeBanner() {
     }
     
     if (userCodeSystem.userCode) {
-        // SOLO EMOJI - sin código de texto
         codeButton.innerHTML = `<span class="button-icon">🔑</span>`;
         codeButton.title = 'Código de sincronización: ' + userCodeSystem.userCode;
         
@@ -255,7 +251,6 @@ function mostrarInfoUserCode() {
     if (userCodeSystem.userCode) {
         mostrarStatus(`🔑 Código: ${userCodeSystem.userCode} - Haz clic para cambiar`, 'info');
         
-        // Mostrar opción para cambiar después de 2 segundos
         setTimeout(() => {
             if (confirm(`Tu código actual es: ${userCodeSystem.userCode}\n\n¿Quieres cambiar de código?`)) {
                 cambiarUsuario();
@@ -456,7 +451,6 @@ async function cargarDatos() {
     console.log('🔄 Cargando datos...');
     
     try {
-        // Cargar de localStorage primero
         try {
             const historialGuardado = localStorage.getItem('historialViajes');
             if (historialGuardado) {
@@ -477,12 +471,10 @@ async function cargarDatos() {
             historial = [];
         }
 
-        // Cargar desde Firebase solo si no hay datos locales o para sincronizar
         if (firebaseSync && firebaseSync.initialized) {
             try {
                 console.log('☁️ Verificando sincronización con Firebase...');
                 
-                // SOLO sincronizar si no hay datos locales
                 if (perfiles.length === 0) {
                     const cloudProfiles = await firebaseSync.loadProfiles();
                     if (cloudProfiles && cloudProfiles.length > 0) {
@@ -493,7 +485,6 @@ async function cargarDatos() {
                     console.log('📱 Usando datos locales, omitiendo carga de Firebase');
                 }
                 
-                // Para el historial, combinar sin reemplazar
                 const cloudTrips = await firebaseSync.loadTrips();
                 if (cloudTrips && cloudTrips.length > 0) {
                     console.log('✅ Viajes de Firebase cargados:', cloudTrips.length);
@@ -519,7 +510,6 @@ async function cargarDatos() {
             }
         }
 
-        // Asegurar que tenemos un perfil
         if (!perfilActual && perfiles.length > 0) {
             perfilActual = perfiles[0];
         }
@@ -544,7 +534,6 @@ async function cargarDatos() {
 async function guardarDatos() {
     console.log('💾 Guardando datos...');
     
-    // Guardar localmente primero
     localStorage.setItem('historialViajes', JSON.stringify(historial));
     
     localStorage.setItem('DIBER_data', JSON.stringify({
@@ -557,7 +546,6 @@ async function guardarDatos() {
 
     console.log('✅ Datos guardados localmente');
     
-    // Sincronizar inmediatamente con Firebase si está disponible
     if (firebaseSync && firebaseSync.initialized) {
         try {
             console.log('☁️ Sincronizando perfiles con Firebase...');
@@ -1040,7 +1028,6 @@ function mostrarConfigPerfil(perfil = null) {
     if (!form) return;
     
     if (perfil) {
-        // Cargar TODOS los valores del perfil, incluyendo los umbrales
         document.getElementById('perfil-id').value = perfil.id;
         document.getElementById('nombre-perfil').value = perfil.nombre;
         document.getElementById('tipo-medida').value = perfil.tipoMedida;
@@ -1049,7 +1036,6 @@ function mostrarConfigPerfil(perfil = null) {
         document.getElementById('precio-combustible').value = perfil.precioCombustible;
         document.getElementById('moneda').value = perfil.moneda;
         
-        // ESTAS SON LAS LÍNEAS IMPORTANTES - Cargar los umbrales guardados
         document.getElementById('umbral-minuto-rentable').value = perfil.umbralMinutoRentable || 6.00;
         document.getElementById('umbral-km-rentable').value = perfil.umbralKmRentable || 25.00;
         document.getElementById('umbral-minuto-oportunidad').value = perfil.umbralMinutoOportunidad || 5.00;
@@ -1058,7 +1044,6 @@ function mostrarConfigPerfil(perfil = null) {
         document.getElementById('costo-seguro').value = perfil.costoSeguro || 0;
         document.getElementById('costo-mantenimiento').value = perfil.costoMantenimiento || 0;
     } else {
-        // Para nuevo perfil, usar valores por defecto
         form.reset();
         document.getElementById('perfil-id').value = '';
         document.getElementById('umbral-minuto-rentable').value = '6.00';
@@ -1084,7 +1069,6 @@ function guardarPerfil(event) {
         rendimiento: parseFloat(document.getElementById('rendimiento').value),
         precioCombustible: parseFloat(document.getElementById('precio-combustible').value),
         moneda: document.getElementById('moneda').value,
-        // Asegurar que se guarden los valores actuales de los umbrales
         umbralMinutoRentable: parseFloat(document.getElementById('umbral-minuto-rentable').value),
         umbralKmRentable: parseFloat(document.getElementById('umbral-km-rentable').value),
         umbralMinutoOportunidad: parseFloat(document.getElementById('umbral-minuto-oportunidad').value),
@@ -1100,7 +1084,6 @@ function guardarPerfil(event) {
         return;
     }
     
-    // Verificar que los valores se están guardando correctamente
     console.log('💾 Guardando perfil con rendimiento:', perfil.rendimiento);
     console.log('💾 Umbrales guardados:', {
         minRent: perfil.umbralMinutoRentable,
@@ -1438,6 +1421,8 @@ function cerrarModalRapido() {
     const modalRapido = document.getElementById('modal-rapido');
     if (modalRapido) {
         modalRapido.classList.add('hidden');
+        // LIMPIAR FORMULARIO AL CERRAR MODAL
+        limpiarFormulario();
     }
 }
 
@@ -1570,7 +1555,7 @@ function guardarEnHistorial(resultado, aceptado) {
 }
 
 // =============================================
-// SISTEMA DE RESULTADO RÁPIDO
+// SISTEMA DE RESULTADO RÁPIDO - MODIFICADO
 // =============================================
 
 function mostrarResultadoRapido(resultado) {
@@ -1629,22 +1614,22 @@ function mostrarResultadoRapido(resultado) {
                 <div class="metrica-card">
                     <div class="metrica-icono">💸</div>
                     <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-minuto">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
-                        <div class="metrica-label">Por minuto</div>
+                        <div class="metrica-valor" id="modal-ganancia-minuto">${formatearMoneda(resultado.gananciaPorMinuto)}</div>
+                        <div class="metrica-label">Ganancia total</div>
                     </div>
                 </div>
                 <div class="metrica-card">
                     <div class="metrica-icono">🛣️</div>
                     <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-km">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
-                        <div class="metrica-label">Por km</div>
+                        <div class="metrica-valor" id="modal-ganancia-km">${resultado.distancia || 0} ${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}</div>
+                        <div class="metrica-label">Distancia</div>
                     </div>
                 </div>
                 <div class="metrica-card">
                     <div class="metrica-icono">📊</div>
                     <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-eficiencia">${calcularEficiencia(resultado)}%</div>
-                        <div class="metrica-label">Eficiencia</div>
+                        <div class="metrica-valor" id="modal-eficiencia">${resultado.minutos || 0} min</div>
+                        <div class="metrica-label">Tiempo</div>
                     </div>
                 </div>
             </div>
@@ -1879,7 +1864,6 @@ function configurarEventListeners() {
         elementos['sync-status-btn'].addEventListener('click', mostrarPanelSync);
     }
     
-    // Botón de activar ubicación
     if (elementos['activar-ubicacion-btn']) {
         elementos['activar-ubicacion-btn'].addEventListener('click', activarUbicacion);
     }
@@ -2052,7 +2036,6 @@ function exportarHistorialPDF() {
         const viajesFiltrados = filtrarHistorial(historial, filtroActual);
         const stats = obtenerEstadisticasCompletasConFiltro(viajesFiltrados);
         
-        // Obtener información del filtro para el título
         const infoFiltro = obtenerInfoFiltroPDF();
         
         const pdfContent = `
@@ -2113,7 +2096,6 @@ function exportarHistorialPDF() {
             gap: 10px;
         }
         
-        /* ESTADÍSTICAS PRINCIPALES */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -2143,7 +2125,6 @@ function exportarHistorialPDF() {
             font-weight: 500;
         }
         
-        /* MÉTRICAS DE RENDIMIENTO */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -2170,7 +2151,6 @@ function exportarHistorialPDF() {
             font-weight: 500;
         }
         
-        /* TABLA DE VIAJES */
         .viajes-table {
             width: 100%;
             border-collapse: collapse;
@@ -2209,7 +2189,6 @@ function exportarHistorialPDF() {
         .badge-oportunidad { background: #fff3cd; color: #856404; }
         .badge-no-rentable { background: #ffebee; color: #c62828; }
         
-        /* RESUMEN FINANCIERO */
         .financial-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -2260,7 +2239,6 @@ function exportarHistorialPDF() {
         </div>
         
         <div class="content">
-            <!-- RESUMEN EJECUTIVO -->
             <div class="section">
                 <h2 class="section-title">📊 Resumen Ejecutivo</h2>
                 <div class="stats-grid">
@@ -2283,7 +2261,6 @@ function exportarHistorialPDF() {
                 </div>
             </div>
             
-            <!-- MÉTRICAS DE RENDIMIENTO -->
             <div class="section">
                 <h2 class="section-title">🚀 Métricas de Rendimiento</h2>
                 <div class="metrics-grid">
@@ -2318,7 +2295,6 @@ function exportarHistorialPDF() {
                 </div>
             </div>
             
-            <!-- DETALLE DE VIAJES -->
             <div class="section">
                 <h2 class="section-title">📋 Detalle de Viajes (${viajesFiltrados.length})</h2>
                 ${viajesFiltrados.length > 0 ? `
@@ -2360,7 +2336,6 @@ function exportarHistorialPDF() {
                 `}
             </div>
             
-            <!-- RESUMEN FINANCIERO -->
             <div class="section">
                 <h2 class="section-title">💰 Resumen Financiero</h2>
                 <div class="financial-grid">
@@ -2435,7 +2410,6 @@ function configurarModalExportacion() {
     }
 }
 
-// FUNCIONES AUXILIARES PARA EL PDF
 function obtenerEstadisticasCompletasConFiltro(viajesFiltrados) {
     const viajesAceptados = viajesFiltrados.filter(v => v.aceptado === true);
     const totalViajes = viajesAceptados.length;
@@ -2660,7 +2634,7 @@ async function resincronizarCompleta() {
     }
 }
 
-async function resetearSincronizacion() {
+function resetearSincronizacion() {
     console.log('🔄 RESETEANDO SISTEMA DE SINCRONIZACIÓN...');
     
     if (confirm('¿Estás seguro de que quieres resetear la sincronización? Esto no borrará tus datos locales.')) {
