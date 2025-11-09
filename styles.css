@@ -3309,3 +3309,60 @@ function agregarEstilosTrafico() {
         font-size: 16px !important;
     }
 }
+
+/* Estilos para el resultado rápido (sin modal) */
+.resultado-rapido {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 15px;
+    border-left: 4px solid var(--primary-blue);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.resultado-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.resultado-badge.rentable {
+    color: #2e7d32;
+}
+
+.resultado-badge.oportunidad {
+    color: #ff9800;
+}
+
+.resultado-badge.no-rentable {
+    color: #c62828;
+}
+
+.resultado-metricas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.metrica-rapida {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.metrica-rapida:last-child {
+    border-bottom: none;
+}
+
+.metrica-label {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.metrica-valor {
+    font-weight: 600;
+    font-size: 0.9em;
+}
