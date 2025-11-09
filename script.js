@@ -1430,16 +1430,38 @@ function limpiarFormulario() {
 }
 
 function cerrarModal() {
+    console.log('❌ Cerrando modal principal...');
+    
+    // Cerrar teclado
+    cerrarTeclado();
+    
+    // Resetear formulario
+    resetearFormularioViaje();
+    
+    // Cerrar modal
     if (elementos.modalFondo) {
         elementos.modalFondo.style.display = 'none';
     }
+    
+    console.log('✅ Modal principal cerrado y formulario reseteado');
 }
 
 function cerrarModalRapido() {
+    console.log('❌ Cerrando modal rápido...');
+    
+    // Cerrar teclado primero
+    cerrarTeclado();
+    
+    // Resetear formulario
+    resetearFormularioViaje();
+    
+    // Cerrar modal
     const modalRapido = document.getElementById('modal-rapido');
     if (modalRapido) {
         modalRapido.classList.add('hidden');
     }
+    
+    console.log('✅ Modal rápido cerrado y formulario reseteado');
 }
 
 function cerrarExportModal() {
@@ -1501,7 +1523,7 @@ function procesarViajeRapido(aceptado) {
         return;
     }
 
-    cerrarModalRapido();
+    cerrarModalRapido(); // Esto ya incluye resetear el formulario
     
     const viajeParaHistorial = {
         ...calculoActual,
@@ -1518,8 +1540,6 @@ function procesarViajeRapido(aceptado) {
     } else {
         mostrarMensaje('❌ Viaje rechazado', 'info');
     }
-    
-    limpiarFormulario();
     
     actualizarEstadisticas();
     actualizarHistorialConFiltros();
@@ -1576,6 +1596,11 @@ function guardarEnHistorial(resultado, aceptado) {
 
 function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
+
+    console.log('🔄 Mostrando resultado rápido...');
+    
+    // CERRAR TECLADO AUTOMÁTICAMENTE AL MOSTRAR MODAL
+    cerrarTeclado();
 
     let modal = document.getElementById('modal-rapido');
     if (!modal) {
@@ -1655,6 +1680,8 @@ function mostrarResultadoRapido(resultado) {
 
     modal.classList.remove('hidden');
     calculoActual = resultado;
+    
+    console.log('✅ Modal rápido mostrado y teclado cerrado');
 }
 
 function obtenerSubtituloRentabilidad(resultado) {
@@ -2718,6 +2745,58 @@ async function inicializarApp() {
 }
 
 // =============================================
+// FUNCIONES PARA CERRAR TECLADO Y RESETEAR VALORES
+// =============================================
+
+function cerrarTeclado() {
+    console.log('⌨️ Cerrando teclado...');
+    // Forzar blur en todos los inputs para cerrar el teclado
+    const inputs = document.querySelectorAll('input[type="number"], input[type="text"]');
+    inputs.forEach(input => {
+        input.blur();
+    });
+    
+    // Método alternativo para dispositivos móviles
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+        document.activeElement.blur();
+    }
+    
+    // Crear y enfocar un elemento temporal para forzar el cierre del teclado
+    const tempInput = document.createElement('input');
+    tempInput.style.position = 'absolute';
+    tempInput.style.opacity = '0';
+    tempInput.style.height = '0';
+    tempInput.style.fontSize = '16px'; // Previene zoom en iOS
+    document.body.appendChild(tempInput);
+    tempInput.focus();
+    setTimeout(() => {
+        document.body.removeChild(tempInput);
+    }, 100);
+}
+
+function resetearFormularioViaje() {
+    console.log('🔄 Reseteando formulario de viaje...');
+    
+    // Resetear valores a vacío o cero
+    if (elementos.tarifa) elementos.tarifa.value = '';
+    if (elementos.minutos) elementos.minutos.value = '';
+    if (elementos.distancia) elementos.distancia.value = '';
+    
+    // Ocultar indicadores y resultados
+    if (elementos['auto-calc-indicator']) {
+        elementos['auto-calc-indicator'].classList.add('hidden');
+    }
+    if (elementos['resultado-rapido']) {
+        elementos['resultado-rapido'].classList.add('hidden');
+    }
+    
+    // Resetear cálculo actual
+    calculoActual = null;
+    
+    console.log('✅ Formulario reseteado');
+}
+
+// =============================================
 // FUNCIONES GLOBALES
 // =============================================
 
@@ -2785,6 +2864,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
