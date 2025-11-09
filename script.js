@@ -216,13 +216,14 @@ function showUserCodeBanner() {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 8px 10px;
+            padding: 6px 8px;
             cursor: pointer;
             color: var(--text-primary);
-            font-size: 1.1em;
-            width: 40px;
-            height: 40px;
+            font-size: 1em;
+            width: 36px;
+            height: 36px;
             transition: all 0.3s;
+            margin-top: 2px;
         `;
         
         // Insertar en header-left
@@ -2784,6 +2785,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
