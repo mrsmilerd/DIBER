@@ -51,7 +51,7 @@ function inicializarElementosDOM() {
     
     const ids = [
         'perfil-screen', 'config-perfil-screen', 'main-screen',
-        'status-indicator', 'status-text', 'auto-calc-indicator',
+        'status-indicator', 'status-text',
         'tarifa', 'minutos', 'distancia',
         'resultado-rapido', 'resultado-badge', 'resultado-emoji', 'resultado-texto',
         'metrica-minuto', 'metrica-km',
@@ -1429,7 +1429,6 @@ function limpiarFormulario() {
     if (elementos.tarifa) elementos.tarifa.value = '';
     if (elementos.minutos) elementos.minutos.value = '';
     if (elementos.distancia) elementos.distancia.value = '';
-    if (elementos['auto-calc-indicator']) elementos['auto-calc-indicator'].classList.add('hidden');
     if (elementos['resultado-rapido']) elementos['resultado-rapido'].classList.add('hidden');
     Actual = null;
     cerrarModalRapido();
@@ -2791,6 +2790,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
