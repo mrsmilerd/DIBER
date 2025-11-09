@@ -950,7 +950,7 @@ function manejarCalculoAutomatico() {
     if (timeoutCalculo) {
         clearTimeout(timeoutCalculo);
     }
-    timeoutCalculo = setTimeout(calcularAutomatico, 500);
+    timeoutCalculo = setTimeout(calcularAutomatico, 800); // Aumenté el tiempo a 800ms
 }
 
 function calcularAutomatico() {
@@ -960,9 +960,13 @@ function calcularAutomatico() {
     const minutos = parseFloat(elementos.minutos.value) || 0;
     const distancia = parseFloat(elementos.distancia.value) || 0;
     
+    // VERIFICAR QUE TODOS LOS CAMPOS ESTÉN COMPLETOS
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
+    const datosParciales = tarifa > 0 || minutos > 0 || distancia > 0;
     
     if (datosCompletos) {
+        console.log('✅ Todos los datos completos, mostrando resultado...');
+        
         if (elementos['auto-calc-indicator']) {
             elementos['auto-calc-indicator'].classList.remove('hidden');
         }
@@ -973,7 +977,22 @@ function calcularAutomatico() {
             calculoActual = resultado;
             mostrarResultadoRapido(resultado);
         }
+    } else if (datosParciales) {
+        // Solo mostrar indicador de cálculo sin mostrar modal
+        console.log('📝 Datos parciales, calculando sin mostrar modal...');
+        
+        if (elementos['auto-calc-indicator']) {
+            elementos['auto-calc-indicator'].classList.remove('hidden');
+        }
+        
+        const resultado = calcularRentabilidad(tarifa, minutos, distancia);
+        
+        if (resultado) {
+            calculoActual = resultado;
+            mostrarResultadoRapidoSinModal(resultado); // Nueva función sin modal
+        }
     } else {
+        // No hay datos, ocultar todo
         if (elementos['auto-calc-indicator']) {
             elementos['auto-calc-indicator'].classList.add('hidden');
         }
@@ -981,6 +1000,34 @@ function calcularAutomatico() {
             elementos['resultado-rapido'].classList.add('hidden');
         }
         cerrarModalRapido();
+    }
+}
+
+// NUEVA FUNCIÓN: Mostrar resultado sin abrir modal
+function mostrarResultadoRapidoSinModal(resultado) {
+    if (!resultado || !elementos['resultado-rapido']) return;
+    
+    // Solo actualizar el resultado rápido (pequeño) sin abrir modal
+    elementos['resultado-rapido'].classList.remove('hidden');
+    
+    if (elementos['resultado-emoji']) {
+        elementos['resultado-emoji'].textContent = resultado.emoji;
+    }
+    if (elementos['resultado-texto']) {
+        elementos['resultado-texto'].textContent = resultado.texto;
+    }
+    if (elementos['metrica-minuto']) {
+        elementos['metrica-minuto'].textContent = formatearMoneda(resultado.gananciaPorMinuto) + '/min';
+    }
+    if (elementos['metrica-km']) {
+        elementos['metrica-km'].textContent = formatearMoneda(resultado.gananciaPorKm) + '/km';
+    }
+    
+    // Actualizar clases CSS para el badge
+    const badge = elementos['resultado-badge'];
+    if (badge) {
+        badge.className = 'resultado-badge';
+        badge.classList.add(resultado.rentabilidad);
     }
 }
 
@@ -1598,6 +1645,16 @@ function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
 
     console.log('🔄 Mostrando resultado rápido...');
+    
+    // Verificar nuevamente que todos los datos estén completos
+    const tarifa = parseFloat(elementos.tarifa.value) || 0;
+    const minutos = parseFloat(elementos.minutos.value) || 0;
+    const distancia = parseFloat(elementos.distancia.value) || 0;
+    
+    if (!(tarifa > 0 && minutos > 0 && distancia > 0)) {
+        console.log('❌ Datos incompletos, no mostrar modal');
+        return;
+    }
     
     // CERRAR TECLADO AUTOMÁTICAMENTE AL MOSTRAR MODAL
     cerrarTeclado();
@@ -2864,6 +2921,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
