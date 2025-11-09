@@ -1003,56 +1003,6 @@ function calcularYMostrarModal() {
     }
 }
 
-function calcularAutomatico() {
-    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
-    
-    const tarifa = parseFloat(elementos.tarifa.value) || 0;
-    const minutos = parseFloat(elementos.minutos.value) || 0;
-    const distancia = parseFloat(elementos.distancia.value) || 0;
-    
-    // VERIFICAR QUE TODOS LOS CAMPOS ESTÉN COMPLETOS
-    const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
-    const datosParciales = tarifa > 0 || minutos > 0 || distancia > 0;
-    
-    if (datosCompletos) {
-        console.log('✅ Todos los datos completos, mostrando resultado...');
-        
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.remove('hidden');
-        }
-        
-        const resultado = calcularRentabilidad(tarifa, minutos, distancia);
-        
-        if (resultado) {
-            calculoActual = resultado;
-            mostrarResultadoRapido(resultado);
-        }
-    } else if (datosParciales) {
-        // Solo mostrar indicador de cálculo sin mostrar modal
-        console.log('📝 Datos parciales, calculando sin mostrar modal...');
-        
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.remove('hidden');
-        }
-        
-        const resultado = calcularRentabilidad(tarifa, minutos, distancia);
-        
-        if (resultado) {
-            calculoActual = resultado;
-            mostrarResultadoRapidoSinModal(resultado); // Nueva función sin modal
-        }
-    } else {
-        // No hay datos, ocultar todo
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.add('hidden');
-        }
-        if (elementos['resultado-rapido']) {
-            elementos['resultado-rapido'].classList.add('hidden');
-        }
-        cerrarModalRapido();
-    }
-}
-
 function calcularRentabilidad(tarifa, minutos, distancia) {
     if (!perfilActual) return null;
     
@@ -1921,6 +1871,15 @@ function configurarEventListeners() {
     }
     if (elementos.distancia) {
         elementos.distancia.addEventListener('input', manejarCalculoAutomatico);
+    }
+
+     // NUEVO: Botón para calcular y mostrar modal
+    const calcularBtn = document.getElementById('calcular-viaje-btn');
+    if (calcularBtn) {
+        calcularBtn.addEventListener('click', calcularYMostrarModal);
+        console.log('✅ Event listener agregado para botón calcular');
+    } else {
+        console.error('❌ No se encontró el botón calcular-viaje-btn');
     }
     
     if (elementos['aceptar-viaje']) {
@@ -2943,6 +2902,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
