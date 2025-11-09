@@ -11,6 +11,7 @@ let calculoActual = null;
 let timeoutCalculo = null;
 let firebaseSync;
 let filtroActual = 'hoy';
+let Actual = null;
 
 // --- Sistema de Código de Usuario ---
 let userCodeSystem = {
@@ -942,14 +943,20 @@ function cambiarPestana(tabId) {
 }
 
 // =============================================
-// SISTEMA DE CÁLCULO
+// SISTEMA DE CÁLCULO - CORREGIDO
 // =============================================
 
-function manejarAutomatico() {
-    if (timeout) {
-        clearTimeout(timeout);
+// Variable para el timeout del cálculo automático
+let timeoutCalculoAutomatico = null;
+
+function manejarCalculoAutomatico() {
+    // Limpiar timeout anterior si existe
+    if (timeoutCalculoAutomatico) {
+        clearTimeout(timeoutCalculoAutomatico);
     }
-    timeout = setTimeout(calcularAutomatico, 500);
+    
+    // Establecer nuevo timeout para cálculo automático
+    timeoutCalculoAutomatico = setTimeout(calcularAutomatico, 500);
 }
 
 function calcularAutomatico() {
@@ -962,7 +969,7 @@ function calcularAutomatico() {
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
     if (datosCompletos) {
-        // Cálculo automático activo (sin indicador visual)
+        console.log('🔄 Cálculo automático ejecutándose...');
         const resultado = calcularRentabilidad(tarifa, minutos, distancia);
         
         if (resultado) {
@@ -970,7 +977,7 @@ function calcularAutomatico() {
             mostrarResultadoRapido(resultado);
         }
     } else {
-        // Cálculo automático inactivo
+        console.log('⏸️ Cálculo automático pausado - datos incompletos');
         if (elementos['resultado-rapido']) {
             elementos['resultado-rapido'].classList.add('hidden');
         }
@@ -1414,6 +1421,11 @@ function mostrarMensaje(mensaje, tipo = 'info') {
 }
 
 function limpiarFormulario() {
+     if (timeoutCalculoAutomatico) {
+        clearTimeout(timeoutCalculoAutomatico);
+        timeoutCalculoAutomatico = null;
+    }
+    
     if (elementos.tarifa) elementos.tarifa.value = '';
     if (elementos.minutos) elementos.minutos.value = '';
     if (elementos.distancia) elementos.distancia.value = '';
@@ -2779,5 +2791,6 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
