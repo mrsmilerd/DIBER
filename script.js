@@ -1573,7 +1573,7 @@ function guardarEnHistorial(resultado, aceptado) {
 // SISTEMA DE RESULTADO RÁPIDO
 // =============================================
 
-function mostrarModalRapidoSimplificado(resultado) {
+function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
 
     let modal = document.getElementById('modal-rapido');
@@ -1603,7 +1603,18 @@ function mostrarModalRapidoSimplificado(resultado) {
                 </button>
             </div>
 
-            <!-- 🎯 SOLO RENTABILIDAD - ELIMINADO TODO LO DEMÁS -->
+            <div class="tiempo-ajustado-section">
+                <div class="tiempo-original">
+                    <span class="tiempo-label">Tiempo estimado:</span>
+                    <span class="tiempo-valor" id="modal-tiempo-original">${resultado.minutos || 0} min</span>
+                </div>
+                <div class="flecha-ajuste">↓</div>
+                <div class="tiempo-real">
+                    <span class="tiempo-label">Con tráfico real:</span>
+                    <span class="tiempo-valor destacado" id="modal-tiempo-real">${tiempoReal} min</span>
+                </div>
+            </div>
+
             <div class="resultado-principal" id="modal-resultado-principal">
                 <div class="badge-rentabilidad ${resultado.rentabilidad}" id="modal-badge-rentabilidad">
                     <div class="badge-emoji">${resultado.emoji}</div>
@@ -1642,7 +1653,7 @@ function mostrarModalRapidoSimplificado(resultado) {
     `;
 
     modal.classList.remove('hidden');
-    console.log('✅ Modal pop-up ultra-simplificado mostrado');
+    calculoActual = resultado;
 }
 
 function obtenerSubtituloRentabilidad(resultado) {
@@ -1664,74 +1675,6 @@ function obtenerMensajeImpacto(trafficAnalysis) {
     if (ajuste > 20) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Considerar el impacto`;
     if (ajuste > 0) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Impacto mínimo`;
     return 'Tráfico fluido - Sin impacto en el tiempo';
-}
-
-// =============================================
-// ACTUALIZAR CSS PARA EL MODAL SIMPLIFICADO
-// =============================================
-
-function agregarEstilosOcultos() {
-    const styles = `
-        /* Ocultar resultado instantáneo del formulario principal */
-        #resultado-rapido,
-        #resultado-badge,
-        #resultado-emoji, 
-        #resultado-texto,
-        #metrica-minuto,
-        #metrica-km {
-            display: none !important;
-        }
-        
-        /* Modal ultra-simplificado - sin métricas */
-        .metricas-grid-mejorado {
-            display: none !important;
-        }
-        
-        /* Mejor espaciado para modal simplificado */
-        .modal-rapido-contenido-mejorado {
-            padding: 0;
-        }
-        
-        .resultado-principal {
-            margin: 20px 0;
-        }
-        
-        .impacto-trafico {
-            margin: 15px 0;
-        }
-        
-        .acciones-mejoradas {
-            margin-top: 20px;
-        }
-        
-        /* Badge de rentabilidad más destacado */
-        .badge-rentabilidad {
-            padding: 20px;
-            margin: 15px 0;
-            text-align: center;
-        }
-        
-        .badge-emoji {
-            font-size: 3em;
-            margin-bottom: 10px;
-        }
-        
-        .badge-title {
-            font-size: 1.5em;
-            font-weight: bold;
-        }
-        
-        .badge-subtitle {
-            font-size: 1em;
-            opacity: 0.8;
-            margin-top: 5px;
-        }
-    `;
-    
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = styles;
-    document.head.appendChild(styleSheet);
-    console.log('✅ Estilos para modal simplificado agregados');
 }
 
 // =============================================
