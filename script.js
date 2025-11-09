@@ -1456,7 +1456,7 @@ function cerrarModal() {
     }
 }
 
-ffunction cerrarModalRapido() {
+function cerrarModalRapido() {
     const modalRapido = document.getElementById('modal-rapido');
     if (modalRapido) {
         modalRapido.classList.add('hidden');
@@ -2959,5 +2959,6 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
