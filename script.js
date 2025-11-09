@@ -1625,30 +1625,6 @@ function mostrarResultadoRapido(resultado) {
                 </div>
             </div>
 
-            <div class="metricas-grid-mejorado">
-                <div class="metrica-card">
-                    <div class="metrica-icono">💸</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-minuto">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
-                        <div class="metrica-label">Por minuto</div>
-                    </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">🛣️</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-km">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
-                        <div class="metrica-label">Por km</div>
-                    </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">📊</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-eficiencia">${calcularEficiencia(resultado)}%</div>
-                        <div class="metrica-label">Eficiencia</div>
-                    </div>
-                </div>
-            </div>
-
             ${tieneTrafico ? `
             <div class="impacto-trafico" id="modal-impacto-trafico">
                 <div class="impacto-header">
@@ -2808,6 +2784,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
