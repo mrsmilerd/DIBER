@@ -3175,7 +3175,7 @@ function agregarEstilosTrafico() {
 }
 
 /* ============================================= */
-/* HEADER COMPLETAMENTE REDISEÑADO - VERSIÓN FINAL */
+/* HEADER CORREGIDO - EMOJIS UNIFORMES Y LOGO SÓLIDO */
 /* ============================================= */
 
 .app-header {
@@ -3193,7 +3193,6 @@ function agregarEstilosTrafico() {
     align-items: flex-start !important;
     justify-content: flex-start !important;
     flex: 0 0 auto !important;
-    margin-top: 0 !important;
 }
 
 .logo-container {
@@ -3203,7 +3202,6 @@ function agregarEstilosTrafico() {
     transform: translateX(-50%) !important;
     text-align: center !important;
     z-index: 1000 !important;
-    flex: 0 0 auto !important;
 }
 
 .header-actions {
@@ -3212,61 +3210,61 @@ function agregarEstilosTrafico() {
     gap: 6px !important;
     justify-content: flex-end !important;
     flex: 0 0 auto !important;
-    margin-top: 0 !important;
 }
 
-/* LOGO MUCHO MÁS GRANDE */
+/* LOGO MÁS GRANDE Y SIN TRANSPARENCIA */
 .app-logo {
-    height: 85px !important;
+    height: 80px !important;
     width: auto !important;
     max-width: none !important;
     object-fit: contain !important;
+    filter: none !important;
+    opacity: 1 !important;
+    background: transparent !important;
 }
 
-/* BOTONES MUCHO MÁS PEQUEÑOS */
-.user-code-button {
+/* BOTONES UNIFORMES - TODOS IGUALES */
+.user-code-button,
+.header-actions .secondary-button.small,
+.theme-toggle {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     background: var(--card-bg) !important;
     border: 1px solid var(--border-color) !important;
-    border-radius: 6px !important;
-    padding: 4px !important;
+    border-radius: 8px !important;
+    padding: 8px !important;
     cursor: pointer !important;
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 14px !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
     margin: 0 !important;
     flex-shrink: 0 !important;
+    transition: all 0.3s ease !important;
 }
 
-.header-actions .secondary-button.small {
-    padding: 4px !important;
-    width: 32px !important;
-    height: 32px !important;
+/* EMOJIS UNIFORMES - TODOS EL MISMO TAMAÑO */
+.user-code-button .button-icon,
+.header-actions .button-icon,
+.theme-toggle .theme-icon {
+    font-size: 18px !important;
+    line-height: 1 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    margin: 0 !important;
-    flex-shrink: 0 !important;
-}
-
-.theme-toggle {
-    padding: 4px !important;
-    width: 32px !important;
-    height: 32px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin: 0 !important;
-    flex-shrink: 0 !important;
-}
-
-/* ELIMINAR CUALQUIER MARGIN O PADDING EXTRA */
-.header-left *,
-.header-actions * {
+    width: 100% !important;
+    height: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+}
+
+/* Estados hover */
+.user-code-button:hover,
+.header-actions .secondary-button.small:hover,
+.theme-toggle:hover {
+    border-color: var(--primary-blue) !important;
+    background: rgba(26, 115, 232, 0.1) !important;
+    transform: scale(1.05) !important;
 }
 
 /* RESPONSIVE */
@@ -3278,21 +3276,36 @@ function agregarEstilosTrafico() {
     .user-code-button,
     .header-actions .secondary-button.small,
     .theme-toggle {
-        width: 30px !important;
-        height: 30px !important;
+        width: 38px !important;
+        height: 38px !important;
+        padding: 7px !important;
+        font-size: 15px !important;
+    }
+    
+    .user-code-button .button-icon,
+    .header-actions .button-icon,
+    .theme-toggle .theme-icon {
+        font-size: 17px !important;
     }
 }
 
 @media (max-width: 480px) {
     .app-logo {
-        height: 60px !important;
+        height: 65px !important;
     }
     
     .user-code-button,
     .header-actions .secondary-button.small,
     .theme-toggle {
-        width: 28px !important;
-        height: 28px !important;
-        font-size: 12px !important;
+        width: 36px !important;
+        height: 36px !important;
+        padding: 6px !important;
+        font-size: 14px !important;
+    }
+    
+    .user-code-button .button-icon,
+    .header-actions .button-icon,
+    .theme-toggle .theme-icon {
+        font-size: 16px !important;
     }
 }
