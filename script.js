@@ -945,11 +945,11 @@ function cambiarPestana(tabId) {
 // SISTEMA DE CÁLCULO
 // =============================================
 
-function manejarCalculoAutomatico() {
-    if (timeoutCalculo) {
-        clearTimeout(timeoutCalculo);
+function manejarAutomatico() {
+    if (timeout) {
+        clearTimeout(timeout);
     }
-    timeoutCalculo = setTimeout(calcularAutomatico, 500);
+    timeout = setTimeout(calcularAutomatico, 500);
 }
 
 function calcularAutomatico() {
@@ -962,20 +962,15 @@ function calcularAutomatico() {
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
     if (datosCompletos) {
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.remove('hidden');
-        }
-        
+        // Cálculo automático activo (sin indicador visual)
         const resultado = calcularRentabilidad(tarifa, minutos, distancia);
         
         if (resultado) {
-            calculoActual = resultado;
+            Actual = resultado;
             mostrarResultadoRapido(resultado);
         }
     } else {
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.add('hidden');
-        }
+        // Cálculo automático inactivo
         if (elementos['resultado-rapido']) {
             elementos['resultado-rapido'].classList.add('hidden');
         }
@@ -1424,7 +1419,7 @@ function limpiarFormulario() {
     if (elementos.distancia) elementos.distancia.value = '';
     if (elementos['auto-calc-indicator']) elementos['auto-calc-indicator'].classList.add('hidden');
     if (elementos['resultado-rapido']) elementos['resultado-rapido'].classList.add('hidden');
-    calculoActual = null;
+    Actual = null;
     cerrarModalRapido();
 }
 
@@ -1459,9 +1454,9 @@ function cerrarSyncPanel() {
 // =============================================
 
 function procesarViaje(aceptado) {
-    console.log('🔄 Procesando viaje:', { aceptado, calculoActual: !!calculoActual });
+    console.log('🔄 Procesando viaje:', { aceptado, Actual: !!Actual });
     
-    if (!calculoActual) {
+    if (!Actual) {
         mostrarError('No hay cálculo actual para procesar');
         return;
     }
@@ -1472,7 +1467,7 @@ function procesarViaje(aceptado) {
     }
 
     try {
-        guardarEnHistorial(calculoActual, aceptado);
+        guardarEnHistorial(Actual, aceptado);
         
         if (aceptado) {
             mostrarStatus('✅ Viaje aceptado y guardado en historial', 'success');
@@ -1493,9 +1488,9 @@ function procesarViaje(aceptado) {
 }
 
 function procesarViajeRapido(aceptado) {
-    console.log('⚡ Procesando viaje rápido:', { aceptado, calculoActual: !!calculoActual });
+    console.log('⚡ Procesando viaje rápido:', { aceptado, Actual: !!Actual });
     
-    if (!calculoActual) {
+    if (!Actual) {
         mostrarError('No hay cálculo actual para procesar');
         return;
     }
@@ -1503,11 +1498,11 @@ function procesarViajeRapido(aceptado) {
     cerrarModalRapido();
     
     const viajeParaHistorial = {
-        ...calculoActual,
+        ...Actual,
         aceptado: aceptado,
-        rentable: calculoActual.rentabilidad === 'rentable',
-        emoji: calculoActual.emoji,
-        texto: calculoActual.texto
+        rentable: Actual.rentabilidad === 'rentable',
+        emoji: Actual.emoji,
+        texto: Actual.texto
     };
     
     agregarAlHistorial(viajeParaHistorial);
@@ -2784,4 +2779,5 @@ window.onclick = function(event) {
         }
     }
 };
+
 
