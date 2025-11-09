@@ -3182,15 +3182,15 @@ function agregarEstilosTrafico() {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    padding: 15px 0;
+    padding: 12px 0;
     position: relative;
     width: 100%;
-    gap: 20px;
+    gap: 15px;
 }
 
 .header-left {
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Alinear más arriba */
     justify-content: flex-start;
 }
 
@@ -3203,14 +3203,14 @@ function agregarEstilosTrafico() {
 
 .header-actions {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start; /* Alinear más arriba */
+    gap: 8px;
     justify-content: flex-end;
 }
 
 /* Logo MÁS GRANDE */
 .app-logo {
-    max-height: 60px !important;
+    max-height: 75px !important; /* Aumentado de 60px a 75px */
     width: auto;
     object-fit: contain;
 }
@@ -3223,14 +3223,15 @@ function agregarEstilosTrafico() {
     background: var(--card-bg) !important;
     border: 1px solid var(--border-color) !important;
     border-radius: 8px !important;
-    padding: 8px 10px !important;
+    padding: 6px 8px !important; /* Reducido */
     cursor: pointer !important;
     color: var(--text-primary) !important;
-    font-size: 1.1em !important;
+    font-size: 1em !important; /* Reducido */
     min-width: auto !important;
     transition: all 0.3s !important;
-    width: 40px;
-    height: 40px;
+    width: 36px; /* Reducido */
+    height: 36px; /* Reducido */
+    margin-top: 2px; /* Alinear más arriba */
 }
 
 .user-code-button:hover {
@@ -3241,54 +3242,31 @@ function agregarEstilosTrafico() {
 
 /* Botones de acciones */
 .header-actions .secondary-button.small {
-    padding: 8px 10px !important;
+    padding: 6px 8px !important; /* Reducido */
     min-width: auto !important;
-    width: 40px;
-    height: 40px;
+    width: 36px; /* Reducido */
+    height: 36px; /* Reducido */
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-top: 2px; /* Alinear más arriba */
 }
 
 .header-actions button {
     min-width: auto !important;
-    padding: 8px 10px !important;
+    padding: 6px 8px !important; /* Reducido */
 }
 
 /* Responsive para móviles */
 @media (max-width: 768px) {
     .app-header {
         grid-template-columns: auto 1fr auto;
-        gap: 15px;
-        padding: 12px 0;
-    }
-    
-    .app-logo {
-        max-height: 50px !important;
-    }
-    
-    .header-actions {
-        gap: 8px;
-    }
-    
-    .user-code-button,
-    .header-actions .secondary-button.small {
-        width: 36px;
-        height: 36px;
-        padding: 6px 8px !important;
-    }
-}
-
-/* Para pantallas muy pequeñas */
-@media (max-width: 480px) {
-    .app-header {
-        grid-template-columns: auto 1fr auto;
-        gap: 10px;
+        gap: 12px;
         padding: 10px 0;
     }
     
     .app-logo {
-        max-height: 45px !important;
+        max-height: 65px !important; /* Aumentado */
     }
     
     .header-actions {
@@ -3297,10 +3275,34 @@ function agregarEstilosTrafico() {
     
     .user-code-button,
     .header-actions .secondary-button.small {
-        width: 34px;
-        height: 34px;
-        padding: 5px 7px !important;
-        font-size: 1em !important;
+        width: 34px; /* Reducido */
+        height: 34px; /* Reducido */
+        padding: 5px 7px !important; /* Reducido */
+    }
+}
+
+/* Para pantallas muy pequeñas */
+@media (max-width: 480px) {
+    .app-header {
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        padding: 8px 0;
+    }
+    
+    .app-logo {
+        max-height: 55px !important; /* Aumentado */
+    }
+    
+    .header-actions {
+        gap: 5px;
+    }
+    
+    .user-code-button,
+    .header-actions .secondary-button.small {
+        width: 32px; /* Reducido */
+        height: 32px; /* Reducido */
+        padding: 4px 6px !important; /* Reducido */
+        font-size: 0.9em !important;
     }
 }
 
