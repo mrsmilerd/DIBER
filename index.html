@@ -277,10 +277,11 @@
     </div>
 
     <!-- Pantalla Principal de Cálculos -->
-    <div id="main-screen" class="screen">
+<div id="main-screen" class="screen">
     <div class="container">
-<div class="app-header">
+      <div class="app-header">
     <div class="header-left">
+        <!-- Botón de código de usuario - SOLO EMOJI -->
         <button id="user-code-button" class="secondary-button small user-code-button" title="Código de sincronización" style="display: none;">
             <span class="button-icon">🔑</span>
         </button>
@@ -290,14 +291,14 @@
     </div>
     
     <div class="logo-container">
-        <img src="logo_b.png" alt="Logo DIBER" class="app-logo" style="height: 80px !important; opacity: 1 !important; filter: none !important;">
+        <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
     </div>
     
     <div class="header-actions">
         <button id="sync-status-btn" class="secondary-button small" title="Estado de sincronización">
             <span class="button-icon" id="sync-btn-icon">🌐</span>
         </button>
-        <button id="theme-toggle" class="theme-toggle" title="Cambiar tema">
+        <button id="theme-toggle" class="theme-toggle" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
             <span class="theme-icon">🌙</span>
         </button>
     </div>
@@ -377,22 +378,14 @@
                 <span class="status-text">Ubicación activa - Tráfico monitoreado</span>
             </div>
         </div>
-
-<!-- AGREGAR ESTE BOTÓN NUEVO -->
-<div class="calcular-button-section" style="margin-top: 20px;">
-    <button type="button" id="calcular-viaje-btn" class="primary-button" style="width: 100%; padding: 15px; font-size: 16px;">
-        <span class="button-icon">🧮</span>
-        CALCULAR RENTABILIDAD DEL VIAJE
-    </button>
-</div>
         
         <!-- Indicador de Cálculo Automático -->
-        div id="auto-calc-indicator" class="auto-calc-indicator hidden">
-    <div class="auto-calc-content">
-        <span class="auto-calc-icon">🔄</span>
-        <span class="auto-calc-text">DATOS INGRESADOS - LISTO PARA CALCULAR</span>
-    </div>
-</div>
+        <div id="auto-calc-indicator" class="auto-calc-indicator hidden">
+            <div class="auto-calc-content">
+                <span class="auto-calc-icon">🔄</span>
+                <span class="auto-calc-text">CÁLCULO AUTOMÁTICO ACTIVO</span>
+            </div>
+        </div>
 
         <!-- Resultado Rápido -->
         <div id="resultado-rapido" class="resultado-rapido hidden">
@@ -1295,16 +1288,3 @@
     </style>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
