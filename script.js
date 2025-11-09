@@ -1378,7 +1378,6 @@ function cerrarModalRapido() {
     // NO limpiar el formulario automáticamente aquí
     // El usuario decide cuándo limpiar
 }
-}
 
 function cerrarExportModal() {
     if (elementos.exportModal) {
@@ -2814,4 +2813,5 @@ window.onclick = function(event) {
         }
     }
 };
+
 
