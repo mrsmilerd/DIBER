@@ -216,14 +216,13 @@ function showUserCodeBanner() {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 6px 8px;
+            padding: 8px 10px;
             cursor: pointer;
             color: var(--text-primary);
-            font-size: 1em;
-            width: 36px;
-            height: 36px;
+            font-size: 1.1em;
+            width: 40px;
+            height: 40px;
             transition: all 0.3s;
-            margin-top: 2px;
         `;
         
         // Insertar en header-left
@@ -950,56 +949,37 @@ function manejarCalculoAutomatico() {
     if (timeoutCalculo) {
         clearTimeout(timeoutCalculo);
     }
-    timeoutCalculo = setTimeout(verificarDatosCompletos, 500);
+    timeoutCalculo = setTimeout(calcularAutomatico, 500);
 }
 
-function verificarDatosCompletos() {
+function calcularAutomatico() {
     if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
     
     const tarifa = parseFloat(elementos.tarifa.value) || 0;
     const minutos = parseFloat(elementos.minutos.value) || 0;
     const distancia = parseFloat(elementos.distancia.value) || 0;
     
-    // SOLO mostrar indicador si hay datos, pero NO el modal
-    const tieneDatos = tarifa > 0 || minutos > 0 || distancia > 0;
-    
-    if (elementos['auto-calc-indicator']) {
-        if (tieneDatos) {
-            elementos['auto-calc-indicator'].classList.remove('hidden');
-        } else {
-            elementos['auto-calc-indicator'].classList.add('hidden');
-        }
-    }
-    
-    // OCULTAR cualquier resultado rápido previo
-    if (elementos['resultado-rapido']) {
-        elementos['resultado-rapido'].classList.add('hidden');
-    }
-}
-
-// NUEVA FUNCIÓN: Solo se ejecuta cuando el usuario quiere calcular
-function calcularYMostrarModal() {
-    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
-    
-    const tarifa = parseFloat(elementos.tarifa.value) || 0;
-    const minutos = parseFloat(elementos.minutos.value) || 0;
-    const distancia = parseFloat(elementos.distancia.value) || 0;
-    
-    // VERIFICAR QUE TODOS LOS CAMPOS ESTÉN COMPLETOS
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
-    if (!datosCompletos) {
-        mostrarError('Por favor, completa todos los campos del viaje');
-        return;
-    }
-    
-    console.log('✅ Todos los datos completos, mostrando modal...');
-    
-    const resultado = calcularRentabilidad(tarifa, minutos, distancia);
-    
-    if (resultado) {
-        calculoActual = resultado;
-        mostrarResultadoRapido(resultado);
+    if (datosCompletos) {
+        if (elementos['auto-calc-indicator']) {
+            elementos['auto-calc-indicator'].classList.remove('hidden');
+        }
+        
+        const resultado = calcularRentabilidad(tarifa, minutos, distancia);
+        
+        if (resultado) {
+            calculoActual = resultado;
+            mostrarResultadoRapido(resultado);
+        }
+    } else {
+        if (elementos['auto-calc-indicator']) {
+            elementos['auto-calc-indicator'].classList.add('hidden');
+        }
+        if (elementos['resultado-rapido']) {
+            elementos['resultado-rapido'].classList.add('hidden');
+        }
+        cerrarModalRapido();
     }
 }
 
@@ -1449,38 +1429,16 @@ function limpiarFormulario() {
 }
 
 function cerrarModal() {
-    console.log('❌ Cerrando modal principal...');
-    
-    // Cerrar teclado
-    cerrarTeclado();
-    
-    // Resetear formulario
-    resetearFormularioViaje();
-    
-    // Cerrar modal
     if (elementos.modalFondo) {
         elementos.modalFondo.style.display = 'none';
     }
-    
-    console.log('✅ Modal principal cerrado y formulario reseteado');
 }
 
 function cerrarModalRapido() {
-    console.log('❌ Cerrando modal rápido...');
-    
-    // Cerrar teclado primero
-    cerrarTeclado();
-    
-    // Resetear formulario
-    resetearFormularioViaje();
-    
-    // Cerrar modal
     const modalRapido = document.getElementById('modal-rapido');
     if (modalRapido) {
         modalRapido.classList.add('hidden');
     }
-    
-    console.log('✅ Modal rápido cerrado y formulario reseteado');
 }
 
 function cerrarExportModal() {
@@ -1542,7 +1500,7 @@ function procesarViajeRapido(aceptado) {
         return;
     }
 
-    cerrarModalRapido(); // Esto ya incluye resetear el formulario
+    cerrarModalRapido();
     
     const viajeParaHistorial = {
         ...calculoActual,
@@ -1559,6 +1517,8 @@ function procesarViajeRapido(aceptado) {
     } else {
         mostrarMensaje('❌ Viaje rechazado', 'info');
     }
+    
+    limpiarFormulario();
     
     actualizarEstadisticas();
     actualizarHistorialConFiltros();
@@ -1616,21 +1576,6 @@ function guardarEnHistorial(resultado, aceptado) {
 function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
 
-    console.log('🔄 Mostrando resultado rápido...');
-    
-    // Verificar nuevamente que todos los datos estén completos
-    const tarifa = parseFloat(elementos.tarifa.value) || 0;
-    const minutos = parseFloat(elementos.minutos.value) || 0;
-    const distancia = parseFloat(elementos.distancia.value) || 0;
-    
-    if (!(tarifa > 0 && minutos > 0 && distancia > 0)) {
-        console.log('❌ Datos incompletos, no mostrar modal');
-        return;
-    }
-    
-    // CERRAR TECLADO AUTOMÁTICAMENTE AL MOSTRAR MODAL
-    cerrarTeclado();
-
     let modal = document.getElementById('modal-rapido');
     if (!modal) {
         modal = document.createElement('div');
@@ -1680,6 +1625,30 @@ function mostrarResultadoRapido(resultado) {
                 </div>
             </div>
 
+            <div class="metricas-grid-mejorado">
+                <div class="metrica-card">
+                    <div class="metrica-icono">💸</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-ganancia-minuto">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
+                        <div class="metrica-label">Por minuto</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">🛣️</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-ganancia-km">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
+                        <div class="metrica-label">Por km</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">📊</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-eficiencia">${calcularEficiencia(resultado)}%</div>
+                        <div class="metrica-label">Eficiencia</div>
+                    </div>
+                </div>
+            </div>
+
             ${tieneTrafico ? `
             <div class="impacto-trafico" id="modal-impacto-trafico">
                 <div class="impacto-header">
@@ -1709,8 +1678,6 @@ function mostrarResultadoRapido(resultado) {
 
     modal.classList.remove('hidden');
     calculoActual = resultado;
-    
-    console.log('✅ Modal rápido mostrado y teclado cerrado');
 }
 
 function obtenerSubtituloRentabilidad(resultado) {
@@ -1871,15 +1838,6 @@ function configurarEventListeners() {
     }
     if (elementos.distancia) {
         elementos.distancia.addEventListener('input', manejarCalculoAutomatico);
-    }
-
-     // NUEVO: Botón para calcular y mostrar modal
-    const calcularBtn = document.getElementById('calcular-viaje-btn');
-    if (calcularBtn) {
-        calcularBtn.addEventListener('click', calcularYMostrarModal);
-        console.log('✅ Event listener agregado para botón calcular');
-    } else {
-        console.error('❌ No se encontró el botón calcular-viaje-btn');
     }
     
     if (elementos['aceptar-viaje']) {
@@ -2783,58 +2741,6 @@ async function inicializarApp() {
 }
 
 // =============================================
-// FUNCIONES PARA CERRAR TECLADO Y RESETEAR VALORES
-// =============================================
-
-function cerrarTeclado() {
-    console.log('⌨️ Cerrando teclado...');
-    // Forzar blur en todos los inputs para cerrar el teclado
-    const inputs = document.querySelectorAll('input[type="number"], input[type="text"]');
-    inputs.forEach(input => {
-        input.blur();
-    });
-    
-    // Método alternativo para dispositivos móviles
-    if (document.activeElement && document.activeElement.tagName === 'INPUT') {
-        document.activeElement.blur();
-    }
-    
-    // Crear y enfocar un elemento temporal para forzar el cierre del teclado
-    const tempInput = document.createElement('input');
-    tempInput.style.position = 'absolute';
-    tempInput.style.opacity = '0';
-    tempInput.style.height = '0';
-    tempInput.style.fontSize = '16px'; // Previene zoom en iOS
-    document.body.appendChild(tempInput);
-    tempInput.focus();
-    setTimeout(() => {
-        document.body.removeChild(tempInput);
-    }, 100);
-}
-
-function resetearFormularioViaje() {
-    console.log('🔄 Reseteando formulario de viaje...');
-    
-    // Resetear valores a vacío o cero
-    if (elementos.tarifa) elementos.tarifa.value = '';
-    if (elementos.minutos) elementos.minutos.value = '';
-    if (elementos.distancia) elementos.distancia.value = '';
-    
-    // Ocultar indicadores y resultados
-    if (elementos['auto-calc-indicator']) {
-        elementos['auto-calc-indicator'].classList.add('hidden');
-    }
-    if (elementos['resultado-rapido']) {
-        elementos['resultado-rapido'].classList.add('hidden');
-    }
-    
-    // Resetear cálculo actual
-    calculoActual = null;
-    
-    console.log('✅ Formulario reseteado');
-}
-
-// =============================================
 // FUNCIONES GLOBALES
 // =============================================
 
@@ -2902,16 +2808,3 @@ window.onclick = function(event) {
         }
     }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
