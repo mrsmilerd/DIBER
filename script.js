@@ -943,6 +943,18 @@ function manejarCalculoAutomatico() {
     timeoutCalculo = setTimeout(calcularAutomatico, 800);
 }
 
+function manejarCalculoAutomatico() {
+    console.log('🔄 Input cambiado, manejando cálculo automático...');
+    
+    // Limpiar timeout anterior
+    if (timeoutCalculo) {
+        clearTimeout(timeoutCalculo);
+    }
+    
+    // Configurar nuevo timeout
+    timeoutCalculo = setTimeout(calcularAutomatico, 800);
+}
+
 function calcularAutomatico() {
     console.log('🧮 Ejecutando cálculo automático...');
     
@@ -2830,7 +2842,7 @@ async function inicializarApp() {
         configurarModalExportacion();
         
         // 🚨 OCULTAR RESULTADO INSTANTÁNEO EN INTERFAZ
-        actualizarInterfazFormulario();
+        ocultarResultadoInstantaneo();
         
         if (perfiles.length === 0) {
             mostrarPantalla('perfil');
@@ -2849,6 +2861,39 @@ async function inicializarApp() {
         mostrarPantalla('perfil');
         mostrarStatus('Error al cargar la aplicación. Por favor, recarga la página.', 'error');
     }
+}
+
+// =============================================
+// FUNCIÓN PARA OCULTAR RESULTADO INSTANTÁNEO
+// =============================================
+
+function ocultarResultadoInstantaneo() {
+    console.log('🚫 Ocultando resultado instantáneo...');
+    
+    // Buscar y ocultar la sección de resultado instantáneo si existe
+    const resultadoRapido = document.getElementById('resultado-rapido');
+    if (resultadoRapido) {
+        resultadoRapido.style.display = 'none';
+        console.log('✅ Sección resultado-rápido ocultada');
+    }
+    
+    // También ocultar elementos individuales si existen
+    const elementosOcultar = [
+        'resultado-rapido',
+        'resultado-badge', 
+        'resultado-emoji',
+        'resultado-texto',
+        'metrica-minuto',
+        'metrica-km'
+    ];
+    
+    elementosOcultar.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            elemento.style.display = 'none';
+            console.log(`✅ Elemento ${id} ocultado`);
+        }
+    });
 }
 
 // =============================================
@@ -2879,11 +2924,18 @@ function agregarEstilosOcultos() {
         .acciones-mejoradas {
             margin-top: 20px;
         }
+        
+        /* Mejorar espaciado del formulario principal sin resultado instantáneo */
+        #tab-calcular .form-section {
+            margin-bottom: 10px;
+            padding-bottom: 15px;
+        }
     `;
     
     const styleSheet = document.createElement('style');
     styleSheet.textContent = styles;
     document.head.appendChild(styleSheet);
+    console.log('✅ Estilos para ocultar elementos agregados');
 }
 
 // =============================================
@@ -2916,6 +2968,7 @@ window.resincronizarCompleta = resincronizarCompleta;
 window.resetearSincronizacion = resetearSincronizacion;
 window.verificarConexionFirebase = verificarConexionFirebase;
 window.limpiarFormularioCompleto = limpiarFormularioCompleto;
+window.ocultarResultadoInstantaneo = ocultarResultadoInstantaneo;
 
 // =============================================
 // EJECUCIÓN PRINCIPAL
@@ -2959,6 +3012,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
