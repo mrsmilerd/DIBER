@@ -50,8 +50,10 @@ function inicializarElementosDOM() {
     
     const ids = [
         'perfil-screen', 'config-perfil-screen', 'main-screen',
-        'status-indicator', 'status-text', 
+        'status-indicator', 'status-text', 'auto-calc-indicator',
         'tarifa', 'minutos', 'distancia',
+        'resultado-rapido', 'resultado-badge', 'resultado-emoji', 'resultado-texto',
+        'metrica-minuto', 'metrica-km',
         'aceptar-viaje', 'rechazar-viaje',
         'modalFondo', 'modalContenido', 'modalResultadosDoble', 'modal-badge', 'modal-emoji', 'modal-texto',
         'history-list', 'clear-history', 'exportar-historial',
@@ -66,12 +68,13 @@ function inicializarElementosDOM() {
         'activar-ubicacion-btn', 'location-status',
         'modal-rapido', 'modal-trafico-header', 'modal-trafico-status', 'modal-trafico-condition',
         'modal-tiempo-original', 'modal-tiempo-real', 'modal-resultado-principal',
-        'modal-badge-rentabilidad', 'modal-badge-subtitle',
-        'modal-impacto-trafico', 'modal-impacto-content',
+        'modal-badge-rentabilidad', 'modal-badge-subtitle', 'modal-ganancia-minuto',
+        'modal-ganancia-km', 'modal-eficiencia', 'modal-impacto-trafico', 'modal-impacto-content',
         'modal-badge-rechazar', 'modal-badge-aceptar', 'modal-btn-aceptar',
         'code-status', 'sync-perfil-info', 'sync-panel-status', 'current-device-icon',
         'current-device-name', 'current-device-id', 'firebase-status', 'last-sync-time',
         'cloud-profiles-count', 'cloud-history-count', 'force-sync-btn'
+        // 'user-code-banner' removido - se integrará en header-actions
     ];
 
     ids.forEach(id => {
@@ -158,7 +161,7 @@ function setUserCode() {
     localStorage.setItem('DIBER_user_code', code);
     
     hideUserCodeModal();
-    showUserCodeBanner();
+    showUserCodeBanner(); // Ahora se integra en el header
     
     mostrarStatus('✅ Código de usuario establecido', 'success');
     
@@ -200,6 +203,7 @@ function showUserCodeBanner() {
     
     let codeButton = document.getElementById('user-code-button');
     
+    // Si el botón no existe, crearlo
     if (!codeButton) {
         codeButton = document.createElement('button');
         codeButton.id = 'user-code-button';
@@ -221,6 +225,7 @@ function showUserCodeBanner() {
             transition: all 0.3s;
         `;
         
+        // Insertar en header-left
         headerLeft.appendChild(codeButton);
         
         console.log('✅ Botón de código creado en header-left');
@@ -228,6 +233,7 @@ function showUserCodeBanner() {
     }
     
     if (userCodeSystem.userCode) {
+        // SOLO EMOJI - sin código de texto
         codeButton.innerHTML = `<span class="button-icon">🔑</span>`;
         codeButton.title = 'Código de sincronización: ' + userCodeSystem.userCode;
         
@@ -249,6 +255,7 @@ function mostrarInfoUserCode() {
     if (userCodeSystem.userCode) {
         mostrarStatus(`🔑 Código: ${userCodeSystem.userCode} - Haz clic para cambiar`, 'info');
         
+        // Mostrar opción para cambiar después de 2 segundos
         setTimeout(() => {
             if (confirm(`Tu código actual es: ${userCodeSystem.userCode}\n\n¿Quieres cambiar de código?`)) {
                 cambiarUsuario();
@@ -449,6 +456,7 @@ async function cargarDatos() {
     console.log('🔄 Cargando datos...');
     
     try {
+        // Cargar de localStorage primero
         try {
             const historialGuardado = localStorage.getItem('historialViajes');
             if (historialGuardado) {
@@ -469,10 +477,12 @@ async function cargarDatos() {
             historial = [];
         }
 
+        // Cargar desde Firebase solo si no hay datos locales o para sincronizar
         if (firebaseSync && firebaseSync.initialized) {
             try {
                 console.log('☁️ Verificando sincronización con Firebase...');
                 
+                // SOLO sincronizar si no hay datos locales
                 if (perfiles.length === 0) {
                     const cloudProfiles = await firebaseSync.loadProfiles();
                     if (cloudProfiles && cloudProfiles.length > 0) {
@@ -483,6 +493,7 @@ async function cargarDatos() {
                     console.log('📱 Usando datos locales, omitiendo carga de Firebase');
                 }
                 
+                // Para el historial, combinar sin reemplazar
                 const cloudTrips = await firebaseSync.loadTrips();
                 if (cloudTrips && cloudTrips.length > 0) {
                     console.log('✅ Viajes de Firebase cargados:', cloudTrips.length);
@@ -508,6 +519,7 @@ async function cargarDatos() {
             }
         }
 
+        // Asegurar que tenemos un perfil
         if (!perfilActual && perfiles.length > 0) {
             perfilActual = perfiles[0];
         }
@@ -532,6 +544,7 @@ async function cargarDatos() {
 async function guardarDatos() {
     console.log('💾 Guardando datos...');
     
+    // Guardar localmente primero
     localStorage.setItem('historialViajes', JSON.stringify(historial));
     
     localStorage.setItem('DIBER_data', JSON.stringify({
@@ -544,6 +557,7 @@ async function guardarDatos() {
 
     console.log('✅ Datos guardados localmente');
     
+    // Sincronizar inmediatamente con Firebase si está disponible
     if (firebaseSync && firebaseSync.initialized) {
         try {
             console.log('☁️ Sincronizando perfiles con Firebase...');
@@ -932,74 +946,47 @@ function cambiarPestana(tabId) {
 // =============================================
 
 function manejarCalculoAutomatico() {
-    console.log('🔄 Input cambiado, manejando cálculo automático...');
-    
-    // Limpiar timeout anterior
     if (timeoutCalculo) {
         clearTimeout(timeoutCalculo);
     }
-    
-    // Configurar nuevo timeout
-    timeoutCalculo = setTimeout(calcularAutomatico, 800);
-}
-
-function manejarCalculoAutomatico() {
-    console.log('🔄 Input cambiado, manejando cálculo automático...');
-    
-    // Limpiar timeout anterior
-    if (timeoutCalculo) {
-        clearTimeout(timeoutCalculo);
-    }
-    
-    // Configurar nuevo timeout
-    timeoutCalculo = setTimeout(calcularAutomatico, 800);
+    timeoutCalculo = setTimeout(calcularAutomatico, 500);
 }
 
 function calcularAutomatico() {
-    console.log('🧮 Ejecutando cálculo automático...');
-    
-    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) {
-        console.error('❌ Elementos de formulario no encontrados');
-        return;
-    }
+    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
     
     const tarifa = parseFloat(elementos.tarifa.value) || 0;
     const minutos = parseFloat(elementos.minutos.value) || 0;
     const distancia = parseFloat(elementos.distancia.value) || 0;
     
-    console.log('📊 Datos ingresados:', { tarifa, minutos, distancia });
-    
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
     if (datosCompletos) {
-        console.log('✅ Datos completos, calculando rentabilidad...');
+        if (elementos['auto-calc-indicator']) {
+            elementos['auto-calc-indicator'].classList.remove('hidden');
+        }
         
         const resultado = calcularRentabilidad(tarifa, minutos, distancia);
         
         if (resultado) {
             calculoActual = resultado;
-            console.log('🎯 Resultado del cálculo:', resultado);
-            
-            // 🚨 SOLO MOSTRAR MODAL POP-UP, NO RESULTADO INSTANTÁNEO
-            mostrarModalRapidoSimplificado(resultado);
-        } else {
-            console.error('❌ Error en el cálculo de rentabilidad');
+            mostrarResultadoRapido(resultado);
         }
     } else {
-        console.log('📝 Datos incompletos, ocultando modal...');
+        if (elementos['auto-calc-indicator']) {
+            elementos['auto-calc-indicator'].classList.add('hidden');
+        }
+        if (elementos['resultado-rapido']) {
+            elementos['resultado-rapido'].classList.add('hidden');
+        }
         cerrarModalRapido();
     }
 }
 
 function calcularRentabilidad(tarifa, minutos, distancia) {
-    if (!perfilActual) {
-        console.error('❌ No hay perfil actual para calcular');
-        return null;
-    }
+    if (!perfilActual) return null;
     
     try {
-        console.log('🔧 Calculando rentabilidad con perfil:', perfilActual.nombre);
-        
         const combustibleUsado = distancia / perfilActual.rendimiento;
         const costoCombustible = combustibleUsado * perfilActual.precioCombustible;
         
@@ -1011,22 +998,10 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
         const costoTotal = costoCombustible + costoMantenimiento + costoSeguro;
         const gananciaNeta = tarifa - costoTotal;
         
-        const gananciaPorMinuto = minutos > 0 ? (tarifa / minutos) : 0;
-        const gananciaPorKm = distancia > 0 ? (tarifa / distancia) : 0;
+        const gananciaPorMinuto = tarifa / minutos;
+        const gananciaPorKm = tarifa / distancia;
         
         let rentabilidad, emoji, texto;
-        
-        console.log('📐 Umbrales del perfil:', {
-            minRent: perfilActual.umbralMinutoRentable,
-            kmRent: perfilActual.umbralKmRentable,
-            minOport: perfilActual.umbralMinutoOportunidad,
-            kmOport: perfilActual.umbralKmOportunidad
-        });
-        
-        console.log('📊 Métricas calculadas:', {
-            gananciaPorMinuto,
-            gananciaPorKm
-        });
         
         if (gananciaPorMinuto >= perfilActual.umbralMinutoRentable && 
             gananciaPorKm >= perfilActual.umbralKmRentable) {
@@ -1044,17 +1019,13 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
             texto = 'NO RENTABLE';
         }
         
-        const resultado = {
+        return {
             tarifa, minutos, distancia, gananciaNeta, gananciaPorMinuto, gananciaPorKm,
             costoCombustible, costoMantenimiento, costoSeguro, costoTotal,
             rentabilidad, emoji, texto, timestamp: new Date().toISOString()
         };
         
-        console.log('🎉 Resultado final:', resultado);
-        return resultado;
-        
     } catch (error) {
-        console.error('❌ Error en el cálculo:', error);
         mostrarError('Error en el cálculo. Verifica los datos ingresados.');
         return null;
     }
@@ -1069,6 +1040,7 @@ function mostrarConfigPerfil(perfil = null) {
     if (!form) return;
     
     if (perfil) {
+        // Cargar TODOS los valores del perfil, incluyendo los umbrales
         document.getElementById('perfil-id').value = perfil.id;
         document.getElementById('nombre-perfil').value = perfil.nombre;
         document.getElementById('tipo-medida').value = perfil.tipoMedida;
@@ -1077,6 +1049,7 @@ function mostrarConfigPerfil(perfil = null) {
         document.getElementById('precio-combustible').value = perfil.precioCombustible;
         document.getElementById('moneda').value = perfil.moneda;
         
+        // ESTAS SON LAS LÍNEAS IMPORTANTES - Cargar los umbrales guardados
         document.getElementById('umbral-minuto-rentable').value = perfil.umbralMinutoRentable || 6.00;
         document.getElementById('umbral-km-rentable').value = perfil.umbralKmRentable || 25.00;
         document.getElementById('umbral-minuto-oportunidad').value = perfil.umbralMinutoOportunidad || 5.00;
@@ -1085,6 +1058,7 @@ function mostrarConfigPerfil(perfil = null) {
         document.getElementById('costo-seguro').value = perfil.costoSeguro || 0;
         document.getElementById('costo-mantenimiento').value = perfil.costoMantenimiento || 0;
     } else {
+        // Para nuevo perfil, usar valores por defecto
         form.reset();
         document.getElementById('perfil-id').value = '';
         document.getElementById('umbral-minuto-rentable').value = '6.00';
@@ -1110,6 +1084,7 @@ function guardarPerfil(event) {
         rendimiento: parseFloat(document.getElementById('rendimiento').value),
         precioCombustible: parseFloat(document.getElementById('precio-combustible').value),
         moneda: document.getElementById('moneda').value,
+        // Asegurar que se guarden los valores actuales de los umbrales
         umbralMinutoRentable: parseFloat(document.getElementById('umbral-minuto-rentable').value),
         umbralKmRentable: parseFloat(document.getElementById('umbral-km-rentable').value),
         umbralMinutoOportunidad: parseFloat(document.getElementById('umbral-minuto-oportunidad').value),
@@ -1125,6 +1100,7 @@ function guardarPerfil(event) {
         return;
     }
     
+    // Verificar que los valores se están guardando correctamente
     console.log('💾 Guardando perfil con rendimiento:', perfil.rendimiento);
     console.log('💾 Umbrales guardados:', {
         minRent: perfil.umbralMinutoRentable,
@@ -1443,23 +1419,13 @@ function mostrarMensaje(mensaje, tipo = 'info') {
 }
 
 function limpiarFormulario() {
-    console.log('🧹 Limpiando formulario...');
-    
-    // SOLO limpiar cuando el usuario lo decida explícitamente
-    // No limpiar automáticamente durante el cálculo
-}
-
-function limpiarFormularioCompleto() {
-    console.log('🗑️ Limpiando formulario completo...');
-    
     if (elementos.tarifa) elementos.tarifa.value = '';
     if (elementos.minutos) elementos.minutos.value = '';
     if (elementos.distancia) elementos.distancia.value = '';
-    
+    if (elementos['auto-calc-indicator']) elementos['auto-calc-indicator'].classList.add('hidden');
+    if (elementos['resultado-rapido']) elementos['resultado-rapido'].classList.add('hidden');
     calculoActual = null;
     cerrarModalRapido();
-    
-    console.log('✅ Formulario limpiado completamente');
 }
 
 function cerrarModal() {
@@ -1472,8 +1438,6 @@ function cerrarModalRapido() {
     const modalRapido = document.getElementById('modal-rapido');
     if (modalRapido) {
         modalRapido.classList.add('hidden');
-        // Limpiar formulario al cerrar modal
-        limpiarFormularioCompleto();
     }
 }
 
@@ -1516,8 +1480,7 @@ function procesarViaje(aceptado) {
             mostrarStatus('❌ Viaje rechazado', 'info');
         }
 
-        // LIMPIAR FORMULARIO SOLO DESPUÉS DE PROCESAR
-        limpiarFormularioCompleto();
+        limpiarFormulario();
         cerrarModal();
         
         actualizarEstadisticas();
@@ -1555,8 +1518,7 @@ function procesarViajeRapido(aceptado) {
         mostrarMensaje('❌ Viaje rechazado', 'info');
     }
     
-    // LIMPIAR FORMULARIO SOLO DESPUÉS DE PROCESAR
-    limpiarFormularioCompleto();
+    limpiarFormulario();
     
     actualizarEstadisticas();
     actualizarHistorialConFiltros();
@@ -1608,43 +1570,10 @@ function guardarEnHistorial(resultado, aceptado) {
 }
 
 // =============================================
-// SISTEMA DE RESULTADO RÁPIDO - MODIFICADO
+// SISTEMA DE RESULTADO RÁPIDO
 // =============================================
 
 function mostrarResultadoRapido(resultado) {
-    if (!resultado) {
-        console.error('❌ No hay resultado para mostrar');
-        return;
-    }
-
-    console.log('🚀 Mostrando resultado rápido:', resultado);
-
-    // Actualizar resultado rápido en la interfaz principal
-    if (elementos['resultado-rapido']) {
-        elementos['resultado-rapido'].classList.remove('hidden');
-        
-        if (elementos['resultado-emoji']) {
-            elementos['resultado-emoji'].textContent = resultado.emoji;
-        }
-        if (elementos['resultado-texto']) {
-            elementos['resultado-texto'].textContent = resultado.texto;
-        }
-        if (elementos['resultado-badge']) {
-            elementos['resultado-badge'].className = `resultado-badge ${resultado.rentabilidad}`;
-        }
-        if (elementos['metrica-minuto']) {
-            elementos['metrica-minuto'].textContent = formatearMoneda(resultado.gananciaPorMinuto);
-        }
-        if (elementos['metrica-km']) {
-            elementos['metrica-km'].textContent = formatearMoneda(resultado.gananciaPorKm);
-        }
-    }
-
-    // Mostrar modal rápido mejorado
-    mostrarModalRapidoMejorado(resultado);
-}
-
-function mostrarModalRapidoSimplificado(resultado) {
     if (!resultado) return;
 
     let modal = document.getElementById('modal-rapido');
@@ -1686,7 +1615,6 @@ function mostrarModalRapidoSimplificado(resultado) {
                 </div>
             </div>
 
-            <!-- 🎯 SOLO INFORMACIÓN DE RENTABILIDAD - ELIMINADAS MÉTRICAS BÁSICAS -->
             <div class="resultado-principal" id="modal-resultado-principal">
                 <div class="badge-rentabilidad ${resultado.rentabilidad}" id="modal-badge-rentabilidad">
                     <div class="badge-emoji">${resultado.emoji}</div>
@@ -1697,27 +1625,26 @@ function mostrarModalRapidoSimplificado(resultado) {
                 </div>
             </div>
 
-            <!-- 📊 MÉTRICAS DE RENTABILIDAD ÚTILES -->
             <div class="metricas-grid-mejorado">
                 <div class="metrica-card">
-                    <div class="metrica-icono">💰</div>
+                    <div class="metrica-icono">💸</div>
                     <div class="metrica-content">
-                        <div class="metrica-valor">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
-                        <div class="metrica-label">Ganancia por minuto</div>
+                        <div class="metrica-valor" id="modal-ganancia-minuto">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
+                        <div class="metrica-label">Por minuto</div>
                     </div>
                 </div>
                 <div class="metrica-card">
-                    <div class="metrica-icono">📈</div>
+                    <div class="metrica-icono">🛣️</div>
                     <div class="metrica-content">
-                        <div class="metrica-valor">${formatearMoneda(resultado.gananciaPorKm)}/${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}</div>
-                        <div class="metrica-label">Ganancia por km</div>
+                        <div class="metrica-valor" id="modal-ganancia-km">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
+                        <div class="metrica-label">Por km</div>
                     </div>
                 </div>
                 <div class="metrica-card">
-                    <div class="metrica-icono">🎯</div>
+                    <div class="metrica-icono">📊</div>
                     <div class="metrica-content">
-                        <div class="metrica-valor">${calcularEficiencia(resultado)}%</div>
-                        <div class="metrica-label">Nivel de eficiencia</div>
+                        <div class="metrica-valor" id="modal-eficiencia">${calcularEficiencia(resultado)}%</div>
+                        <div class="metrica-label">Eficiencia</div>
                     </div>
                 </div>
             </div>
@@ -1750,12 +1677,8 @@ function mostrarModalRapidoSimplificado(resultado) {
     `;
 
     modal.classList.remove('hidden');
-    console.log('✅ Modal pop-up simplificado mostrado');
+    calculoActual = resultado;
 }
-
-// =============================================
-// FUNCIONES AUXILIARES
-// =============================================
 
 function obtenerSubtituloRentabilidad(resultado) {
     const porMinuto = resultado.gananciaPorMinuto;
@@ -1765,25 +1688,12 @@ function obtenerSubtituloRentabilidad(resultado) {
     return 'Ganancias bajas';
 }
 
-function obtenerMensajeImpacto(trafficAnalysis) {
-    if (!trafficAnalysis) return 'Sin datos de tráfico';
-    
-    const ajuste = trafficAnalysis.adjustment;
-    if (ajuste > 50) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Viaje significativamente afectado`;
-    if (ajuste > 20) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Considerar el impacto`;
-    if (ajuste > 0) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Impacto mínimo`;
-    return 'Tráfico fluido - Sin impacto en el tiempo';
-}
-
 function calcularEficiencia(resultado) {
-    // Calcular eficiencia basada en ganancia por minuto
     const eficiencia = Math.min((resultado.gananciaPorMinuto / 25) * 100, 100);
     return eficiencia.toFixed(0);
 }
 
 function obtenerMensajeImpacto(trafficAnalysis) {
-    if (!trafficAnalysis) return 'Sin datos de tráfico';
-    
     const ajuste = trafficAnalysis.adjustment;
     if (ajuste > 50) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Viaje significativamente afectado`;
     if (ajuste > 20) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Considerar el impacto`;
@@ -1920,43 +1830,6 @@ function configurarEventListeners() {
     
     inicializarTabs();
     
-    // Event listeners para inputs
-    if (elementos.tarifa) {
-        elementos.tarifa.addEventListener('input', manejarCalculoAutomatico);
-    }
-    
-    if (elementos.minutos) {
-        elementos.minutos.addEventListener('input', manejarCalculoAutomatico);
-    }
-    
-    if (elementos.distancia) {
-        elementos.distancia.addEventListener('input', manejarCalculoAutomatico);
-    }
-    
-    // Botones de acción
-    if (elementos['aceptar-viaje']) {
-        elementos['aceptar-viaje'].addEventListener('click', () => procesarViaje(true));
-    }
-    
-    if (elementos['rechazar-viaje']) {
-        elementos['rechazar-viaje'].addEventListener('click', () => procesarViaje(false));
-    }
-    
-    // Botón para limpiar manualmente
-    const botonLimpiar = document.getElementById('limpiar-formulario');
-    if (!botonLimpiar) {
-        // Crear botón de limpiar si no existe
-        const actionsContainer = document.querySelector('.action-buttons');
-        if (actionsContainer) {
-            const limpiarBtn = document.createElement('button');
-            limpiarBtn.id = 'limpiar-formulario';
-            limpiarBtn.className = 'secondary-button';
-            limpiarBtn.innerHTML = '<span class="button-icon">🧹</span> Limpiar';
-            limpiarBtn.onclick = limpiarFormularioCompleto;
-            actionsContainer.appendChild(limpiarBtn);
-        }
-    }
-    
     if (elementos.tarifa) {
         elementos.tarifa.addEventListener('input', manejarCalculoAutomatico);
     }
@@ -1985,19 +1858,15 @@ function configurarEventListeners() {
     if (elementos['nuevo-perfil-btn']) {
         elementos['nuevo-perfil-btn'].addEventListener('click', () => mostrarConfigPerfil());
     }
-    
     if (elementos['volver-perfiles']) {
         elementos['volver-perfiles'].addEventListener('click', () => mostrarPantalla('perfil'));
     }
-    
     if (elementos['cancelar-perfil']) {
         elementos['cancelar-perfil'].addEventListener('click', () => mostrarPantalla('perfil'));
     }
-    
     if (elementos['cambiar-perfil']) {
         elementos['cambiar-perfil'].addEventListener('click', () => mostrarPantalla('perfil'));
     }
-    
     if (elementos['perfil-form']) {
         elementos['perfil-form'].addEventListener('submit', guardarPerfil);
     }
@@ -2005,11 +1874,12 @@ function configurarEventListeners() {
     if (elementos['theme-toggle']) {
         elementos['theme-toggle'].addEventListener('click', alternarTema);
     }
-    
+  
     if (elementos['sync-status-btn']) {
         elementos['sync-status-btn'].addEventListener('click', mostrarPanelSync);
     }
     
+    // Botón de activar ubicación
     if (elementos['activar-ubicacion-btn']) {
         elementos['activar-ubicacion-btn'].addEventListener('click', activarUbicacion);
     }
@@ -2020,7 +1890,7 @@ function configurarEventListeners() {
         });
     });
     
-    console.log('✅ Event listeners configurados correctamente');
+    console.log('✅ Event listeners configurados');
 }
 
 function alternarTema() {
@@ -2182,6 +2052,7 @@ function exportarHistorialPDF() {
         const viajesFiltrados = filtrarHistorial(historial, filtroActual);
         const stats = obtenerEstadisticasCompletasConFiltro(viajesFiltrados);
         
+        // Obtener información del filtro para el título
         const infoFiltro = obtenerInfoFiltroPDF();
         
         const pdfContent = `
@@ -2242,6 +2113,7 @@ function exportarHistorialPDF() {
             gap: 10px;
         }
         
+        /* ESTADÍSTICAS PRINCIPALES */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -2271,6 +2143,7 @@ function exportarHistorialPDF() {
             font-weight: 500;
         }
         
+        /* MÉTRICAS DE RENDIMIENTO */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -2297,6 +2170,7 @@ function exportarHistorialPDF() {
             font-weight: 500;
         }
         
+        /* TABLA DE VIAJES */
         .viajes-table {
             width: 100%;
             border-collapse: collapse;
@@ -2335,6 +2209,7 @@ function exportarHistorialPDF() {
         .badge-oportunidad { background: #fff3cd; color: #856404; }
         .badge-no-rentable { background: #ffebee; color: #c62828; }
         
+        /* RESUMEN FINANCIERO */
         .financial-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -2385,6 +2260,7 @@ function exportarHistorialPDF() {
         </div>
         
         <div class="content">
+            <!-- RESUMEN EJECUTIVO -->
             <div class="section">
                 <h2 class="section-title">📊 Resumen Ejecutivo</h2>
                 <div class="stats-grid">
@@ -2407,6 +2283,7 @@ function exportarHistorialPDF() {
                 </div>
             </div>
             
+            <!-- MÉTRICAS DE RENDIMIENTO -->
             <div class="section">
                 <h2 class="section-title">🚀 Métricas de Rendimiento</h2>
                 <div class="metrics-grid">
@@ -2441,6 +2318,7 @@ function exportarHistorialPDF() {
                 </div>
             </div>
             
+            <!-- DETALLE DE VIAJES -->
             <div class="section">
                 <h2 class="section-title">📋 Detalle de Viajes (${viajesFiltrados.length})</h2>
                 ${viajesFiltrados.length > 0 ? `
@@ -2482,6 +2360,7 @@ function exportarHistorialPDF() {
                 `}
             </div>
             
+            <!-- RESUMEN FINANCIERO -->
             <div class="section">
                 <h2 class="section-title">💰 Resumen Financiero</h2>
                 <div class="financial-grid">
@@ -2556,6 +2435,7 @@ function configurarModalExportacion() {
     }
 }
 
+// FUNCIONES AUXILIARES PARA EL PDF
 function obtenerEstadisticasCompletasConFiltro(viajesFiltrados) {
     const viajesAceptados = viajesFiltrados.filter(v => v.aceptado === true);
     const totalViajes = viajesAceptados.length;
@@ -2780,7 +2660,7 @@ async function resincronizarCompleta() {
     }
 }
 
-function resetearSincronizacion() {
+async function resetearSincronizacion() {
     console.log('🔄 RESETEANDO SISTEMA DE SINCRONIZACIÓN...');
     
     if (confirm('¿Estás seguro de que quieres resetear la sincronización? Esto no borrará tus datos locales.')) {
@@ -2841,9 +2721,6 @@ async function inicializarApp() {
         configurarEventListeners();
         configurarModalExportacion();
         
-        // 🚨 OCULTAR RESULTADO INSTANTÁNEO EN INTERFAZ
-        ocultarResultadoInstantaneo();
-        
         if (perfiles.length === 0) {
             mostrarPantalla('perfil');
             mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
@@ -2861,81 +2738,6 @@ async function inicializarApp() {
         mostrarPantalla('perfil');
         mostrarStatus('Error al cargar la aplicación. Por favor, recarga la página.', 'error');
     }
-}
-
-// =============================================
-// FUNCIÓN PARA OCULTAR RESULTADO INSTANTÁNEO
-// =============================================
-
-function ocultarResultadoInstantaneo() {
-    console.log('🚫 Ocultando resultado instantáneo...');
-    
-    // Buscar y ocultar la sección de resultado instantáneo si existe
-    const resultadoRapido = document.getElementById('resultado-rapido');
-    if (resultadoRapido) {
-        resultadoRapido.style.display = 'none';
-        console.log('✅ Sección resultado-rápido ocultada');
-    }
-    
-    // También ocultar elementos individuales si existen
-    const elementosOcultar = [
-        'resultado-rapido',
-        'resultado-badge', 
-        'resultado-emoji',
-        'resultado-texto',
-        'metrica-minuto',
-        'metrica-km'
-    ];
-    
-    elementosOcultar.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            elemento.style.display = 'none';
-            console.log(`✅ Elemento ${id} ocultado`);
-        }
-    });
-}
-
-// =============================================
-// AGREGAR ESTILOS CSS PARA OCULTAR ELEMENTOS
-// =============================================
-
-function agregarEstilosOcultos() {
-    const styles = `
-        /* Ocultar resultado instantáneo del formulario principal */
-        #resultado-rapido,
-        #resultado-badge,
-        #resultado-emoji, 
-        #resultado-texto,
-        #metrica-minuto,
-        #metrica-km {
-            display: none !important;
-        }
-        
-        /* Asegurar que el modal pop-up tenga buen espaciado */
-        .modal-rapido-contenido-mejorado {
-            padding: 0;
-        }
-        
-        .metricas-grid-mejorado {
-            margin: 20px 0;
-        }
-        
-        .acciones-mejoradas {
-            margin-top: 20px;
-        }
-        
-        /* Mejorar espaciado del formulario principal sin resultado instantáneo */
-        #tab-calcular .form-section {
-            margin-bottom: 10px;
-            padding-bottom: 15px;
-        }
-    `;
-    
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = styles;
-    document.head.appendChild(styleSheet);
-    console.log('✅ Estilos para ocultar elementos agregados');
 }
 
 // =============================================
@@ -2967,8 +2769,6 @@ window.diagnosticarSincronizacion = diagnosticarSincronizacion;
 window.resincronizarCompleta = resincronizarCompleta;
 window.resetearSincronizacion = resetearSincronizacion;
 window.verificarConexionFirebase = verificarConexionFirebase;
-window.limpiarFormularioCompleto = limpiarFormularioCompleto;
-window.ocultarResultadoInstantaneo = ocultarResultadoInstantaneo;
 
 // =============================================
 // EJECUCIÓN PRINCIPAL
@@ -2976,10 +2776,6 @@ window.ocultarResultadoInstantaneo = ocultarResultadoInstantaneo;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 DOM cargado, inicializando aplicación...');
-    
-    // Agregar estilos para ocultar elementos
-    agregarEstilosOcultos();
-    
     inicializarApp();
 });
 
@@ -3012,7 +2808,3 @@ window.onclick = function(event) {
         }
     }
 };
-
-
-
-
