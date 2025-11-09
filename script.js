@@ -50,7 +50,7 @@ function inicializarElementosDOM() {
     
     const ids = [
         'perfil-screen', 'config-perfil-screen', 'main-screen',
-        'status-indicator', 'status-text', 'auto-calc-indicator',
+        'status-indicator', 'status-text', 
         'tarifa', 'minutos', 'distancia',
         'resultado-rapido', 'resultado-badge', 'resultado-emoji', 'resultado-texto',
         'metrica-minuto', 'metrica-km',
@@ -934,36 +934,48 @@ function cambiarPestana(tabId) {
 // =============================================
 
 function manejarCalculoAutomatico() {
+    console.log('🔄 Input cambiado, manejando cálculo automático...');
+    
+    // Limpiar timeout anterior
     if (timeoutCalculo) {
         clearTimeout(timeoutCalculo);
     }
-    timeoutCalculo = setTimeout(calcularAutomatico, 500);
+    
+    // Configurar nuevo timeout con más tiempo
+    timeoutCalculo = setTimeout(calcularAutomatico, 800); // Aumentado a 800ms
 }
 
 function calcularAutomatico() {
-    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
+    console.log('🧮 Ejecutando cálculo automático...');
+    
+    if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) {
+        console.error('❌ Elementos de formulario no encontrados');
+        return;
+    }
     
     const tarifa = parseFloat(elementos.tarifa.value) || 0;
     const minutos = parseFloat(elementos.minutos.value) || 0;
     const distancia = parseFloat(elementos.distancia.value) || 0;
     
+    console.log('📊 Datos ingresados:', { tarifa, minutos, distancia });
+    
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
     if (datosCompletos) {
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.remove('hidden');
-        }
+        console.log('✅ Datos completos, calculando rentabilidad...');
         
         const resultado = calcularRentabilidad(tarifa, minutos, distancia);
         
         if (resultado) {
             calculoActual = resultado;
+            console.log('🎯 Resultado del cálculo:', resultado);
             mostrarResultadoRapido(resultado);
+        } else {
+            console.error('❌ Error en el cálculo de rentabilidad');
         }
     } else {
-        if (elementos['auto-calc-indicator']) {
-            elementos['auto-calc-indicator'].classList.add('hidden');
-        }
+        console.log('📝 Datos incompletos, ocultando resultados...');
+        // Solo ocultar resultados, NO limpiar el formulario
         if (elementos['resultado-rapido']) {
             elementos['resultado-rapido'].classList.add('hidden');
         }
@@ -972,9 +984,14 @@ function calcularAutomatico() {
 }
 
 function calcularRentabilidad(tarifa, minutos, distancia) {
-    if (!perfilActual) return null;
+    if (!perfilActual) {
+        console.error('❌ No hay perfil actual para calcular');
+        return null;
+    }
     
     try {
+        console.log('🔧 Calculando rentabilidad con perfil:', perfilActual.nombre);
+        
         const combustibleUsado = distancia / perfilActual.rendimiento;
         const costoCombustible = combustibleUsado * perfilActual.precioCombustible;
         
@@ -986,10 +1003,22 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
         const costoTotal = costoCombustible + costoMantenimiento + costoSeguro;
         const gananciaNeta = tarifa - costoTotal;
         
-        const gananciaPorMinuto = tarifa / minutos;
-        const gananciaPorKm = tarifa / distancia;
+        const gananciaPorMinuto = minutos > 0 ? (tarifa / minutos) : 0;
+        const gananciaPorKm = distancia > 0 ? (tarifa / distancia) : 0;
         
         let rentabilidad, emoji, texto;
+        
+        console.log('📐 Umbrales del perfil:', {
+            minRent: perfilActual.umbralMinutoRentable,
+            kmRent: perfilActual.umbralKmRentable,
+            minOport: perfilActual.umbralMinutoOportunidad,
+            kmOport: perfilActual.umbralKmOportunidad
+        });
+        
+        console.log('📊 Métricas calculadas:', {
+            gananciaPorMinuto,
+            gananciaPorKm
+        });
         
         if (gananciaPorMinuto >= perfilActual.umbralMinutoRentable && 
             gananciaPorKm >= perfilActual.umbralKmRentable) {
@@ -1007,13 +1036,17 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
             texto = 'NO RENTABLE';
         }
         
-        return {
+        const resultado = {
             tarifa, minutos, distancia, gananciaNeta, gananciaPorMinuto, gananciaPorKm,
             costoCombustible, costoMantenimiento, costoSeguro, costoTotal,
             rentabilidad, emoji, texto, timestamp: new Date().toISOString()
         };
         
+        console.log('🎉 Resultado final:', resultado);
+        return resultado;
+        
     } catch (error) {
+        console.error('❌ Error en el cálculo:', error);
         mostrarError('Error en el cálculo. Verifica los datos ingresados.');
         return null;
     }
@@ -1402,13 +1435,27 @@ function mostrarMensaje(mensaje, tipo = 'info') {
 }
 
 function limpiarFormulario() {
+    console.log('🧹 Limpiando formulario...');
+    
+    // SOLO limpiar cuando el usuario lo decida explícitamente
+    // No limpiar automáticamente durante el cálculo
+}
+
+function limpiarFormularioCompleto() {
+    console.log('🗑️ Limpiando formulario completo...');
+    
     if (elementos.tarifa) elementos.tarifa.value = '';
     if (elementos.minutos) elementos.minutos.value = '';
     if (elementos.distancia) elementos.distancia.value = '';
-    if (elementos['auto-calc-indicator']) elementos['auto-calc-indicator'].classList.add('hidden');
-    if (elementos['resultado-rapido']) elementos['resultado-rapido'].classList.add('hidden');
+    
+    if (elementos['resultado-rapido']) {
+        elementos['resultado-rapido'].classList.add('hidden');
+    }
+    
     calculoActual = null;
     cerrarModalRapido();
+    
+    console.log('✅ Formulario limpiado completamente');
 }
 
 function cerrarModal() {
@@ -1421,9 +1468,9 @@ function cerrarModalRapido() {
     const modalRapido = document.getElementById('modal-rapido');
     if (modalRapido) {
         modalRapido.classList.add('hidden');
-        // LIMPIAR FORMULARIO AL CERRAR MODAL
-        limpiarFormulario();
     }
+    // NO limpiar el formulario automáticamente aquí
+    // El usuario decide cuándo limpiar
 }
 
 function cerrarExportModal() {
@@ -1465,7 +1512,8 @@ function procesarViaje(aceptado) {
             mostrarStatus('❌ Viaje rechazado', 'info');
         }
 
-        limpiarFormulario();
+        // LIMPIAR FORMULARIO SOLO DESPUÉS DE PROCESAR
+        limpiarFormularioCompleto();
         cerrarModal();
         
         actualizarEstadisticas();
@@ -1503,7 +1551,8 @@ function procesarViajeRapido(aceptado) {
         mostrarMensaje('❌ Viaje rechazado', 'info');
     }
     
-    limpiarFormulario();
+    // LIMPIAR FORMULARIO SOLO DESPUÉS DE PROCESAR
+    limpiarFormularioCompleto();
     
     actualizarEstadisticas();
     actualizarHistorialConFiltros();
@@ -1559,6 +1608,39 @@ function guardarEnHistorial(resultado, aceptado) {
 // =============================================
 
 function mostrarResultadoRapido(resultado) {
+    if (!resultado) {
+        console.error('❌ No hay resultado para mostrar');
+        return;
+    }
+
+    console.log('🚀 Mostrando resultado rápido:', resultado);
+
+    // Actualizar resultado rápido en la interfaz principal
+    if (elementos['resultado-rapido']) {
+        elementos['resultado-rapido'].classList.remove('hidden');
+        
+        if (elementos['resultado-emoji']) {
+            elementos['resultado-emoji'].textContent = resultado.emoji;
+        }
+        if (elementos['resultado-texto']) {
+            elementos['resultado-texto'].textContent = resultado.texto;
+        }
+        if (elementos['resultado-badge']) {
+            elementos['resultado-badge'].className = `resultado-badge ${resultado.rentabilidad}`;
+        }
+        if (elementos['metrica-minuto']) {
+            elementos['metrica-minuto'].textContent = formatearMoneda(resultado.gananciaPorMinuto);
+        }
+        if (elementos['metrica-km']) {
+            elementos['metrica-km'].textContent = formatearMoneda(resultado.gananciaPorKm);
+        }
+    }
+
+    // Mostrar modal rápido mejorado
+    mostrarModalRapidoMejorado(resultado);
+}
+
+function mostrarModalRapidoMejorado(resultado) {
     if (!resultado) return;
 
     let modal = document.getElementById('modal-rapido');
@@ -1614,7 +1696,7 @@ function mostrarResultadoRapido(resultado) {
                 <div class="metrica-card">
                     <div class="metrica-icono">💸</div>
                     <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-minuto">${formatearMoneda(resultado.gananciaPorMinuto)}</div>
+                        <div class="metrica-valor" id="modal-ganancia-minuto">${formatearMoneda(resultado.tarifa)}</div>
                         <div class="metrica-label">Ganancia total</div>
                     </div>
                 </div>
@@ -1662,8 +1744,12 @@ function mostrarResultadoRapido(resultado) {
     `;
 
     modal.classList.remove('hidden');
-    calculoActual = resultado;
+    console.log('✅ Modal rápido mostrado correctamente');
 }
+
+// =============================================
+// FUNCIONES AUXILIARES
+// =============================================
 
 function obtenerSubtituloRentabilidad(resultado) {
     const porMinuto = resultado.gananciaPorMinuto;
@@ -1671,6 +1757,16 @@ function obtenerSubtituloRentabilidad(resultado) {
     if (porMinuto >= 15) return 'Buenas condiciones';
     if (porMinuto >= 10) return 'Condiciones regulares';
     return 'Ganancias bajas';
+}
+
+function obtenerMensajeImpacto(trafficAnalysis) {
+    if (!trafficAnalysis) return 'Sin datos de tráfico';
+    
+    const ajuste = trafficAnalysis.adjustment;
+    if (ajuste > 50) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Viaje significativamente afectado`;
+    if (ajuste > 20) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Considerar el impacto`;
+    if (ajuste > 0) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Impacto mínimo`;
+    return 'Tráfico fluido - Sin impacto en el tiempo';
 }
 
 function calcularEficiencia(resultado) {
@@ -1815,6 +1911,58 @@ function configurarEventListeners() {
     
     inicializarTabs();
     
+    // Event listeners para inputs - CON MEJOR MANEJO
+    if (elementos.tarifa) {
+        elementos.tarifa.addEventListener('input', function() {
+            console.log('💰 Input de tarifa cambiado');
+            manejarCalculoAutomatico();
+        });
+    }
+    
+    if (elementos.minutos) {
+        elementos.minutos.addEventListener('input', function() {
+            console.log('⏱️ Input de minutos cambiado');
+            manejarCalculoAutomatico();
+        });
+    }
+    
+    if (elementos.distancia) {
+        elementos.distancia.addEventListener('input', function() {
+            console.log('🛣️ Input de distancia cambiado');
+            manejarCalculoAutomatico();
+        });
+    }
+    
+    // Botones de acción
+    if (elementos['aceptar-viaje']) {
+        elementos['aceptar-viaje'].addEventListener('click', () => {
+            console.log('✅ Botón aceptar viaje clickeado');
+            procesarViaje(true);
+        });
+    }
+    
+    if (elementos['rechazar-viaje']) {
+        elementos['rechazar-viaje'].addEventListener('click', () => {
+            console.log('❌ Botón rechazar viaje clickeado');
+            procesarViaje(false);
+        });
+    }
+    
+    // Botón para limpiar manualmente
+    const botonLimpiar = document.getElementById('limpiar-formulario');
+    if (!botonLimpiar) {
+        // Crear botón de limpiar si no existe
+        const actionsContainer = document.querySelector('.action-buttons');
+        if (actionsContainer) {
+            const limpiarBtn = document.createElement('button');
+            limpiarBtn.id = 'limpiar-formulario';
+            limpiarBtn.className = 'secondary-button';
+            limpiarBtn.innerHTML = '<span class="button-icon">🧹</span> Limpiar';
+            limpiarBtn.onclick = limpiarFormularioCompleto;
+            actionsContainer.appendChild(limpiarBtn);
+        }
+    }
+    
     if (elementos.tarifa) {
         elementos.tarifa.addEventListener('input', manejarCalculoAutomatico);
     }
@@ -1843,15 +1991,19 @@ function configurarEventListeners() {
     if (elementos['nuevo-perfil-btn']) {
         elementos['nuevo-perfil-btn'].addEventListener('click', () => mostrarConfigPerfil());
     }
+    
     if (elementos['volver-perfiles']) {
         elementos['volver-perfiles'].addEventListener('click', () => mostrarPantalla('perfil'));
     }
+    
     if (elementos['cancelar-perfil']) {
         elementos['cancelar-perfil'].addEventListener('click', () => mostrarPantalla('perfil'));
     }
+    
     if (elementos['cambiar-perfil']) {
         elementos['cambiar-perfil'].addEventListener('click', () => mostrarPantalla('perfil'));
     }
+    
     if (elementos['perfil-form']) {
         elementos['perfil-form'].addEventListener('submit', guardarPerfil);
     }
@@ -1859,7 +2011,7 @@ function configurarEventListeners() {
     if (elementos['theme-toggle']) {
         elementos['theme-toggle'].addEventListener('click', alternarTema);
     }
-  
+    
     if (elementos['sync-status-btn']) {
         elementos['sync-status-btn'].addEventListener('click', mostrarPanelSync);
     }
@@ -1874,7 +2026,7 @@ function configurarEventListeners() {
         });
     });
     
-    console.log('✅ Event listeners configurados');
+    console.log('✅ Event listeners configurados correctamente');
 }
 
 function alternarTema() {
@@ -2743,6 +2895,7 @@ window.diagnosticarSincronizacion = diagnosticarSincronizacion;
 window.resincronizarCompleta = resincronizarCompleta;
 window.resetearSincronizacion = resetearSincronizacion;
 window.verificarConexionFirebase = verificarConexionFirebase;
+window.limpiarFormularioCompleto = limpiarFormularioCompleto;
 
 // =============================================
 // EJECUCIÓN PRINCIPAL
@@ -2782,3 +2935,4 @@ window.onclick = function(event) {
         }
     }
 };
+
