@@ -3366,3 +3366,29 @@ function agregarEstilosTrafico() {
     font-weight: 600;
     font-size: 0.9em;
 }
+
+.auto-calc-indicator {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 12px 15px;
+    margin-top: 15px;
+    text-align: center;
+    border-left: 4px solid #4CAF50;
+}
+
+.auto-calc-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.auto-calc-icon {
+    font-size: 1.2em;
+}
+
+.auto-calc-text {
+    font-weight: 600;
+    font-size: 0.9em;
+}
