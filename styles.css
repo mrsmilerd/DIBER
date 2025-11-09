@@ -2937,7 +2937,7 @@ function agregarEstilosTrafico() {
 
 /* Resultado principal */
 .resultado-principal {
-    padding: 25px 20px 15px 20px;
+    padding: 0 25px 20px 25px;
 }
 
 .badge-rentabilidad {
@@ -2981,33 +2981,40 @@ function agregarEstilosTrafico() {
 .metricas-grid-mejorado {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    padding: 0 20px 20px;
+    gap: 12px;
+    padding: 0 25px 20px 25px;
 }
 
 .metrica-card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 15px 10px;
     text-align: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.metrica-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
 }
 
 .metrica-icono {
     font-size: 1.5em;
     margin-bottom: 8px;
+    opacity: 0.9;
 }
 
 .metrica-valor {
-    font-weight: bold;
-    font-size: 1.1em;
-    margin-bottom: 5px;
+    font-weight: 700;
+    font-size: 0.95em;
+    margin-bottom: 4px;
 }
 
 .metrica-label {
-    font-size: 0.8em;
-    color: #666;
+    font-size: 0.75em;
+    opacity: 0.7;
 }
 
 /* Impacto del tráfico */
@@ -3015,7 +3022,7 @@ function agregarEstilosTrafico() {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     border-radius: 12px;
-   margin: 0 20px 25px 20px;
+    margin: 0 25px 20px 25px;
     padding: 15px;
     border-left: 4px solid #4facfe;
 }
@@ -3175,220 +3182,144 @@ function agregarEstilosTrafico() {
 }
 
 /* ============================================= */
-/* HEADER CORREGIDO - EMOJIS UNIFORMES Y LOGO SÓLIDO */
+/* ESTILOS PARA HEADER REORGANIZADO - VERSIÓN FINAL */
 /* ============================================= */
 
 .app-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: flex-start !important;
-    padding: 8px 0 !important;
-    width: 100% !important;
-    position: relative !important;
-    min-height: 60px !important;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 15px 0;
+    position: relative;
+    width: 100%;
+    gap: 20px;
 }
 
 .header-left {
-    display: flex !important;
-    align-items: flex-start !important;
-    justify-content: flex-start !important;
-    flex: 0 0 auto !important;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .logo-container {
-    position: absolute !important;
-    left: 50% !important;
-    top: 0 !important;
-    transform: translateX(-50%) !important;
-    text-align: center !important;
-    z-index: 1000 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
 }
 
 .header-actions {
-    display: flex !important;
-    align-items: flex-start !important;
-    gap: 6px !important;
-    justify-content: flex-end !important;
-    flex: 0 0 auto !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-end;
 }
 
-/* LOGO MÁS GRANDE Y SIN TRANSPARENCIA */
+/* Logo MÁS GRANDE */
 .app-logo {
-    height: 80px !important;
-    width: auto !important;
-    max-width: none !important;
-    object-fit: contain !important;
-    filter: none !important;
-    opacity: 1 !important;
-    background: transparent !important;
+    max-height: 60px !important;
+    width: auto;
+    object-fit: contain;
 }
 
-/* BOTONES UNIFORMES - TODOS IGUALES */
-.user-code-button,
-.header-actions .secondary-button.small,
-.theme-toggle {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background: var(--card-bg) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 8px !important;
-    padding: 8px !important;
-    cursor: pointer !important;
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 16px !important;
-    margin: 0 !important;
-    flex-shrink: 0 !important;
-    transition: all 0.3s ease !important;
-}
-
-/* EMOJIS UNIFORMES - TODOS EL MISMO TAMAÑO */
-.user-code-button .button-icon,
-.header-actions .button-icon,
-.theme-toggle .theme-icon {
-    font-size: 18px !important;
-    line-height: 1 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 100% !important;
-    height: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Estados hover */
-.user-code-button:hover,
-.header-actions .secondary-button.small:hover,
-.theme-toggle:hover {
-    border-color: var(--primary-blue) !important;
-    background: rgba(26, 115, 232, 0.1) !important;
-    transform: scale(1.05) !important;
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-    .app-logo {
-        height: 70px !important;
-    }
-    
-    .user-code-button,
-    .header-actions .secondary-button.small,
-    .theme-toggle {
-        width: 38px !important;
-        height: 38px !important;
-        padding: 7px !important;
-        font-size: 15px !important;
-    }
-    
-    .user-code-button .button-icon,
-    .header-actions .button-icon,
-    .theme-toggle .theme-icon {
-        font-size: 17px !important;
-    }
-}
-
-@media (max-width: 480px) {
-    .app-logo {
-        height: 65px !important;
-    }
-    
-    .user-code-button,
-    .header-actions .secondary-button.small,
-    .theme-toggle {
-        width: 36px !important;
-        height: 36px !important;
-        padding: 6px !important;
-        font-size: 14px !important;
-    }
-    
-    .user-code-button .button-icon,
-    .header-actions .button-icon,
-    .theme-toggle .theme-icon {
-        font-size: 16px !important;
-    }
-}
-
-/* Estilos para el resultado rápido (sin modal) */
-.resultado-rapido {
-    background: var(--card-bg);
-    border-radius: 12px;
-    padding: 15px;
-    margin-top: 15px;
-    border-left: 4px solid var(--primary-blue);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.resultado-badge {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.resultado-badge.rentable {
-    color: #2e7d32;
-}
-
-.resultado-badge.oportunidad {
-    color: #ff9800;
-}
-
-.resultado-badge.no-rentable {
-    color: #c62828;
-}
-
-.resultado-metricas {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-.metrica-rapida {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.metrica-rapida:last-child {
-    border-bottom: none;
-}
-
-.metrica-label {
-    font-size: 0.9em;
-    color: var(--text-secondary);
-}
-
-.metrica-valor {
-    font-weight: 600;
-    font-size: 0.9em;
-}
-
-.auto-calc-indicator {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 10px;
-    padding: 12px 15px;
-    margin-top: 15px;
-    text-align: center;
-    border-left: 4px solid #4CAF50;
-}
-
-.auto-calc-content {
+/* Botón de código - SOLO EMOJI */
+.user-code-button {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 8px 10px !important;
+    cursor: pointer !important;
+    color: var(--text-primary) !important;
+    font-size: 1.1em !important;
+    min-width: auto !important;
+    transition: all 0.3s !important;
+    width: 40px;
+    height: 40px;
 }
 
-.auto-calc-icon {
-    font-size: 1.2em;
+.user-code-button:hover {
+    border-color: var(--primary-blue) !important;
+    background: rgba(26, 115, 232, 0.1) !important;
+    transform: scale(1.05);
 }
 
-.auto-calc-text {
-    font-weight: 600;
-    font-size: 0.9em;
+/* Botones de acciones */
+.header-actions .secondary-button.small {
+    padding: 8px 10px !important;
+    min-width: auto !important;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
+
+.header-actions button {
+    min-width: auto !important;
+    padding: 8px 10px !important;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .app-header {
+        grid-template-columns: auto 1fr auto;
+        gap: 15px;
+        padding: 12px 0;
+    }
+    
+    .app-logo {
+        max-height: 50px !important;
+    }
+    
+    .header-actions {
+        gap: 8px;
+    }
+    
+    .user-code-button,
+    .header-actions .secondary-button.small {
+        width: 36px;
+        height: 36px;
+        padding: 6px 8px !important;
+    }
+}
+
+/* Para pantallas muy pequeñas */
+@media (max-width: 480px) {
+    .app-header {
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        padding: 10px 0;
+    }
+    
+    .app-logo {
+        max-height: 45px !important;
+    }
+    
+    .header-actions {
+        gap: 6px;
+    }
+    
+    .user-code-button,
+    .header-actions .secondary-button.small {
+        width: 34px;
+        height: 34px;
+        padding: 5px 7px !important;
+        font-size: 1em !important;
+    }
+}
+
+/* Asegurar que no haya superposiciones */
+.header-left,
+.logo-container,
+.header-actions {
+    position: relative;
+    z-index: 10;
+}
+
+.logo-container {
+    z-index: 20;
+}
+
