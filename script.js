@@ -950,7 +950,7 @@ function manejarCalculoAutomatico() {
     if (timeoutCalculo) {
         clearTimeout(timeoutCalculo);
     }
-    timeoutCalculo = setTimeout(calcularAutomatico, 800); // Aumenté el tiempo a 800ms
+    timeoutCalculo = setTimeout(verificarDatosCompletos, 500);
 }
 
 function calcularAutomatico() {
@@ -1000,34 +1000,6 @@ function calcularAutomatico() {
             elementos['resultado-rapido'].classList.add('hidden');
         }
         cerrarModalRapido();
-    }
-}
-
-// NUEVA FUNCIÓN: Mostrar resultado sin abrir modal
-function mostrarResultadoRapidoSinModal(resultado) {
-    if (!resultado || !elementos['resultado-rapido']) return;
-    
-    // Solo actualizar el resultado rápido (pequeño) sin abrir modal
-    elementos['resultado-rapido'].classList.remove('hidden');
-    
-    if (elementos['resultado-emoji']) {
-        elementos['resultado-emoji'].textContent = resultado.emoji;
-    }
-    if (elementos['resultado-texto']) {
-        elementos['resultado-texto'].textContent = resultado.texto;
-    }
-    if (elementos['metrica-minuto']) {
-        elementos['metrica-minuto'].textContent = formatearMoneda(resultado.gananciaPorMinuto) + '/min';
-    }
-    if (elementos['metrica-km']) {
-        elementos['metrica-km'].textContent = formatearMoneda(resultado.gananciaPorKm) + '/km';
-    }
-    
-    // Actualizar clases CSS para el badge
-    const badge = elementos['resultado-badge'];
-    if (badge) {
-        badge.className = 'resultado-badge';
-        badge.classList.add(resultado.rentabilidad);
     }
 }
 
@@ -2921,6 +2893,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
