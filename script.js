@@ -1573,7 +1573,7 @@ function guardarEnHistorial(resultado, aceptado) {
 // SISTEMA DE RESULTADO RÁPIDO
 // =============================================
 
-function mostrarResultadoRapido(resultado) {
+function mostrarModalRapidoSimplificado(resultado) {
     if (!resultado) return;
 
     let modal = document.getElementById('modal-rapido');
@@ -1603,48 +1603,13 @@ function mostrarResultadoRapido(resultado) {
                 </button>
             </div>
 
-            <div class="tiempo-ajustado-section">
-                <div class="tiempo-original">
-                    <span class="tiempo-label">Tiempo estimado:</span>
-                    <span class="tiempo-valor" id="modal-tiempo-original">${resultado.minutos || 0} min</span>
-                </div>
-                <div class="flecha-ajuste">↓</div>
-                <div class="tiempo-real">
-                    <span class="tiempo-label">Con tráfico real:</span>
-                    <span class="tiempo-valor destacado" id="modal-tiempo-real">${tiempoReal} min</span>
-                </div>
-            </div>
-
+            <!-- 🎯 SOLO RENTABILIDAD - ELIMINADO TODO LO DEMÁS -->
             <div class="resultado-principal" id="modal-resultado-principal">
                 <div class="badge-rentabilidad ${resultado.rentabilidad}" id="modal-badge-rentabilidad">
                     <div class="badge-emoji">${resultado.emoji}</div>
                     <div class="badge-content">
                         <div class="badge-title">${resultado.texto}</div>
                         <div class="badge-subtitle" id="modal-badge-subtitle">${obtenerSubtituloRentabilidad(resultado)}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="metricas-grid-mejorado">
-                <div class="metrica-card">
-                    <div class="metrica-icono">💸</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-minuto">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
-                        <div class="metrica-label">Por minuto</div>
-                    </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">🛣️</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-km">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
-                        <div class="metrica-label">Por km</div>
-                    </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">📊</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-eficiencia">${calcularEficiencia(resultado)}%</div>
-                        <div class="metrica-label">Eficiencia</div>
                     </div>
                 </div>
             </div>
@@ -1677,7 +1642,7 @@ function mostrarResultadoRapido(resultado) {
     `;
 
     modal.classList.remove('hidden');
-    calculoActual = resultado;
+    console.log('✅ Modal pop-up ultra-simplificado mostrado');
 }
 
 function obtenerSubtituloRentabilidad(resultado) {
@@ -1699,6 +1664,74 @@ function obtenerMensajeImpacto(trafficAnalysis) {
     if (ajuste > 20) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Considerar el impacto`;
     if (ajuste > 0) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Impacto mínimo`;
     return 'Tráfico fluido - Sin impacto en el tiempo';
+}
+
+// =============================================
+// ACTUALIZAR CSS PARA EL MODAL SIMPLIFICADO
+// =============================================
+
+function agregarEstilosOcultos() {
+    const styles = `
+        /* Ocultar resultado instantáneo del formulario principal */
+        #resultado-rapido,
+        #resultado-badge,
+        #resultado-emoji, 
+        #resultado-texto,
+        #metrica-minuto,
+        #metrica-km {
+            display: none !important;
+        }
+        
+        /* Modal ultra-simplificado - sin métricas */
+        .metricas-grid-mejorado {
+            display: none !important;
+        }
+        
+        /* Mejor espaciado para modal simplificado */
+        .modal-rapido-contenido-mejorado {
+            padding: 0;
+        }
+        
+        .resultado-principal {
+            margin: 20px 0;
+        }
+        
+        .impacto-trafico {
+            margin: 15px 0;
+        }
+        
+        .acciones-mejoradas {
+            margin-top: 20px;
+        }
+        
+        /* Badge de rentabilidad más destacado */
+        .badge-rentabilidad {
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .badge-emoji {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .badge-title {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .badge-subtitle {
+            font-size: 1em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+    `;
+    
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+    console.log('✅ Estilos para modal simplificado agregados');
 }
 
 // =============================================
@@ -2808,3 +2841,4 @@ window.onclick = function(event) {
         }
     }
 };
+
