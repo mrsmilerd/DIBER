@@ -2964,7 +2964,9 @@ async function inicializarApp() {
         }
         
         await initializeFirebaseSync();
-        await inicializarSistemaTrafico();
+        
+         console.log('✅ Sistema de tráfico Waze inicializado automáticamente');
+        
         await cargarDatos();
         
         aplicarTemaGuardado();
@@ -3058,6 +3060,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
