@@ -4,169 +4,355 @@
 // =============================================
 
 // =============================================
-// SISTEMA WAZE EN TIEMPO REAL - RADIO 10KM
+// SISTEMA HÍBRIDO DE TRÁFICO INTELIGENTE
 // =============================================
 
-class WazeTrafficAnalyzer {
+class HybridTrafficAnalyzer {
     constructor() {
-        this.radiusKm = 10; // Radio de 10km alrededor del usuario
-        this.updateInterval = 120000; // Actualizar cada 2 minutos (Waze es pesado)
+        this.radiusKm = 10;
+        this.updateInterval = 300000; // 5 minutos
         this.lastUpdate = null;
         this.currentTrafficData = null;
-        this.cacheDuration = 60000; // Cache de 1 minuto para misma ubicación
         this.locationCache = new Map();
+        this.cacheDuration = 60000; // 1 minuto
     }
 
     async obtenerTraficoRadio(ubicacionUsuario) {
         const cacheKey = `${ubicacionUsuario.lat.toFixed(4)},${ubicacionUsuario.lng.toFixed(4)}`;
         const now = Date.now();
         
-        // Verificar cache de ubicación
+        // Verificar cache
         const cached = this.locationCache.get(cacheKey);
         if (cached && now - cached.timestamp < this.cacheDuration) {
-            console.log('📦 Usando cache de tráfico Waze');
+            console.log('📦 Usando cache de análisis híbrido');
             return cached.data;
         }
 
-        // Verificar si tenemos datos generales recientes
+        // Verificar datos generales recientes
         if (this.currentTrafficData && this.lastUpdate && 
             now - this.lastUpdate < this.updateInterval) {
-            console.log('🔄 Usando datos Waze recientes');
+            console.log('🔄 Usando datos híbridos recientes');
             return this.currentTrafficData;
         }
 
-        console.log('🛰️ Consultando Waze para radio de 10km...');
+        console.log('🧠 Ejecutando análisis híbrido de tráfico...');
         
         try {
-            const trafficData = await this.consultarWazeAPI(ubicacionUsuario);
-            this.currentTrafficData = trafficData;
+            const analisisCompleto = await this.analizarTraficoCompleto(ubicacionUsuario);
+            
+            this.currentTrafficData = analisisCompleto;
             this.lastUpdate = now;
             
-            // Guardar en cache de ubicación
+            // Guardar en cache
             this.locationCache.set(cacheKey, {
                 timestamp: now,
-                data: trafficData
+                data: analisisCompleto
             });
 
-            // Limpiar cache viejo
             this.cleanOldCache();
             
-            return trafficData;
+            return analisisCompleto;
             
         } catch (error) {
-            console.error('❌ Error Waze API:', error);
+            console.error('❌ Error en análisis híbrido:', error);
             return this.getConservativeEstimate();
         }
     }
 
-    async consultarWazeAPI(ubicacion) {
-        // Waze tiene un endpoint público para alertas de tráfico
-        const url = `https://www.waze.com/row-rtserver/web/TGeoRSS` +
-                    `?tk=ccp_partner` +
-                    `&format=JSON` +
-                    `&lat=${ubicacion.lat}` +
-                    `&lon=${ubicacion.lng}` +
-                    `&radius=${this.radiusKm}`;
-
-        console.log('🔗 Consultando Waze:', url);
-
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': 'application/json',
-                'Referer': 'https://www.waze.com/'
-            },
-            mode: 'cors'
-        });
-
-        if (!response.ok) {
-            throw new Error(`Waze error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return this.procesarDatosWaze(data, ubicacion);
-    }
-
-    procesarDatosWaze(data, ubicacion) {
-        const alertas = data.alerts || [];
-        const jams = data.jams || [];
+    async analizarTraficoCompleto(ubicacion) {
+        console.log('🔍 Analizando múltiples fuentes de tráfico...');
         
-        console.log(`📊 Waze: ${alertas.length} alertas, ${jams.length} atascos`);
+        const [patronTiempo, tipoZona, infoZona] = await Promise.all([
+            this.analizarPatronTiempo(),
+            this.analizarTipoZona(ubicacion),
+            this.obtenerInfoZona(ubicacion)
+        ]);
 
-        // Analizar densidad de alertas y atascos
-        const alertasGraves = alertas.filter(a => 
-            a.type === 'ACCIDENT' || a.type === 'HAZARD' || a.type === 'ROAD_CLOSED' || a.type === 'WEATHERHAZARD'
-        );
-        
-        const atascosActivos = jams.filter(j => j.severity >= 2); // Severidad media-alta
-        
-        // Calcular factor de tráfico basado en densidad
-        const factorTrafico = this.calcularFactorTrafico(
-            alertasGraves.length, 
-            atascosActivos.length,
-            this.radiusKm
-        );
+        // Combinar inteligentemente todas las fuentes
+        const factorTrafico = this.combinarFuentesInteligentemente([
+            patronTiempo,    // 50% peso - más confiable
+            tipoZona,        // 40% peso  
+            infoZona         // 10% peso
+        ]);
 
         const resultado = {
             factorTrafico: factorTrafico,
-            alertasTotales: alertas.length,
-            alertasGraves: alertasGraves.length,
-            atascosActivos: atascosActivos.length,
-            radioKm: this.radiusKm,
-            ubicacionCentro: ubicacion,
+            fuentes: {
+                patronTiempo,
+                tipoZona, 
+                infoZona
+            },
             timestamp: new Date().toISOString(),
-            confianza: this.calcularConfianza(alertas.length),
-            tiposAlertas: this.contarTiposAlertas(alertas)
+            confianza: this.calcularConfianza([patronTiempo, tipoZona, infoZona]),
+            mensaje: this.generarMensajeInteligente(factorTrafico, tipoZona, patronTiempo),
+            detalles: this.generarDetallesCompletos(patronTiempo, tipoZona, infoZona),
+            dataSource: 'hybrid_intelligent'
         };
 
-        console.log('✅ Análisis Waze completado:', resultado);
+        console.log('✅ Análisis híbrido completado:', resultado);
         return resultado;
     }
 
-    calcularFactorTrafico(alertasGraves, atascosActivos, radioKm) {
-        // Densidad por km²
-        const area = Math.PI * Math.pow(radioKm, 2);
-        const densidadAlertas = alertasGraves / area;
-        const densidadAtascos = atascosActivos / area;
+    analizarPatronTiempo() {
+        const ahora = new Date();
+        const hora = ahora.getHours();
+        const minutos = ahora.getMinutes();
+        const horaDecimal = hora + (minutos / 60);
+        const dia = ahora.getDay();
+        const esFinSemana = dia === 0 || dia === 6;
+        const esVacaciones = this.esTemporadaVacaciones(ahora);
         
-        console.log(`📈 Densidad: ${densidadAlertas.toFixed(3)} alertas/km², ${densidadAtascos.toFixed(3)} atascos/km²`);
+        console.log(`📅 Análisis temporal: ${hora}:${minutos}, ${esFinSemana ? 'Fin de semana' : 'Día laboral'}`);
         
-        // Factor base
         let factor = 1.0;
+        let descripcion = '';
         
-        // Ajustar por densidad de alertas graves
-        if (densidadAlertas > 0.5) factor += 0.8; // +80%
-        else if (densidadAlertas > 0.2) factor += 0.4; // +40%
-        else if (densidadAlertas > 0.1) factor += 0.2; // +20%
+        if (!esFinSemana) {
+            // LUNES A VIERNES - Patrones específicos para Santo Domingo
+            if (horaDecimal >= 6.5 && horaDecimal <= 9.5) {
+                // PICO MAÑANA: 6:30 AM - 9:30 AM
+                const intensidad = this.calcularIntensidadPico(horaDecimal, 7.5, 2.0);
+                factor = 1.5 + (intensidad * 0.7); // 1.5 - 2.2
+                descripcion = 'Hora pico mañana';
+            }
+            else if (horaDecimal >= 11.5 && horaDecimal <= 14.0) {
+                // ALMUERZO: 11:30 AM - 2:00 PM
+                factor = 1.3;
+                descripcion = 'Hora almuerzo';
+            }
+            else if (horaDecimal >= 16.5 && horaDecimal <= 19.5) {
+                // PICO TARDE: 4:30 PM - 7:30 PM
+                const intensidad = this.calcularIntensidadPico(horaDecimal, 17.5, 2.5);
+                factor = 1.6 + (intensidad * 0.8); // 1.6 - 2.4
+                descripcion = 'Hora pico tarde';
+            }
+            else if (horaDecimal >= 7 && horaDecimal <= 17) {
+                // DÍA LABORAL NORMAL
+                factor = 1.2;
+                descripcion = 'Día laboral normal';
+            }
+            else {
+                // MADRUGADA/NOCHE
+                factor = 0.9;
+                descripcion = 'Horario tranquilo';
+            }
+        } else {
+            // FIN DE SEMANA
+            if (horaDecimal >= 11 && horaDecimal <= 16) {
+                factor = 1.4;
+                descripcion = 'Fin de semana activo';
+            }
+            else if (horaDecimal >= 18 && horaDecimal <= 22) {
+                factor = 1.3;
+                descripcion = 'Noche de fin de semana';
+            }
+            else {
+                factor = 1.0;
+                descripcion = 'Fin de semana tranquilo';
+            }
+        }
         
-        // Ajustar por densidad de atascos
-        if (densidadAtascos > 0.3) factor += 0.6; // +60%
-        else if (densidadAtascos > 0.1) factor += 0.3; // +30%
-
-        // Ajuste mínimo si hay cualquier alerta grave
-        if (alertasGraves > 0 && factor < 1.1) factor = 1.1;
+        // Ajuste por vacaciones
+        if (esVacaciones) {
+            factor *= 0.8; // 20% menos tráfico en vacaciones
+            descripcion += ' (temporada vacacional)';
+        }
         
-        const factorFinal = Math.min(Math.max(factor, 1.0), 2.5); // Límites
-        console.log(`🎯 Factor tráfico calculado: ${factorFinal}`);
-        
-        return factorFinal;
+        return {
+            factor: Math.min(factor, 2.5),
+            tipo: 'patron_tiempo',
+            confianza: 0.85,
+            descripcion: descripcion,
+            horaAnalizada: `${hora}:${minutos.toString().padStart(2, '0')}`
+        };
     }
 
-    contarTiposAlertas(alertas) {
-        const tipos = {};
-        alertas.forEach(alerta => {
-            tipos[alerta.type] = (tipos[alerta.type] || 0) + 1;
+    calcularIntensidadPico(horaActual, horaPico, duracionPico) {
+        const distancia = Math.abs(horaActual - horaPico);
+        const intensidad = Math.max(0, 1 - (distancia / (duracionPico / 2)));
+        return intensidad;
+    }
+
+    async analizarTipoZona(ubicacion) {
+        try {
+            const zonaInfo = await this.obtenerInfoZona(ubicacion);
+            const tipoZona = this.clasificarZona(zonaInfo);
+            
+            let factor = 1.0;
+            let descripcionZona = 'Área general';
+            
+            switch(tipoZona) {
+                case 'centro_ciudad':
+                    factor = 1.7;
+                    descripcionZona = 'Centro de ciudad';
+                    break;
+                case 'avenida_principal':
+                    factor = 1.8;
+                    descripcionZona = 'Avenida principal';
+                    break;
+                case 'zona_comercial':
+                    factor = 1.6;
+                    descripcionZona = 'Zona comercial';
+                    break;
+                case 'residencial':
+                    factor = 1.2;
+                    descripcionZona = 'Zona residencial';
+                    break;
+                case 'carretera':
+                    factor = 1.0;
+                    descripcionZona = 'Carretera';
+                    break;
+                case 'industrial':
+                    factor = 1.3;
+                    descripcionZona = 'Zona industrial';
+                    break;
+                default:
+                    factor = 1.4;
+                    descripcionZona = 'Área urbana';
+            }
+            
+            return {
+                factor: factor,
+                tipo: 'tipo_zona',
+                confianza: 0.75,
+                zona: tipoZona,
+                descripcion: descripcionZona,
+                nombre: zonaInfo.display_name?.split(',')[0] || 'Tu ubicación'
+            };
+            
+        } catch (error) {
+            console.warn('⚠️ No se pudo analizar tipo de zona:', error);
+            return { 
+                factor: 1.3, 
+                tipo: 'tipo_zona', 
+                confianza: 0.3, 
+                zona: 'desconocida',
+                descripcion: 'Área desconocida',
+                nombre: 'Tu ubicación'
+            };
+        }
+    }
+
+    async obtenerInfoZona(ubicacion) {
+        // Usar OpenStreetMap Nominatim (gratuito y sin CORS)
+        const url = `https://nominatim.openstreetmap.org/reverse?` +
+                   `lat=${ubicacion.lat}&` +
+                   `lon=${ubicacion.lng}&` +
+                   `format=json&` +
+                   `addressdetails=1&` +
+                   `zoom=16`;
+
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'DIBER-App/1.0 (contacto@diber.com)',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) throw new Error(`OSM error: ${response.status}`);
+            
+            const data = await response.json();
+            console.log('🗺️ Información de zona obtenida:', data.display_name?.split(',')[0]);
+            return data;
+            
+        } catch (error) {
+            console.warn('⚠️ Fallback a información de zona básica');
+            return { display_name: 'Área local' };
+        }
+    }
+
+    clasificarZona(zonaInfo) {
+        const address = zonaInfo.address || {};
+        
+        // Clasificación inteligente basada en datos de OpenStreetMap
+        if (address.road) {
+            const roadLower = address.road.toLowerCase();
+            
+            // Detectar avenidas principales (ej: Churchill, 27 de Febrero, Kennedy)
+            if (roadLower.includes('avenida') || roadLower.includes('av.')) 
+                return 'avenida_principal';
+            if (roadLower.includes('autopista') || roadLower.includes('expreso'))
+                return 'carretera';
+        }
+        
+        if (address.city && address.city.toLowerCase().includes('santo domingo'))
+            return 'centro_ciudad';
+            
+        if (address.shop || address.commercial)
+            return 'zona_comercial';
+            
+        if (address.industrial || address.landuse === 'industrial')
+            return 'industrial';
+            
+        if (address.suburb || address.residential)
+            return 'residencial';
+        
+        return 'general';
+    }
+
+    combinarFuentesInteligentemente(fuentes) {
+        let totalPonderado = 0;
+        let totalPesos = 0;
+        
+        const pesos = {
+            'patron_tiempo': 0.50,  // Más peso al patrón temporal
+            'tipo_zona': 0.40,      // Buen peso al tipo de zona
+            'info_zona': 0.10       // Menos peso a info adicional
+        };
+        
+        fuentes.forEach(fuente => {
+            const peso = pesos[fuente.tipo] || 0.1;
+            const factorAjustado = fuente.factor * (fuente.confianza || 0.5);
+            totalPonderado += factorAjustado * peso;
+            totalPesos += peso;
         });
-        return tipos;
+        
+        const factorFinal = totalPonderado / totalPesos;
+        return Math.min(Math.max(factorFinal, 0.8), 2.5); // Límites razonables
     }
 
-    calcularConfianza(totalAlertas) {
-        // Más alertas = más confianza en los datos
-        if (totalAlertas > 20) return 0.9;
-        if (totalAlertas > 10) return 0.8;
-        if (totalAlertas > 5) return 0.7;
-        if (totalAlertas > 0) return 0.6;
-        return 0.5; // Sin alertas, confianza baja
+    generarMensajeInteligente(factor, tipoZona, patronTiempo) {
+        const nombreZona = tipoZona.nombre || 'tu zona';
+        const descripcionPatron = patronTiempo.descripcion.toLowerCase();
+        
+        if (factor >= 2.0) 
+            return `🚨 TRÁFICO MUY PESADO en ${nombreZona} - ${descripcionPatron}`;
+        if (factor >= 1.6) 
+            return `⚠️ Tráfico PESADO en ${nombreZona} - ${descripcionPatron}`;
+        if (factor >= 1.3) 
+            return `🟡 Tráfico MODERADO en ${nombreZona}`;
+        if (factor <= 0.9) 
+            return `✅ Tráfico FLUIDO en ${nombreZona}`;
+            
+        return `🟢 Tráfico NORMAL en ${nombreZona}`;
+    }
+
+    generarDetallesCompletos(patronTiempo, tipoZona, infoZona) {
+        return `${tipoZona.descripcion} | ${patronTiempo.descripcion} | Análisis híbrido`;
+    }
+
+    calcularConfianza(fuentes) {
+        const confianzas = fuentes.map(f => f.confianza || 0.5);
+        const promedio = confianzas.reduce((a, b) => a + b, 0) / confianzas.length;
+        return Math.min(promedio * 1.2, 0.95); // Boost de confianza por múltiples fuentes
+    }
+
+    esTemporadaVacaciones(fecha) {
+        const mes = fecha.getMonth();
+        const dia = fecha.getDate();
+        
+        // Vacaciones en República Dominicana
+        const vacaciones = [
+            { mes: 11, diaInicio: 15, diaFin: 31 }, // Navidad (15-31 Dic)
+            { mes: 0, diaInicio: 1, diaFin: 15 },   // Año Nuevo (1-15 Ene)
+            { mes: 2, diaInicio: 25, diaFin: 31 },  // Semana Santa (marzo/abril - aproximado)
+            { mes: 7, diaInicio: 1, diaFin: 20 }    // Verano (Agosto)
+        ];
+        
+        return vacaciones.some(v => 
+            mes === v.mes && dia >= v.diaInicio && dia <= v.diaFin
+        );
     }
 
     cleanOldCache() {
@@ -183,37 +369,37 @@ class WazeTrafficAnalyzer {
         const ahora = new Date();
         const hora = ahora.getHours();
         
-        // Estimación básica por hora
         let factor = 1.0;
         if ((hora >= 7 && hora <= 9) || (hora >= 17 && hora <= 19)) {
-            factor = 1.6; // Hora pico
+            factor = 1.6;
         } else if (hora >= 12 && hora <= 14) {
-            factor = 1.3; // Hora almuerzo
+            factor = 1.3;
         }
         
         return {
             factorTrafico: factor,
-            alertasTotales: 0,
-            alertasGraves: 0,
-            atascosActivos: 0,
-            radioKm: this.radiusKm,
-            ubicacionCentro: null,
+            fuentes: {
+                patronTiempo: { factor: factor, descripcion: 'Estimación horaria' },
+                tipoZona: { factor: 1.0, descripcion: 'Área general' }
+            },
             timestamp: new Date().toISOString(),
-            confianza: 0.3,
-            tiposAlertas: {},
+            confianza: 0.4,
+            mensaje: factor >= 1.5 ? '⏰ Hora pico estimada' : '🕒 Hora normal estimada',
+            detalles: 'Estimación básica por hora del día',
+            dataSource: 'fallback',
             esEstimacion: true
         };
     }
 }
 
 // =============================================
-// SISTEMA DE TRÁFICO WAZE MEJORADO
+// SISTEMA DE TRÁFICO HÍBRIDO MEJORADO
 // =============================================
 
 class TrafficRadiusAnalyzer {
     constructor() {
         this.radiusKm = 10;
-        this.wazeAnalyzer = new WazeTrafficAnalyzer();
+        this.hybridAnalyzer = new HybridTrafficAnalyzer();
         this.lastLocation = null;
         this.congestionLevels = {
             low: { factor: 1.0, emoji: '✅', color: '#4CAF50', text: 'Fluido' },
@@ -224,35 +410,40 @@ class TrafficRadiusAnalyzer {
     }
 
     async quickTrafficAnalysis(userMinutes) {
-        console.log('⚡ Análisis Waze en tiempo real...');
+        console.log('🧠 Ejecutando análisis híbrido de tráfico...');
         
         try {
             const location = await this.getQuickLocation();
-            const wazeData = await this.wazeAnalyzer.obtenerTraficoRadio(location);
+            const hybridData = await this.hybridAnalyzer.obtenerTraficoRadio(location);
             
-            // Usar factor de Waze directamente
-            const adjustedTime = Math.ceil(userMinutes * wazeData.factorTrafico);
+            const adjustedTime = Math.ceil(userMinutes * hybridData.factorTrafico);
             
             const resultado = {
                 originalTime: userMinutes,
                 adjustedTime: adjustedTime,
-                trafficCondition: this.mapearCondicionTrafico(wazeData.factorTrafico),
-                trafficInfo: this.congestionLevels[this.mapearCondicionTrafico(wazeData.factorTrafico)],
-                adjustment: ((wazeData.factorTrafico - 1) * 100).toFixed(0),
-                isSignificant: wazeData.factorTrafico > 1.3,
+                trafficCondition: this.mapearCondicionTrafico(hybridData.factorTrafico),
+                trafficInfo: this.congestionLevels[this.mapearCondicionTrafico(hybridData.factorTrafico)],
+                adjustment: ((hybridData.factorTrafico - 1) * 100).toFixed(0),
+                isSignificant: hybridData.factorTrafico > 1.3,
                 location: location,
-                mensaje: this.generarMensajeWaze(wazeData),
-                detalles: this.generarDetallesWaze(wazeData),
-                confidence: wazeData.confianza,
-                dataSource: 'waze',
-                wazeData: wazeData // Datos completos para debug
+                mensaje: hybridData.mensaje,
+                detalles: hybridData.detalles,
+                confidence: hybridData.confianza,
+                dataSource: hybridData.dataSource,
+                hybridData: hybridData
             };
 
-            console.log('✅ Análisis completado:', resultado);
+            console.log('✅ Análisis híbrido completado:', {
+                minutosOriginales: userMinutes,
+                minutosReales: adjustedTime,
+                factor: hybridData.factorTrafico,
+                mensaje: hybridData.mensaje
+            });
+            
             return resultado;
             
         } catch (error) {
-            console.error('❌ Error en análisis Waze:', error);
+            console.error('❌ Error en análisis híbrido:', error);
             return this.getConservativeEstimate(userMinutes);
         }
     }
@@ -264,46 +455,7 @@ class TrafficRadiusAnalyzer {
         return 'low';
     }
 
-    generarMensajeWaze(wazeData) {
-        if (wazeData.esEstimacion) {
-            return '📡 Estimación por hora (Waze no disponible)';
-        }
-        
-        if (wazeData.alertasGraves > 5) {
-            return `🚨 ${wazeData.alertasGraves} incidentes graves en ${wazeData.radioKm}km`;
-        }
-        if (wazeData.atascosActivos > 3) {
-            return `⚠️ ${wazeData.atascosActivos} atascos activos en tu zona`;
-        }
-        if (wazeData.factorTrafico > 1.8) {
-            return `🔴 Tráfico MUY pesado - ${wazeData.alertasTotales} alertas`;
-        }
-        if (wazeData.factorTrafico > 1.4) {
-            return `🟡 Tráfico moderado - ${wazeData.alertasTotales} alertas`;
-        }
-        if (wazeData.alertasTotales > 0) {
-            return `🟢 Tráfico fluido - ${wazeData.alertasTotales} alertas leves`;
-        }
-        return `✅ Tráfico excelente - Sin incidentes`;
-    }
-
-    generarDetallesWaze(wazeData) {
-        if (wazeData.esEstimacion) {
-            return 'Usando estimación por hora del día';
-        }
-        
-        let detalles = `${wazeData.alertasTotales} alertas totales`;
-        if (wazeData.alertasGraves > 0) {
-            detalles += `, ${wazeData.alertasGraves} graves`;
-        }
-        if (wazeData.atascosActivos > 0) {
-            detalles += `, ${wazeData.atascosActivos} atascos`;
-        }
-        detalles += ` en ${wazeData.radioKm}km radio`;
-        
-        return detalles;
-    }
-
+    // ... (mantén el resto de tus métodos igual)
     async getQuickLocation() {
         if (this.lastLocation && Date.now() - this.lastLocation.timestamp < 30000) {
             return this.lastLocation.coords;
@@ -331,7 +483,7 @@ class TrafficRadiusAnalyzer {
                 },
                 { 
                     enableHighAccuracy: false,
-                    timeout: 5000, // Más rápido
+                    timeout: 5000,
                     maximumAge: 60000
                 }
             );
@@ -3060,6 +3212,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
