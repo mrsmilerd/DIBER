@@ -325,7 +325,8 @@ generarMensajeInteligente(factor, tipoZona, patronTiempo) {
 }
 
 generarDetallesCompletos(patronTiempo, tipoZona, infoZona) {
-    return `${tipoZona.descripcion} | ${patronTiempo.descripcion} | Análisis híbrido`;
+    const nombreZona = tipoZona.nombre || 'Área local';
+    return `${nombreZona} | ${tipoZona.descripcion} | ${patronTiempo.descripcion}`;
 }
 
 calcularConfianza(fuentes) {
@@ -3210,6 +3211,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
