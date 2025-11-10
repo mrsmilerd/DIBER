@@ -3144,11 +3144,31 @@ async function inicializarApp() {
 }
 
 // =============================================
-// FUNCIONES PARA MODAL RÁPIDO DE TRÁFICO
+// FUNCIONES PARA MODAL RÁPIDO DE TRÁFICO - VERSIÓN CORREGIDA
 // =============================================
+
+// Función para activar análisis de tráfico con datos del formulario
+function activarAnalisisTrafico() {
+    const tarifa = parseFloat(document.getElementById('tarifa').value) || 0;
+    const minutos = parseInt(document.getElementById('minutos').value) || 0;
+    const distancia = parseFloat(document.getElementById('distancia').value) || 0;
+    
+    console.log('Datos del formulario:', { tarifa, minutos, distancia }); // Para debug
+    
+    // Validar que todos los campos tengan datos
+    if (tarifa <= 0 || minutos <= 0 || distancia <= 0) {
+        alert('Por favor, completa todos los campos del viaje primero');
+        return;
+    }
+    
+    // Mostrar el modal con los datos reales
+    mostrarModalRapido(tarifa, minutos, distancia);
+}
 
 // Función para mostrar el modal rápido con datos reales
 function mostrarModalRapido(tarifa, minutos, distancia) {
+    console.log('Mostrando modal con:', { tarifa, minutos, distancia }); // Para debug
+    
     // Obtener elementos del DOM
     const modal = document.getElementById('modal-rapido');
     const tiempoOriginal = document.getElementById('modal-tiempo-original');
@@ -3156,6 +3176,7 @@ function mostrarModalRapido(tarifa, minutos, distancia) {
     const condicionTrafico = document.getElementById('modal-trafico-condition');
     const badgeTitle = document.getElementById('modal-badge-title');
     const badgeSubtitle = document.getElementById('modal-badge-subtitle');
+    const badgeEmoji = document.getElementById('modal-badge-emoji');
     const gananciaMinuto = document.getElementById('modal-ganancia-minuto');
     const gananciaKm = document.getElementById('modal-ganancia-km');
     const eficiencia = document.getElementById('modal-eficiencia');
@@ -3165,11 +3186,34 @@ function mostrarModalRapido(tarifa, minutos, distancia) {
     const badgeAceptar = document.getElementById('modal-badge-aceptar');
     const badgeRechazar = document.getElementById('modal-badge-rechazar');
 
+    // Resetear estilos iniciales
+    badgeRentabilidad.style.background = '#f8f9fa';
+    badgeRentabilidad.style.borderColor = '#dee2e6';
+    btnAceptar.style.background = '#e8f5e8';
+    btnAceptar.style.color = '#2e7d32';
+    btnAceptar.style.borderColor = '#4caf50';
+
     // Mostrar tiempo original
     tiempoOriginal.textContent = `${minutos} min`;
+    tiempoReal.textContent = `-- min`;
+    condicionTrafico.textContent = `Cargando datos...`;
+    badgeTitle.textContent = `ANALIZANDO`;
+    badgeSubtitle.textContent = `Calculando rentabilidad...`;
+    badgeEmoji.textContent = `⏳`;
+    gananciaMinuto.textContent = `--/min`;
+    gananciaKm.textContent = `--/km`;
+    eficiencia.textContent = `--%`;
+    impactoContent.textContent = `Calculando impacto del tráfico...`;
+    badgeAceptar.textContent = `Recomendado`;
+    badgeRechazar.textContent = `No rentable`;
 
-    // Simular análisis de tráfico (en una app real, esto vendría de una API)
+    // Mostrar modal inmediatamente
+    modal.classList.remove('hidden');
+
+    // Simular análisis de tráfico después de 1 segundo
     setTimeout(() => {
+        console.log('Calculando análisis de tráfico...'); // Para debug
+        
         // Generar datos de tráfico realistas
         const nivelesTrafico = [
             { nivel: 'Bajo', factor: 1.1, emoji: '🟢', desc: 'Tráfico fluido' },
@@ -3180,6 +3224,8 @@ function mostrarModalRapido(tarifa, minutos, distancia) {
 
         const traficoAleatorio = nivelesTrafico[Math.floor(Math.random() * nivelesTrafico.length)];
         const tiempoConTrafico = Math.round(minutos * traficoAleatorio.factor);
+
+        console.log('Tráfico generado:', traficoAleatorio, 'Tiempo con tráfico:', tiempoConTrafico); // Para debug
 
         // Actualizar datos de tráfico
         tiempoReal.textContent = `${tiempoConTrafico} min`;
@@ -3195,6 +3241,9 @@ function mostrarModalRapido(tarifa, minutos, distancia) {
         const umbralKmRentable = perfil ? perfil.umbralKmRentable : 25.00;
         const umbralMinutoOportunidad = perfil ? perfil.umbralMinutoOportunidad : 5.00;
         const umbralKmOportunidad = perfil ? perfil.umbralKmOportunidad : 23.00;
+
+        console.log('Umbrales:', { umbralMinutoRentable, umbralKmRentable, umbralMinutoOportunidad, umbralKmOportunidad }); // Para debug
+        console.log('Ganancias calculadas:', { gananciaPorMinuto, gananciaPorKm }); // Para debug
 
         // Determinar rentabilidad
         let esRentable = false;
@@ -3223,10 +3272,13 @@ function mostrarModalRapido(tarifa, minutos, distancia) {
             recomendacionAceptar = 'No recomendado';
         }
 
+        console.log('Resultado:', resultadoTexto); // Para debug
+
         // Actualizar UI con resultados
         badgeTitle.textContent = resultadoTexto;
         badgeSubtitle.textContent = esRentable ? 'Excelentes condiciones' : 
                                    esOportunidad ? 'Condiciones aceptables' : 'No cumple criterios';
+        badgeEmoji.textContent = resultadoEmoji;
         
         badgeRentabilidad.style.background = esRentable ? '#e8f5e8' : 
                                            esOportunidad ? '#fff3cd' : '#ffebee';
@@ -3264,9 +3316,6 @@ function mostrarModalRapido(tarifa, minutos, distancia) {
         }
 
     }, 1000); // Simular delay de carga de datos
-
-    // Mostrar modal
-    modal.classList.remove('hidden');
 }
 
 // Función para cerrar el modal rápido
@@ -3280,18 +3329,35 @@ function procesarViajeRapido(aceptar) {
     if (aceptar) {
         // Lógica para aceptar viaje
         console.log('Viaje aceptado');
+        mostrarNotificacion('✅ Viaje aceptado y guardado en historial', 'success');
         // Aquí iría la lógica para guardar en historial, etc.
     } else {
         // Lógica para rechazar viaje
         console.log('Viaje rechazado');
+        mostrarNotificacion('❌ Viaje rechazado', 'error');
     }
     cerrarModalRapido();
 }
 
 // Función auxiliar para obtener perfil actual
 function obtenerPerfilActual() {
-    // Esta función debería retornar el perfil activo actual
-    // Por ahora retornamos un objeto con valores por defecto
+    try {
+        // Intentar obtener el perfil activo del localStorage
+        const perfilActivo = localStorage.getItem('perfilActivo');
+        if (perfilActivo) {
+            const perfil = JSON.parse(perfilActivo);
+            return {
+                umbralMinutoRentable: perfil.umbralMinutoRentable || 6.00,
+                umbralKmRentable: perfil.umbralKmRentable || 25.00,
+                umbralMinutoOportunidad: perfil.umbralMinutoOportunidad || 5.00,
+                umbralKmOportunidad: perfil.umbralKmOportunidad || 23.00
+            };
+        }
+    } catch (error) {
+        console.error('Error al obtener perfil:', error);
+    }
+    
+    // Valores por defecto si no hay perfil
     return {
         umbralMinutoRentable: 6.00,
         umbralKmRentable: 25.00,
@@ -3300,20 +3366,44 @@ function obtenerPerfilActual() {
     };
 }
 
-// Función para activar análisis de tráfico con datos del formulario
-function activarAnalisisTrafico() {
-    const tarifa = parseFloat(document.getElementById('tarifa').value) || 0;
-    const minutos = parseInt(document.getElementById('minutos').value) || 0;
-    const distancia = parseFloat(document.getElementById('distancia').value) || 0;
+// Función para mostrar notificaciones (agregar si no existe)
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    // Crear elemento de notificación
+    const notificacion = document.createElement('div');
+    notificacion.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        background: ${tipo === 'success' ? '#4caf50' : tipo === 'error' ? '#f44336' : '#2196f3'};
+        color: white;
+        border-radius: 5px;
+        z-index: 10000;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease-out;
+    `;
     
-    // Validar que todos los campos tengan datos
-    if (tarifa <= 0 || minutos <= 0 || distancia <= 0) {
-        alert('Por favor, completa todos los campos del viaje primero');
-        return;
-    }
+    notificacion.textContent = mensaje;
+    document.body.appendChild(notificacion);
     
-    // Mostrar el modal con los datos reales
-    mostrarModalRapido(tarifa, minutos, distancia);
+    // Remover después de 3 segundos
+    setTimeout(() => {
+        notificacion.remove();
+    }, 3000);
+}
+
+// Agregar estilo CSS para la animación si no existe
+if (!document.querySelector('#notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 // =============================================
@@ -3384,6 +3474,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
