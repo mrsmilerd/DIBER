@@ -57,33 +57,33 @@ class HybridTrafficAnalyzer {
     }
 
     async analizarTraficoCompleto(ubicacion) {
-        console.log('🔍 Analizando múltiples fuentes de tráfico...');
-        
-        const [patronTiempo, tipoZona, infoZona] = await Promise.all([
-            this.analizarPatronTiempo(),
-            this.analizarTipoZona(ubicacion),
-            this.obtenerInfoZona(ubicacion)
-        ]);
+    console.log('🔍 Analizando múltiples fuentes de tráfico...');
+    
+    const [patronTiempo, tipoZona, infoZona] = await Promise.all([
+        this.analizarPatronTiempo(),
+        this.analizarTipoZona(ubicacion),
+        this.obtenerInfoZona(ubicacion)  // ✅ Ahora retorna objeto válido
+    ]);
 
-        const factorTrafico = this.combinarFuentesInteligentemente([
-            patronTiempo,
-            tipoZona,
-            infoZona
-        ]);
+    const factorTrafico = this.combinarFuentesInteligentemente([
+        patronTiempo,
+        tipoZona,
+        infoZona  // ✅ Ahora es un objeto válido
+    ]);
 
-        const resultado = {
-            factorTrafico: factorTrafico,
-            fuentes: { patronTiempo, tipoZona, infoZona },
-            timestamp: new Date().toISOString(),
-            confianza: this.calcularConfianza([patronTiempo, tipoZona, infoZona]),
-            mensaje: this.generarMensajeInteligente(factorTrafico, tipoZona, patronTiempo),
-            detalles: this.generarDetallesCompletos(patronTiempo, tipoZona, infoZona),
-            dataSource: 'hybrid_intelligent'
-        };
+    const resultado = {
+        factorTrafico: factorTrafico,
+        fuentes: { patronTiempo, tipoZona, infoZona },
+        timestamp: new Date().toISOString(),
+        confianza: this.calcularConfianza([patronTiempo, tipoZona, infoZona]),
+        mensaje: this.generarMensajeInteligente(factorTrafico, tipoZona, patronTiempo),
+        detalles: this.generarDetallesCompletos(patronTiempo, tipoZona, infoZona),
+        dataSource: 'hybrid_intelligent'
+    };
 
-        console.log('✅ Análisis híbrido completado:', resultado);
-        return resultado;
-    }
+    console.log('✅ Análisis híbrido completado:', resultado);
+    return resultado;
+}
 
     analizarPatronTiempo() {
         const ahora = new Date();
@@ -160,11 +160,12 @@ class HybridTrafficAnalyzer {
         return intensidad;
     }
 
-    async analizarTipoZona(ubicacion) {
-        try {
-            const zonaInfo = await this.obtenerInfoZona(ubicacion);
-            const tipoZona = this.clasificarZona(zonaInfo);
-            
+   async analizarTipoZona(ubicacion) {
+    try {
+        const infoZona = await this.obtenerInfoZona(ubicacion);
+        const zonaInfo = infoZona.data;  // ✅ Ahora accedemos a .data
+        const tipoZona = this.clasificarZona(zonaInfo);
+        
         let factor = 1.0;
         let descripcionZona = 'Área general';
         
@@ -227,13 +228,25 @@ async obtenerInfoZona(ubicacion) {
         }
         
         console.log('🗺️ Información de zona obtenida:', data.display_name?.split(',')[0]);
-        return data;
+        
+        // ✅ CORRECCIÓN: Retornar objeto con estructura válida
+        return {
+            factor: 1.0,  // Valor por defecto
+            tipo: 'info_zona',
+            confianza: 0.5,
+            descripcion: 'Información de zona',
+            data: data  // Los datos reales de OpenStreetMap
+        };
         
     } catch (error) {
         console.warn('⚠️ Fallback a información de zona básica');
+        // ✅ CORRECCIÓN: Retornar objeto válido incluso en error
         return { 
-            display_name: 'Área local',
-            address: {}
+            factor: 1.0,
+            tipo: 'info_zona', 
+            confianza: 0.3,
+            descripcion: 'Información básica de zona',
+            data: { display_name: 'Área local', address: {} }
         };
     }
 }
@@ -3197,6 +3210,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
