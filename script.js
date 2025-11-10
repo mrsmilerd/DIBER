@@ -3,514 +3,6 @@
 // Versión Corregida y Sincronizada con HTML
 // =============================================
 
-// =============================================
-// SISTEMA HÍBRIDO DE TRÁFICO INTELIGENTE - CORREGIDO
-// =============================================
-
-class HybridTrafficAnalyzer {
-    constructor() {
-        this.radiusKm = 10;
-        this.updateInterval = 300000;
-        this.lastUpdate = null;
-        this.currentTrafficData = null;
-        this.locationCache = new Map();
-        this.cacheDuration = 60000;
-    }
-
-    async obtenerTraficoRadio(ubicacionUsuario) {
-        const cacheKey = `${ubicacionUsuario.lat.toFixed(4)},${ubicacionUsuario.lng.toFixed(4)}`;
-        const now = Date.now();
-        
-        const cached = this.locationCache.get(cacheKey);
-        if (cached && now - cached.timestamp < this.cacheDuration) {
-            console.log('📦 Usando cache de análisis híbrido');
-            return cached.data;
-        }
-
-        if (this.currentTrafficData && this.lastUpdate && 
-            now - this.lastUpdate < this.updateInterval) {
-            console.log('🔄 Usando datos híbridos recientes');
-            return this.currentTrafficData;
-        }
-
-        console.log('🧠 Ejecutando análisis híbrido de tráfico...');
-        
-        try {
-            const analisisCompleto = await this.analizarTraficoCompleto(ubicacionUsuario);
-            
-            this.currentTrafficData = analisisCompleto;
-            this.lastUpdate = now;
-            
-            this.locationCache.set(cacheKey, {
-                timestamp: now,
-                data: analisisCompleto
-            });
-
-            this.cleanOldCache();
-            
-            return analisisCompleto;
-            
-        } catch (error) {
-            console.error('❌ Error en análisis híbrido:', error);
-            return this.getConservativeEstimate();
-        }
-    }
-
-    async analizarTraficoCompleto(ubicacion) {
-    console.log('🔍 Analizando múltiples fuentes de tráfico...');
-    
-    const [patronTiempo, tipoZona, infoZona] = await Promise.all([
-        this.analizarPatronTiempo(),
-        this.analizarTipoZona(ubicacion),
-        this.obtenerInfoZona(ubicacion)  // ✅ Ahora retorna objeto válido
-    ]);
-
-    const factorTrafico = this.combinarFuentesInteligentemente([
-        patronTiempo,
-        tipoZona,
-        infoZona  // ✅ Ahora es un objeto válido
-    ]);
-
-    const resultado = {
-        factorTrafico: factorTrafico,
-        fuentes: { patronTiempo, tipoZona, infoZona },
-        timestamp: new Date().toISOString(),
-        confianza: this.calcularConfianza([patronTiempo, tipoZona, infoZona]),
-        mensaje: this.generarMensajeInteligente(factorTrafico, tipoZona, patronTiempo),
-        detalles: this.generarDetallesCompletos(patronTiempo, tipoZona, infoZona),
-        dataSource: 'hybrid_intelligent'
-    };
-
-    console.log('✅ Análisis híbrido completado:', resultado);
-    return resultado;
-}
-
-    analizarPatronTiempo() {
-        const ahora = new Date();
-        const hora = ahora.getHours();
-        const minutos = ahora.getMinutes();
-        const horaDecimal = hora + (minutos / 60);
-        const dia = ahora.getDay();
-        const esFinSemana = dia === 0 || dia === 6;
-        
-        console.log(`📅 Análisis temporal: ${hora}:${minutos}, ${esFinSemana ? 'Fin de semana' : 'Día laboral'}`);
-        
-        let factor = 1.0;
-        let descripcion = '';
-        
-        try {
-            if (!esFinSemana) {
-                if (horaDecimal >= 6.5 && horaDecimal <= 9.5) {
-                    const intensidad = this.calcularIntensidadPico(horaDecimal, 7.5, 2.0);
-                    factor = 1.5 + (intensidad * 0.7);
-                    descripcion = 'Hora pico mañana';
-                }
-                else if (horaDecimal >= 11.5 && horaDecimal <= 14.0) {
-                    factor = 1.3;
-                    descripcion = 'Hora almuerzo';
-                }
-                else if (horaDecimal >= 16.5 && horaDecimal <= 19.5) {
-                    const intensidad = this.calcularIntensidadPico(horaDecimal, 17.5, 2.5);
-                    factor = 1.6 + (intensidad * 0.8);
-                    descripcion = 'Hora pico tarde';
-                }
-                else if (horaDecimal >= 7 && horaDecimal <= 17) {
-                    factor = 1.2;
-                    descripcion = 'Día laboral normal';
-                }
-                else {
-                    factor = 0.9;
-                    descripcion = 'Horario tranquilo';
-                }
-            } else {
-                if (horaDecimal >= 11 && horaDecimal <= 16) {
-                    factor = 1.4;
-                    descripcion = 'Fin de semana activo';
-                }
-                else if (horaDecimal >= 18 && horaDecimal <= 22) {
-                    factor = 1.3;
-                    descripcion = 'Noche de fin de semana';
-                }
-                else {
-                    factor = 1.0;
-                    descripcion = 'Fin de semana tranquilo';
-                }
-            }
-            
-            factor = parseFloat(factor) || 1.0;
-            
-        } catch (error) {
-            console.error('❌ Error en análisis temporal:', error);
-            factor = 1.0;
-            descripcion = 'Análisis básico';
-        }
-        
-        return {
-            factor: factor,
-            tipo: 'patron_tiempo',
-            confianza: 0.85,
-            descripcion: descripcion,
-            horaAnalizada: `${hora}:${minutos.toString().padStart(2, '0')}`
-        };
-    }
-
-    calcularIntensidadPico(horaActual, horaPico, duracionPico) {
-        const distancia = Math.abs(horaActual - horaPico);
-        const intensidad = Math.max(0, 1 - (distancia / (duracionPico / 2)));
-        return intensidad;
-    }
-
-   async analizarTipoZona(ubicacion) {
-    try {
-        const infoZona = await this.obtenerInfoZona(ubicacion);
-        const zonaInfo = infoZona.data;  // ✅ Ahora accedemos a .data
-        const tipoZona = this.clasificarZona(zonaInfo);
-        
-        let factor = 1.0;
-        let descripcionZona = 'Área general';
-        
-        switch(tipoZona) {
-            case 'centro_ciudad': factor = 1.7; descripcionZona = 'Centro de ciudad'; break;
-            case 'avenida_principal': factor = 1.8; descripcionZona = 'Avenida principal'; break;
-            case 'zona_comercial': factor = 1.6; descripcionZona = 'Zona comercial'; break;
-            case 'residencial': factor = 1.2; descripcionZona = 'Zona residencial'; break;
-            case 'carretera': factor = 1.0; descripcionZona = 'Carretera'; break;
-            case 'industrial': factor = 1.3; descripcionZona = 'Zona industrial'; break;
-            default: factor = 1.4; descripcionZona = 'Área urbana';
-        }
-        
-        factor = parseFloat(factor) || 1.0;
-        
-        return {
-            factor: factor,
-            tipo: 'tipo_zona',
-            confianza: 0.75,
-            zona: tipoZona,
-            descripcion: descripcionZona,
-            nombre: zonaInfo.display_name?.split(',')[0] || 'Tu ubicación'
-        };
-        
-    } catch (error) {
-        console.warn('⚠️ No se pudo analizar tipo de zona:', error);
-        return { 
-            factor: 1.3, 
-            tipo: 'tipo_zona', 
-            confianza: 0.3, 
-            zona: 'desconocida',
-            descripcion: 'Área desconocida',
-            nombre: 'Tu ubicación'
-        };
-    }
-}
-
-async obtenerInfoZona(ubicacion) {
-    const url = `https://nominatim.openstreetmap.org/reverse?` +
-               `lat=${ubicacion.lat}&` +
-               `lon=${ubicacion.lng}&` +
-               `format=json&` +
-               `addressdetails=1&` +
-               `zoom=16`;
-
-    try {
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'DIBER-App/1.0',
-                'Accept': 'application/json'
-            }
-        });
-
-        if (!response.ok) throw new Error(`OSM error: ${response.status}`);
-        
-        const data = await response.json();
-        
-        if (!data || typeof data !== 'object') {
-            throw new Error('Respuesta inválida de OpenStreetMap');
-        }
-        
-        console.log('🗺️ Información de zona obtenida:', data.display_name?.split(',')[0]);
-        
-        // ✅ CORRECCIÓN: Retornar objeto con estructura válida
-        return {
-            factor: 1.0,  // Valor por defecto
-            tipo: 'info_zona',
-            confianza: 0.5,
-            descripcion: 'Información de zona',
-            data: data  // Los datos reales de OpenStreetMap
-        };
-        
-    } catch (error) {
-        console.warn('⚠️ Fallback a información de zona básica');
-        // ✅ CORRECCIÓN: Retornar objeto válido incluso en error
-        return { 
-            factor: 1.0,
-            tipo: 'info_zona', 
-            confianza: 0.3,
-            descripcion: 'Información básica de zona',
-            data: { display_name: 'Área local', address: {} }
-        };
-    }
-}
-
-clasificarZona(zonaInfo) {
-    const address = zonaInfo.address || {};
-    
-    if (address.road) {
-        const roadLower = address.road.toLowerCase();
-        
-        if (roadLower.includes('avenida') || roadLower.includes('av.')) 
-            return 'avenida_principal';
-        if (roadLower.includes('autopista') || roadLower.includes('expreso'))
-            return 'carretera';
-    }
-    
-    if (address.city && address.city.toLowerCase().includes('santo domingo'))
-        return 'centro_ciudad';
-        
-    if (address.shop || address.commercial)
-        return 'zona_comercial';
-        
-    if (address.industrial || address.landuse === 'industrial')
-        return 'industrial';
-        
-    if (address.suburb || address.residential)
-        return 'residencial';
-    
-    return 'general';
-}
-
-combinarFuentesInteligentemente(fuentes) {
-    let totalPonderado = 0;
-    let totalPesos = 0;
-    
-    const pesos = {
-        'patron_tiempo': 0.50,
-        'tipo_zona': 0.40, 
-        'info_zona': 0.10
-    };
-    
-    fuentes.forEach(fuente => {
-        let factor = parseFloat(fuente.factor);
-        if (isNaN(factor) || !isFinite(factor)) {
-            console.warn(`⚠️ Factor inválido en ${fuente.tipo}:`, fuente.factor);
-            factor = 1.0;
-        }
-        
-        const peso = pesos[fuente.tipo] || 0.1;
-        const confianza = parseFloat(fuente.confianza) || 0.5;
-        const factorAjustado = factor * Math.min(Math.max(confianza, 0.1), 1.0);
-        
-        totalPonderado += factorAjustado * peso;
-        totalPesos += peso;
-    });
-    
-    const factorFinal = totalPesos > 0 ? totalPonderado / totalPesos : 1.0;
-    
-    return Math.min(Math.max(parseFloat(factorFinal) || 1.0, 0.5), 3.0);
-}
-
-generarMensajeInteligente(factor, tipoZona, patronTiempo) {
-    const nombreZona = tipoZona.nombre || 'tu zona';
-    const descripcionPatron = patronTiempo.descripcion.toLowerCase();
-    
-    if (factor >= 2.0) 
-        return `🚨 TRÁFICO MUY PESADO en ${nombreZona} - ${descripcionPatron}`;
-    if (factor >= 1.6) 
-        return `⚠️ Tráfico PESADO en ${nombreZona} - ${descripcionPatron}`;
-    if (factor >= 1.3) 
-        return `🟡 Tráfico MODERADO en ${nombreZona}`;
-    if (factor <= 0.9) 
-        return `✅ Tráfico FLUIDO en ${nombreZona}`;
-        
-    return `🟢 Tráfico NORMAL en ${nombreZona}`;
-}
-
-generarDetallesCompletos(patronTiempo, tipoZona, infoZona) {
-    const nombreZona = tipoZona.nombre || 'Área local';
-    return `${nombreZona} | ${tipoZona.descripcion} | ${patronTiempo.descripcion}`;
-}
-
-calcularConfianza(fuentes) {
-    const confianzas = fuentes.map(f => f.confianza || 0.5);
-    const promedio = confianzas.reduce((a, b) => a + b, 0) / confianzas.length;
-    return Math.min(promedio * 1.2, 0.95);
-}
-
-esTemporadaVacaciones(fecha) {
-    const mes = fecha.getMonth();
-    const dia = fecha.getDate();
-    
-    const vacaciones = [
-        { mes: 11, diaInicio: 15, diaFin: 31 },
-        { mes: 0, diaInicio: 1, diaFin: 15 },
-        { mes: 2, diaInicio: 25, diaFin: 31 },
-        { mes: 7, diaInicio: 1, diaFin: 20 }
-    ];
-    
-    return vacaciones.some(v => 
-        mes === v.mes && dia >= v.diaInicio && dia <= v.diaFin
-    );
-}
-
-cleanOldCache() {
-    const now = Date.now();
-    for (const [key, value] of this.locationCache.entries()) {
-        if (now - value.timestamp > this.cacheDuration * 2) {
-            this.locationCache.delete(key);
-        }
-    }
-}
-
-getConservativeEstimate() {
-    console.log('🔄 Usando estimación conservadora');
-    const ahora = new Date();
-    const hora = ahora.getHours();
-    
-    let factor = 1.0;
-    if ((hora >= 7 && hora <= 9) || (hora >= 17 && hora <= 19)) {
-        factor = 1.6;
-    } else if (hora >= 12 && hora <= 14) {
-        factor = 1.3;
-    }
-    
-    factor = parseFloat(factor) || 1.0;
-    
-    return {
-        factorTrafico: factor,
-        fuentes: {
-            patronTiempo: { factor: factor, descripcion: 'Estimación horaria' },
-            tipoZona: { factor: 1.0, descripcion: 'Área general' }
-        },
-        timestamp: new Date().toISOString(),
-        confianza: 0.4,
-        mensaje: factor >= 1.5 ? '⏰ Hora pico estimada' : '🕒 Hora normal estimada',
-        detalles: 'Estimación básica por hora del día',
-        dataSource: 'fallback',
-        esEstimacion: true
-    };
-}
-}
-
-// =============================================
-// SISTEMA DE TRÁFICO HÍBRIDO MEJORADO
-// =============================================
-
-class TrafficRadiusAnalyzer {
-    constructor() {
-        this.radiusKm = 10;
-        this.hybridAnalyzer = new HybridTrafficAnalyzer();
-        this.lastLocation = null;
-        this.congestionLevels = {
-            low: { factor: 1.0, emoji: '✅', color: '#4CAF50', text: 'Fluido' },
-            moderate: { factor: 1.3, emoji: '⚠️', color: '#FF9800', text: 'Moderado' },
-            heavy: { factor: 1.7, emoji: '🚗', color: '#F44336', text: 'Pesado' },
-            severe: { factor: 2.2, emoji: '🚨', color: '#D32F2F', text: 'Muy Pesado' }
-        };
-    }
-
-    async quickTrafficAnalysis(userMinutes) {
-        console.log('🧠 Ejecutando análisis híbrido de tráfico...');
-        
-        try {
-            const location = await this.getQuickLocation();
-            const hybridData = await this.hybridAnalyzer.obtenerTraficoRadio(location);
-            
-            // ✅ CORRECCIÓN: Validar que hybridData.factorTrafico sea un número
-            const factor = parseFloat(hybridData.factorTrafico) || 1.0;
-            const adjustedTime = Math.ceil(userMinutes * factor);
-            
-            const resultado = {
-                originalTime: userMinutes,
-                adjustedTime: adjustedTime,
-                trafficCondition: this.mapearCondicionTrafico(factor),
-                trafficInfo: this.congestionLevels[this.mapearCondicionTrafico(factor)],
-                adjustment: ((factor - 1) * 100).toFixed(0),
-                isSignificant: factor > 1.3,
-                location: location,
-                mensaje: hybridData.mensaje,
-                detalles: hybridData.detalles,
-                confidence: hybridData.confianza,
-                dataSource: hybridData.dataSource,
-                hybridData: hybridData
-            };
-
-            console.log('✅ Análisis híbrido completado:', {
-                minutosOriginales: userMinutes,
-                minutosReales: adjustedTime,
-                factor: factor,
-                mensaje: hybridData.mensaje
-            });
-            
-            return resultado;
-            
-        } catch (error) {
-            console.error('❌ Error en análisis híbrido:', error);
-            return this.getConservativeEstimate(userMinutes);
-        }
-    }
-
-    mapearCondicionTrafico(factor) {
-        if (factor >= 2.0) return 'severe';
-        if (factor >= 1.5) return 'heavy';
-        if (factor >= 1.2) return 'moderate';
-        return 'low';
-    }
-
-    async getQuickLocation() {
-        if (this.lastLocation && Date.now() - this.lastLocation.timestamp < 30000) {
-            return this.lastLocation.coords;
-        }
-        
-        return new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const coords = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                        accuracy: position.coords.accuracy
-                    };
-                    
-                    this.lastLocation = {
-                        coords: coords,
-                        timestamp: Date.now()
-                    };
-                    
-                    resolve(coords);
-                },
-                (error) => {
-                    console.warn('📍 Error obteniendo ubicación:', error);
-                    reject(error);
-                },
-                { 
-                    enableHighAccuracy: false,
-                    timeout: 5000,
-                    maximumAge: 60000
-                }
-            );
-        });
-    }
-
-    getConservativeEstimate(userMinutes) {
-        console.log('🔄 Usando estimación conservadora de respaldo');
-        const hour = new Date().getHours();
-        const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
-        const factor = isPeak ? 1.6 : 1.2;
-        
-        return {
-            originalTime: userMinutes,
-            adjustedTime: Math.ceil(userMinutes * factor),
-            trafficCondition: isPeak ? 'heavy' : 'moderate',
-            trafficInfo: this.congestionLevels[isPeak ? 'heavy' : 'moderate'],
-            adjustment: ((factor - 1) * 100).toFixed(0),
-            isSignificant: true,
-            location: null,
-            mensaje: isPeak ? '⏰ Hora pico estimada' : '🕒 Hora normal estimada',
-            detalles: 'Estimación basada en hora del día',
-            confidence: 0.4,
-            dataSource: 'fallback'
-        };
-    }
-} 
-
 // --- Variables Globales ---
 let perfiles = [];
 let perfilActual = null;
@@ -520,8 +12,6 @@ let timeoutCalculo = null;
 let firebaseSync;
 let filtroActual = 'hoy';
 let Actual = null;
-let trafficAnalyzer = new TrafficRadiusAnalyzer();
-let trafficInitialized = true;
 
 // --- Sistema de Código de Usuario ---
 let userCodeSystem = {
@@ -534,6 +24,10 @@ let userCodeSystem = {
 let firebaseInitialized = false;
 let loadingData = false;
 let appInitialized = false;
+
+// --- Sistema de Tráfico ---
+let trafficAnalyzer = null;
+let trafficInitialized = false;
 
 // --- Configuración Firebase ---
 const firebaseConfig = {
@@ -1491,7 +985,7 @@ function calcularAutomatico() {
     }
 }
 
-async function calcularRentabilidad(tarifa, minutos, distancia) {
+function calcularRentabilidad(tarifa, minutos, distancia) {
     if (!perfilActual) return null;
     
     try {
@@ -1506,22 +1000,7 @@ async function calcularRentabilidad(tarifa, minutos, distancia) {
         const costoTotal = costoCombustible + costoMantenimiento + costoSeguro;
         const gananciaNeta = tarifa - costoTotal;
         
-        // 🚗 NUEVO: OBTENER TIEMPO REAL CON WAZE
-        let minutosReales = minutos;
-        let trafficAnalysis = null;
-        
-        if (minutos > 0 && trafficAnalyzer) {
-            try {
-                trafficAnalysis = await trafficAnalyzer.quickTrafficAnalysis(minutos);
-                minutosReales = trafficAnalysis.adjustedTime;
-                console.log('🛰️ Tiempo ajustado por Waze:', minutos, '→', minutosReales, 'min');
-            } catch (error) {
-                console.error('Error en análisis tráfico:', error);
-                // Continuar con minutos originales
-            }
-        }
-        
-        const gananciaPorMinuto = tarifa / minutosReales; // ← Usar minutos REALES
+        const gananciaPorMinuto = tarifa / minutos;
         const gananciaPorKm = tarifa / distancia;
         
         let rentabilidad, emoji, texto;
@@ -1543,26 +1022,12 @@ async function calcularRentabilidad(tarifa, minutos, distancia) {
         }
         
         return {
-            tarifa, 
-            minutos: minutosReales, // ← Minutos ajustados por tráfico
-            minutosOriginales: minutos, // ← Minutos originales del usuario
-            distancia, 
-            gananciaNeta, 
-            gananciaPorMinuto, 
-            gananciaPorKm,
-            costoCombustible, 
-            costoMantenimiento, 
-            costoSeguro, 
-            costoTotal,
-            rentabilidad, 
-            emoji, 
-            texto, 
-            timestamp: new Date().toISOString(),
-            trafficAnalysis: trafficAnalysis // ← Incluir datos de tráfico
+            tarifa, minutos, distancia, gananciaNeta, gananciaPorMinuto, gananciaPorKm,
+            costoCombustible, costoMantenimiento, costoSeguro, costoTotal,
+            rentabilidad, emoji, texto, timestamp: new Date().toISOString()
         };
         
     } catch (error) {
-        console.error('Error en el cálculo:', error);
         mostrarError('Error en el cálculo. Verifica los datos ingresados.');
         return null;
     }
@@ -2195,10 +1660,6 @@ function mostrarResultadoRapido(resultado) {
 
     modal.classList.remove('hidden');
     calculoActual = resultado;
-    
-if (resultado.trafficAnalysis && resultado.trafficAnalysis.mensaje) {
-        console.log('🚗 Análisis de tráfico:', resultado.trafficAnalysis.mensaje);
-    }
 }
 
 function obtenerSubtituloRentabilidad(resultado) {
@@ -2220,6 +1681,126 @@ function obtenerMensajeImpacto(trafficAnalysis) {
     if (ajuste > 20) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Considerar el impacto`;
     if (ajuste > 0) return `El tráfico aumenta el tiempo en un <strong>${ajuste}%</strong> - Impacto mínimo`;
     return 'Tráfico fluido - Sin impacto en el tiempo';
+}
+
+// =============================================
+// SISTEMA DE ANÁLISIS DE TRÁFICO
+// =============================================
+
+class TrafficRadiusAnalyzer {
+    constructor() {
+        this.radiusKm = 10;
+        this.congestionLevels = {
+            low: { factor: 1.0, emoji: '✅', color: '#4CAF50', text: 'Fluido' },
+            moderate: { factor: 1.3, emoji: '⚠️', color: '#FF9800', text: 'Moderado' },
+            heavy: { factor: 1.7, emoji: '🚗', color: '#F44336', text: 'Pesado' },
+            severe: { factor: 2.2, emoji: '🚨', color: '#D32F2F', text: 'Muy Pesado' }
+        };
+        this.lastLocation = null;
+    }
+
+    async quickTrafficAnalysis(userMinutes) {
+        console.log('⚡ Análisis rápido de tráfico...');
+        
+        try {
+            const location = await this.getQuickLocation();
+            const trafficCondition = this.instantTrafficCheck();
+            const adjustedTime = Math.ceil(userMinutes * this.congestionLevels[trafficCondition].factor);
+            
+            return {
+                originalTime: userMinutes,
+                adjustedTime: adjustedTime,
+                trafficCondition: trafficCondition,
+                trafficInfo: this.congestionLevels[trafficCondition],
+                adjustment: ((this.congestionLevels[trafficCondition].factor - 1) * 100).toFixed(0),
+                isSignificant: adjustedTime > userMinutes * 1.2,
+                location: location
+            };
+            
+        } catch (error) {
+            console.log('🔄 Usando estimación conservadora');
+            return this.getConservativeEstimate(userMinutes);
+        }
+    }
+
+    async getQuickLocation() {
+        if (this.lastLocation && Date.now() - this.lastLocation.timestamp < 30000) {
+            return this.lastLocation.coords;
+        }
+        
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const coords = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+                    
+                    this.lastLocation = {
+                        coords: coords,
+                        timestamp: Date.now()
+                    };
+                    
+                    resolve(coords);
+                },
+                (error) => {
+                    console.warn('Error obteniendo ubicación:', error);
+                    reject(error);
+                },
+                { 
+                    enableHighAccuracy: false,
+                    timeout: 3000,
+                    maximumAge: 60000
+                }
+            );
+        });
+    }
+
+    instantTrafficCheck() {
+        const now = new Date();
+        const hour = now.getHours();
+        const day = now.getDay();
+        const isWeekend = day === 0 || day === 6;
+        
+        if (isWeekend) {
+            if (hour >= 11 && hour <= 20) return 'moderate';
+            return 'low';
+        } else {
+            if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) return 'heavy';
+            if ((hour >= 12 && hour <= 14)) return 'moderate';
+            return 'low';
+        }
+    }
+
+    getConservativeEstimate(userMinutes) {
+        const hour = new Date().getHours();
+        const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
+        const factor = isPeak ? 1.6 : 1.2;
+        
+        return {
+            originalTime: userMinutes,
+            adjustedTime: Math.ceil(userMinutes * factor),
+            trafficCondition: isPeak ? 'heavy' : 'moderate',
+            trafficInfo: this.congestionLevels[isPeak ? 'heavy' : 'moderate'],
+            adjustment: ((factor - 1) * 100).toFixed(0),
+            isSignificant: true,
+            location: null
+        };
+    }
+}
+
+async function inicializarSistemaTrafico() {
+    console.log('🚗 Inicializando sistema de análisis de tráfico...');
+    
+    try {
+        trafficAnalyzer = new TrafficRadiusAnalyzer();
+        trafficInitialized = true;
+        console.log('✅ Sistema de tráfico inicializado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error inicializando sistema de tráfico:', error);
+    }
 }
 
 // =============================================
@@ -3115,9 +2696,7 @@ async function inicializarApp() {
         }
         
         await initializeFirebaseSync();
-        
-         console.log('✅ Sistema de tráfico Waze inicializado automáticamente');
-        
+        await inicializarSistemaTrafico();
         await cargarDatos();
         
         aplicarTemaGuardado();
@@ -3141,269 +2720,6 @@ async function inicializarApp() {
         mostrarPantalla('perfil');
         mostrarStatus('Error al cargar la aplicación. Por favor, recarga la página.', 'error');
     }
-}
-
-// =============================================
-// FUNCIONES PARA MODAL RÁPIDO DE TRÁFICO - VERSIÓN CORREGIDA
-// =============================================
-
-// Función para activar análisis de tráfico con datos del formulario
-function activarAnalisisTrafico() {
-    const tarifa = parseFloat(document.getElementById('tarifa').value) || 0;
-    const minutos = parseInt(document.getElementById('minutos').value) || 0;
-    const distancia = parseFloat(document.getElementById('distancia').value) || 0;
-    
-    console.log('Datos del formulario:', { tarifa, minutos, distancia }); // Para debug
-    
-    // Validar que todos los campos tengan datos
-    if (tarifa <= 0 || minutos <= 0 || distancia <= 0) {
-        alert('Por favor, completa todos los campos del viaje primero');
-        return;
-    }
-    
-    // Mostrar el modal con los datos reales
-    mostrarModalRapido(tarifa, minutos, distancia);
-}
-
-// Función para mostrar el modal rápido con datos reales
-function mostrarModalRapido(tarifa, minutos, distancia) {
-    console.log('Mostrando modal con:', { tarifa, minutos, distancia }); // Para debug
-    
-    // Obtener elementos del DOM
-    const modal = document.getElementById('modal-rapido');
-    const tiempoOriginal = document.getElementById('modal-tiempo-original');
-    const tiempoReal = document.getElementById('modal-tiempo-real');
-    const condicionTrafico = document.getElementById('modal-trafico-condition');
-    const badgeTitle = document.getElementById('modal-badge-title');
-    const badgeSubtitle = document.getElementById('modal-badge-subtitle');
-    const badgeEmoji = document.getElementById('modal-badge-emoji');
-    const gananciaMinuto = document.getElementById('modal-ganancia-minuto');
-    const gananciaKm = document.getElementById('modal-ganancia-km');
-    const eficiencia = document.getElementById('modal-eficiencia');
-    const impactoContent = document.getElementById('modal-impacto-content');
-    const badgeRentabilidad = document.getElementById('modal-badge-rentabilidad');
-    const btnAceptar = document.getElementById('modal-btn-aceptar');
-    const badgeAceptar = document.getElementById('modal-badge-aceptar');
-    const badgeRechazar = document.getElementById('modal-badge-rechazar');
-
-    // Resetear estilos iniciales
-    badgeRentabilidad.style.background = '#f8f9fa';
-    badgeRentabilidad.style.borderColor = '#dee2e6';
-    btnAceptar.style.background = '#e8f5e8';
-    btnAceptar.style.color = '#2e7d32';
-    btnAceptar.style.borderColor = '#4caf50';
-
-    // Mostrar tiempo original
-    tiempoOriginal.textContent = `${minutos} min`;
-    tiempoReal.textContent = `-- min`;
-    condicionTrafico.textContent = `Cargando datos...`;
-    badgeTitle.textContent = `ANALIZANDO`;
-    badgeSubtitle.textContent = `Calculando rentabilidad...`;
-    badgeEmoji.textContent = `⏳`;
-    gananciaMinuto.textContent = `--/min`;
-    gananciaKm.textContent = `--/km`;
-    eficiencia.textContent = `--%`;
-    impactoContent.textContent = `Calculando impacto del tráfico...`;
-    badgeAceptar.textContent = `Recomendado`;
-    badgeRechazar.textContent = `No rentable`;
-
-    // Mostrar modal inmediatamente
-    modal.classList.remove('hidden');
-
-    // Simular análisis de tráfico después de 1 segundo
-    setTimeout(() => {
-        console.log('Calculando análisis de tráfico...'); // Para debug
-        
-        // Generar datos de tráfico realistas
-        const nivelesTrafico = [
-            { nivel: 'Bajo', factor: 1.1, emoji: '🟢', desc: 'Tráfico fluido' },
-            { nivel: 'Moderado', factor: 1.3, emoji: '🟡', desc: 'Tráfico normal' },
-            { nivel: 'Alto', factor: 1.7, emoji: '🔴', desc: 'Tráfico pesado' },
-            { nivel: 'Muy Alto', factor: 2.2, emoji: '⛔', desc: 'Congestión severa' }
-        ];
-
-        const traficoAleatorio = nivelesTrafico[Math.floor(Math.random() * nivelesTrafico.length)];
-        const tiempoConTrafico = Math.round(minutos * traficoAleatorio.factor);
-
-        console.log('Tráfico generado:', traficoAleatorio, 'Tiempo con tráfico:', tiempoConTrafico); // Para debug
-
-        // Actualizar datos de tráfico
-        tiempoReal.textContent = `${tiempoConTrafico} min`;
-        condicionTrafico.innerHTML = `${traficoAleatorio.emoji} ${traficoAleatorio.nivel}`;
-        
-        // Calcular métricas con el tiempo real
-        const gananciaPorMinuto = tarifa / tiempoConTrafico;
-        const gananciaPorKm = distancia > 0 ? tarifa / distancia : 0;
-        
-        // Obtener umbrales del perfil actual
-        const perfil = obtenerPerfilActual();
-        const umbralMinutoRentable = perfil ? perfil.umbralMinutoRentable : 6.00;
-        const umbralKmRentable = perfil ? perfil.umbralKmRentable : 25.00;
-        const umbralMinutoOportunidad = perfil ? perfil.umbralMinutoOportunidad : 5.00;
-        const umbralKmOportunidad = perfil ? perfil.umbralKmOportunidad : 23.00;
-
-        console.log('Umbrales:', { umbralMinutoRentable, umbralKmRentable, umbralMinutoOportunidad, umbralKmOportunidad }); // Para debug
-        console.log('Ganancias calculadas:', { gananciaPorMinuto, gananciaPorKm }); // Para debug
-
-        // Determinar rentabilidad
-        let esRentable = false;
-        let esOportunidad = false;
-        let resultadoTexto = '';
-        let resultadoEmoji = '';
-        let resultadoColor = '';
-        let recomendacionAceptar = '';
-
-        if (gananciaPorMinuto >= umbralMinutoRentable && gananciaPorKm >= umbralKmRentable) {
-            esRentable = true;
-            resultadoTexto = 'VIAJE RENTABLE';
-            resultadoEmoji = '✅';
-            resultadoColor = '#4caf50';
-            recomendacionAceptar = 'Altamente recomendado';
-        } else if (gananciaPorMinuto >= umbralMinutoOportunidad && gananciaPorKm >= umbralKmOportunidad) {
-            esOportunidad = true;
-            resultadoTexto = 'OPORTUNIDAD';
-            resultadoEmoji = '⚠️';
-            resultadoColor = '#ff9800';
-            recomendacionAceptar = 'Aceptar con cuidado';
-        } else {
-            resultadoTexto = 'NO RENTABLE';
-            resultadoEmoji = '❌';
-            resultadoColor = '#f44336';
-            recomendacionAceptar = 'No recomendado';
-        }
-
-        console.log('Resultado:', resultadoTexto); // Para debug
-
-        // Actualizar UI con resultados
-        badgeTitle.textContent = resultadoTexto;
-        badgeSubtitle.textContent = esRentable ? 'Excelentes condiciones' : 
-                                   esOportunidad ? 'Condiciones aceptables' : 'No cumple criterios';
-        badgeEmoji.textContent = resultadoEmoji;
-        
-        badgeRentabilidad.style.background = esRentable ? '#e8f5e8' : 
-                                           esOportunidad ? '#fff3cd' : '#ffebee';
-        badgeRentabilidad.style.borderColor = resultadoColor;
-
-        // Actualizar métricas
-        gananciaMinuto.textContent = `RD$${gananciaPorMinuto.toFixed(2)}/min`;
-        gananciaKm.textContent = `RD$${gananciaPorKm.toFixed(2)}/km`;
-        
-        // Calcular eficiencia (porcentaje sobre el umbral rentable)
-        const eficienciaCalculada = Math.min(150, Math.round((gananciaPorMinuto / umbralMinutoRentable) * 100));
-        eficiencia.textContent = `${eficienciaCalculada}%`;
-
-        // Actualizar impacto del tráfico
-        const aumentoPorcentaje = Math.round((traficoAleatorio.factor - 1) * 100);
-        impactoContent.innerHTML = `El tráfico <strong>${traficoAleatorio.desc.toLowerCase()}</strong> aumenta el tiempo en un <strong>${aumentoPorcentaje}%</strong>`;
-
-        // Actualizar botones
-        badgeAceptar.textContent = recomendacionAceptar;
-        badgeRechazar.textContent = esRentable ? 'Pérdida potencial' : 'Evitar pérdidas';
-
-        // Cambiar estilo del botón aceptar según rentabilidad
-        if (esRentable) {
-            btnAceptar.style.background = '#e8f5e8';
-            btnAceptar.style.color = '#2e7d32';
-            btnAceptar.style.borderColor = '#4caf50';
-        } else if (esOportunidad) {
-            btnAceptar.style.background = '#fff3cd';
-            btnAceptar.style.color = '#856404';
-            btnAceptar.style.borderColor = '#ffc107';
-        } else {
-            btnAceptar.style.background = '#ffebee';
-            btnAceptar.style.color = '#c62828';
-            btnAceptar.style.borderColor = '#f44336';
-        }
-
-    }, 1000); // Simular delay de carga de datos
-}
-
-// Función para cerrar el modal rápido
-function cerrarModalRapido() {
-    const modal = document.getElementById('modal-rapido');
-    modal.classList.add('hidden');
-}
-
-// Función para procesar la decisión del viaje
-function procesarViajeRapido(aceptar) {
-    if (aceptar) {
-        // Lógica para aceptar viaje
-        console.log('Viaje aceptado');
-        mostrarNotificacion('✅ Viaje aceptado y guardado en historial', 'success');
-        // Aquí iría la lógica para guardar en historial, etc.
-    } else {
-        // Lógica para rechazar viaje
-        console.log('Viaje rechazado');
-        mostrarNotificacion('❌ Viaje rechazado', 'error');
-    }
-    cerrarModalRapido();
-}
-
-// Función auxiliar para obtener perfil actual
-function obtenerPerfilActual() {
-    try {
-        // Intentar obtener el perfil activo del localStorage
-        const perfilActivo = localStorage.getItem('perfilActivo');
-        if (perfilActivo) {
-            const perfil = JSON.parse(perfilActivo);
-            return {
-                umbralMinutoRentable: perfil.umbralMinutoRentable || 6.00,
-                umbralKmRentable: perfil.umbralKmRentable || 25.00,
-                umbralMinutoOportunidad: perfil.umbralMinutoOportunidad || 5.00,
-                umbralKmOportunidad: perfil.umbralKmOportunidad || 23.00
-            };
-        }
-    } catch (error) {
-        console.error('Error al obtener perfil:', error);
-    }
-    
-    // Valores por defecto si no hay perfil
-    return {
-        umbralMinutoRentable: 6.00,
-        umbralKmRentable: 25.00,
-        umbralMinutoOportunidad: 5.00,
-        umbralKmOportunidad: 23.00
-    };
-}
-
-// Función para mostrar notificaciones (agregar si no existe)
-function mostrarNotificacion(mensaje, tipo = 'info') {
-    // Crear elemento de notificación
-    const notificacion = document.createElement('div');
-    notificacion.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        background: ${tipo === 'success' ? '#4caf50' : tipo === 'error' ? '#f44336' : '#2196f3'};
-        color: white;
-        border-radius: 5px;
-        z-index: 10000;
-        font-weight: bold;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        animation: slideIn 0.3s ease-out;
-    `;
-    
-    notificacion.textContent = mensaje;
-    document.body.appendChild(notificacion);
-    
-    // Remover después de 3 segundos
-    setTimeout(() => {
-        notificacion.remove();
-    }, 3000);
-}
-
-// Agregar estilo CSS para la animación si no existe
-if (!document.querySelector('#notification-styles')) {
-    const style = document.createElement('style');
-    style.id = 'notification-styles';
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-    `;
-    document.head.appendChild(style);
 }
 
 // =============================================
@@ -3474,20 +2790,3 @@ window.onclick = function(event) {
         }
     }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
