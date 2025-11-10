@@ -46,15 +46,30 @@ const elementos = {};
 // SISTEMA DE AUTO-APRENDIZAJE DE RUTAS - FASE 1
 // =============================================
 
+// =============================================
+// SISTEMA DE AUTO-APRENDIZAJE DE RUTAS - FASE 2
+// =============================================
+
 class RouteLearningSystem {
     constructor() {
         this.initialized = false;
         this.learningEnabled = true;
+        this.conservativeData = this.initializeConservativeData();
     }
 
-    // Generar ID único para cada ruta basado en zonas aproximadas
+    // Datos conservadores iniciales (funcionan SIN viajes previos)
+    initializeConservativeData() {
+        return {
+            'MORNING_PEAK': { efficiency: 7.0, trafficFactor: 1.4, successRate: 45 },
+            'EVENING_PEAK': { efficiency: 6.5, trafficFactor: 1.6, successRate: 40 },
+            'MIDDAY': { efficiency: 8.5, trafficFactor: 1.2, successRate: 55 },
+            'NIGHT': { efficiency: 10.0, trafficFactor: 0.9, successRate: 65 },
+            'REGULAR': { efficiency: 9.0, trafficFactor: 1.1, successRate: 60 }
+        };
+    }
+
+    // Generar ID único para cada ruta
     generateRouteId(startLat, startLng, endLat, endLng) {
-        // Redondear coordenadas para agrupar rutas similares (precisión de ~100m)
         const roundedStartLat = startLat ? startLat.toFixed(2) : '0';
         const roundedStartLng = startLng ? startLng.toFixed(2) : '0';
         const roundedEndLat = endLat ? endLat.toFixed(2) : '0';
@@ -63,7 +78,7 @@ class RouteLearningSystem {
         return `route_${roundedStartLat}_${roundedStartLng}_${roundedEndLat}_${roundedEndLng}`;
     }
 
-    // Obtener slot de tiempo para el aprendizaje
+    // Obtener slot de tiempo
     getTimeSlot(hour) {
         if (hour >= 6 && hour <= 9) return 'MORNING_PEAK';
         if (hour >= 12 && hour <= 14) return 'MIDDAY';
@@ -80,7 +95,6 @@ class RouteLearningSystem {
         }
 
         try {
-            // Verificar que tenemos datos mínimos para aprender
             if (!tripData.minutos || !tripData.distancia || tripData.minutos < 1) {
                 console.log('⚠️ Datos insuficientes para aprendizaje');
                 return;
@@ -90,7 +104,6 @@ class RouteLearningSystem {
             const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
             const timeSlot = this.getTimeSlot(now.getHours());
             
-            // Usar datos de ubicación si están disponibles, sino crear datos aproximados
             let routeId;
             let locationData = {};
             
@@ -103,16 +116,14 @@ class RouteLearningSystem {
                 );
                 locationData = { startLocation, endLocation };
             } else {
-                // Crear datos aproximados basados en tiempo y distancia
                 routeId = this.generateRouteId(
-                    Math.random() * 0.1 + 18.4, // Aproximado Santo Domingo
+                    Math.random() * 0.1 + 18.4,
                     Math.random() * 0.1 - 69.9,
                     Math.random() * 0.1 + 18.4,
                     Math.random() * 0.1 - 69.9
                 );
             }
 
-            // Calcular métricas de aprendizaje
             const efficiency = tripData.gananciaPorMinuto || 0;
             const trafficFactor = this.calculateTrafficFactor(tripData);
             
@@ -121,7 +132,7 @@ class RouteLearningSystem {
                 dayOfWeek,
                 timeSlot,
                 originalTime: tripData.minutos,
-                actualTime: tripData.minutos, // En Fase 2 esto será tiempo real
+                actualTime: tripData.minutos,
                 distance: tripData.distancia,
                 earnings: tripData.tarifa || tripData.ganancia,
                 efficiency: parseFloat(efficiency.toFixed(2)),
@@ -135,12 +146,11 @@ class RouteLearningSystem {
 
             console.log('🧠 Guardando datos de aprendizaje:', learningData);
 
-            // Guardar en Firebase
             const success = await firebaseSync.saveRouteLearning(learningData);
             if (success) {
                 console.log('✅ Aprendizaje guardado exitosamente');
             } else {
-                console.log('⚠️ Aprendizaje guardado localmente (Falló Firebase)');
+                console.log('⚠️ Aprendizaje guardado localmente');
                 this.saveLearningLocal(learningData);
             }
             
@@ -149,19 +159,111 @@ class RouteLearningSystem {
         }
     }
 
-    // Calcular factor de tráfico basado en eficiencia
+    // 🎯 NUEVO: Obtener predicciones inteligentes (funciona SIN datos)
+    async getPredictiveInsights(estimatedTime, estimatedDistance, estimatedEarnings = 0) {
+        if (!this.learningEnabled) {
+            return this.getConservativePrediction(estimatedTime, this.getTimeSlot(new Date().getHours()));
+        }
+
+        try {
+            const now = new Date();
+            const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+            const timeSlot = this.getTimeSlot(now.getHours());
+            
+            // Generar routeId aproximado para consulta
+            const routeId = this.generateRouteId(
+                18.4, -69.9, 18.5, -69.8 // Coordenadas aproximadas de Santo Domingo
+            );
+
+            let historicalStats = null;
+            
+            // Intentar obtener datos históricos si Firebase está disponible
+            if (firebaseSync && firebaseSync.initialized) {
+                historicalStats = await firebaseSync.getRouteLearningStats(routeId, dayOfWeek, timeSlot);
+            }
+
+            // ✅ SISTEMA HÍBRIDO: Usa datos históricos O conservadores
+            if (historicalStats && historicalStats.totalTrips >= 2) {
+                // Tenemos datos reales - usar predicción inteligente
+                return {
+                    predictedEfficiency: historicalStats.avgEfficiency,
+                    trafficFactor: historicalStats.avgTrafficFactor,
+                    successRate: historicalStats.profitabilityRate,
+                    confidence: Math.min(90, historicalStats.totalTrips * 15),
+                    dataPoints: historicalStats.totalTrips,
+                    adjustedTime: Math.ceil(estimatedTime * historicalStats.avgTrafficFactor),
+                    recommendation: this.generateRecommendation(historicalStats),
+                    dataSource: 'HISTORICAL',
+                    message: `Basado en ${historicalStats.totalTrips} viajes similares`
+                };
+            } else {
+                // Sin datos históricos - usar predicción conservadora
+                const conservative = this.conservativeData[timeSlot] || this.conservativeData.REGULAR;
+                const estimatedEfficiency = estimatedEarnings / estimatedTime;
+                
+                return {
+                    predictedEfficiency: conservative.efficiency,
+                    trafficFactor: conservative.trafficFactor,
+                    successRate: conservative.successRate,
+                    confidence: 35, // Baja confianza sin datos
+                    dataPoints: 0,
+                    adjustedTime: Math.ceil(estimatedTime * conservative.trafficFactor),
+                    recommendation: this.getConservativeRecommendation(estimatedEfficiency),
+                    dataSource: 'CONSERVATIVE',
+                    message: 'Predicción base - mejora con cada viaje'
+                };
+            }
+            
+        } catch (error) {
+            console.error('❌ Error obteniendo insights predictivos:', error);
+            return this.getConservativePrediction(estimatedTime, this.getTimeSlot(new Date().getHours()));
+        }
+    }
+
+    // Generar recomendación basada en datos históricos
+    generateRecommendation(stats) {
+        if (stats.profitabilityRate >= 80) return 'HIGH_SUCCESS';
+        if (stats.profitabilityRate >= 60) return 'GOOD_OPPORTUNITY'; 
+        if (stats.profitabilityRate >= 40) return 'MODERATE_RISK';
+        return 'HIGH_RISK';
+    }
+
+    // Generar recomendación conservadora
+    getConservativeRecommendation(estimatedEfficiency) {
+        const baseEfficiency = perfilActual?.umbralMinutoRentable || 6.0;
+        
+        if (estimatedEfficiency >= baseEfficiency * 1.3) return 'GOOD_OPPORTUNITY';
+        if (estimatedEfficiency >= baseEfficiency) return 'MODERATE_RISK';
+        return 'HIGH_RISK';
+    }
+
+    // Predicción conservadora de fallback
+    getConservativePrediction(estimatedTime, timeSlot) {
+        const conservative = this.conservativeData[timeSlot] || this.conservativeData.REGULAR;
+        
+        return {
+            predictedEfficiency: conservative.efficiency,
+            trafficFactor: conservative.trafficFactor,
+            successRate: conservative.successRate,
+            confidence: 30,
+            dataPoints: 0,
+            adjustedTime: Math.ceil(estimatedTime * conservative.trafficFactor),
+            recommendation: 'CONSERVATIVE_ESTIMATE',
+            dataSource: 'FALLBACK',
+            message: 'Usando datos base del sistema'
+        };
+    }
+
     calculateTrafficFactor(tripData) {
         const baseEfficiency = perfilActual?.umbralMinutoRentable || 6.0;
         const actualEfficiency = tripData.gananciaPorMinuto || 0;
         
         if (actualEfficiency <= 0) return 1.0;
         
-        // Factor más alto = más tráfico (menos eficiencia)
         const factor = Math.max(0.5, Math.min(2.0, baseEfficiency / actualEfficiency));
         return parseFloat(factor.toFixed(3));
     }
 
-    // Guardar localmente si Firebase falla
     saveLearningLocal(learningData) {
         try {
             const localLearning = JSON.parse(localStorage.getItem('DIBER_route_learning') || '[]');
@@ -171,7 +273,6 @@ class RouteLearningSystem {
                 localTimestamp: new Date().toISOString()
             });
             
-            // Mantener solo los últimos 50 registros locales
             if (localLearning.length > 50) {
                 localLearning.splice(0, localLearning.length - 50);
             }
@@ -183,7 +284,6 @@ class RouteLearningSystem {
         }
     }
 
-    // Sincronizar datos locales cuando Firebase esté disponible
     async syncLocalLearning() {
         try {
             const localLearning = JSON.parse(localStorage.getItem('DIBER_route_learning') || '[]');
@@ -195,39 +295,12 @@ class RouteLearningSystem {
                 await firebaseSync.saveRouteLearning(learningItem);
             }
 
-            // Limpiar datos locales después de sincronizar
             localStorage.removeItem('DIBER_route_learning');
             console.log('✅ Aprendizaje local sincronizado y limpiado');
             
         } catch (error) {
             console.error('❌ Error sincronizando aprendizaje local:', error);
         }
-    }
-
-    // Obtener factor predictivo para una ruta (PARA FASE 2)
-    async getPredictiveFactor(routeId, dayOfWeek, timeSlot) {
-        if (!firebaseSync) return 1.0;
-
-        try {
-            // En Fase 2, aquí buscaríamos datos históricos
-            // Por ahora retornamos un factor conservador
-            return this.getConservativeFactor(timeSlot);
-        } catch (error) {
-            console.error('❌ Error obteniendo factor predictivo:', error);
-            return 1.0;
-        }
-    }
-
-    // Factor conservador basado en horario (PARA FASE 2)
-    getConservativeFactor(timeSlot) {
-        const factors = {
-            'MORNING_PEAK': 1.4,
-            'EVENING_PEAK': 1.6,
-            'MIDDAY': 1.2,
-            'NIGHT': 0.9,
-            'REGULAR': 1.1
-        };
-        return factors[timeSlot] || 1.1;
     }
 }
 
@@ -386,6 +459,64 @@ class FirebaseSync {
             return null;
         }
     }
+
+    async getRouteLearningStats(routeId, dayOfWeek, timeSlot) {
+    if (!this.initialized) return null;
+
+    try {
+        const learningRef = this.db.collection('route_learning')
+            .where('routeId', '==', routeId)
+            .where('dayOfWeek', '==', dayOfWeek)
+            .where('timeSlot', '==', timeSlot)
+            .orderBy('timestamp', 'desc')
+            .limit(50);
+
+        const snapshot = await learningRef.get();
+        
+        if (!snapshot.empty) {
+            const stats = {
+                totalTrips: snapshot.size,
+                avgEfficiency: 0,
+                avgTrafficFactor: 0,
+                profitabilityRate: 0,
+                recentTrips: []
+            };
+
+            let totalEfficiency = 0;
+            let totalTrafficFactor = 0;
+            let profitableTrips = 0;
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                totalEfficiency += data.efficiency || 0;
+                totalTrafficFactor += data.trafficFactor || 1.0;
+                
+                if (data.profitability === 'rentable') {
+                    profitableTrips++;
+                }
+
+                stats.recentTrips.push({
+                    efficiency: data.efficiency,
+                    trafficFactor: data.trafficFactor,
+                    timestamp: data.timestamp
+                });
+            });
+
+            stats.avgEfficiency = parseFloat((totalEfficiency / snapshot.size).toFixed(2));
+            stats.avgTrafficFactor = parseFloat((totalTrafficFactor / snapshot.size).toFixed(3));
+            stats.profitabilityRate = parseFloat(((profitableTrips / snapshot.size) * 100).toFixed(1));
+
+            console.log('📊 Estadísticas de ruta obtenidas:', stats);
+            return stats;
+        }
+        
+        console.log('📊 No hay datos históricos para esta ruta/horario');
+        return null;
+    } catch (error) {
+        console.error('❌ Error obteniendo estadísticas de ruta:', error);
+        return null;
+    }
+}
 }
 
 // =============================================
@@ -1180,7 +1311,7 @@ function manejarCalculoAutomatico() {
     timeoutCalculoAutomatico = setTimeout(calcularAutomatico, 500);
 }
 
-function calcularAutomatico() {
+async function calcularAutomatico() {
     if (!elementos.tarifa || !elementos.minutos || !elementos.distancia) return;
     
     const tarifa = parseFloat(elementos.tarifa.value) || 0;
@@ -1191,9 +1322,28 @@ function calcularAutomatico() {
     
     if (datosCompletos) {
         console.log('🔄 Cálculo automático ejecutándose...');
-        const resultado = calcularRentabilidad(tarifa, minutos, distancia);
+        
+        // ✅ PRIMERO obtener insights predictivos
+        let insights = null;
+        if (window.routeLearningSystem) {
+            console.log('🎯 Solicitando predicciones inteligentes...');
+            insights = await window.routeLearningSystem.getPredictiveInsights(minutos, distancia, tarifa);
+            console.log('📈 Insights obtenidos:', insights);
+        }
+        
+        // Calcular rentabilidad con tiempo ajustado si hay insights
+        const tiempoParaCalculo = insights ? insights.adjustedTime : minutos;
+        const resultado = calcularRentabilidad(tarifa, tiempoParaCalculo, distancia);
         
         if (resultado) {
+            // ✅ AGREGAR INSIGHTS AL RESULTADO
+            if (insights) {
+                resultado.insights = insights;
+                resultado.tiempoAjustado = insights.adjustedTime;
+                resultado.tiempoOriginal = minutos;
+                resultado.fuenteDatos = insights.dataSource;
+            }
+            
             Actual = resultado;
             mostrarResultadoRapido(resultado);
         }
@@ -1813,7 +1963,14 @@ function mostrarResultadoRapido(resultado) {
 
     const tieneTrafico = resultado.trafficAnalysis;
     const trafficInfo = tieneTrafico ? resultado.trafficAnalysis.trafficInfo : { emoji: '🚦', text: 'SIN DATOS' };
-    const tiempoReal = tieneTrafico ? resultado.trafficAnalysis.adjustedTime : resultado.minutos;
+    
+    // ✅ USAR TIEMPO AJUSTADO POR PREDICCIÓN si está disponible
+    const tiempoReal = resultado.tiempoAjustado || 
+                      (tieneTrafico ? resultado.trafficAnalysis.adjustedTime : resultado.minutos);
+    
+    // ✅ DETERMINAR COLOR SEGÚN FUENTE DE DATOS
+    const dataSourceColor = resultado.fuenteDatos === 'HISTORICAL' ? '#4CAF50' : 
+                           resultado.fuenteDatos === 'CONSERVATIVE' ? '#FF9800' : '#9E9E9E';
     
     modal.innerHTML = `
         <div class="modal-rapido-contenido-mejorado">
@@ -1837,7 +1994,7 @@ function mostrarResultadoRapido(resultado) {
                 </div>
                 <div class="flecha-ajuste">↓</div>
                 <div class="tiempo-real">
-                    <span class="tiempo-label">Con tráfico real:</span>
+                    <span class="tiempo-label">Con análisis predictivo:</span>
                     <span class="tiempo-valor destacado" id="modal-tiempo-real">${tiempoReal} min</span>
                 </div>
             </div>
@@ -1851,6 +2008,35 @@ function mostrarResultadoRapido(resultado) {
                     </div>
                 </div>
             </div>
+
+            <!-- ✅ NUEVA SECCIÓN: PREDICCIONES INTELIGENTES -->
+            ${resultado.insights ? `
+            <div class="predicciones-inteligentes" style="margin: 15px 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid ${dataSourceColor};">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="font-weight: bold; color: #333;">
+                        🎯 Análisis Predictivo
+                    </div>
+                    <div style="font-size: 0.8em; padding: 4px 8px; background: ${dataSourceColor}; color: white; border-radius: 12px;">
+                        ${resultado.insights.dataSource === 'HISTORICAL' ? 'DATOS REALES' : 'ESTIMACIÓN BASE'}
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.2em; font-weight: bold; color: #007cba;">${resultado.insights.confidence}%</div>
+                        <div style="font-size: 0.7em; color: #666;">Confianza</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.2em; font-weight: bold; color: #4CAF50;">${resultado.insights.successRate}%</div>
+                        <div style="font-size: 0.7em; color: #666;">Tasa de éxito</div>
+                    </div>
+                </div>
+                
+                <div style="font-size: 0.8em; color: #666; text-align: center;">
+                    ${resultado.insights.message}
+                </div>
+            </div>
+            ` : ''}
 
             ${tieneTrafico ? `
             <div class="impacto-trafico" id="modal-impacto-trafico">
@@ -2898,6 +3084,8 @@ function diagnosticarSincronizacion() {
 // INICIALIZACIÓN COMPLETA
 // =============================================
 
+// EN inicializarApp() - REEMPLAZAR la inicialización:
+
 async function inicializarApp() {
     if (window.appInitialized) {
         console.log('🚫 App ya inicializada, omitiendo...');
@@ -2918,15 +3106,15 @@ async function inicializarApp() {
         
         await initializeFirebaseSync();
         await inicializarSistemaTrafico();
-
- // ✅ INICIALIZAR SISTEMA DE AUTO-APRENDIZAJE
+        
+        // ✅ INICIALIZAR SISTEMA DE AUTO-APRENDIZAJE FASE 2
         window.routeLearningSystem = new RouteLearningSystem();
         window.routeLearningSystem.initialized = true;
-        console.log('🧠 Sistema de auto-aprendizaje inicializado');
+        console.log('🧠 Sistema de auto-aprendizaje FASE 2 inicializado');
         
         await cargarDatos();
         
-        // ✅ SINCRONIZAR APRENDIZAJE LOCAL SI HAY DATOS PENDIENTES
+        // ✅ SINCRONIZAR APRENDIZAJE LOCAL
         if (firebaseSync && firebaseSync.initialized) {
             setTimeout(() => {
                 window.routeLearningSystem.syncLocalLearning();
@@ -2947,7 +3135,7 @@ async function inicializarApp() {
         }
         
         window.appInitialized = true;
-        console.log('🎉 DIBER inicializado correctamente');
+        console.log('🎉 DIBER con PREDICCIONES INTELIGENTES inicializado correctamente');
         
     } catch (error) {
         console.error('❌ Error crítico en inicialización:', error);
@@ -3049,5 +3237,6 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
