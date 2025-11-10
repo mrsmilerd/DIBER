@@ -2297,13 +2297,13 @@ function mostrarResultadoRapido(resultado) {
             </div>
             ` : ''}
 
-            <div class="acciones-mejoradas">
+    <div class="acciones-mejoradas">
     <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
         <span class="btn-icon">❌</span>
         <span class="btn-text">Rechazar Viaje</span>
         <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
     </button>
-    <button class="btn-aceptar-elegante" onclick="iniciarCronometroConViaje(resultado)" id="modal-btn-aceptar">
+    <button class="btn-aceptar-elegante" id="modal-btn-aceptar-cronometro">
         <span class="btn-icon">✅</span>
         <span class="btn-text">Aceptar y Cronometrar</span>
         <span class="btn-badge" id="modal-badge-aceptar">${resultado.rentabilidad === 'rentable' ? 'Recomendado' : 'Con cuidado'}</span>
@@ -2314,6 +2314,14 @@ function mostrarResultadoRapido(resultado) {
 
     modal.classList.remove('hidden');
     calculoActual = resultado;
+    
+ // ✅ CORRECCIÓN: Agregar event listener después de crear el modal
+    const btnAceptar = document.getElementById('modal-btn-aceptar-cronometro');
+    if (btnAceptar) {
+        btnAceptar.onclick = function() {
+            iniciarCronometroConViaje(resultado);
+        };
+    }
 }
 
 function obtenerSubtituloRentabilidad(resultado) {
@@ -3482,6 +3490,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
