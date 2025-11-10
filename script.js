@@ -4,118 +4,205 @@
 // =============================================
 
 // =============================================
-// SISTEMA DE TRÁFICO INTELIGENTE - CERO CONFIGURACIÓN
+// SISTEMA WAZE EN TIEMPO REAL - RADIO 10KM
 // =============================================
 
-class SmartTrafficAnalyzer {
+class WazeTrafficAnalyzer {
     constructor() {
-        // DATOS PREDETERMINADOS - NO necesitas cambiar nada
-        this.config = {
-            horariosPico: {
-                'lunes_viernes': {
-                    'pico_manana': { hora: 7.5, duracion: 2.5, factor: 1.9 },
-                    'pico_tarde': { hora: 17.5, duracion: 3.0, factor: 2.1 }
-                },
-                'sabado': {
-                    'pico_medio_dia': { hora: 13.0, duracion: 4.0, factor: 1.4 }
-                },
-                'domingo': {
-                    'pico_tarde': { hora: 17.0, duracion: 3.0, factor: 1.2 }
-                }
-            },
-            factoresDia: {
-                1: 1.3, // Lunes
-                2: 1.2, // Martes  
-                3: 1.25, // Miércoles
-                4: 1.35, // Jueves
-                5: 1.5, // Viernes
-                6: 1.15, // Sábado
-                0: 0.9  // Domingo
-            }
-        };
+        this.radiusKm = 10; // Radio de 10km alrededor del usuario
+        this.updateInterval = 120000; // Actualizar cada 2 minutos (Waze es pesado)
+        this.lastUpdate = null;
+        this.currentTrafficData = null;
+        this.cacheDuration = 60000; // Cache de 1 minuto para misma ubicación
+        this.locationCache = new Map();
     }
 
-    analizarTraficoInteligente(minutosBase, ubicacion = null) {
-        const ahora = new Date();
-        const factor = this.calcularFactorCompleto(ahora, ubicacion);
+    async obtenerTraficoRadio(ubicacionUsuario) {
+        const cacheKey = `${ubicacionUsuario.lat.toFixed(4)},${ubicacionUsuario.lng.toFixed(4)}`;
+        const now = Date.now();
         
-        return {
-            tiempoOriginal: minutosBase,
-            tiempoReal: Math.ceil(minutosBase * factor),
-            factor: factor,
-            confianza: 0.85,
-            mensaje: this.obtenerMensajeTrafico(factor),
-            detalles: this.obtenerDetallesAnalisis(ahora)
-        };
+        // Verificar cache de ubicación
+        const cached = this.locationCache.get(cacheKey);
+        if (cached && now - cached.timestamp < this.cacheDuration) {
+            console.log('📦 Usando cache de tráfico Waze');
+            return cached.data;
+        }
+
+        // Verificar si tenemos datos generales recientes
+        if (this.currentTrafficData && this.lastUpdate && 
+            now - this.lastUpdate < this.updateInterval) {
+            console.log('🔄 Usando datos Waze recientes');
+            return this.currentTrafficData;
+        }
+
+        console.log('🛰️ Consultando Waze para radio de 10km...');
+        
+        try {
+            const trafficData = await this.consultarWazeAPI(ubicacionUsuario);
+            this.currentTrafficData = trafficData;
+            this.lastUpdate = now;
+            
+            // Guardar en cache de ubicación
+            this.locationCache.set(cacheKey, {
+                timestamp: now,
+                data: trafficData
+            });
+
+            // Limpiar cache viejo
+            this.cleanOldCache();
+            
+            return trafficData;
+            
+        } catch (error) {
+            console.error('❌ Error Waze API:', error);
+            return this.getConservativeEstimate();
+        }
     }
 
-    calcularFactorCompleto(fecha, ubicacion) {
+    async consultarWazeAPI(ubicacion) {
+        // Waze tiene un endpoint público para alertas de tráfico
+        const url = `https://www.waze.com/row-rtserver/web/TGeoRSS` +
+                    `?tk=ccp_partner` +
+                    `&format=JSON` +
+                    `&lat=${ubicacion.lat}` +
+                    `&lon=${ubicacion.lng}` +
+                    `&radius=${this.radiusKm}`;
+
+        console.log('🔗 Consultando Waze:', url);
+
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'application/json',
+                'Referer': 'https://www.waze.com/'
+            },
+            mode: 'cors'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Waze error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return this.procesarDatosWaze(data, ubicacion);
+    }
+
+    procesarDatosWaze(data, ubicacion) {
+        const alertas = data.alerts || [];
+        const jams = data.jams || [];
+        
+        console.log(`📊 Waze: ${alertas.length} alertas, ${jams.length} atascos`);
+
+        // Analizar densidad de alertas y atascos
+        const alertasGraves = alertas.filter(a => 
+            a.type === 'ACCIDENT' || a.type === 'HAZARD' || a.type === 'ROAD_CLOSED' || a.type === 'WEATHERHAZARD'
+        );
+        
+        const atascosActivos = jams.filter(j => j.severity >= 2); // Severidad media-alta
+        
+        // Calcular factor de tráfico basado en densidad
+        const factorTrafico = this.calcularFactorTrafico(
+            alertasGraves.length, 
+            atascosActivos.length,
+            this.radiusKm
+        );
+
+        const resultado = {
+            factorTrafico: factorTrafico,
+            alertasTotales: alertas.length,
+            alertasGraves: alertasGraves.length,
+            atascosActivos: atascosActivos.length,
+            radioKm: this.radiusKm,
+            ubicacionCentro: ubicacion,
+            timestamp: new Date().toISOString(),
+            confianza: this.calcularConfianza(alertas.length),
+            tiposAlertas: this.contarTiposAlertas(alertas)
+        };
+
+        console.log('✅ Análisis Waze completado:', resultado);
+        return resultado;
+    }
+
+    calcularFactorTrafico(alertasGraves, atascosActivos, radioKm) {
+        // Densidad por km²
+        const area = Math.PI * Math.pow(radioKm, 2);
+        const densidadAlertas = alertasGraves / area;
+        const densidadAtascos = atascosActivos / area;
+        
+        console.log(`📈 Densidad: ${densidadAlertas.toFixed(3)} alertas/km², ${densidadAtascos.toFixed(3)} atascos/km²`);
+        
+        // Factor base
         let factor = 1.0;
         
-        // 1. Factor del día de la semana
-        factor *= this.obtenerFactorDia(fecha);
+        // Ajustar por densidad de alertas graves
+        if (densidadAlertas > 0.5) factor += 0.8; // +80%
+        else if (densidadAlertas > 0.2) factor += 0.4; // +40%
+        else if (densidadAlertas > 0.1) factor += 0.2; // +20%
         
-        // 2. Factor de hora exacta
-        factor *= this.obtenerFactorHora(fecha);
+        // Ajustar por densidad de atascos
+        if (densidadAtascos > 0.3) factor += 0.6; // +60%
+        else if (densidadAtascos > 0.1) factor += 0.3; // +30%
+
+        // Ajuste mínimo si hay cualquier alerta grave
+        if (alertasGraves > 0 && factor < 1.1) factor = 1.1;
         
-        // 3. Ajuste por ubicación si está disponible
-        if (ubicacion) {
-            factor *= this.obtenerAjusteZonaSimple(ubicacion);
-        }
+        const factorFinal = Math.min(Math.max(factor, 1.0), 2.5); // Límites
+        console.log(`🎯 Factor tráfico calculado: ${factorFinal}`);
         
-        return Math.min(factor, 2.5); // Límite máximo razonable
+        return factorFinal;
     }
 
-    obtenerFactorDia(fecha) {
-        const diaSemana = fecha.getDay();
-        return this.config.factoresDia[diaSemana] || 1.0;
+    contarTiposAlertas(alertas) {
+        const tipos = {};
+        alertas.forEach(alerta => {
+            tipos[alerta.type] = (tipos[alerta.type] || 0) + 1;
+        });
+        return tipos;
     }
 
-    obtenerFactorHora(fecha) {
-        const horaDecimal = fecha.getHours() + (fecha.getMinutes() / 60);
-        const diaSemana = fecha.getDay();
-        
-        let tipoDia = 'lunes_viernes';
-        if (diaSemana === 6) tipoDia = 'sabado';
-        if (diaSemana === 0) tipoDia = 'domingo';
-        
-        const picos = this.config.horariosPico[tipoDia];
-        
-        for (const [nombrePico, config] of Object.entries(picos)) {
-            const distanciaAlPico = Math.abs(horaDecimal - config.hora);
-            if (distanciaAlPico <= config.duracion / 2) {
-                // Estamos dentro del rango del pico
-                const intensidad = 1 - (distanciaAlPico / (config.duracion / 2));
-                return 1 + ((config.factor - 1) * intensidad);
+    calcularConfianza(totalAlertas) {
+        // Más alertas = más confianza en los datos
+        if (totalAlertas > 20) return 0.9;
+        if (totalAlertas > 10) return 0.8;
+        if (totalAlertas > 5) return 0.7;
+        if (totalAlertas > 0) return 0.6;
+        return 0.5; // Sin alertas, confianza baja
+    }
+
+    cleanOldCache() {
+        const now = Date.now();
+        for (const [key, value] of this.locationCache.entries()) {
+            if (now - value.timestamp > this.cacheDuration * 2) {
+                this.locationCache.delete(key);
             }
         }
-        
-        return 1.0; // Fuera de horas pico
     }
 
-    obtenerAjusteZonaSimple(ubicacion) {
-        // Ajuste simple basado en hora del día
-        const hora = new Date().getHours();
+    getConservativeEstimate() {
+        console.log('🔄 Usando estimación conservadora');
+        const ahora = new Date();
+        const hora = ahora.getHours();
         
-        // Si es hora pico, asumir zona congestionada
+        // Estimación básica por hora
+        let factor = 1.0;
         if ((hora >= 7 && hora <= 9) || (hora >= 17 && hora <= 19)) {
-            return 1.3;
+            factor = 1.6; // Hora pico
+        } else if (hora >= 12 && hora <= 14) {
+            factor = 1.3; // Hora almuerzo
         }
         
-        return 1.0;
-    }
-
-    obtenerMensajeTrafico(factor) {
-        if (factor >= 2.0) return '🚨 Tráfico MUY PESADO';
-        if (factor >= 1.5) return '⚠️ Tráfico PESADO'; 
-        if (factor >= 1.2) return '🟡 Tráfico MODERADO';
-        if (factor <= 0.9) return '✅ Tráfico FLUIDO';
-        return '🟢 Tráfico NORMAL';
-    }
-
-    obtenerDetallesAnalisis(fecha) {
-        const diaSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        return `Análisis para ${diaSemana[fecha.getDay()]} ${fecha.getHours()}:${fecha.getMinutes().toString().padStart(2, '0')}`;
+        return {
+            factorTrafico: factor,
+            alertasTotales: 0,
+            alertasGraves: 0,
+            atascosActivos: 0,
+            radioKm: this.radiusKm,
+            ubicacionCentro: null,
+            timestamp: new Date().toISOString(),
+            confianza: 0.3,
+            tiposAlertas: {},
+            esEstimacion: true
+        };
     }
 }
 
@@ -128,7 +215,8 @@ let timeoutCalculo = null;
 let firebaseSync;
 let filtroActual = 'hoy';
 let Actual = null;
-let smartTrafficAnalyzer = new SmartTrafficAnalyzer();
+let trafficAnalyzer = new TrafficRadiusAnalyzer();
+let trafficInitialized = true;
 
 // --- Sistema de Código de Usuario ---
 let userCodeSystem = {
@@ -1102,7 +1190,7 @@ function calcularAutomatico() {
     }
 }
 
-function calcularRentabilidad(tarifa, minutos, distancia) {
+async calcularRentabilidad(tarifa, minutos, distancia) {
     if (!perfilActual) return null;
     
     try {
@@ -1117,7 +1205,22 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
         const costoTotal = costoCombustible + costoMantenimiento + costoSeguro;
         const gananciaNeta = tarifa - costoTotal;
         
-        const gananciaPorMinuto = tarifa / minutos;
+        // 🚗 NUEVO: OBTENER TIEMPO REAL CON WAZE
+        let minutosReales = minutos;
+        let trafficAnalysis = null;
+        
+        if (minutos > 0 && trafficAnalyzer) {
+            try {
+                trafficAnalysis = await trafficAnalyzer.quickTrafficAnalysis(minutos);
+                minutosReales = trafficAnalysis.adjustedTime;
+                console.log('🛰️ Tiempo ajustado por Waze:', minutos, '→', minutosReales, 'min');
+            } catch (error) {
+                console.error('Error en análisis tráfico:', error);
+                // Continuar con minutos originales
+            }
+        }
+        
+        const gananciaPorMinuto = tarifa / minutosReales; // ← Usar minutos REALES
         const gananciaPorKm = tarifa / distancia;
         
         let rentabilidad, emoji, texto;
@@ -1139,12 +1242,26 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
         }
         
         return {
-            tarifa, minutos, distancia, gananciaNeta, gananciaPorMinuto, gananciaPorKm,
-            costoCombustible, costoMantenimiento, costoSeguro, costoTotal,
-            rentabilidad, emoji, texto, timestamp: new Date().toISOString()
+            tarifa, 
+            minutos: minutosReales, // ← Minutos ajustados por tráfico
+            minutosOriginales: minutos, // ← Minutos originales del usuario
+            distancia, 
+            gananciaNeta, 
+            gananciaPorMinuto, 
+            gananciaPorKm,
+            costoCombustible, 
+            costoMantenimiento, 
+            costoSeguro, 
+            costoTotal,
+            rentabilidad, 
+            emoji, 
+            texto, 
+            timestamp: new Date().toISOString(),
+            trafficAnalysis: trafficAnalysis // ← Incluir datos de tráfico
         };
         
     } catch (error) {
+        console.error('Error en el cálculo:', error);
         mostrarError('Error en el cálculo. Verifica los datos ingresados.');
         return null;
     }
@@ -1805,63 +1922,102 @@ function obtenerMensajeImpacto(trafficAnalysis) {
 }
 
 // =============================================
-// SISTEMA DE ANÁLISIS DE TRÁFICO
+// SISTEMA DE TRÁFICO WAZE MEJORADO
 // =============================================
 
 class TrafficRadiusAnalyzer {
     constructor() {
         this.radiusKm = 10;
+        this.wazeAnalyzer = new WazeTrafficAnalyzer();
+        this.lastLocation = null;
         this.congestionLevels = {
             low: { factor: 1.0, emoji: '✅', color: '#4CAF50', text: 'Fluido' },
             moderate: { factor: 1.3, emoji: '⚠️', color: '#FF9800', text: 'Moderado' },
             heavy: { factor: 1.7, emoji: '🚗', color: '#F44336', text: 'Pesado' },
             severe: { factor: 2.2, emoji: '🚨', color: '#D32F2F', text: 'Muy Pesado' }
         };
-        this.lastLocation = null;
     }
 
     async quickTrafficAnalysis(userMinutes) {
-    console.log('⚡ Análisis PRECISO de tráfico...');
-    
-    try {
-        const location = await this.getQuickLocation();
-        const analisis = smartTrafficAnalyzer.analizarTraficoInteligente(userMinutes, location);
+        console.log('⚡ Análisis Waze en tiempo real...');
         
-        // Mapear a tu sistema existente
-        let trafficCondition = 'low';
-        if (analisis.factor >= 2.0) trafficCondition = 'severe';
-        else if (analisis.factor >= 1.5) trafficCondition = 'heavy';
-        else if (analisis.factor >= 1.2) trafficCondition = 'moderate';
-        
-        return {
-            originalTime: userMinutes,
-            adjustedTime: analisis.tiempoReal,
-            trafficCondition: trafficCondition,
-            trafficInfo: this.congestionLevels[trafficCondition],
-            adjustment: ((analisis.factor - 1) * 100).toFixed(0),
-            isSignificant: analisis.factor > 1.2,
-            location: location,
-            mensaje: analisis.mensaje,
-            detalles: analisis.detalles
-        };
-        
-    } catch (error) {
-        console.log('🔄 Usando estimación inteligente sin ubicación');
-        const analisis = smartTrafficAnalyzer.analizarTraficoInteligente(userMinutes);
-        
-        return {
-            originalTime: userMinutes,
-            adjustedTime: analisis.tiempoReal,
-            trafficCondition: analisis.factor >= 1.5 ? 'heavy' : 'moderate',
-            trafficInfo: this.congestionLevels[analisis.factor >= 1.5 ? 'heavy' : 'moderate'],
-            adjustment: ((analisis.factor - 1) * 100).toFixed(0),
-            isSignificant: analisis.factor > 1.2,
-            location: null,
-            mensaje: analisis.mensaje,
-            detalles: analisis.detalles
-        };
+        try {
+            const location = await this.getQuickLocation();
+            const wazeData = await this.wazeAnalyzer.obtenerTraficoRadio(location);
+            
+            // Usar factor de Waze directamente
+            const adjustedTime = Math.ceil(userMinutes * wazeData.factorTrafico);
+            
+            const resultado = {
+                originalTime: userMinutes,
+                adjustedTime: adjustedTime,
+                trafficCondition: this.mapearCondicionTrafico(wazeData.factorTrafico),
+                trafficInfo: this.congestionLevels[this.mapearCondicionTrafico(wazeData.factorTrafico)],
+                adjustment: ((wazeData.factorTrafico - 1) * 100).toFixed(0),
+                isSignificant: wazeData.factorTrafico > 1.3,
+                location: location,
+                mensaje: this.generarMensajeWaze(wazeData),
+                detalles: this.generarDetallesWaze(wazeData),
+                confidence: wazeData.confianza,
+                dataSource: 'waze',
+                wazeData: wazeData // Datos completos para debug
+            };
+
+            console.log('✅ Análisis completado:', resultado);
+            return resultado;
+            
+        } catch (error) {
+            console.error('❌ Error en análisis Waze:', error);
+            return this.getConservativeEstimate(userMinutes);
+        }
     }
-}
+
+    mapearCondicionTrafico(factor) {
+        if (factor >= 2.0) return 'severe';
+        if (factor >= 1.5) return 'heavy';
+        if (factor >= 1.2) return 'moderate';
+        return 'low';
+    }
+
+    generarMensajeWaze(wazeData) {
+        if (wazeData.esEstimacion) {
+            return '📡 Estimación por hora (Waze no disponible)';
+        }
+        
+        if (wazeData.alertasGraves > 5) {
+            return `🚨 ${wazeData.alertasGraves} incidentes graves en ${wazeData.radioKm}km`;
+        }
+        if (wazeData.atascosActivos > 3) {
+            return `⚠️ ${wazeData.atascosActivos} atascos activos en tu zona`;
+        }
+        if (wazeData.factorTrafico > 1.8) {
+            return `🔴 Tráfico MUY pesado - ${wazeData.alertasTotales} alertas`;
+        }
+        if (wazeData.factorTrafico > 1.4) {
+            return `🟡 Tráfico moderado - ${wazeData.alertasTotales} alertas`;
+        }
+        if (wazeData.alertasTotales > 0) {
+            return `🟢 Tráfico fluido - ${wazeData.alertasTotales} alertas leves`;
+        }
+        return `✅ Tráfico excelente - Sin incidentes`;
+    }
+
+    generarDetallesWaze(wazeData) {
+        if (wazeData.esEstimacion) {
+            return 'Usando estimación por hora del día';
+        }
+        
+        let detalles = `${wazeData.alertasTotales} alertas totales`;
+        if (wazeData.alertasGraves > 0) {
+            detalles += `, ${wazeData.alertasGraves} graves`;
+        }
+        if (wazeData.atascosActivos > 0) {
+            detalles += `, ${wazeData.atascosActivos} atascos`;
+        }
+        detalles += ` en ${wazeData.radioKm}km radio`;
+        
+        return detalles;
+    }
 
     async getQuickLocation() {
         if (this.lastLocation && Date.now() - this.lastLocation.timestamp < 30000) {
@@ -1885,30 +2041,20 @@ class TrafficRadiusAnalyzer {
                     resolve(coords);
                 },
                 (error) => {
-                    console.warn('Error obteniendo ubicación:', error);
+                    console.warn('📍 Error obteniendo ubicación:', error);
                     reject(error);
                 },
                 { 
                     enableHighAccuracy: false,
-                    timeout: 3000,
+                    timeout: 5000, // Más rápido
                     maximumAge: 60000
                 }
             );
         });
     }
 
-   instantTrafficCheck() {
-    const now = new Date();
-    const analisis = smartTrafficAnalyzer.analizarTraficoInteligente(1); // 1 minuto base
-    
-    // Convertir a los niveles que tu sistema espera
-    if (analisis.factor >= 2.0) return 'severe';
-    if (analisis.factor >= 1.5) return 'heavy';
-    if (analisis.factor >= 1.2) return 'moderate';
-    return 'low';
-}
-    
     getConservativeEstimate(userMinutes) {
+        console.log('🔄 Usando estimación conservadora de respaldo');
         const hour = new Date().getHours();
         const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
         const factor = isPeak ? 1.6 : 1.2;
@@ -1920,21 +2066,12 @@ class TrafficRadiusAnalyzer {
             trafficInfo: this.congestionLevels[isPeak ? 'heavy' : 'moderate'],
             adjustment: ((factor - 1) * 100).toFixed(0),
             isSignificant: true,
-            location: null
+            location: null,
+            mensaje: isPeak ? '⏰ Hora pico estimada' : '🕒 Hora normal estimada',
+            detalles: 'Estimación basada en hora del día',
+            confidence: 0.4,
+            dataSource: 'fallback'
         };
-    }
-}
-
-async function inicializarSistemaTrafico() {
-    console.log('🚗 Inicializando sistema de análisis de tráfico...');
-    
-    try {
-        trafficAnalyzer = new TrafficRadiusAnalyzer();
-        trafficInitialized = true;
-        console.log('✅ Sistema de tráfico inicializado correctamente');
-        
-    } catch (error) {
-        console.error('❌ Error inicializando sistema de tráfico:', error);
     }
 }
 
@@ -2925,6 +3062,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
