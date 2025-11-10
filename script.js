@@ -48,7 +48,7 @@ const elementos = {};
 let cronometro = {
     activo: false,
     inicio: null,
-    tiempoTranscurrido: 0,
+    tiempoTranscurridoSegundos: 0,
     intervalo: null,
     viajeActual: null
 };
@@ -57,51 +57,69 @@ let cronometro = {
 // FUNCIONES DEL SISTEMA DE CRONÓMETRO
 // =============================================
 
-function crearBannerCronometro(resultado) {
-    const banner = document.createElement('div');
-    banner.id = 'banner-cronometro';
-    banner.className = 'verde'; // Empezar en verde
+function crearModalCronometro(resultado) {
+    const modalFondo = document.createElement('div');
+    modalFondo.id = 'modal-cronometro';
+    modalFondo.className = 'modal-cronometro-fondo';
     
-    // Calcular porcentaje para el marcador verde
+    // Calcular porcentajes para los marcadores
     const porcentajeVerde = calcularPorcentaje(
         resultado.minutos, 
         resultado.tiempoAjustado || resultado.minutos
     );
     
-    banner.innerHTML = `
-        <div class="banner-contenido">
-            <div class="banner-info">
-                <div class="banner-titulo">
-                    <span class="banner-icono">🚗</span>
-                    <span class="banner-texto">Viaje en Curso</span>
+    modalFondo.innerHTML = `
+        <div class="modal-cronometro-contenido estado-verde">
+            <div class="cronometro-header">
+                <div class="cronometro-titulo">
+                    <span class="cronometro-icono">🚗</span>
+                    <span>Viaje en Curso</span>
                 </div>
-                <div class="banner-tiempos">
-                    <div class="tiempo-estimado">Estimado: ${resultado.tiempoAjustado || resultado.minutos} min</div>
-                    <div class="tiempo-real" id="banner-tiempo-real">00:00</div>
-                </div>
-            </div>
-            
-            <div class="banner-progreso">
-                <div class="barra-progreso">
-                    <div class="progreso-fill" id="progreso-fill"></div>
-                </div>
-                <div class="marcadores-tiempo">
-                    <span class="marcador" style="left: 0%">0</span>
-                    <span class="marcador verde" style="left: ${porcentajeVerde}%">${resultado.minutos}</span>
-                    <span class="marcador rojo" style="left: 100%">${resultado.tiempoAjustado || resultado.minutos}</span>
+                <div class="cronometro-tiempo-display" id="cronometro-tiempo-display">
+                    00:00
                 </div>
             </div>
             
-            <div class="banner-accion">
-                <div class="instruccion">Toca para finalizar viaje</div>
+            <div class="cronometro-info">
+                <div class="info-item">
+                    <span class="info-label">Tiempo estimado:</span>
+                    <span class="info-valor">${resultado.tiempoAjustado || resultado.minutos} min</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Tu estimación:</span>
+                    <span class="info-valor">${resultado.minutos} min</span>
+                </div>
+            </div>
+            
+            <div class="cronometro-progreso">
+                <div class="barra-progreso-container">
+                    <div class="barra-progreso">
+                        <div class="progreso-fill" id="progreso-fill"></div>
+                    </div>
+                    <div class="marcadores-tiempo">
+                        <span class="marcador inicio">0</span>
+                        <span class="marcador verde" style="left: ${porcentajeVerde}%">${resultado.minutos}</span>
+                        <span class="marcador fin">${resultado.tiempoAjustado || resultado.minutos}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="cronometro-estado" id="cronometro-estado">
+                <span class="estado-icono">✅</span>
+                <span class="estado-texto">Dentro de tu tiempo estimado</span>
+            </div>
+            
+            <div class="cronometro-acciones">
+                <button class="btn-detener-viaje" onclick="detenerCronometro()">
+                    <span class="btn-icono">🛑</span>
+                    <span class="btn-texto">Finalizar Viaje</span>
+                </button>
+                <div class="instruccion">Toca cuando llegues a tu destino</div>
             </div>
         </div>
     `;
     
-    document.body.appendChild(banner);
-    
-    // Hacer el banner clickeable
-    banner.addEventListener('click', detenerCronometro);
+    document.body.appendChild(modalFondo);
 }
 
 function calcularPorcentaje(tiempoBase, tiempoTotal) {
@@ -117,6 +135,9 @@ function iniciarCronometroConViaje(resultado) {
     // Cerrar modal rápido
     cerrarModalRapido();
 
+    // ✅ LIMPIAR FORMULARIO
+    limpiarFormulario();
+
     // Guardar datos del viaje
     cronometro.viajeActual = {
         ...resultado,
@@ -131,58 +152,89 @@ function iniciarCronometroConViaje(resultado) {
     // Iniciar cronómetro
     cronometro.activo = true;
     cronometro.inicio = Date.now();
-    cronometro.tiempoTranscurrido = 0;
+    cronometro.tiempoTranscurridoSegundos = 0;
 
-    // Mostrar banner
-    crearBannerCronometro(resultado);
+    // Mostrar banner modal
+    crearModalCronometro(resultado);
     
     // Actualizar cada segundo
     cronometro.intervalo = setInterval(actualizarCronometro, 1000);
 
     console.log('🎯 Cronómetro iniciado para viaje:', cronometro.viajeActual);
-    mostrarStatus('⏱️ Viaje iniciado - Toca el banner para finalizar', 'info');
+    mostrarStatus('⏱️ Viaje iniciado', 'info');
 }
 
 function actualizarCronometro() {
     if (!cronometro.activo) return;
 
-    cronometro.tiempoTranscurrido = Date.now() - cronometro.inicio;
+    cronometro.tiempoTranscurridoSegundos = Math.floor((Date.now() - cronometro.inicio) / 1000);
+    const minutosTranscurridos = cronometro.tiempoTranscurridoSegundos / 60;
     
-    const minutosTranscurridos = cronometro.tiempoTranscurrido / 60000;
     const minutos = Math.floor(minutosTranscurridos);
-    const segundos = Math.floor((cronometro.tiempoTranscurrido % 60000) / 1000);
+    const segundos = cronometro.tiempoTranscurridoSegundos % 60;
     const tiempoFormateado = `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
     
-    // Actualizar tiempo en banner
-    const tiempoRealElement = document.getElementById('banner-tiempo-real');
-    if (tiempoRealElement) {
-        tiempoRealElement.textContent = tiempoFormateado;
+    // Actualizar tiempo en display
+    const tiempoDisplay = document.getElementById('cronometro-tiempo-display');
+    if (tiempoDisplay) {
+        tiempoDisplay.textContent = tiempoFormateado;
     }
     
-    // ✅ ACTUALIZAR COLORES SEGÚN PROGRESO
+    // ✅ ACTUALIZAR COLORES SEGÚN PROGRESO (3 colores)
     actualizarColoresProgreso(minutosTranscurridos);
     
     // Actualizar barra de progreso
     actualizarBarraProgreso(minutosTranscurridos);
+    
+    // Actualizar texto de estado
+    actualizarTextoEstado(minutosTranscurridos);
+}
+
+function actualizarTextoEstado(minutosTranscurridos) {
+    const estadoElement = document.getElementById('cronometro-estado');
+    if (!estadoElement || !cronometro.viajeActual) return;
+    
+    const { tiempoBase, tiempoMaximo } = cronometro.viajeActual;
+    const estado = estadoElement.querySelector('.estado-texto');
+    const icono = estadoElement.querySelector('.estado-icono');
+    
+    if (minutosTranscurridos <= tiempoBase) {
+        estado.textContent = 'Dentro de tu tiempo estimado';
+        icono.textContent = '✅';
+    } else if (minutosTranscurridos <= tiempoMaximo) {
+        estado.textContent = 'Dentro del tiempo con tráfico';
+        icono.textContent = '⚠️';
+    } else {
+        estado.textContent = 'Tiempo excedido';
+        icono.textContent = '🔴';
+    }
 }
 
 function actualizarColoresProgreso(minutosTranscurridos) {
-    const banner = document.getElementById('banner-cronometro');
-    if (!banner || !cronometro.viajeActual) return;
+    const modal = document.getElementById('modal-cronometro');
+    if (!modal || !cronometro.viajeActual) return;
     
     const { tiempoBase, tiempoMaximo } = cronometro.viajeActual;
     
-    // Lógica de colores
+    // ✅ CORRECCIÓN: Lógica de 3 colores
     if (minutosTranscurridos <= tiempoBase) {
-        // ✅ VERDE - Dentro del tiempo base
-        banner.className = 'verde';
+        // ✅ VERDE - Dentro del tiempo base (lo que tú pusiste)
+        modal.className = 'modal-cronometro-contenido estado-verde';
     } else if (minutosTranscurridos <= tiempoMaximo) {
-        // 🟡 AMARILLO - Dentro del tiempo con tráfico
-        banner.className = 'amarillo';
+        // 🟡 AMARILLO - Entre tu tiempo y el tiempo estimado con tráfico
+        modal.className = 'modal-cronometro-contenido estado-amarillo';
     } else {
         // 🔴 ROJO - Pasó el tiempo máximo estimado
-        banner.className = 'rojo';
+        modal.className = 'modal-cronometro-contenido estado-rojo';
     }
+    
+    console.log('🎨 Color actual:', {
+        minutosTranscurridos,
+        tiempoBase,
+        tiempoMaximo,
+        estado: minutosTranscurridos <= tiempoBase ? 'VERDE' : 
+                minutosTranscurridos <= tiempoMaximo ? 'AMARILLO' : 'ROJO'
+    });
 }
 
 function actualizarBarraProgreso(minutosTranscurridos) {
@@ -3490,6 +3542,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
