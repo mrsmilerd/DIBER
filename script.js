@@ -3144,6 +3144,179 @@ async function inicializarApp() {
 }
 
 // =============================================
+// FUNCIONES PARA MODAL RÁPIDO DE TRÁFICO
+// =============================================
+
+// Función para mostrar el modal rápido con datos reales
+function mostrarModalRapido(tarifa, minutos, distancia) {
+    // Obtener elementos del DOM
+    const modal = document.getElementById('modal-rapido');
+    const tiempoOriginal = document.getElementById('modal-tiempo-original');
+    const tiempoReal = document.getElementById('modal-tiempo-real');
+    const condicionTrafico = document.getElementById('modal-trafico-condition');
+    const badgeTitle = document.getElementById('modal-badge-title');
+    const badgeSubtitle = document.getElementById('modal-badge-subtitle');
+    const gananciaMinuto = document.getElementById('modal-ganancia-minuto');
+    const gananciaKm = document.getElementById('modal-ganancia-km');
+    const eficiencia = document.getElementById('modal-eficiencia');
+    const impactoContent = document.getElementById('modal-impacto-content');
+    const badgeRentabilidad = document.getElementById('modal-badge-rentabilidad');
+    const btnAceptar = document.getElementById('modal-btn-aceptar');
+    const badgeAceptar = document.getElementById('modal-badge-aceptar');
+    const badgeRechazar = document.getElementById('modal-badge-rechazar');
+
+    // Mostrar tiempo original
+    tiempoOriginal.textContent = `${minutos} min`;
+
+    // Simular análisis de tráfico (en una app real, esto vendría de una API)
+    setTimeout(() => {
+        // Generar datos de tráfico realistas
+        const nivelesTrafico = [
+            { nivel: 'Bajo', factor: 1.1, emoji: '🟢', desc: 'Tráfico fluido' },
+            { nivel: 'Moderado', factor: 1.3, emoji: '🟡', desc: 'Tráfico normal' },
+            { nivel: 'Alto', factor: 1.7, emoji: '🔴', desc: 'Tráfico pesado' },
+            { nivel: 'Muy Alto', factor: 2.2, emoji: '⛔', desc: 'Congestión severa' }
+        ];
+
+        const traficoAleatorio = nivelesTrafico[Math.floor(Math.random() * nivelesTrafico.length)];
+        const tiempoConTrafico = Math.round(minutos * traficoAleatorio.factor);
+
+        // Actualizar datos de tráfico
+        tiempoReal.textContent = `${tiempoConTrafico} min`;
+        condicionTrafico.innerHTML = `${traficoAleatorio.emoji} ${traficoAleatorio.nivel}`;
+        
+        // Calcular métricas con el tiempo real
+        const gananciaPorMinuto = tarifa / tiempoConTrafico;
+        const gananciaPorKm = distancia > 0 ? tarifa / distancia : 0;
+        
+        // Obtener umbrales del perfil actual
+        const perfil = obtenerPerfilActual();
+        const umbralMinutoRentable = perfil ? perfil.umbralMinutoRentable : 6.00;
+        const umbralKmRentable = perfil ? perfil.umbralKmRentable : 25.00;
+        const umbralMinutoOportunidad = perfil ? perfil.umbralMinutoOportunidad : 5.00;
+        const umbralKmOportunidad = perfil ? perfil.umbralKmOportunidad : 23.00;
+
+        // Determinar rentabilidad
+        let esRentable = false;
+        let esOportunidad = false;
+        let resultadoTexto = '';
+        let resultadoEmoji = '';
+        let resultadoColor = '';
+        let recomendacionAceptar = '';
+
+        if (gananciaPorMinuto >= umbralMinutoRentable && gananciaPorKm >= umbralKmRentable) {
+            esRentable = true;
+            resultadoTexto = 'VIAJE RENTABLE';
+            resultadoEmoji = '✅';
+            resultadoColor = '#4caf50';
+            recomendacionAceptar = 'Altamente recomendado';
+        } else if (gananciaPorMinuto >= umbralMinutoOportunidad && gananciaPorKm >= umbralKmOportunidad) {
+            esOportunidad = true;
+            resultadoTexto = 'OPORTUNIDAD';
+            resultadoEmoji = '⚠️';
+            resultadoColor = '#ff9800';
+            recomendacionAceptar = 'Aceptar con cuidado';
+        } else {
+            resultadoTexto = 'NO RENTABLE';
+            resultadoEmoji = '❌';
+            resultadoColor = '#f44336';
+            recomendacionAceptar = 'No recomendado';
+        }
+
+        // Actualizar UI con resultados
+        badgeTitle.textContent = resultadoTexto;
+        badgeSubtitle.textContent = esRentable ? 'Excelentes condiciones' : 
+                                   esOportunidad ? 'Condiciones aceptables' : 'No cumple criterios';
+        
+        badgeRentabilidad.style.background = esRentable ? '#e8f5e8' : 
+                                           esOportunidad ? '#fff3cd' : '#ffebee';
+        badgeRentabilidad.style.borderColor = resultadoColor;
+
+        // Actualizar métricas
+        gananciaMinuto.textContent = `RD$${gananciaPorMinuto.toFixed(2)}/min`;
+        gananciaKm.textContent = `RD$${gananciaPorKm.toFixed(2)}/km`;
+        
+        // Calcular eficiencia (porcentaje sobre el umbral rentable)
+        const eficienciaCalculada = Math.min(150, Math.round((gananciaPorMinuto / umbralMinutoRentable) * 100));
+        eficiencia.textContent = `${eficienciaCalculada}%`;
+
+        // Actualizar impacto del tráfico
+        const aumentoPorcentaje = Math.round((traficoAleatorio.factor - 1) * 100);
+        impactoContent.innerHTML = `El tráfico <strong>${traficoAleatorio.desc.toLowerCase()}</strong> aumenta el tiempo en un <strong>${aumentoPorcentaje}%</strong>`;
+
+        // Actualizar botones
+        badgeAceptar.textContent = recomendacionAceptar;
+        badgeRechazar.textContent = esRentable ? 'Pérdida potencial' : 'Evitar pérdidas';
+
+        // Cambiar estilo del botón aceptar según rentabilidad
+        if (esRentable) {
+            btnAceptar.style.background = '#e8f5e8';
+            btnAceptar.style.color = '#2e7d32';
+            btnAceptar.style.borderColor = '#4caf50';
+        } else if (esOportunidad) {
+            btnAceptar.style.background = '#fff3cd';
+            btnAceptar.style.color = '#856404';
+            btnAceptar.style.borderColor = '#ffc107';
+        } else {
+            btnAceptar.style.background = '#ffebee';
+            btnAceptar.style.color = '#c62828';
+            btnAceptar.style.borderColor = '#f44336';
+        }
+
+    }, 1000); // Simular delay de carga de datos
+
+    // Mostrar modal
+    modal.classList.remove('hidden');
+}
+
+// Función para cerrar el modal rápido
+function cerrarModalRapido() {
+    const modal = document.getElementById('modal-rapido');
+    modal.classList.add('hidden');
+}
+
+// Función para procesar la decisión del viaje
+function procesarViajeRapido(aceptar) {
+    if (aceptar) {
+        // Lógica para aceptar viaje
+        console.log('Viaje aceptado');
+        // Aquí iría la lógica para guardar en historial, etc.
+    } else {
+        // Lógica para rechazar viaje
+        console.log('Viaje rechazado');
+    }
+    cerrarModalRapido();
+}
+
+// Función auxiliar para obtener perfil actual
+function obtenerPerfilActual() {
+    // Esta función debería retornar el perfil activo actual
+    // Por ahora retornamos un objeto con valores por defecto
+    return {
+        umbralMinutoRentable: 6.00,
+        umbralKmRentable: 25.00,
+        umbralMinutoOportunidad: 5.00,
+        umbralKmOportunidad: 23.00
+    };
+}
+
+// Función para activar análisis de tráfico con datos del formulario
+function activarAnalisisTrafico() {
+    const tarifa = parseFloat(document.getElementById('tarifa').value) || 0;
+    const minutos = parseInt(document.getElementById('minutos').value) || 0;
+    const distancia = parseFloat(document.getElementById('distancia').value) || 0;
+    
+    // Validar que todos los campos tengan datos
+    if (tarifa <= 0 || minutos <= 0 || distancia <= 0) {
+        alert('Por favor, completa todos los campos del viaje primero');
+        return;
+    }
+    
+    // Mostrar el modal con los datos reales
+    mostrarModalRapido(tarifa, minutos, distancia);
+}
+
+// =============================================
 // FUNCIONES GLOBALES
 // =============================================
 
@@ -3211,6 +3384,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
