@@ -3,6 +3,45 @@
 // Versión Corregida y Sincronizada con HTML
 // =============================================
 
+// --- Variables Globales ---
+let perfiles = [];
+let perfilActual = null;
+let historial = [];
+let calculoActual = null;
+let timeoutCalculo = null;
+let firebaseSync;
+let filtroActual = 'hoy';
+let Actual = null;
+
+// --- Sistema de Código de Usuario ---
+let userCodeSystem = {
+    userId: null,
+    userCode: null,
+    initialized: false
+};
+
+// --- Variables de Control de Inicialización ---
+let firebaseInitialized = false;
+let loadingData = false;
+let appInitialized = false;
+
+// --- Sistema de Tráfico ---
+let trafficAnalyzer = null;
+let trafficInitialized = false;
+
+// --- Configuración Firebase ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCf5j5Pu-go6ipUw2EnTO2OnKgvYLzkonY",
+  authDomain: "diber-32875.firebaseapp.com",
+  projectId: "diber-32875",
+  storageBucket: "diber-32875.firebasestorage.app",
+  messagingSenderId: "260349079723",
+  appId: "1:260349079723:web:babe1cc51e8bb067ba87ee"
+};
+
+// --- Elementos DOM ---
+const elementos = {};
+
 // =============================================
 // SISTEMA DE AUTO-APRENDIZAJE DE RUTAS - FASE 1
 // =============================================
@@ -192,44 +231,162 @@ class RouteLearningSystem {
     }
 }
 
-// --- Variables Globales ---
-let perfiles = [];
-let perfilActual = null;
-let historial = [];
-let calculoActual = null;
-let timeoutCalculo = null;
-let firebaseSync;
-let filtroActual = 'hoy';
-let Actual = null;
+// =============================================
+// SISTEMA DE SINCRONIZACIÓN MULTI-DISPOSITIVO
+// =============================================
 
-// --- Sistema de Código de Usuario ---
-let userCodeSystem = {
-    userId: null,
-    userCode: null,
-    initialized: false
-};
+class FirebaseSync {
+    constructor() {
+        this.initialized = false;
+        this.userId = null;
+        this.db = null;
+    }
 
-// --- Variables de Control de Inicialización ---
-let firebaseInitialized = false;
-let loadingData = false;
-let appInitialized = false;
+    async initialize() {
+        if (this.initialized) return true;
 
-// --- Sistema de Tráfico ---
-let trafficAnalyzer = null;
-let trafficInitialized = false;
+        try {
+            console.log('📡 Inicializando Firebase Sync...');
+            
+            if (typeof firebase === 'undefined') {
+                throw new Error('Firebase no está cargado');
+            }
+            
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            
+            this.db = firebase.firestore();
+            this.userId = userCodeSystem.userId;
+            
+            this.initialized = true;
+            console.log('✅ Firebase Sync inicializado CORRECTAMENTE');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error inicializando Firebase Sync:', error);
+            return false;
+        }
+    }
 
-// --- Configuración Firebase ---
-const firebaseConfig = {
-  apiKey: "AIzaSyCf5j5Pu-go6ipUw2EnTO2OnKgvYLzkonY",
-  authDomain: "diber-32875.firebaseapp.com",
-  projectId: "diber-32875",
-  storageBucket: "diber-32875.firebasestorage.app",
-  messagingSenderId: "260349079723",
-  appId: "1:260349079723:web:babe1cc51e8bb067ba87ee"
-};
+    async saveProfile(profile) {
+        if (!this.initialized) return false;
 
-// --- Elementos DOM ---
-const elementos = {};
+        try {
+            const profileRef = this.db.collection('users').doc(this.userId)
+                .collection('profiles').doc(profile.id);
+            
+            await profileRef.set({
+                ...profile,
+                lastSync: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            console.log('✅ Perfil guardado en Firebase:', profile.nombre);
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error guardando perfil en Firebase:', error);
+            return false;
+        }
+    }
+
+    async saveTrip(trip) {
+        if (!this.initialized) return false;
+
+        try {
+            const tripRef = this.db.collection('users').doc(this.userId)
+                .collection('trips').doc(trip.id);
+            
+            await tripRef.set({
+                ...trip,
+                lastSync: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            console.log('✅ Viaje guardado en Firebase');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error guardando viaje en Firebase:', error);
+            return false;
+        }
+    }
+
+    // ✅ MÉTODO CORREGIDO - DENTRO DE LA CLASE
+    async saveRouteLearning(learningData) {
+        if (!this.initialized) return false;
+
+        try {
+            const learningRef = this.db.collection('route_learning')
+                .doc(learningData.routeId + '_' + Date.now()); // ID único
+            
+            await learningRef.set({
+                ...learningData,
+                lastSync: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            console.log('✅ Datos de aprendizaje guardados en Firebase');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error guardando aprendizaje en Firebase:', error);
+            return false;
+        }
+    }
+
+    async loadProfiles() {
+        if (!this.initialized) return null;
+
+        try {
+            const profilesRef = this.db.collection('users').doc(this.userId)
+                .collection('profiles');
+            
+            const snapshot = await profilesRef.orderBy('fechaCreacion', 'desc').get();
+            
+            if (!snapshot.empty) {
+                const profiles = [];
+                snapshot.forEach(doc => {
+                    profiles.push(doc.data());
+                });
+                
+                console.log('✅ Perfiles cargados desde Firebase:', profiles.length);
+                return profiles;
+            } else {
+                return [];
+            }
+            
+        } catch (error) {
+            console.error('❌ Error cargando perfiles desde Firebase:', error);
+            return null;
+        }
+    }
+
+    async loadTrips() {
+        if (!this.initialized) return null;
+
+        try {
+            const tripsRef = this.db.collection('users').doc(this.userId)
+                .collection('trips');
+            
+            const snapshot = await tripsRef.orderBy('timestamp', 'desc').limit(100).get();
+            
+            if (!snapshot.empty) {
+                const trips = [];
+                snapshot.forEach(doc => {
+                    trips.push(doc.data());
+                });
+                
+                console.log('✅ Viajes cargados desde Firebase:', trips.length);
+                return trips;
+            } else {
+                return [];
+            }
+            
+        } catch (error) {
+            console.error('❌ Error cargando viajes desde Firebase:', error);
+            return null;
+        }
+    }
+}
 
 // =============================================
 // INICIALIZACIÓN DE ELEMENTOS DOM - CORREGIDA
@@ -465,161 +622,6 @@ function cambiarUsuario() {
         showUserCodeModal();
         
         mostrarStatus('🔑 Sesión cerrada. Ingresa un nuevo código.', 'info');
-    }
-}
-
-// =============================================
-// SISTEMA DE SINCRONIZACIÓN MULTI-DISPOSITIVO
-// =============================================
-
-class FirebaseSync {
-    constructor() {
-        this.initialized = false;
-        this.userId = null;
-        this.db = null;
-    }
-
-    async initialize() {
-        if (this.initialized) return true;
-
-        try {
-            console.log('📡 Inicializando Firebase Sync...');
-            
-            if (typeof firebase === 'undefined') {
-                throw new Error('Firebase no está cargado');
-            }
-            
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            
-            this.db = firebase.firestore();
-            this.userId = userCodeSystem.userId;
-            
-            this.initialized = true;
-            console.log('✅ Firebase Sync inicializado CORRECTAMENTE');
-            return true;
-            
-        } catch (error) {
-            console.error('❌ Error inicializando Firebase Sync:', error);
-            return false;
-        }
-
-async saveRouteLearning(learningData) {
-    if (!this.initialized) return false;
-
-    try {
-        const learningRef = this.db.collection('route_learning')
-            .doc(learningData.routeId + '_' + Date.now()); // ID único
-        
-        await learningRef.set({
-            ...learningData,
-            lastSync: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        
-        console.log('✅ Datos de aprendizaje guardados en Firebase');
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Error guardando aprendizaje en Firebase:', error);
-        return false;
-    }
-}
-
-    async saveProfile(profile) {
-        if (!this.initialized) return false;
-
-        try {
-            const profileRef = this.db.collection('users').doc(this.userId)
-                .collection('profiles').doc(profile.id);
-            
-            await profileRef.set({
-                ...profile,
-                lastSync: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-            
-            console.log('✅ Perfil guardado en Firebase:', profile.nombre);
-            return true;
-            
-        } catch (error) {
-            console.error('❌ Error guardando perfil en Firebase:', error);
-            return false;
-        }
-    }
-
-    async saveTrip(trip) {
-        if (!this.initialized) return false;
-
-        try {
-            const tripRef = this.db.collection('users').doc(this.userId)
-                .collection('trips').doc(trip.id);
-            
-            await tripRef.set({
-                ...trip,
-                lastSync: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-            
-            console.log('✅ Viaje guardado en Firebase');
-            return true;
-            
-        } catch (error) {
-            console.error('❌ Error guardando viaje en Firebase:', error);
-            return false;
-        }
-    }
-
-    async loadProfiles() {
-        if (!this.initialized) return null;
-
-        try {
-            const profilesRef = this.db.collection('users').doc(this.userId)
-                .collection('profiles');
-            
-            const snapshot = await profilesRef.orderBy('fechaCreacion', 'desc').get();
-            
-            if (!snapshot.empty) {
-                const profiles = [];
-                snapshot.forEach(doc => {
-                    profiles.push(doc.data());
-                });
-                
-                console.log('✅ Perfiles cargados desde Firebase:', profiles.length);
-                return profiles;
-            } else {
-                return [];
-            }
-            
-        } catch (error) {
-            console.error('❌ Error cargando perfiles desde Firebase:', error);
-            return null;
-        }
-    }
-
-    async loadTrips() {
-        if (!this.initialized) return null;
-
-        try {
-            const tripsRef = this.db.collection('users').doc(this.userId)
-                .collection('trips');
-            
-            const snapshot = await tripsRef.orderBy('timestamp', 'desc').limit(100).get();
-            
-            if (!snapshot.empty) {
-                const trips = [];
-                snapshot.forEach(doc => {
-                    trips.push(doc.data());
-                });
-                
-                console.log('✅ Viajes cargados desde Firebase:', trips.length);
-                return trips;
-            } else {
-                return [];
-            }
-            
-        } catch (error) {
-            console.error('❌ Error cargando viajes desde Firebase:', error);
-            return null;
-        }
     }
 }
 
@@ -3047,4 +3049,5 @@ window.onclick = function(event) {
         }
     }
 };
+
 
