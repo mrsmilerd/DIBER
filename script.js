@@ -43,6 +43,251 @@ const firebaseConfig = {
 const elementos = {};
 
 // =============================================
+// SISTEMA DE CRONÓMETRO PARA TIEMPOS REALES
+// =============================================
+let cronometro = {
+    activo: false,
+    inicio: null,
+    tiempoTranscurrido: 0,
+    intervalo: null,
+    viajeActual: null
+};
+
+// =============================================
+// FUNCIONES DEL SISTEMA DE CRONÓMETRO
+// =============================================
+
+function crearBannerCronometro(resultado) {
+    const banner = document.createElement('div');
+    banner.id = 'banner-cronometro';
+    banner.className = 'verde'; // Empezar en verde
+    
+    // Calcular porcentaje para el marcador verde
+    const porcentajeVerde = calcularPorcentaje(
+        resultado.minutos, 
+        resultado.tiempoAjustado || resultado.minutos
+    );
+    
+    banner.innerHTML = `
+        <div class="banner-contenido">
+            <div class="banner-info">
+                <div class="banner-titulo">
+                    <span class="banner-icono">🚗</span>
+                    <span class="banner-texto">Viaje en Curso</span>
+                </div>
+                <div class="banner-tiempos">
+                    <div class="tiempo-estimado">Estimado: ${resultado.tiempoAjustado || resultado.minutos} min</div>
+                    <div class="tiempo-real" id="banner-tiempo-real">00:00</div>
+                </div>
+            </div>
+            
+            <div class="banner-progreso">
+                <div class="barra-progreso">
+                    <div class="progreso-fill" id="progreso-fill"></div>
+                </div>
+                <div class="marcadores-tiempo">
+                    <span class="marcador" style="left: 0%">0</span>
+                    <span class="marcador verde" style="left: ${porcentajeVerde}%">${resultado.minutos}</span>
+                    <span class="marcador rojo" style="left: 100%">${resultado.tiempoAjustado || resultado.minutos}</span>
+                </div>
+            </div>
+            
+            <div class="banner-accion">
+                <div class="instruccion">Toca para finalizar viaje</div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(banner);
+    
+    // Hacer el banner clickeable
+    banner.addEventListener('click', detenerCronometro);
+}
+
+function calcularPorcentaje(tiempoBase, tiempoTotal) {
+    return (tiempoBase / tiempoTotal) * 100;
+}
+
+function iniciarCronometroConViaje(resultado) {
+    if (cronometro.activo) {
+        console.log('⏱️ Cronómetro ya activo');
+        return;
+    }
+
+    // Cerrar modal rápido
+    cerrarModalRapido();
+
+    // Guardar datos del viaje
+    cronometro.viajeActual = {
+        ...resultado,
+        timestampInicio: new Date().toISOString(),
+        tiempoEstimado: resultado.minutos,
+        tiempoAjustado: resultado.tiempoAjustado || resultado.minutos,
+        // Para los colores
+        tiempoBase: resultado.minutos,
+        tiempoMaximo: resultado.tiempoAjustado || resultado.minutos
+    };
+
+    // Iniciar cronómetro
+    cronometro.activo = true;
+    cronometro.inicio = Date.now();
+    cronometro.tiempoTranscurrido = 0;
+
+    // Mostrar banner
+    crearBannerCronometro(resultado);
+    
+    // Actualizar cada segundo
+    cronometro.intervalo = setInterval(actualizarCronometro, 1000);
+
+    console.log('🎯 Cronómetro iniciado para viaje:', cronometro.viajeActual);
+    mostrarStatus('⏱️ Viaje iniciado - Toca el banner para finalizar', 'info');
+}
+
+function actualizarCronometro() {
+    if (!cronometro.activo) return;
+
+    cronometro.tiempoTranscurrido = Date.now() - cronometro.inicio;
+    
+    const minutosTranscurridos = cronometro.tiempoTranscurrido / 60000;
+    const minutos = Math.floor(minutosTranscurridos);
+    const segundos = Math.floor((cronometro.tiempoTranscurrido % 60000) / 1000);
+    const tiempoFormateado = `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+    
+    // Actualizar tiempo en banner
+    const tiempoRealElement = document.getElementById('banner-tiempo-real');
+    if (tiempoRealElement) {
+        tiempoRealElement.textContent = tiempoFormateado;
+    }
+    
+    // ✅ ACTUALIZAR COLORES SEGÚN PROGRESO
+    actualizarColoresProgreso(minutosTranscurridos);
+    
+    // Actualizar barra de progreso
+    actualizarBarraProgreso(minutosTranscurridos);
+}
+
+function actualizarColoresProgreso(minutosTranscurridos) {
+    const banner = document.getElementById('banner-cronometro');
+    if (!banner || !cronometro.viajeActual) return;
+    
+    const { tiempoBase, tiempoMaximo } = cronometro.viajeActual;
+    
+    // Lógica de colores
+    if (minutosTranscurridos <= tiempoBase) {
+        // ✅ VERDE - Dentro del tiempo base
+        banner.className = 'verde';
+    } else if (minutosTranscurridos <= tiempoMaximo) {
+        // 🟡 AMARILLO - Dentro del tiempo con tráfico
+        banner.className = 'amarillo';
+    } else {
+        // 🔴 ROJO - Pasó el tiempo máximo estimado
+        banner.className = 'rojo';
+    }
+}
+
+function actualizarBarraProgreso(minutosTranscurridos) {
+    const progresoFill = document.getElementById('progreso-fill');
+    if (!progresoFill || !cronometro.viajeActual) return;
+    
+    const { tiempoMaximo } = cronometro.viajeActual;
+    const porcentaje = Math.min(100, (minutosTranscurridos / tiempoMaximo) * 100);
+    
+    progresoFill.style.width = `${porcentaje}%`;
+}
+
+function detenerCronometro() {
+    if (!cronometro.activo) {
+        console.log('❌ No hay cronómetro activo');
+        return;
+    }
+
+    // Detener cronómetro
+    clearInterval(cronometro.intervalo);
+    const tiempoRealMinutos = Math.round(cronometro.tiempoTranscurrido / 60000);
+    
+    console.log('🛑 Cronómetro detenido. Tiempo real:', tiempoRealMinutos, 'minutos');
+
+    // Remover banner
+    const banner = document.getElementById('banner-cronometro');
+    if (banner) {
+        banner.remove();
+    }
+
+    // Procesar viaje con tiempo real
+    procesarViajeConTiempoReal(tiempoRealMinutos);
+    
+    // Resetear cronómetro
+    cronometro.activo = false;
+    cronometro.inicio = null;
+    cronometro.tiempoTranscurrido = 0;
+    cronometro.viajeActual = null;
+}
+
+function procesarViajeConTiempoReal(tiempoRealMinutos) {
+    const viajeConTiempoReal = {
+        ...cronometro.viajeActual,
+        tiempoReal: tiempoRealMinutos,
+        timestampFin: new Date().toISOString(),
+        diferenciaTiempo: tiempoRealMinutos - cronometro.viajeActual.tiempoEstimado,
+        tiempoRealCapturado: true
+    };
+
+    // Guardar en historial
+    agregarAlHistorialConTiempoReal(viajeConTiempoReal);
+
+    // Mostrar resumen
+    mostrarResumenTiempoReal(viajeConTiempoReal);
+}
+
+async function agregarAlHistorialConTiempoReal(viaje) {
+    console.log('💾 Guardando viaje con tiempo real:', viaje.tiempoReal, 'min');
+
+    // Crear objeto para historial
+    const viajeHistorial = {
+        ...viaje,
+        minutos: viaje.tiempoReal, // Usar tiempo real en lugar del estimado
+        gananciaPorMinuto: viaje.tarifa / viaje.tiempoReal,
+        tiempoRealCapturado: true,
+        diferenciaConEstimado: viaje.diferenciaTiempo,
+        eficienciaReal: viaje.tarifa / viaje.tiempoReal
+    };
+
+    // Llamar a la función existente pero con datos reales
+    await agregarAlHistorial(viajeHistorial);
+}
+
+function mostrarResumenTiempoReal(viaje) {
+    const diferencia = viaje.diferenciaTiempo;
+    let mensaje = '';
+    
+    if (diferencia > 5) {
+        mensaje = `📈 Viaje tomó ${diferencia} min más de lo estimado`;
+    } else if (diferencia < -5) {
+        mensaje = `📉 Viaje tomó ${Math.abs(diferencia)} min menos de lo estimado`;
+    } else {
+        mensaje = '🎯 Tiempo muy cercano al estimado';
+    }
+
+    const eficienciaReal = viaje.tarifa / viaje.tiempoReal;
+    const eficienciaEstimada = viaje.tarifa / viaje.tiempoEstimado;
+
+    alert(`✅ VIAJE COMPLETADO
+
+⏱️ Tiempos:
+• Estimado: ${viaje.tiempoEstimado} min
+• Real: ${viaje.tiempoReal} min
+• Diferencia: ${diferencia} min
+
+💰 Eficiencia:
+• Estimada: RD$${eficienciaEstimada.toFixed(2)}/min
+• Real: RD$${eficienciaReal.toFixed(2)}/min
+
+${mensaje}
+
+🧠 El sistema aprenderá de este tiempo real para mejorar las futuras predicciones!`);
+}
+
+// =============================================
 // SISTEMA DE AUTO-APRENDIZAJE DE RUTAS - COMPLETO
 // =============================================
 
@@ -1001,15 +1246,23 @@ async function agregarAlHistorial(viaje) {
     
      console.log('💾 Historial guardado localmente. Total viajes:', historial.length);
     
-    // ✅ SISTEMA DE AUTO-APRENDIZAJE - Solo para viajes aceptados
-    if (viaje.aceptado !== false) {
-        setTimeout(async () => {
-            if (window.routeLearningSystem && window.routeLearningSystem.learningEnabled) {
-                console.log('🧠 Iniciando análisis de aprendizaje...');
-                await window.routeLearningSystem.analyzeCompletedTrip(viaje);
-            }
-        }, 1500);
-    }
+    // ✅ APRENDIZAJE MEJORADO CON TIEMPO REAL
+if (viaje.aceptado !== false) {
+    setTimeout(async () => {
+        if (window.routeLearningSystem && window.routeLearningSystem.learningEnabled) {
+            console.log('🧠 Iniciando análisis de aprendizaje...');
+            
+            // Si tenemos tiempo real, usarlo para aprendizaje más preciso
+            const datosAprendizaje = viaje.tiempoRealCapturado ? {
+                ...viaje,
+                minutos: viaje.tiempoReal, // Usar tiempo real para aprendizaje
+                gananciaPorMinuto: viaje.eficienciaReal
+            } : viaje;
+            
+            await window.routeLearningSystem.analyzeCompletedTrip(datosAprendizaje);
+        }
+    }, 1500);
+}
     
     if (firebaseSync && firebaseSync.initialized && nuevoViaje.aceptado) {
         try {
@@ -2045,17 +2298,17 @@ function mostrarResultadoRapido(resultado) {
             ` : ''}
 
             <div class="acciones-mejoradas">
-                <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
-                    <span class="btn-icon">❌</span>
-                    <span class="btn-text">Rechazar Viaje</span>
-                    <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
-                </button>
-                <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)" id="modal-btn-aceptar">
-                    <span class="btn-icon">✅</span>
-                    <span class="btn-text">Aceptar Viaje</span>
-                    <span class="btn-badge" id="modal-badge-aceptar">${resultado.rentabilidad === 'rentable' ? 'Recomendado' : 'Con cuidado'}</span>
-                </button>
-            </div>
+    <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
+        <span class="btn-icon">❌</span>
+        <span class="btn-text">Rechazar Viaje</span>
+        <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
+    </button>
+    <button class="btn-aceptar-elegante" onclick="iniciarCronometroConViaje(resultado)" id="modal-btn-aceptar">
+        <span class="btn-icon">✅</span>
+        <span class="btn-text">Aceptar y Cronometrar</span>
+        <span class="btn-badge" id="modal-badge-aceptar">${resultado.rentabilidad === 'rentable' ? 'Recomendado' : 'Con cuidado'}</span>
+    </button>
+</div>
         </div>
     `;
 
@@ -3229,6 +3482,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
