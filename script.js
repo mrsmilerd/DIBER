@@ -3,46 +3,6 @@
 // Versión Corregida y Sincronizada con HTML
 // =============================================
 
-// --- Variables Globales ---
-let perfiles = [];
-let perfilActual = null;
-let historial = [];
-let calculoActual = null;
-let timeoutCalculo = null;
-let firebaseSync;
-let filtroActual = 'hoy';
-let Actual = null;
-let smartTrafficAnalyzer = new SmartTrafficAnalyzer();
-
-// --- Sistema de Código de Usuario ---
-let userCodeSystem = {
-    userId: null,
-    userCode: null,
-    initialized: false
-};
-
-// --- Variables de Control de Inicialización ---
-let firebaseInitialized = false;
-let loadingData = false;
-let appInitialized = false;
-
-// --- Sistema de Tráfico ---
-let trafficAnalyzer = null;
-let trafficInitialized = false;
-
-// --- Configuración Firebase ---
-const firebaseConfig = {
-  apiKey: "AIzaSyCf5j5Pu-go6ipUw2EnTO2OnKgvYLzkonY",
-  authDomain: "diber-32875.firebaseapp.com",
-  projectId: "diber-32875",
-  storageBucket: "diber-32875.firebasestorage.app",
-  messagingSenderId: "260349079723",
-  appId: "1:260349079723:web:babe1cc51e8bb067ba87ee"
-};
-
-// --- Elementos DOM ---
-const elementos = {};
-
 // =============================================
 // SISTEMA DE TRÁFICO INTELIGENTE - CERO CONFIGURACIÓN
 // =============================================
@@ -158,6 +118,46 @@ class SmartTrafficAnalyzer {
         return `Análisis para ${diaSemana[fecha.getDay()]} ${fecha.getHours()}:${fecha.getMinutes().toString().padStart(2, '0')}`;
     }
 }
+
+// --- Variables Globales ---
+let perfiles = [];
+let perfilActual = null;
+let historial = [];
+let calculoActual = null;
+let timeoutCalculo = null;
+let firebaseSync;
+let filtroActual = 'hoy';
+let Actual = null;
+let smartTrafficAnalyzer = new SmartTrafficAnalyzer();
+
+// --- Sistema de Código de Usuario ---
+let userCodeSystem = {
+    userId: null,
+    userCode: null,
+    initialized: false
+};
+
+// --- Variables de Control de Inicialización ---
+let firebaseInitialized = false;
+let loadingData = false;
+let appInitialized = false;
+
+// --- Sistema de Tráfico ---
+let trafficAnalyzer = null;
+let trafficInitialized = false;
+
+// --- Configuración Firebase ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCf5j5Pu-go6ipUw2EnTO2OnKgvYLzkonY",
+  authDomain: "diber-32875.firebaseapp.com",
+  projectId: "diber-32875",
+  storageBucket: "diber-32875.firebasestorage.app",
+  messagingSenderId: "260349079723",
+  appId: "1:260349079723:web:babe1cc51e8bb067ba87ee"
+};
+
+// --- Elementos DOM ---
+const elementos = {};
 
 // =============================================
 // INICIALIZACIÓN DE ELEMENTOS DOM - CORREGIDA
@@ -2925,6 +2925,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
