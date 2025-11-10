@@ -4,31 +4,29 @@
 // =============================================
 
 // =============================================
-// SISTEMA HÍBRIDO DE TRÁFICO INTELIGENTE
+// SISTEMA HÍBRIDO DE TRÁFICO INTELIGENTE - CORREGIDO
 // =============================================
 
 class HybridTrafficAnalyzer {
     constructor() {
         this.radiusKm = 10;
-        this.updateInterval = 300000; // 5 minutos
+        this.updateInterval = 300000;
         this.lastUpdate = null;
         this.currentTrafficData = null;
         this.locationCache = new Map();
-        this.cacheDuration = 60000; // 1 minuto
+        this.cacheDuration = 60000;
     }
 
     async obtenerTraficoRadio(ubicacionUsuario) {
         const cacheKey = `${ubicacionUsuario.lat.toFixed(4)},${ubicacionUsuario.lng.toFixed(4)}`;
         const now = Date.now();
         
-        // Verificar cache
         const cached = this.locationCache.get(cacheKey);
         if (cached && now - cached.timestamp < this.cacheDuration) {
             console.log('📦 Usando cache de análisis híbrido');
             return cached.data;
         }
 
-        // Verificar datos generales recientes
         if (this.currentTrafficData && this.lastUpdate && 
             now - this.lastUpdate < this.updateInterval) {
             console.log('🔄 Usando datos híbridos recientes');
@@ -43,7 +41,6 @@ class HybridTrafficAnalyzer {
             this.currentTrafficData = analisisCompleto;
             this.lastUpdate = now;
             
-            // Guardar en cache
             this.locationCache.set(cacheKey, {
                 timestamp: now,
                 data: analisisCompleto
@@ -68,20 +65,15 @@ class HybridTrafficAnalyzer {
             this.obtenerInfoZona(ubicacion)
         ]);
 
-        // Combinar inteligentemente todas las fuentes
         const factorTrafico = this.combinarFuentesInteligentemente([
-            patronTiempo,    // 50% peso - más confiable
-            tipoZona,        // 40% peso  
-            infoZona         // 10% peso
+            patronTiempo,
+            tipoZona,
+            infoZona
         ]);
 
         const resultado = {
             factorTrafico: factorTrafico,
-            fuentes: {
-                patronTiempo,
-                tipoZona, 
-                infoZona
-            },
+            fuentes: { patronTiempo, tipoZona, infoZona },
             timestamp: new Date().toISOString(),
             confianza: this.calcularConfianza([patronTiempo, tipoZona, infoZona]),
             mensaje: this.generarMensajeInteligente(factorTrafico, tipoZona, patronTiempo),
@@ -94,76 +86,73 @@ class HybridTrafficAnalyzer {
     }
 
     analizarPatronTiempo() {
-    const ahora = new Date();
-    const hora = ahora.getHours();
-    const minutos = ahora.getMinutes();
-    const horaDecimal = hora + (minutos / 60);
-    const dia = ahora.getDay();
-    const esFinSemana = dia === 0 || dia === 6;
-    
-    console.log(`📅 Análisis temporal: ${hora}:${minutos}, ${esFinSemana ? 'Fin de semana' : 'Día laboral'}`);
-    
-    let factor = 1.0;
-    let descripcion = '';
-    
-    try {
-        if (!esFinSemana) {
-            // LUNES A VIERNES
-            if (horaDecimal >= 6.5 && horaDecimal <= 9.5) {
-                const intensidad = this.calcularIntensidadPico(horaDecimal, 7.5, 2.0);
-                factor = 1.5 + (intensidad * 0.7);
-                descripcion = 'Hora pico mañana';
+        const ahora = new Date();
+        const hora = ahora.getHours();
+        const minutos = ahora.getMinutes();
+        const horaDecimal = hora + (minutos / 60);
+        const dia = ahora.getDay();
+        const esFinSemana = dia === 0 || dia === 6;
+        
+        console.log(`📅 Análisis temporal: ${hora}:${minutos}, ${esFinSemana ? 'Fin de semana' : 'Día laboral'}`);
+        
+        let factor = 1.0;
+        let descripcion = '';
+        
+        try {
+            if (!esFinSemana) {
+                if (horaDecimal >= 6.5 && horaDecimal <= 9.5) {
+                    const intensidad = this.calcularIntensidadPico(horaDecimal, 7.5, 2.0);
+                    factor = 1.5 + (intensidad * 0.7);
+                    descripcion = 'Hora pico mañana';
+                }
+                else if (horaDecimal >= 11.5 && horaDecimal <= 14.0) {
+                    factor = 1.3;
+                    descripcion = 'Hora almuerzo';
+                }
+                else if (horaDecimal >= 16.5 && horaDecimal <= 19.5) {
+                    const intensidad = this.calcularIntensidadPico(horaDecimal, 17.5, 2.5);
+                    factor = 1.6 + (intensidad * 0.8);
+                    descripcion = 'Hora pico tarde';
+                }
+                else if (horaDecimal >= 7 && horaDecimal <= 17) {
+                    factor = 1.2;
+                    descripcion = 'Día laboral normal';
+                }
+                else {
+                    factor = 0.9;
+                    descripcion = 'Horario tranquilo';
+                }
+            } else {
+                if (horaDecimal >= 11 && horaDecimal <= 16) {
+                    factor = 1.4;
+                    descripcion = 'Fin de semana activo';
+                }
+                else if (horaDecimal >= 18 && horaDecimal <= 22) {
+                    factor = 1.3;
+                    descripcion = 'Noche de fin de semana';
+                }
+                else {
+                    factor = 1.0;
+                    descripcion = 'Fin de semana tranquilo';
+                }
             }
-            else if (horaDecimal >= 11.5 && horaDecimal <= 14.0) {
-                factor = 1.3;
-                descripcion = 'Hora almuerzo';
-            }
-            else if (horaDecimal >= 16.5 && horaDecimal <= 19.5) {
-                const intensidad = this.calcularIntensidadPico(horaDecimal, 17.5, 2.5);
-                factor = 1.6 + (intensidad * 0.8);
-                descripcion = 'Hora pico tarde';
-            }
-            else if (horaDecimal >= 7 && horaDecimal <= 17) {
-                factor = 1.2;
-                descripcion = 'Día laboral normal';
-            }
-            else {
-                factor = 0.9;
-                descripcion = 'Horario tranquilo';
-            }
-        } else {
-            // FIN DE SEMANA
-            if (horaDecimal >= 11 && horaDecimal <= 16) {
-                factor = 1.4;
-                descripcion = 'Fin de semana activo';
-            }
-            else if (horaDecimal >= 18 && horaDecimal <= 22) {
-                factor = 1.3;
-                descripcion = 'Noche de fin de semana';
-            }
-            else {
-                factor = 1.0;
-                descripcion = 'Fin de semana tranquilo';
-            }
+            
+            factor = parseFloat(factor) || 1.0;
+            
+        } catch (error) {
+            console.error('❌ Error en análisis temporal:', error);
+            factor = 1.0;
+            descripcion = 'Análisis básico';
         }
         
-        // ✅ CORRECCIÓN: Asegurar que el factor sea numérico
-        factor = parseFloat(factor) || 1.0;
-        
-    } catch (error) {
-        console.error('❌ Error en análisis temporal:', error);
-        factor = 1.0;
-        descripcion = 'Análisis básico';
+        return {
+            factor: factor,
+            tipo: 'patron_tiempo',
+            confianza: 0.85,
+            descripcion: descripcion,
+            horaAnalizada: `${hora}:${minutos.toString().padStart(2, '0')}`
+        };
     }
-    
-    return {
-        factor: factor,
-        tipo: 'patron_tiempo',
-        confianza: 0.85,
-        descripcion: descripcion,
-        horaAnalizada: `${hora}:${minutos.toString().padStart(2, '0')}`
-    };
-}
 
     calcularIntensidadPico(horaActual, horaPico, duracionPico) {
         const distancia = Math.abs(horaActual - horaPico);
@@ -171,11 +160,11 @@ class HybridTrafficAnalyzer {
         return intensidad;
     }
 
-   async analizarTipoZona(ubicacion) {
-    try {
-        const zonaInfo = await this.obtenerInfoZona(ubicacion);
-        const tipoZona = this.clasificarZona(zonaInfo);
-        
+    async analizarTipoZona(ubicacion) {
+        try {
+            const zonaInfo = await this.obtenerInfoZona(ubicacion);
+            const tipoZona = this.clasificarZona(zonaInfo);
+            
         let factor = 1.0;
         let descripcionZona = 'Área general';
         
@@ -189,7 +178,6 @@ class HybridTrafficAnalyzer {
             default: factor = 1.4; descripcionZona = 'Área urbana';
         }
         
-        // ✅ CORRECCIÓN: Asegurar valor numérico
         factor = parseFloat(factor) || 1.0;
         
         return {
@@ -214,7 +202,7 @@ class HybridTrafficAnalyzer {
     }
 }
 
-    async obtenerInfoZona(ubicacion) {
+async obtenerInfoZona(ubicacion) {
     const url = `https://nominatim.openstreetmap.org/reverse?` +
                `lat=${ubicacion.lat}&` +
                `lon=${ubicacion.lng}&` +
@@ -234,7 +222,6 @@ class HybridTrafficAnalyzer {
         
         const data = await response.json();
         
-        // ✅ CORRECCIÓN: Validar datos de respuesta
         if (!data || typeof data !== 'object') {
             throw new Error('Respuesta inválida de OpenStreetMap');
         }
@@ -244,44 +231,41 @@ class HybridTrafficAnalyzer {
         
     } catch (error) {
         console.warn('⚠️ Fallback a información de zona básica');
-        // ✅ CORRECCIÓN: Retornar objeto válido en caso de error
         return { 
             display_name: 'Área local',
             address: {}
         };
     }
 }
-    
-    clasificarZona(zonaInfo) {
-        const address = zonaInfo.address || {};
-        
-        // Clasificación inteligente basada en datos de OpenStreetMap
-        if (address.road) {
-            const roadLower = address.road.toLowerCase();
-            
-            // Detectar avenidas principales (ej: Churchill, 27 de Febrero, Kennedy)
-            if (roadLower.includes('avenida') || roadLower.includes('av.')) 
-                return 'avenida_principal';
-            if (roadLower.includes('autopista') || roadLower.includes('expreso'))
-                return 'carretera';
-        }
-        
-        if (address.city && address.city.toLowerCase().includes('santo domingo'))
-            return 'centro_ciudad';
-            
-        if (address.shop || address.commercial)
-            return 'zona_comercial';
-            
-        if (address.industrial || address.landuse === 'industrial')
-            return 'industrial';
-            
-        if (address.suburb || address.residential)
-            return 'residencial';
-        
-        return 'general';
-    }
 
-    combinarFuentesInteligentemente(fuentes) {
+clasificarZona(zonaInfo) {
+    const address = zonaInfo.address || {};
+    
+    if (address.road) {
+        const roadLower = address.road.toLowerCase();
+        
+        if (roadLower.includes('avenida') || roadLower.includes('av.')) 
+            return 'avenida_principal';
+        if (roadLower.includes('autopista') || roadLower.includes('expreso'))
+            return 'carretera';
+    }
+    
+    if (address.city && address.city.toLowerCase().includes('santo domingo'))
+        return 'centro_ciudad';
+        
+    if (address.shop || address.commercial)
+        return 'zona_comercial';
+        
+    if (address.industrial || address.landuse === 'industrial')
+        return 'industrial';
+        
+    if (address.suburb || address.residential)
+        return 'residencial';
+    
+    return 'general';
+}
+
+combinarFuentesInteligentemente(fuentes) {
     let totalPonderado = 0;
     let totalPesos = 0;
     
@@ -290,13 +274,12 @@ class HybridTrafficAnalyzer {
         'tipo_zona': 0.40, 
         'info_zona': 0.10
     };
-        
-        fuentes.forEach(fuente => {
-        // ✅ CORRECCIÓN: Asegurar que el factor sea un número válido
+    
+    fuentes.forEach(fuente => {
         let factor = parseFloat(fuente.factor);
         if (isNaN(factor) || !isFinite(factor)) {
             console.warn(`⚠️ Factor inválido en ${fuente.tipo}:`, fuente.factor);
-            factor = 1.0; // Valor por defecto seguro
+            factor = 1.0;
         }
         
         const peso = pesos[fuente.tipo] || 0.1;
@@ -307,66 +290,63 @@ class HybridTrafficAnalyzer {
         totalPesos += peso;
     });
     
-    // ✅ CORRECCIÓN: Asegurar división segura
     const factorFinal = totalPesos > 0 ? totalPonderado / totalPesos : 1.0;
     
-    // ✅ CORRECCIÓN: Límites más estrictos
     return Math.min(Math.max(parseFloat(factorFinal) || 1.0, 0.5), 3.0);
 }
 
-    generarMensajeInteligente(factor, tipoZona, patronTiempo) {
-        const nombreZona = tipoZona.nombre || 'tu zona';
-        const descripcionPatron = patronTiempo.descripcion.toLowerCase();
+generarMensajeInteligente(factor, tipoZona, patronTiempo) {
+    const nombreZona = tipoZona.nombre || 'tu zona';
+    const descripcionPatron = patronTiempo.descripcion.toLowerCase();
+    
+    if (factor >= 2.0) 
+        return `🚨 TRÁFICO MUY PESADO en ${nombreZona} - ${descripcionPatron}`;
+    if (factor >= 1.6) 
+        return `⚠️ Tráfico PESADO en ${nombreZona} - ${descripcionPatron}`;
+    if (factor >= 1.3) 
+        return `🟡 Tráfico MODERADO en ${nombreZona}`;
+    if (factor <= 0.9) 
+        return `✅ Tráfico FLUIDO en ${nombreZona}`;
         
-        if (factor >= 2.0) 
-            return `🚨 TRÁFICO MUY PESADO en ${nombreZona} - ${descripcionPatron}`;
-        if (factor >= 1.6) 
-            return `⚠️ Tráfico PESADO en ${nombreZona} - ${descripcionPatron}`;
-        if (factor >= 1.3) 
-            return `🟡 Tráfico MODERADO en ${nombreZona}`;
-        if (factor <= 0.9) 
-            return `✅ Tráfico FLUIDO en ${nombreZona}`;
-            
-        return `🟢 Tráfico NORMAL en ${nombreZona}`;
-    }
+    return `🟢 Tráfico NORMAL en ${nombreZona}`;
+}
 
-    generarDetallesCompletos(patronTiempo, tipoZona, infoZona) {
-        return `${tipoZona.descripcion} | ${patronTiempo.descripcion} | Análisis híbrido`;
-    }
+generarDetallesCompletos(patronTiempo, tipoZona, infoZona) {
+    return `${tipoZona.descripcion} | ${patronTiempo.descripcion} | Análisis híbrido`;
+}
 
-    calcularConfianza(fuentes) {
-        const confianzas = fuentes.map(f => f.confianza || 0.5);
-        const promedio = confianzas.reduce((a, b) => a + b, 0) / confianzas.length;
-        return Math.min(promedio * 1.2, 0.95); // Boost de confianza por múltiples fuentes
-    }
+calcularConfianza(fuentes) {
+    const confianzas = fuentes.map(f => f.confianza || 0.5);
+    const promedio = confianzas.reduce((a, b) => a + b, 0) / confianzas.length;
+    return Math.min(promedio * 1.2, 0.95);
+}
 
-    esTemporadaVacaciones(fecha) {
-        const mes = fecha.getMonth();
-        const dia = fecha.getDate();
-        
-        // Vacaciones en República Dominicana
-        const vacaciones = [
-            { mes: 11, diaInicio: 15, diaFin: 31 }, // Navidad (15-31 Dic)
-            { mes: 0, diaInicio: 1, diaFin: 15 },   // Año Nuevo (1-15 Ene)
-            { mes: 2, diaInicio: 25, diaFin: 31 },  // Semana Santa (marzo/abril - aproximado)
-            { mes: 7, diaInicio: 1, diaFin: 20 }    // Verano (Agosto)
-        ];
-        
-        return vacaciones.some(v => 
-            mes === v.mes && dia >= v.diaInicio && dia <= v.diaFin
-        );
-    }
+esTemporadaVacaciones(fecha) {
+    const mes = fecha.getMonth();
+    const dia = fecha.getDate();
+    
+    const vacaciones = [
+        { mes: 11, diaInicio: 15, diaFin: 31 },
+        { mes: 0, diaInicio: 1, diaFin: 15 },
+        { mes: 2, diaInicio: 25, diaFin: 31 },
+        { mes: 7, diaInicio: 1, diaFin: 20 }
+    ];
+    
+    return vacaciones.some(v => 
+        mes === v.mes && dia >= v.diaInicio && dia <= v.diaFin
+    );
+}
 
-    cleanOldCache() {
-        const now = Date.now();
-        for (const [key, value] of this.locationCache.entries()) {
-            if (now - value.timestamp > this.cacheDuration * 2) {
-                this.locationCache.delete(key);
-            }
+cleanOldCache() {
+    const now = Date.now();
+    for (const [key, value] of this.locationCache.entries()) {
+        if (now - value.timestamp > this.cacheDuration * 2) {
+            this.locationCache.delete(key);
         }
     }
+}
 
-   getConservativeEstimate() {
+getConservativeEstimate() {
     console.log('🔄 Usando estimación conservadora');
     const ahora = new Date();
     const hora = ahora.getHours();
@@ -378,7 +358,6 @@ class HybridTrafficAnalyzer {
         factor = 1.3;
     }
     
-    // ✅ CORRECCIÓN: Asegurar valor numérico
     factor = parseFloat(factor) || 1.0;
     
     return {
@@ -394,6 +373,7 @@ class HybridTrafficAnalyzer {
         dataSource: 'fallback',
         esEstimacion: true
     };
+}
 }
 
 // =============================================
@@ -420,15 +400,17 @@ class TrafficRadiusAnalyzer {
             const location = await this.getQuickLocation();
             const hybridData = await this.hybridAnalyzer.obtenerTraficoRadio(location);
             
-            const adjustedTime = Math.ceil(userMinutes * hybridData.factorTrafico);
+            // ✅ CORRECCIÓN: Validar que hybridData.factorTrafico sea un número
+            const factor = parseFloat(hybridData.factorTrafico) || 1.0;
+            const adjustedTime = Math.ceil(userMinutes * factor);
             
             const resultado = {
                 originalTime: userMinutes,
                 adjustedTime: adjustedTime,
-                trafficCondition: this.mapearCondicionTrafico(hybridData.factorTrafico),
-                trafficInfo: this.congestionLevels[this.mapearCondicionTrafico(hybridData.factorTrafico)],
-                adjustment: ((hybridData.factorTrafico - 1) * 100).toFixed(0),
-                isSignificant: hybridData.factorTrafico > 1.3,
+                trafficCondition: this.mapearCondicionTrafico(factor),
+                trafficInfo: this.congestionLevels[this.mapearCondicionTrafico(factor)],
+                adjustment: ((factor - 1) * 100).toFixed(0),
+                isSignificant: factor > 1.3,
                 location: location,
                 mensaje: hybridData.mensaje,
                 detalles: hybridData.detalles,
@@ -440,7 +422,7 @@ class TrafficRadiusAnalyzer {
             console.log('✅ Análisis híbrido completado:', {
                 minutosOriginales: userMinutes,
                 minutosReales: adjustedTime,
-                factor: hybridData.factorTrafico,
+                factor: factor,
                 mensaje: hybridData.mensaje
             });
             
@@ -459,7 +441,6 @@ class TrafficRadiusAnalyzer {
         return 'low';
     }
 
-    // ... (mantén el resto de tus métodos igual)
     async getQuickLocation() {
         if (this.lastLocation && Date.now() - this.lastLocation.timestamp < 30000) {
             return this.lastLocation.coords;
@@ -514,7 +495,7 @@ class TrafficRadiusAnalyzer {
             dataSource: 'fallback'
         };
     }
-}
+} 
 
 // --- Variables Globales ---
 let perfiles = [];
@@ -3216,6 +3197,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
