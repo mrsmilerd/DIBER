@@ -3450,3 +3450,191 @@ function agregarEstilosTrafico() {
 #banner-cronometro.rojo {
     background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
 }
+
+/* MODAL CRONÓMETRO CENTRALIZADO */
+.modal-cronometro-fondo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.modal-cronometro-contenido {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+    transition: all 0.5s ease;
+}
+
+/* ESTADOS DE COLOR */
+.estado-verde {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    color: white;
+}
+
+.estado-amarillo {
+    background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+    color: white;
+}
+
+.estado-rojo {
+    background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
+    color: white;
+}
+
+/* HEADER */
+.cronometro-header {
+    margin-bottom: 20px;
+}
+
+.cronometro-titulo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.cronometro-tiempo-display {
+    font-size: 3em;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    background: rgba(255,255,255,0.2);
+    padding: 10px 20px;
+    border-radius: 15px;
+    margin: 10px 0;
+}
+
+/* INFO */
+.cronometro-info {
+    background: rgba(255,255,255,0.2);
+    border-radius: 15px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+.info-valor {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* PROGRESO */
+.cronometro-progreso {
+    margin: 20px 0;
+}
+
+.barra-progreso-container {
+    position: relative;
+}
+
+.barra-progreso {
+    width: 100%;
+    height: 12px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progreso-fill {
+    height: 100%;
+    background: white;
+    border-radius: 6px;
+    width: 0%;
+    transition: width 0.5s ease;
+}
+
+.marcadores-tiempo {
+    position: relative;
+    width: 100%;
+    height: 20px;
+    margin-top: 5px;
+}
+
+.marcador {
+    position: absolute;
+    top: 0;
+    font-size: 0.8em;
+    transform: translateX(-50%);
+    font-weight: bold;
+}
+
+.marcador.verde {
+    color: #00b894;
+}
+
+.marcador.inicio, .marcador.fin {
+    opacity: 0.8;
+}
+
+/* ESTADO */
+.cronometro-estado {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 15px 0;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* ACCIONES */
+.cronometro-acciones {
+    margin-top: 20px;
+}
+
+.btn-detener-viaje {
+    background: rgba(255,255,255,0.9);
+    color: #333;
+    border: none;
+    padding: 15px 25px;
+    border-radius: 12px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn-detener-viaje:hover {
+    background: white;
+    transform: scale(1.05);
+}
+
+.instruccion {
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin-top: 10px;
+    font-style: italic;
+}
