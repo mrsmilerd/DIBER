@@ -94,45 +94,40 @@ class HybridTrafficAnalyzer {
     }
 
     analizarPatronTiempo() {
-        const ahora = new Date();
-        const hora = ahora.getHours();
-        const minutos = ahora.getMinutes();
-        const horaDecimal = hora + (minutos / 60);
-        const dia = ahora.getDay();
-        const esFinSemana = dia === 0 || dia === 6;
-        const esVacaciones = this.esTemporadaVacaciones(ahora);
-        
-        console.log(`📅 Análisis temporal: ${hora}:${minutos}, ${esFinSemana ? 'Fin de semana' : 'Día laboral'}`);
-        
-        let factor = 1.0;
-        let descripcion = '';
-        
+    const ahora = new Date();
+    const hora = ahora.getHours();
+    const minutos = ahora.getMinutes();
+    const horaDecimal = hora + (minutos / 60);
+    const dia = ahora.getDay();
+    const esFinSemana = dia === 0 || dia === 6;
+    
+    console.log(`📅 Análisis temporal: ${hora}:${minutos}, ${esFinSemana ? 'Fin de semana' : 'Día laboral'}`);
+    
+    let factor = 1.0;
+    let descripcion = '';
+    
+    try {
         if (!esFinSemana) {
-            // LUNES A VIERNES - Patrones específicos para Santo Domingo
+            // LUNES A VIERNES
             if (horaDecimal >= 6.5 && horaDecimal <= 9.5) {
-                // PICO MAÑANA: 6:30 AM - 9:30 AM
                 const intensidad = this.calcularIntensidadPico(horaDecimal, 7.5, 2.0);
-                factor = 1.5 + (intensidad * 0.7); // 1.5 - 2.2
+                factor = 1.5 + (intensidad * 0.7);
                 descripcion = 'Hora pico mañana';
             }
             else if (horaDecimal >= 11.5 && horaDecimal <= 14.0) {
-                // ALMUERZO: 11:30 AM - 2:00 PM
                 factor = 1.3;
                 descripcion = 'Hora almuerzo';
             }
             else if (horaDecimal >= 16.5 && horaDecimal <= 19.5) {
-                // PICO TARDE: 4:30 PM - 7:30 PM
                 const intensidad = this.calcularIntensidadPico(horaDecimal, 17.5, 2.5);
-                factor = 1.6 + (intensidad * 0.8); // 1.6 - 2.4
+                factor = 1.6 + (intensidad * 0.8);
                 descripcion = 'Hora pico tarde';
             }
             else if (horaDecimal >= 7 && horaDecimal <= 17) {
-                // DÍA LABORAL NORMAL
                 factor = 1.2;
                 descripcion = 'Día laboral normal';
             }
             else {
-                // MADRUGADA/NOCHE
                 factor = 0.9;
                 descripcion = 'Horario tranquilo';
             }
@@ -152,20 +147,23 @@ class HybridTrafficAnalyzer {
             }
         }
         
-        // Ajuste por vacaciones
-        if (esVacaciones) {
-            factor *= 0.8; // 20% menos tráfico en vacaciones
-            descripcion += ' (temporada vacacional)';
-        }
+        // ✅ CORRECCIÓN: Asegurar que el factor sea numérico
+        factor = parseFloat(factor) || 1.0;
         
-        return {
-            factor: Math.min(factor, 2.5),
-            tipo: 'patron_tiempo',
-            confianza: 0.85,
-            descripcion: descripcion,
-            horaAnalizada: `${hora}:${minutos.toString().padStart(2, '0')}`
-        };
+    } catch (error) {
+        console.error('❌ Error en análisis temporal:', error);
+        factor = 1.0;
+        descripcion = 'Análisis básico';
     }
+    
+    return {
+        factor: factor,
+        tipo: 'patron_tiempo',
+        confianza: 0.85,
+        descripcion: descripcion,
+        horaAnalizada: `${hora}:${minutos.toString().padStart(2, '0')}`
+    };
+}
 
     calcularIntensidadPico(horaActual, horaPico, duracionPico) {
         const distancia = Math.abs(horaActual - horaPico);
@@ -173,95 +171,87 @@ class HybridTrafficAnalyzer {
         return intensidad;
     }
 
-    async analizarTipoZona(ubicacion) {
-        try {
-            const zonaInfo = await this.obtenerInfoZona(ubicacion);
-            const tipoZona = this.clasificarZona(zonaInfo);
-            
-            let factor = 1.0;
-            let descripcionZona = 'Área general';
-            
-            switch(tipoZona) {
-                case 'centro_ciudad':
-                    factor = 1.7;
-                    descripcionZona = 'Centro de ciudad';
-                    break;
-                case 'avenida_principal':
-                    factor = 1.8;
-                    descripcionZona = 'Avenida principal';
-                    break;
-                case 'zona_comercial':
-                    factor = 1.6;
-                    descripcionZona = 'Zona comercial';
-                    break;
-                case 'residencial':
-                    factor = 1.2;
-                    descripcionZona = 'Zona residencial';
-                    break;
-                case 'carretera':
-                    factor = 1.0;
-                    descripcionZona = 'Carretera';
-                    break;
-                case 'industrial':
-                    factor = 1.3;
-                    descripcionZona = 'Zona industrial';
-                    break;
-                default:
-                    factor = 1.4;
-                    descripcionZona = 'Área urbana';
-            }
-            
-            return {
-                factor: factor,
-                tipo: 'tipo_zona',
-                confianza: 0.75,
-                zona: tipoZona,
-                descripcion: descripcionZona,
-                nombre: zonaInfo.display_name?.split(',')[0] || 'Tu ubicación'
-            };
-            
-        } catch (error) {
-            console.warn('⚠️ No se pudo analizar tipo de zona:', error);
-            return { 
-                factor: 1.3, 
-                tipo: 'tipo_zona', 
-                confianza: 0.3, 
-                zona: 'desconocida',
-                descripcion: 'Área desconocida',
-                nombre: 'Tu ubicación'
-            };
+   async analizarTipoZona(ubicacion) {
+    try {
+        const zonaInfo = await this.obtenerInfoZona(ubicacion);
+        const tipoZona = this.clasificarZona(zonaInfo);
+        
+        let factor = 1.0;
+        let descripcionZona = 'Área general';
+        
+        switch(tipoZona) {
+            case 'centro_ciudad': factor = 1.7; descripcionZona = 'Centro de ciudad'; break;
+            case 'avenida_principal': factor = 1.8; descripcionZona = 'Avenida principal'; break;
+            case 'zona_comercial': factor = 1.6; descripcionZona = 'Zona comercial'; break;
+            case 'residencial': factor = 1.2; descripcionZona = 'Zona residencial'; break;
+            case 'carretera': factor = 1.0; descripcionZona = 'Carretera'; break;
+            case 'industrial': factor = 1.3; descripcionZona = 'Zona industrial'; break;
+            default: factor = 1.4; descripcionZona = 'Área urbana';
         }
+        
+        // ✅ CORRECCIÓN: Asegurar valor numérico
+        factor = parseFloat(factor) || 1.0;
+        
+        return {
+            factor: factor,
+            tipo: 'tipo_zona',
+            confianza: 0.75,
+            zona: tipoZona,
+            descripcion: descripcionZona,
+            nombre: zonaInfo.display_name?.split(',')[0] || 'Tu ubicación'
+        };
+        
+    } catch (error) {
+        console.warn('⚠️ No se pudo analizar tipo de zona:', error);
+        return { 
+            factor: 1.3, 
+            tipo: 'tipo_zona', 
+            confianza: 0.3, 
+            zona: 'desconocida',
+            descripcion: 'Área desconocida',
+            nombre: 'Tu ubicación'
+        };
     }
+}
 
     async obtenerInfoZona(ubicacion) {
-        // Usar OpenStreetMap Nominatim (gratuito y sin CORS)
-        const url = `https://nominatim.openstreetmap.org/reverse?` +
-                   `lat=${ubicacion.lat}&` +
-                   `lon=${ubicacion.lng}&` +
-                   `format=json&` +
-                   `addressdetails=1&` +
-                   `zoom=16`;
+    const url = `https://nominatim.openstreetmap.org/reverse?` +
+               `lat=${ubicacion.lat}&` +
+               `lon=${ubicacion.lng}&` +
+               `format=json&` +
+               `addressdetails=1&` +
+               `zoom=16`;
 
-        try {
-            const response = await fetch(url, {
-                headers: {
-                    'User-Agent': 'DIBER-App/1.0 (contacto@diber.com)',
-                    'Accept': 'application/json'
-                }
-            });
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'DIBER-App/1.0',
+                'Accept': 'application/json'
+            }
+        });
 
-            if (!response.ok) throw new Error(`OSM error: ${response.status}`);
-            
-            const data = await response.json();
-            console.log('🗺️ Información de zona obtenida:', data.display_name?.split(',')[0]);
-            return data;
-            
-        } catch (error) {
-            console.warn('⚠️ Fallback a información de zona básica');
-            return { display_name: 'Área local' };
+        if (!response.ok) throw new Error(`OSM error: ${response.status}`);
+        
+        const data = await response.json();
+        
+        // ✅ CORRECCIÓN: Validar datos de respuesta
+        if (!data || typeof data !== 'object') {
+            throw new Error('Respuesta inválida de OpenStreetMap');
         }
+        
+        console.log('🗺️ Información de zona obtenida:', data.display_name?.split(',')[0]);
+        return data;
+        
+    } catch (error) {
+        console.warn('⚠️ Fallback a información de zona básica');
+        // ✅ CORRECCIÓN: Retornar objeto válido en caso de error
+        return { 
+            display_name: 'Área local',
+            address: {}
+        };
     }
-
+}
+    
     clasificarZona(zonaInfo) {
         const address = zonaInfo.address || {};
         
@@ -292,25 +282,37 @@ class HybridTrafficAnalyzer {
     }
 
     combinarFuentesInteligentemente(fuentes) {
-        let totalPonderado = 0;
-        let totalPesos = 0;
-        
-        const pesos = {
-            'patron_tiempo': 0.50,  // Más peso al patrón temporal
-            'tipo_zona': 0.40,      // Buen peso al tipo de zona
-            'info_zona': 0.10       // Menos peso a info adicional
-        };
+    let totalPonderado = 0;
+    let totalPesos = 0;
+    
+    const pesos = {
+        'patron_tiempo': 0.50,
+        'tipo_zona': 0.40, 
+        'info_zona': 0.10
+    };
         
         fuentes.forEach(fuente => {
-            const peso = pesos[fuente.tipo] || 0.1;
-            const factorAjustado = fuente.factor * (fuente.confianza || 0.5);
-            totalPonderado += factorAjustado * peso;
-            totalPesos += peso;
-        });
+        // ✅ CORRECCIÓN: Asegurar que el factor sea un número válido
+        let factor = parseFloat(fuente.factor);
+        if (isNaN(factor) || !isFinite(factor)) {
+            console.warn(`⚠️ Factor inválido en ${fuente.tipo}:`, fuente.factor);
+            factor = 1.0; // Valor por defecto seguro
+        }
         
-        const factorFinal = totalPonderado / totalPesos;
-        return Math.min(Math.max(factorFinal, 0.8), 2.5); // Límites razonables
-    }
+        const peso = pesos[fuente.tipo] || 0.1;
+        const confianza = parseFloat(fuente.confianza) || 0.5;
+        const factorAjustado = factor * Math.min(Math.max(confianza, 0.1), 1.0);
+        
+        totalPonderado += factorAjustado * peso;
+        totalPesos += peso;
+    });
+    
+    // ✅ CORRECCIÓN: Asegurar división segura
+    const factorFinal = totalPesos > 0 ? totalPonderado / totalPesos : 1.0;
+    
+    // ✅ CORRECCIÓN: Límites más estrictos
+    return Math.min(Math.max(parseFloat(factorFinal) || 1.0, 0.5), 3.0);
+}
 
     generarMensajeInteligente(factor, tipoZona, patronTiempo) {
         const nombreZona = tipoZona.nombre || 'tu zona';
@@ -364,32 +366,34 @@ class HybridTrafficAnalyzer {
         }
     }
 
-    getConservativeEstimate() {
-        console.log('🔄 Usando estimación conservadora');
-        const ahora = new Date();
-        const hora = ahora.getHours();
-        
-        let factor = 1.0;
-        if ((hora >= 7 && hora <= 9) || (hora >= 17 && hora <= 19)) {
-            factor = 1.6;
-        } else if (hora >= 12 && hora <= 14) {
-            factor = 1.3;
-        }
-        
-        return {
-            factorTrafico: factor,
-            fuentes: {
-                patronTiempo: { factor: factor, descripcion: 'Estimación horaria' },
-                tipoZona: { factor: 1.0, descripcion: 'Área general' }
-            },
-            timestamp: new Date().toISOString(),
-            confianza: 0.4,
-            mensaje: factor >= 1.5 ? '⏰ Hora pico estimada' : '🕒 Hora normal estimada',
-            detalles: 'Estimación básica por hora del día',
-            dataSource: 'fallback',
-            esEstimacion: true
-        };
+   getConservativeEstimate() {
+    console.log('🔄 Usando estimación conservadora');
+    const ahora = new Date();
+    const hora = ahora.getHours();
+    
+    let factor = 1.0;
+    if ((hora >= 7 && hora <= 9) || (hora >= 17 && hora <= 19)) {
+        factor = 1.6;
+    } else if (hora >= 12 && hora <= 14) {
+        factor = 1.3;
     }
+    
+    // ✅ CORRECCIÓN: Asegurar valor numérico
+    factor = parseFloat(factor) || 1.0;
+    
+    return {
+        factorTrafico: factor,
+        fuentes: {
+            patronTiempo: { factor: factor, descripcion: 'Estimación horaria' },
+            tipoZona: { factor: 1.0, descripcion: 'Área general' }
+        },
+        timestamp: new Date().toISOString(),
+        confianza: 0.4,
+        mensaje: factor >= 1.5 ? '⏰ Hora pico estimada' : '🕒 Hora normal estimada',
+        detalles: 'Estimación básica por hora del día',
+        dataSource: 'fallback',
+        esEstimacion: true
+    };
 }
 
 // =============================================
@@ -3212,6 +3216,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
