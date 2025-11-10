@@ -3,6 +3,195 @@
 // Versión Corregida y Sincronizada con HTML
 // =============================================
 
+// =============================================
+// SISTEMA DE AUTO-APRENDIZAJE DE RUTAS - FASE 1
+// =============================================
+
+class RouteLearningSystem {
+    constructor() {
+        this.initialized = false;
+        this.learningEnabled = true;
+    }
+
+    // Generar ID único para cada ruta basado en zonas aproximadas
+    generateRouteId(startLat, startLng, endLat, endLng) {
+        // Redondear coordenadas para agrupar rutas similares (precisión de ~100m)
+        const roundedStartLat = startLat ? startLat.toFixed(2) : '0';
+        const roundedStartLng = startLng ? startLng.toFixed(2) : '0';
+        const roundedEndLat = endLat ? endLat.toFixed(2) : '0';
+        const roundedEndLng = endLng ? endLng.toFixed(2) : '0';
+        
+        return `route_${roundedStartLat}_${roundedStartLng}_${roundedEndLat}_${roundedEndLng}`;
+    }
+
+    // Obtener slot de tiempo para el aprendizaje
+    getTimeSlot(hour) {
+        if (hour >= 6 && hour <= 9) return 'MORNING_PEAK';
+        if (hour >= 12 && hour <= 14) return 'MIDDAY';
+        if (hour >= 16 && hour <= 19) return 'EVENING_PEAK';
+        if (hour >= 22 || hour <= 5) return 'NIGHT';
+        return 'REGULAR';
+    }
+
+    // Analizar y aprender de cada viaje completado
+    async analyzeCompletedTrip(tripData) {
+        if (!this.learningEnabled || !firebaseSync) {
+            console.log('⏸️ Sistema de aprendizaje desactivado');
+            return;
+        }
+
+        try {
+            // Verificar que tenemos datos mínimos para aprender
+            if (!tripData.minutos || !tripData.distancia || tripData.minutos < 1) {
+                console.log('⚠️ Datos insuficientes para aprendizaje');
+                return;
+            }
+
+            const now = new Date();
+            const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+            const timeSlot = this.getTimeSlot(now.getHours());
+            
+            // Usar datos de ubicación si están disponibles, sino crear datos aproximados
+            let routeId;
+            let locationData = {};
+            
+            if (tripData.locationData && tripData.locationData.startLocation) {
+                const { startLocation, endLocation } = tripData.locationData;
+                routeId = this.generateRouteId(
+                    startLocation.lat, startLocation.lng,
+                    endLocation?.lat || startLocation.lat,
+                    endLocation?.lng || startLocation.lng
+                );
+                locationData = { startLocation, endLocation };
+            } else {
+                // Crear datos aproximados basados en tiempo y distancia
+                routeId = this.generateRouteId(
+                    Math.random() * 0.1 + 18.4, // Aproximado Santo Domingo
+                    Math.random() * 0.1 - 69.9,
+                    Math.random() * 0.1 + 18.4,
+                    Math.random() * 0.1 - 69.9
+                );
+            }
+
+            // Calcular métricas de aprendizaje
+            const efficiency = tripData.gananciaPorMinuto || 0;
+            const trafficFactor = this.calculateTrafficFactor(tripData);
+            
+            const learningData = {
+                routeId,
+                dayOfWeek,
+                timeSlot,
+                originalTime: tripData.minutos,
+                actualTime: tripData.minutos, // En Fase 2 esto será tiempo real
+                distance: tripData.distancia,
+                earnings: tripData.tarifa || tripData.ganancia,
+                efficiency: parseFloat(efficiency.toFixed(2)),
+                trafficFactor: parseFloat(trafficFactor.toFixed(3)),
+                profitability: tripData.rentabilidad || 'unknown',
+                ...locationData,
+                timestamp: now.toISOString(),
+                userId: userCodeSystem.userId,
+                profileId: perfilActual?.id
+            };
+
+            console.log('🧠 Guardando datos de aprendizaje:', learningData);
+
+            // Guardar en Firebase
+            const success = await firebaseSync.saveRouteLearning(learningData);
+            if (success) {
+                console.log('✅ Aprendizaje guardado exitosamente');
+            } else {
+                console.log('⚠️ Aprendizaje guardado localmente (Falló Firebase)');
+                this.saveLearningLocal(learningData);
+            }
+            
+        } catch (error) {
+            console.error('❌ Error en análisis de aprendizaje:', error);
+        }
+    }
+
+    // Calcular factor de tráfico basado en eficiencia
+    calculateTrafficFactor(tripData) {
+        const baseEfficiency = perfilActual?.umbralMinutoRentable || 6.0;
+        const actualEfficiency = tripData.gananciaPorMinuto || 0;
+        
+        if (actualEfficiency <= 0) return 1.0;
+        
+        // Factor más alto = más tráfico (menos eficiencia)
+        const factor = Math.max(0.5, Math.min(2.0, baseEfficiency / actualEfficiency));
+        return parseFloat(factor.toFixed(3));
+    }
+
+    // Guardar localmente si Firebase falla
+    saveLearningLocal(learningData) {
+        try {
+            const localLearning = JSON.parse(localStorage.getItem('DIBER_route_learning') || '[]');
+            localLearning.push({
+                ...learningData,
+                localSave: true,
+                localTimestamp: new Date().toISOString()
+            });
+            
+            // Mantener solo los últimos 50 registros locales
+            if (localLearning.length > 50) {
+                localLearning.splice(0, localLearning.length - 50);
+            }
+            
+            localStorage.setItem('DIBER_route_learning', JSON.stringify(localLearning));
+            console.log('💾 Aprendizaje guardado localmente');
+        } catch (error) {
+            console.error('❌ Error guardando aprendizaje local:', error);
+        }
+    }
+
+    // Sincronizar datos locales cuando Firebase esté disponible
+    async syncLocalLearning() {
+        try {
+            const localLearning = JSON.parse(localStorage.getItem('DIBER_route_learning') || '[]');
+            if (localLearning.length === 0) return;
+
+            console.log('🔄 Sincronizando aprendizaje local:', localLearning.length, 'registros');
+
+            for (const learningItem of localLearning) {
+                await firebaseSync.saveRouteLearning(learningItem);
+            }
+
+            // Limpiar datos locales después de sincronizar
+            localStorage.removeItem('DIBER_route_learning');
+            console.log('✅ Aprendizaje local sincronizado y limpiado');
+            
+        } catch (error) {
+            console.error('❌ Error sincronizando aprendizaje local:', error);
+        }
+    }
+
+    // Obtener factor predictivo para una ruta (PARA FASE 2)
+    async getPredictiveFactor(routeId, dayOfWeek, timeSlot) {
+        if (!firebaseSync) return 1.0;
+
+        try {
+            // En Fase 2, aquí buscaríamos datos históricos
+            // Por ahora retornamos un factor conservador
+            return this.getConservativeFactor(timeSlot);
+        } catch (error) {
+            console.error('❌ Error obteniendo factor predictivo:', error);
+            return 1.0;
+        }
+    }
+
+    // Factor conservador basado en horario (PARA FASE 2)
+    getConservativeFactor(timeSlot) {
+        const factors = {
+            'MORNING_PEAK': 1.4,
+            'EVENING_PEAK': 1.6,
+            'MIDDAY': 1.2,
+            'NIGHT': 0.9,
+            'REGULAR': 1.1
+        };
+        return factors[timeSlot] || 1.1;
+    }
+}
+
 // --- Variables Globales ---
 let perfiles = [];
 let perfilActual = null;
@@ -315,7 +504,27 @@ class FirebaseSync {
             console.error('❌ Error inicializando Firebase Sync:', error);
             return false;
         }
+
+async saveRouteLearning(learningData) {
+    if (!this.initialized) return false;
+
+    try {
+        const learningRef = this.db.collection('route_learning')
+            .doc(learningData.routeId + '_' + Date.now()); // ID único
+        
+        await learningRef.set({
+            ...learningData,
+            lastSync: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        
+        console.log('✅ Datos de aprendizaje guardados en Firebase');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error guardando aprendizaje en Firebase:', error);
+        return false;
     }
+}
 
     async saveProfile(profile) {
         if (!this.initialized) return false;
@@ -663,7 +872,17 @@ async function agregarAlHistorial(viaje) {
     localStorage.setItem('historialViajes', JSON.stringify(historial));
     guardarDatos();
     
-    console.log('💾 Historial guardado localmente. Total viajes:', historial.length);
+     console.log('💾 Historial guardado localmente. Total viajes:', historial.length);
+    
+    // ✅ SISTEMA DE AUTO-APRENDIZAJE - Solo para viajes aceptados
+    if (viaje.aceptado !== false) { // Incluye undefined (true por defecto) y true
+        setTimeout(async () => {
+            if (window.routeLearningSystem && window.routeLearningSystem.learningEnabled) {
+                console.log('🧠 Iniciando análisis de aprendizaje...');
+                await window.routeLearningSystem.analyzeCompletedTrip(viaje);
+            }
+        }, 1500); // Pequeño delay para no bloquear la UI
+    }
     
     if (firebaseSync && firebaseSync.initialized && nuevoViaje.aceptado) {
         try {
@@ -2697,7 +2916,20 @@ async function inicializarApp() {
         
         await initializeFirebaseSync();
         await inicializarSistemaTrafico();
+
+ // ✅ INICIALIZAR SISTEMA DE AUTO-APRENDIZAJE
+        window.routeLearningSystem = new RouteLearningSystem();
+        window.routeLearningSystem.initialized = true;
+        console.log('🧠 Sistema de auto-aprendizaje inicializado');
+        
         await cargarDatos();
+        
+        // ✅ SINCRONIZAR APRENDIZAJE LOCAL SI HAY DATOS PENDIENTES
+        if (firebaseSync && firebaseSync.initialized) {
+            setTimeout(() => {
+                window.routeLearningSystem.syncLocalLearning();
+            }, 3000);
+        }
         
         aplicarTemaGuardado();
         configurarEventListeners();
@@ -2720,6 +2952,30 @@ async function inicializarApp() {
         mostrarPantalla('perfil');
         mostrarStatus('Error al cargar la aplicación. Por favor, recarga la página.', 'error');
     }
+}
+
+// AGREGAR estas funciones utilitarias:
+
+function mostrarEstadisticasAprendizaje() {
+    console.log('📊 Mostrando estadísticas de aprendizaje...');
+    
+    const localLearning = JSON.parse(localStorage.getItem('DIBER_route_learning') || '[]');
+    const totalViajesAprendizaje = historial.filter(v => v.aceptado !== false).length;
+    
+    const stats = {
+        viajesParaAprendizaje: totalViajesAprendizaje,
+        datosLocalesPendientes: localLearning.length,
+        aprendizajeActivo: window.routeLearningSystem?.learningEnabled || false
+    };
+    
+    alert(`🧠 ESTADÍSTICAS DE AUTO-APRENDIZAJE
+    
+• Viajes analizados: ${stats.viajesParaAprendizaje}
+• Datos pendientes de sync: ${stats.datosLocalesPendientes}
+• Sistema activo: ${stats.aprendizajeActivo ? '✅' : '❌'}
+
+📈 El sistema aprende automáticamente de cada viaje que aceptas.
+💾 Los datos se guardan localmente y se sincronizan con la nube.`);
 }
 
 // =============================================
@@ -2751,6 +3007,7 @@ window.diagnosticarSincronizacion = diagnosticarSincronizacion;
 window.resincronizarCompleta = resincronizarCompleta;
 window.resetearSincronizacion = resetearSincronizacion;
 window.verificarConexionFirebase = verificarConexionFirebase;
+window.mostrarEstadisticasAprendizaje = mostrarEstadisticasAprendizaje;
 
 // =============================================
 // EJECUCIÓN PRINCIPAL
@@ -2790,3 +3047,4 @@ window.onclick = function(event) {
         }
     }
 };
+
