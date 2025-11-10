@@ -43,11 +43,7 @@ const firebaseConfig = {
 const elementos = {};
 
 // =============================================
-// SISTEMA DE AUTO-APRENDIZAJE DE RUTAS - FASE 1
-// =============================================
-
-// =============================================
-// SISTEMA DE AUTO-APRENDIZAJE DE RUTAS - FASE 2
+// SISTEMA DE AUTO-APRENDIZAJE DE RUTAS - COMPLETO
 // =============================================
 
 class RouteLearningSystem {
@@ -159,7 +155,7 @@ class RouteLearningSystem {
         }
     }
 
-    // 🎯 NUEVO: Obtener predicciones inteligentes (funciona SIN datos)
+    // Obtener predicciones inteligentes (funciona SIN datos)
     async getPredictiveInsights(estimatedTime, estimatedDistance, estimatedEarnings = 0) {
         if (!this.learningEnabled) {
             return this.getConservativePrediction(estimatedTime, this.getTimeSlot(new Date().getHours()));
@@ -171,9 +167,7 @@ class RouteLearningSystem {
             const timeSlot = this.getTimeSlot(now.getHours());
             
             // Generar routeId aproximado para consulta
-            const routeId = this.generateRouteId(
-                18.4, -69.9, 18.5, -69.8 // Coordenadas aproximadas de Santo Domingo
-            );
+            const routeId = this.generateRouteId(18.4, -69.9, 18.5, -69.8);
 
             let historicalStats = null;
             
@@ -205,7 +199,7 @@ class RouteLearningSystem {
                     predictedEfficiency: conservative.efficiency,
                     trafficFactor: conservative.trafficFactor,
                     successRate: conservative.successRate,
-                    confidence: 35, // Baja confianza sin datos
+                    confidence: 35,
                     dataPoints: 0,
                     adjustedTime: Math.ceil(estimatedTime * conservative.trafficFactor),
                     recommendation: this.getConservativeRecommendation(estimatedEfficiency),
@@ -1008,13 +1002,13 @@ async function agregarAlHistorial(viaje) {
      console.log('💾 Historial guardado localmente. Total viajes:', historial.length);
     
     // ✅ SISTEMA DE AUTO-APRENDIZAJE - Solo para viajes aceptados
-    if (viaje.aceptado !== false) { // Incluye undefined (true por defecto) y true
+    if (viaje.aceptado !== false) {
         setTimeout(async () => {
             if (window.routeLearningSystem && window.routeLearningSystem.learningEnabled) {
                 console.log('🧠 Iniciando análisis de aprendizaje...');
                 await window.routeLearningSystem.analyzeCompletedTrip(viaje);
             }
-        }, 1500); // Pequeño delay para no bloquear la UI
+        }, 1500);
     }
     
     if (firebaseSync && firebaseSync.initialized && nuevoViaje.aceptado) {
@@ -3084,8 +3078,6 @@ function diagnosticarSincronizacion() {
 // INICIALIZACIÓN COMPLETA
 // =============================================
 
-// EN inicializarApp() - REEMPLAZAR la inicialización:
-
 async function inicializarApp() {
     if (window.appInitialized) {
         console.log('🚫 App ya inicializada, omitiendo...');
@@ -3237,6 +3229,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
