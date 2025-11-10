@@ -1340,7 +1340,7 @@ function calcularAutomatico() {
     }
 }
 
-async calcularRentabilidad(tarifa, minutos, distancia) {
+async function calcularRentabilidad(tarifa, minutos, distancia) {
     if (!perfilActual) return null;
     
     try {
@@ -3058,6 +3058,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
