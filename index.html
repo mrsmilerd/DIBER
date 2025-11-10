@@ -370,10 +370,10 @@
 <!-- ✅ AQUÍ VA EL BOTÓN DE ACTIVAR UBICACIÓN -->
        <div class="location-permission-section">
     <button type="button" id="activar-ubicacion-btn" class="location-permission-btn" 
-            onclick="mostrarModalRapido(350, 15, 8.5)">
-        <span class="button-icon">📍</span>
-        Activar Análisis de Tráfico
-    </button>
+        onclick="activarAnalisisTrafico()">
+    <span class="button-icon">📍</span>
+    Activar Análisis de Tráfico
+</button>
     <div id="location-status" class="location-status hidden">
         <span class="status-icon">✅</span>
         <span class="status-text">Tráfico monitoreado</span>
@@ -582,7 +582,7 @@
         <!-- Resultado principal -->
         <div class="resultado-principal" id="modal-resultado-principal">
             <div class="badge-rentabilidad" id="modal-badge-rentabilidad">
-                <div class="badge-emoji">⏳</div>
+                <div class="badge-emoji" id="modal-badge-emoji">⏳</div>
                 <div class="badge-content">
                     <div class="badge-title" id="modal-badge-title">ANALIZANDO</div>
                     <div class="badge-subtitle" id="modal-badge-subtitle">Calculando rentabilidad...</div>
@@ -1281,6 +1281,7 @@
     </style>
 </body>
 </html>
+
 
 
 
