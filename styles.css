@@ -3663,220 +3663,233 @@ function agregarEstilosTrafico() {
     }
 }
 
-/* MODAL MÓVIL - DISEÑO ULTRA SIMPLE */
-@media (max-width: 768px) {
-    .modal-rapido-mejorado {
-        padding: 0 !important;
-        align-items: flex-end !important;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 10000;
+/* MODAL CENTRALIZADO ELEGANTE */
+.modal-centrado-elegante {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.modal-contenido-centrado {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 0;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 
+        0 25px 50px rgba(0,0,0,0.3),
+        0 0 0 1px rgba(255,255,255,0.1);
+    color: white;
+    overflow: hidden;
+    animation: modalAppear 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
     }
-    
-    .modal-rapido-contenido-mejorado {
-        width: 100% !important;
-        max-width: 100% !important;
-        height: auto;
-        max-height: 90vh;
-        border-radius: 20px 20px 0 0 !important;
-        margin: 0 !important;
-        background: white;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    /* HEADER SIMPLE */
-    .modal-trafico-header {
-        padding: 15px 20px !important;
-        background: #007cba !important;
-        color: white;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-radius: 20px 20px 0 0;
-    }
-    
-    .trafico-status {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .trafico-emoji-big {
-        font-size: 24px;
-    }
-    
-    .trafico-info {
-        flex: 1;
-    }
-    
-    .trafico-title {
-        font-size: 14px;
-        font-weight: bold;
-    }
-    
-    .trafico-condition {
-        font-size: 12px;
-        opacity: 0.9;
-    }
-    
-    .modal-cerrar-elegante {
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        font-size: 18px;
-        cursor: pointer;
-    }
-    
-    /* CONTENIDO PRINCIPAL */
-    .resultado-principal {
-        padding: 20px;
-        text-align: center;
-        background: white;
-        border-bottom: 1px solid #f0f0f0;
-    }
-    
-    .badge-rentabilidad {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 15px 20px;
-        border-radius: 15px;
-        font-size: 18px;
-        font-weight: bold;
-    }
-    
-    .badge-rentabilidad.rentable {
-        background: #d4edda;
-        color: #155724;
-        border: 2px solid #c3e6cb;
-    }
-    
-    .badge-rentabilidad.oportunidad {
-        background: #fff3cd;
-        color: #856404;
-        border: 2px solid #ffeaa7;
-    }
-    
-    .badge-rentabilidad.no-rentable {
-        background: #f8d7da;
-        color: #721c24;
-        border: 2px solid #f5c6cb;
-    }
-    
-    .badge-emoji {
-        font-size: 24px;
-    }
-    
-    /* INFORMACIÓN RÁPIDA */
-    .info-rapida {
-        padding: 15px 20px;
-        background: #f8f9fa;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        border-bottom: 1px solid #e9ecef;
-    }
-    
-    .info-item-rapida {
-        text-align: center;
-        padding: 10px;
-        background: white;
-        border-radius: 10px;
-        border: 1px solid #e9ecef;
-    }
-    
-    .info-label-rapida {
-        font-size: 12px;
-        color: #666;
-        margin-bottom: 5px;
-    }
-    
-    .info-valor-rapida {
-        font-size: 16px;
-        font-weight: bold;
-        color: #333;
-    }
-    
-    /* ✅ BOTONES GRANDES Y CLAROS */
-    .acciones-mejoradas {
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    
-    .btn-accion-movil {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        border: none;
-        border-radius: 15px;
-        font-size: 18px;
-        font-weight: bold;
-        cursor: pointer;
-        width: 100%;
-        gap: 10px;
-        transition: all 0.2s;
-    }
-    
-    .btn-accion-movil:active {
-        transform: scale(0.98);
-    }
-    
-    .btn-rechazar-movil {
-        background: #dc3545;
-        color: white;
-    }
-    
-    .btn-aceptar-movil {
-        background: #28a745;
-        color: white;
-    }
-    
-    .btn-icono-movil {
-        font-size: 20px;
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
     }
 }
 
-/* PEQUEÑAS MEJORAS ADICIONALES */
+/* HEADER DEL MODAL */
+.modal-header-centrado {
+    padding: 25px 25px 20px;
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.modal-titulo {
+    font-size: 1.4em;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.modal-subtitulo {
+    font-size: 1em;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+/* BADGE DE RESULTADO */
+.badge-resultado-centrado {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 25px;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.3);
+    margin: 15px 0;
+}
+
+.badge-emoji-grande {
+    font-size: 2em;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.badge-texto-grande {
+    font-size: 1.3em;
+    font-weight: 700;
+}
+
+/* ESTADOS DE RENTABILIDAD */
+.rentable .badge-resultado-centrado {
+    background: rgba(46, 204, 113, 0.3);
+    border-color: rgba(46, 204, 113, 0.5);
+}
+
+.oportunidad .badge-resultado-centrado {
+    background: rgba(243, 156, 18, 0.3);
+    border-color: rgba(243, 156, 18, 0.5);
+}
+
+.no-rentable .badge-resultado-centrado {
+    background: rgba(231, 76, 60, 0.3);
+    border-color: rgba(231, 76, 60, 0.5);
+}
+
+/* CUERPO DEL MODAL */
+.modal-body-centrado {
+    padding: 0 25px 20px;
+}
+
+.metricas-grid-centrado {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.metrica-item-centrado {
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+}
+
+.metrica-valor-centrado {
+    font-size: 1.3em;
+    font-weight: 700;
+    margin-bottom: 5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.metrica-label-centrado {
+    font-size: 0.85em;
+    opacity: 0.9;
+}
+
+/* BOTONES DE ACCIÓN */
+.modal-actions-centrado {
+    padding: 20px 25px 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-accion-grande {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 18px;
+    border: none;
+    border-radius: 15px;
+    font-size: 1.1em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.btn-rechazar-grande {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    color: white;
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.btn-aceptar-grande {
+    background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+    color: white;
+    box-shadow: 0 6px 20px rgba(81, 207, 102, 0.4);
+}
+
+.btn-accion-grande:active {
+    transform: scale(0.98);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+.btn-icono-grande {
+    font-size: 1.3em;
+}
+
+/* RESPONSIVE */
 @media (max-width: 480px) {
-    .modal-rapido-contenido-mejorado {
-        max-height: 85vh;
-    }
-    
-    .resultado-principal {
+    .modal-centrado-elegante {
         padding: 15px;
     }
     
-    .badge-rentabilidad {
-        padding: 12px 15px;
-        font-size: 16px;
+    .modal-contenido-centrado {
+        max-width: 100%;
     }
     
-    .info-rapida {
-        padding: 12px 15px;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
+    .modal-header-centrado {
+        padding: 20px 20px 15px;
     }
     
-    .info-item-rapida {
-        padding: 8px;
+    .modal-titulo {
+        font-size: 1.3em;
     }
     
-    .info-valor-rapida {
-        font-size: 14px;
+    .badge-resultado-centrado {
+        padding: 12px 20px;
     }
     
-    .acciones-mejoradas {
-        padding: 15px;
+    .badge-emoji-grande {
+        font-size: 1.8em;
     }
     
-    .btn-accion-movil {
-        padding: 18px;
-        font-size: 16px;
+    .badge-texto-grande {
+        font-size: 1.2em;
+    }
+    
+    .modal-body-centrado {
+        padding: 0 20px 15px;
+    }
+    
+    .metricas-grid-centrado {
+        gap: 10px;
+    }
+    
+    .metrica-item-centrado {
+        padding: 12px;
+    }
+    
+    .modal-actions-centrado {
+        padding: 15px 20px 20px;
+    }
+    
+    .btn-accion-grande {
+        padding: 16px;
+        font-size: 1em;
     }
 }
