@@ -57,8 +57,22 @@ let cronometro = {
 // FUNCIONES DEL SISTEMA DE CRONÓMETRO
 // =============================================
 
+// Efecto de pulso sutil en el tiempo
+function agregarEfectosVisuales() {
+    const tiempoDisplay = document.getElementById('cronometro-tiempo-display');
+    if (tiempoDisplay) {
+        // Efecto de pulso cada segundo
+        setInterval(() => {
+            tiempoDisplay.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+                tiempoDisplay.style.transform = 'scale(1)';
+            }, 100);
+        }, 1000);
+    }
+}
+
 function crearModalCronometro(resultado) {
-    // ✅ REMOVER MODAL EXISTENTE SI HAY
+    // Remover modal existente si hay
     const modalExistente = document.getElementById('modal-cronometro');
     if (modalExistente) {
         modalExistente.remove();
@@ -76,6 +90,7 @@ function crearModalCronometro(resultado) {
     
     modalFondo.innerHTML = `
         <div class="modal-cronometro-contenido estado-verde">
+            <!-- HEADER -->
             <div class="cronometro-header">
                 <div class="cronometro-titulo">
                     <span class="cronometro-icono">🚗</span>
@@ -86,17 +101,19 @@ function crearModalCronometro(resultado) {
                 </div>
             </div>
             
+            <!-- INFO -->
             <div class="cronometro-info">
                 <div class="info-item">
-                    <span class="info-label">Tu estimación:</span>
+                    <span class="info-label">Tu estimación</span>
                     <span class="info-valor">${resultado.minutos} min</span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Con tráfico:</span>
+                    <span class="info-label">Con tráfico</span>
                     <span class="info-valor">${resultado.tiempoAjustado || resultado.minutos} min</span>
                 </div>
             </div>
             
+            <!-- PROGRESO -->
             <div class="cronometro-progreso">
                 <div class="barra-progreso-container">
                     <div class="barra-progreso">
@@ -110,11 +127,13 @@ function crearModalCronometro(resultado) {
                 </div>
             </div>
             
+            <!-- ESTADO -->
             <div class="cronometro-estado" id="cronometro-estado">
                 <span class="estado-icono">✅</span>
                 <span class="estado-texto">Dentro de tu tiempo estimado</span>
             </div>
             
+            <!-- ACCIONES -->
             <div class="cronometro-acciones">
                 <button class="btn-detener-viaje" onclick="detenerCronometro()">
                     <span class="btn-icono">🛑</span>
@@ -127,12 +146,7 @@ function crearModalCronometro(resultado) {
     
     document.body.appendChild(modalFondo);
     
-    // ✅ DEBUG INICIAL
-    console.log('🎯 Modal creado con tiempos:', {
-        tiempoBase: resultado.minutos,
-        tiempoMaximo: resultado.tiempoAjustado || resultado.minutos,
-        porcentajeVerde
-    });
+    setTimeout(agregarEfectosVisuales, 100);
 }
 
 function calcularPorcentaje(tiempoBase, tiempoTotal) {
@@ -3612,6 +3626,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
