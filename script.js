@@ -1195,41 +1195,49 @@ async function cargarDatos() {
             historial = [];
         }
 
-        // Cargar desde Firebase solo si no hay datos locales o para sincronizar
+        // ✅ CARGA MEJORADA DE FIREBASE - Siempre sincronizar
         if (firebaseSync && firebaseSync.initialized) {
             try {
-                console.log('☁️ Verificando sincronización con Firebase...');
+                console.log('☁️ Sincronizando con Firebase...');
                 
-                // SOLO sincronizar si no hay datos locales
-                if (perfiles.length === 0) {
-                    const cloudProfiles = await firebaseSync.loadProfiles();
-                    if (cloudProfiles && cloudProfiles.length > 0) {
-                        console.log('✅ Perfiles de Firebase cargados (sin datos locales):', cloudProfiles.length);
-                        perfiles = cloudProfiles;
-                    }
-                } else {
-                    console.log('📱 Usando datos locales, omitiendo carga de Firebase');
+                // Cargar perfiles de Firebase
+                const cloudProfiles = await firebaseSync.loadProfiles();
+                if (cloudProfiles && cloudProfiles.length > 0) {
+                    console.log('✅ Perfiles de Firebase cargados:', cloudProfiles.length);
+                    
+                    // Combinar perfiles locales y en la nube
+                    const perfilesUnicos = [...perfiles];
+                    cloudProfiles.forEach(cloudProfile => {
+                        const exists = perfilesUnicos.some(localProfile => localProfile.id === cloudProfile.id);
+                        if (!exists) {
+                            perfilesUnicos.push(cloudProfile);
+                        }
+                    });
+                    perfiles = perfilesUnicos;
                 }
                 
-                // Para el historial, combinar sin reemplazar
+                // Cargar historial de Firebase
                 const cloudTrips = await firebaseSync.loadTrips();
                 if (cloudTrips && cloudTrips.length > 0) {
                     console.log('✅ Viajes de Firebase cargados:', cloudTrips.length);
                     
-                    const combinedHistorial = [...historial];
+                    // Combinar historial
+                    const historialCombinado = [...historial];
                     cloudTrips.forEach(cloudTrip => {
-                        const exists = combinedHistorial.some(localTrip => localTrip.id === cloudTrip.id);
+                        const exists = historialCombinado.some(localTrip => localTrip.id === cloudTrip.id);
                         if (!exists) {
-                            combinedHistorial.push(cloudTrip);
+                            historialCombinado.push(cloudTrip);
                         }
                     });
                     
-                    historial = combinedHistorial
+                    // Ordenar por fecha y limitar
+                    historial = historialCombinado
                         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
                         .slice(0, 100);
                     
                     console.log('🔄 Historial combinado:', historial.length, 'viajes');
                     
+                    // Guardar localmente
                     localStorage.setItem('historialViajes', JSON.stringify(historial));
                 }
             } catch (error) {
@@ -1250,8 +1258,7 @@ async function cargarDatos() {
         console.log('📊 Resumen final:', {
             perfiles: perfiles.length,
             historial: historial.length,
-            perfilActual: perfilActual?.nombre,
-            rendimiento: perfilActual?.rendimiento
+            perfilActual: perfilActual?.nombre
         });
         
     } finally {
@@ -1275,14 +1282,25 @@ async function guardarDatos() {
 
     console.log('✅ Datos guardados localmente');
     
-    // Sincronizar inmediatamente con Firebase si está disponible
+    // ✅ SINCRONIZACIÓN MEJORADA - Forzar sync inmediata
     if (firebaseSync && firebaseSync.initialized) {
         try {
-            console.log('☁️ Sincronizando perfiles con Firebase...');
+            console.log('☁️ Sincronizando PERFILES con Firebase...');
             for (const perfil of perfiles) {
                 await firebaseSync.saveProfile(perfil);
             }
-            console.log('✅ Perfiles sincronizados con Firebase');
+            
+            console.log('☁️ Sincronizando HISTORIAL con Firebase...');
+            const viajesParaSincronizar = historial.filter(item => item.aceptado).slice(0, 50);
+            for (const viaje of viajesParaSincronizar) {
+                await firebaseSync.saveTrip(viaje);
+            }
+            
+            console.log('✅ Sincronización completada:', {
+                perfiles: perfiles.length,
+                viajes: viajesParaSincronizar.length
+            });
+            
         } catch (error) {
             console.error('❌ Error sincronizando con Firebase:', error);
         }
@@ -2028,7 +2046,8 @@ function actualizarEstadisticas() {
     elementos['stats-ganancia'].textContent = formatearMoneda(gananciaTotal);
     
     if (elementos['stats-tiempo']) {
-        elementos['stats-tiempo'].textContent = `${tiempoTotal}min`;
+        // ✅ CORREGIDO: Simplificar decimales
+        elementos['stats-tiempo'].textContent = `${tiempoTotal.toFixed(1)}min`;
     }
     
     if (elementos['stats-rentables']) {
@@ -3331,25 +3350,41 @@ function mostrarPanelSync() {
 
 async function forzarSincronizacion() {
     if (!firebaseSync || !firebaseSync.initialized) {
-        console.log('❌ Firebase Sync no disponible');
+        mostrarError('Firebase no está disponible');
         return;
     }
     
     console.log('🔄 INICIANDO SINCRONIZACIÓN MANUAL...');
-    mostrarStatus('🔄 Sincronizando con Firebase...', 'info');
+    mostrarStatus('🔄 Sincronizando todos los datos...', 'info');
     
     try {
+        // ✅ SINCRONIZAR PERFILES
+        console.log('📤 Subiendo perfiles...');
         for (const perfil of perfiles) {
             await firebaseSync.saveProfile(perfil);
         }
         
-        const viajesAceptados = historial.filter(item => item.aceptado).slice(0, 20);
-        for (const viaje of viajesAceptados) {
-            await firebaseSync.saveTrip(viaje);
+        // ✅ SINCRONIZAR HISTORIAL COMPLETO
+        console.log('📤 Subiendo historial...');
+        const viajesParaSincronizar = historial.filter(item => item.aceptado !== false);
+        let viajesSubidos = 0;
+        
+        for (const viaje of viajesParaSincronizar) {
+            const exito = await firebaseSync.saveTrip(viaje);
+            if (exito) viajesSubidos++;
+        }
+        
+        // ✅ SINCRONIZAR DATOS DE APRENDIZAJE
+        if (window.routeLearningSystem) {
+            await window.routeLearningSystem.syncLocalLearning();
         }
         
         console.log('✅ Sincronización manual completada');
-        mostrarStatus('✅ Sincronización completada', 'success');
+        mostrarStatus(`✅ Sincronizado: ${perfiles.length} perfiles, ${viajesSubidos} viajes`, 'success');
+        
+        // Actualizar interfaz
+        actualizarEstadisticas();
+        actualizarHistorialConFiltros();
         
     } catch (error) {
         console.error('❌ Error en sincronización manual:', error);
@@ -3475,6 +3510,15 @@ function diagnosticarSincronizacion() {
 // INICIALIZACIÓN COMPLETA
 // =============================================
 
+function iniciarSincronizacionAutomatica() {
+    setInterval(async () => {
+        if (firebaseSync && firebaseSync.initialized && document.visibilityState === 'visible') {
+            console.log('🔄 Sincronización automática...');
+            await guardarDatos();
+        }
+    }, 30000); // 30 segundos
+}
+
 async function inicializarApp() {
     if (window.appInitialized) {
         console.log('🚫 App ya inicializada, omitiendo...');
@@ -3509,6 +3553,11 @@ async function inicializarApp() {
                 window.routeLearningSystem.syncLocalLearning();
             }, 3000);
         }
+
+         // ✅ INICIAR SINCRONIZACIÓN AUTOMÁTICA
+    setTimeout(() => {
+        iniciarSincronizacionAutomatica();
+    }, 5000);
         
         aplicarTemaGuardado();
         configurarEventListeners();
@@ -3626,6 +3675,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
