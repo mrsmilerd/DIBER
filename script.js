@@ -263,31 +263,31 @@ function actualizarColoresProgreso(minutosTranscurridos) {
     
     const { tiempoBase, tiempoMaximo } = cronometro.viajeActual;
     
-    console.log('🔍 Debug colores:', {
-        minutosTranscurridos,
+    console.log('🎨 Debug colores:', {
+        minutosTranscurridos: minutosTranscurridos.toFixed(2),
         tiempoBase,
         tiempoMaximo,
-        condicion1: minutosTranscurridos <= tiempoBase,
-        condicion2: minutosTranscurridos <= tiempoMaximo
+        deberiaSerVerde: minutosTranscurridos <= tiempoBase,
+        deberiaSerAmarillo: minutosTranscurridos > tiempoBase && minutosTranscurridos <= tiempoMaximo,
+        deberiaSerRojo: minutosTranscurridos > tiempoMaximo
     });
     
-    // ✅ CORRECCIÓN: Usar el contenido del modal, no el fondo
     const modalContenido = modal.querySelector('.modal-cronometro-contenido');
     if (!modalContenido) return;
     
-    // ✅ Lógica corregida de 3 colores
+    // ✅ LÓGICA CORREGIDA - Exactamente como lo pides
     if (minutosTranscurridos <= tiempoBase) {
-        // VERDE - Dentro del tiempo base
+        // VERDE - Dentro de TU tiempo estimado
         modalContenido.className = 'modal-cronometro-contenido estado-verde';
-        console.log('🎨 Cambiando a VERDE');
+        console.log('🟢 VERDE - Dentro de tu tiempo');
     } else if (minutosTranscurridos <= tiempoMaximo) {
-        // AMARILLO - Entre tu tiempo y el tiempo con tráfico
+        // AMARILLO - Dentro del tiempo del cálculo automático
         modalContenido.className = 'modal-cronometro-contenido estado-amarillo';
-        console.log('🎨 Cambiando a AMARILLO');
+        console.log('🟡 AMARILLO - Dentro del tiempo con tráfico');
     } else {
-        // ROJO - Pasó el tiempo máximo
+        // ROJO - Pasó el tiempo del cálculo automático
         modalContenido.className = 'modal-cronometro-contenido estado-rojo';
-        console.log('🎨 Cambiando a ROJO');
+        console.log('🔴 ROJO - Tiempo excedido');
     }
 }
 
@@ -835,26 +835,28 @@ class FirebaseSync {
         }
     }
 
-    async getRouteLearningStats(routeId, dayOfWeek, timeSlot) {
+   async getRouteLearningStats(routeId, dayOfWeek, timeSlot) {
     if (!this.initialized) return null;
 
     try {
+        console.log('🔍 Buscando datos REALES para predicción...');
+        
+        // Buscar CUALQUIER dato histórico del usuario, sin filtros estrictos
         const learningRef = this.db.collection('route_learning')
-            .where('routeId', '==', routeId)
-            .where('dayOfWeek', '==', dayOfWeek)
-            .where('timeSlot', '==', timeSlot)
+            .where('userId', '==', this.userId)
             .orderBy('timestamp', 'desc')
-            .limit(50);
+            .limit(20); // Últimos 20 viajes
 
         const snapshot = await learningRef.get();
         
         if (!snapshot.empty) {
+            console.log(`📊 Encontrados ${snapshot.size} viajes históricos`);
+            
             const stats = {
                 totalTrips: snapshot.size,
                 avgEfficiency: 0,
                 avgTrafficFactor: 0,
-                profitabilityRate: 0,
-                recentTrips: []
+                profitabilityRate: 0
             };
 
             let totalEfficiency = 0;
@@ -869,31 +871,78 @@ class FirebaseSync {
                 if (data.profitability === 'rentable') {
                     profitableTrips++;
                 }
-
-                stats.recentTrips.push({
-                    efficiency: data.efficiency,
-                    trafficFactor: data.trafficFactor,
-                    timestamp: data.timestamp
-                });
             });
 
             stats.avgEfficiency = parseFloat((totalEfficiency / snapshot.size).toFixed(2));
             stats.avgTrafficFactor = parseFloat((totalTrafficFactor / snapshot.size).toFixed(3));
             stats.profitabilityRate = parseFloat(((profitableTrips / snapshot.size) * 100).toFixed(1));
 
-            console.log('📊 Estadísticas de ruta obtenidas:', stats);
+            console.log('🎯 Estadísticas REALES obtenidas:', stats);
             return stats;
         }
         
-        console.log('📊 No hay datos históricos para esta ruta/horario');
+        console.log('📊 No hay datos históricos del usuario');
         return null;
+        
     } catch (error) {
-        console.error('❌ Error obteniendo estadísticas de ruta:', error);
+        console.error('❌ Error obteniendo estadísticas:', error);
         return null;
     }
 }
-}
 
+async function limpiarDatosMultiDispositivo() {
+    if (!firebaseSync || !firebaseSync.initialized) {
+        mostrarError('Firebase no disponible para limpieza multi-dispositivo');
+        return;
+    }
+    
+    if (confirm('¿Estás seguro? Esto eliminará TODOS tus viajes en TODOS los dispositivos. Esta acción no se puede deshacer.')) {
+        try {
+            mostrarStatus('🔄 Limpiando datos en todos los dispositivos...', 'info');
+            
+            // Limpiar localmente primero
+            historial = [];
+            localStorage.setItem('historialViajes', JSON.stringify(historial));
+            
+            // Limpiar en Firebase
+            const tripsRef = firebaseSync.db.collection('users').doc(userCodeSystem.userId)
+                .collection('trips');
+            
+            const snapshot = await tripsRef.get();
+            const batch = firebaseSync.db.batch();
+            
+            snapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            
+            await batch.commit();
+            
+            // Limpiar datos de aprendizaje
+            const learningRef = firebaseSync.db.collection('route_learning')
+                .where('userId', '==', userCodeSystem.userId);
+                
+            const learningSnapshot = await learningRef.get();
+            const learningBatch = firebaseSync.db.batch();
+            
+            learningSnapshot.forEach(doc => {
+                learningBatch.delete(doc.ref);
+            });
+            
+            await learningBatch.commit();
+            
+            console.log('✅ Datos limpiados en todos los dispositivos');
+            mostrarStatus('✅ Datos limpiados en todos los dispositivos', 'success');
+            
+            actualizarHistorialConFiltros();
+            actualizarEstadisticas();
+            
+        } catch (error) {
+            console.error('❌ Error limpiando datos multi-dispositivo:', error);
+            mostrarError('Error limpiando datos en la nube');
+        }
+    }
+}
+    
 // =============================================
 // INICIALIZACIÓN DE ELEMENTOS DOM - CORREGIDA
 // =============================================
@@ -1471,7 +1520,8 @@ function actualizarHistorialConFiltros() {
     
     elementos['history-list'].innerHTML = viajesFiltrados.map((viaje, index) => {
         const ganancia = viaje.ganancia || viaje.tarifa || 0;
-        const minutos = viaje.minutos || 0;
+        // ✅ CORREGIDO: Solo 1 decimal en minutos
+        const minutos = viaje.minutos ? parseFloat(viaje.minutos).toFixed(1) : '0.0';
         const distancia = viaje.distancia || 0;
         const porMinuto = viaje.porMinuto || viaje.gananciaPorMinuto || 0;
         const porKm = viaje.porKm || viaje.gananciaPorKm || 0;
@@ -1523,6 +1573,10 @@ async function eliminarDelHistorial(viajeId) {
     }
     
     if (confirm('¿Estás seguro de que quieres eliminar este viaje del historial?')) {
+        // Guardar referencia al viaje antes de eliminarlo
+        const viajeEliminado = historial[index];
+        
+        // Eliminar localmente
         historial.splice(index, 1);
         
         localStorage.setItem('historialViajes', JSON.stringify(historial));
@@ -1535,6 +1589,7 @@ async function eliminarDelHistorial(viajeId) {
         
         mostrarMensaje('Viaje eliminado correctamente', 'success');
         
+        // ✅ SINCRONIZAR ELIMINACIÓN CON FIREBASE
         if (firebaseSync && firebaseSync.initialized) {
             try {
                 console.log('☁️ Intentando eliminar de Firebase...');
@@ -1543,6 +1598,22 @@ async function eliminarDelHistorial(viajeId) {
                 
                 await tripRef.delete();
                 console.log('✅ Viaje eliminado de Firebase');
+                
+                // También eliminar de route_learning si existe
+                const learningQuery = await firebaseSync.db.collection('route_learning')
+                    .where('userId', '==', userCodeSystem.userId)
+                    .where('timestamp', '==', viajeEliminado.timestamp)
+                    .get();
+                
+                if (!learningQuery.empty) {
+                    const batch = firebaseSync.db.batch();
+                    learningQuery.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                    console.log('✅ Datos de aprendizaje eliminados de Firebase');
+                }
+                
             } catch (error) {
                 console.error('❌ Error eliminando de Firebase:', error);
             }
@@ -2281,6 +2352,7 @@ function procesarViajeRapido(aceptado) {
         return;
     }
 
+    // ✅ CERRAR MODAL DE CÁLCULO RÁPIDO
     cerrarModalRapido();
     
     const viajeParaHistorial = {
@@ -3679,6 +3751,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
