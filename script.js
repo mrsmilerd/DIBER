@@ -58,6 +58,12 @@ let cronometro = {
 // =============================================
 
 function crearModalCronometro(resultado) {
+    // ✅ REMOVER MODAL EXISTENTE SI HAY
+    const modalExistente = document.getElementById('modal-cronometro');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+
     const modalFondo = document.createElement('div');
     modalFondo.id = 'modal-cronometro';
     modalFondo.className = 'modal-cronometro-fondo';
@@ -82,12 +88,12 @@ function crearModalCronometro(resultado) {
             
             <div class="cronometro-info">
                 <div class="info-item">
-                    <span class="info-label">Tiempo estimado:</span>
-                    <span class="info-valor">${resultado.tiempoAjustado || resultado.minutos} min</span>
-                </div>
-                <div class="info-item">
                     <span class="info-label">Tu estimación:</span>
                     <span class="info-valor">${resultado.minutos} min</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Con tráfico:</span>
+                    <span class="info-valor">${resultado.tiempoAjustado || resultado.minutos} min</span>
                 </div>
             </div>
             
@@ -120,6 +126,13 @@ function crearModalCronometro(resultado) {
     `;
     
     document.body.appendChild(modalFondo);
+    
+    // ✅ DEBUG INICIAL
+    console.log('🎯 Modal creado con tiempos:', {
+        tiempoBase: resultado.minutos,
+        tiempoMaximo: resultado.tiempoAjustado || resultado.minutos,
+        porcentajeVerde
+    });
 }
 
 function calcularPorcentaje(tiempoBase, tiempoTotal) {
@@ -236,25 +249,32 @@ function actualizarColoresProgreso(minutosTranscurridos) {
     
     const { tiempoBase, tiempoMaximo } = cronometro.viajeActual;
     
-    // ✅ CORRECCIÓN: Lógica de 3 colores
-    if (minutosTranscurridos <= tiempoBase) {
-        // ✅ VERDE - Dentro del tiempo base (lo que tú pusiste)
-        modal.className = 'modal-cronometro-contenido estado-verde';
-    } else if (minutosTranscurridos <= tiempoMaximo) {
-        // 🟡 AMARILLO - Entre tu tiempo y el tiempo estimado con tráfico
-        modal.className = 'modal-cronometro-contenido estado-amarillo';
-    } else {
-        // 🔴 ROJO - Pasó el tiempo máximo estimado
-        modal.className = 'modal-cronometro-contenido estado-rojo';
-    }
-    
-    console.log('🎨 Color actual:', {
+    console.log('🔍 Debug colores:', {
         minutosTranscurridos,
         tiempoBase,
         tiempoMaximo,
-        estado: minutosTranscurridos <= tiempoBase ? 'VERDE' : 
-                minutosTranscurridos <= tiempoMaximo ? 'AMARILLO' : 'ROJO'
+        condicion1: minutosTranscurridos <= tiempoBase,
+        condicion2: minutosTranscurridos <= tiempoMaximo
     });
+    
+    // ✅ CORRECCIÓN: Usar el contenido del modal, no el fondo
+    const modalContenido = modal.querySelector('.modal-cronometro-contenido');
+    if (!modalContenido) return;
+    
+    // ✅ Lógica corregida de 3 colores
+    if (minutosTranscurridos <= tiempoBase) {
+        // VERDE - Dentro del tiempo base
+        modalContenido.className = 'modal-cronometro-contenido estado-verde';
+        console.log('🎨 Cambiando a VERDE');
+    } else if (minutosTranscurridos <= tiempoMaximo) {
+        // AMARILLO - Entre tu tiempo y el tiempo con tráfico
+        modalContenido.className = 'modal-cronometro-contenido estado-amarillo';
+        console.log('🎨 Cambiando a AMARILLO');
+    } else {
+        // ROJO - Pasó el tiempo máximo
+        modalContenido.className = 'modal-cronometro-contenido estado-rojo';
+        console.log('🎨 Cambiando a ROJO');
+    }
 }
 
 function actualizarBarraProgreso(minutosTranscurridos) {
@@ -275,25 +295,55 @@ function detenerCronometro() {
 
     // Detener cronómetro
     clearInterval(cronometro.intervalo);
-    const tiempoRealMinutos = Math.round(cronometro.tiempoTranscurrido / 60000);
+    const tiempoRealMinutos = cronometro.tiempoTranscurridoSegundos / 60;
     
-    console.log('🛑 Cronómetro detenido. Tiempo real:', tiempoRealMinutos, 'minutos');
+    console.log('🛑 Cronómetro detenido. Tiempo real:', tiempoRealMinutos.toFixed(2), 'minutos');
 
-    // Remover banner
-    const banner = document.getElementById('banner-cronometro');
-    if (banner) {
-        banner.remove();
+    // ✅ CORRECCIÓN: Remover modal ANTES de procesar
+    const modal = document.getElementById('modal-cronometro');
+    if (modal) {
+        modal.remove();
+        console.log('✅ Modal de cronómetro removido');
     }
 
     // Procesar viaje con tiempo real
-    procesarViajeConTiempoReal(tiempoRealMinutos);
+    if (cronometro.viajeActual) {
+        procesarViajeConTiempoReal(tiempoRealMinutos);
+    }
     
     // Resetear cronómetro
     cronometro.activo = false;
     cronometro.inicio = null;
-    cronometro.tiempoTranscurrido = 0;
+    cronometro.tiempoTranscurridoSegundos = 0;
     cronometro.viajeActual = null;
 }
+
+function debugCronometro() {
+    if (!cronometro.activo || !cronometro.viajeActual) {
+        console.log('❌ Cronómetro no activo');
+        return;
+    }
+    
+    const minutosTranscurridos = cronometro.tiempoTranscurridoSegundos / 60;
+    const { tiempoBase, tiempoMaximo } = cronometro.viajeActual;
+    
+    console.log('🐛 DEBUG CRONÓMETRO:', {
+        segundosTranscurridos: cronometro.tiempoTranscurridoSegundos,
+        minutosTranscurridos: minutosTranscurridos.toFixed(2),
+        tiempoBase,
+        tiempoMaximo,
+        deberiaSerVerde: minutosTranscurridos <= tiempoBase,
+        deberiaSerAmarillo: minutosTranscurridos > tiempoBase && minutosTranscurridos <= tiempoMaximo,
+        deberiaSerRojo: minutosTranscurridos > tiempoMaximo
+    });
+}
+
+// Llamar debug cada 10 segundos durante pruebas
+setInterval(() => {
+    if (cronometro.activo) {
+        debugCronometro();
+    }
+}, 10000);
 
 function procesarViajeConTiempoReal(tiempoRealMinutos) {
     const viajeConTiempoReal = {
@@ -3562,6 +3612,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
