@@ -2355,137 +2355,56 @@ function guardarEnHistorial(resultado, aceptado) {
 function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
 
-    let modal = document.getElementById('modal-rapido');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modal-rapido';
-        modal.className = 'modal-rapido-mejorado hidden';
-        document.body.appendChild(modal);
-    }
-
-    const tieneTrafico = resultado.trafficAnalysis;
-    const trafficInfo = tieneTrafico ? resultado.trafficAnalysis.trafficInfo : { emoji: '🚦', text: 'SIN DATOS' };
-    const tiempoReal = resultado.tiempoAjustado || (tieneTrafico ? resultado.trafficAnalysis.adjustedTime : resultado.minutos);
-    
-    // ✅ DETECTAR SI ES MÓVIL
-    const esMovil = window.innerWidth <= 768;
+    // Crear modal extremadamente simple
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+    `;
     
     modal.innerHTML = `
-        <div class="modal-rapido-contenido-mejorado">
-            <!-- HEADER DE TRÁFICO -->
-            <div class="modal-trafico-header ${tieneTrafico ? 'trafico-' + resultado.trafficAnalysis.trafficCondition : 'trafico-low'}">
-                <div class="trafico-status">
-                    <span class="trafico-emoji-big">${trafficInfo.emoji}</span>
-                    <div class="trafico-info">
-                        <div class="trafico-title">Análisis de Tráfico</div>
-                        <div class="trafico-condition">${trafficInfo.text.toUpperCase()}</div>
-                    </div>
+        <div style="background: white; border-radius: 20px 20px 0 0; padding: 20px;">
+            <!-- RESULTADO -->
+            <div style="text-align: center; padding: 20px 0; font-size: 24px; font-weight: bold; color: ${resultado.rentabilidad === 'rentable' ? 'green' : resultado.rentabilidad === 'oportunidad' ? 'orange' : 'red'};">
+                ${resultado.emoji} ${resultado.texto}
+            </div>
+            
+            <!-- INFORMACIÓN BÁSICA -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0;">
+                <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 10px;">
+                    <div style="font-size: 12px; color: #666;">GANANCIA</div>
+                    <div style="font-size: 18px; font-weight: bold;">${formatearMoneda(resultado.tarifa)}</div>
                 </div>
-                <button class="modal-cerrar-elegante" onclick="cerrarModalRapido()">
-                    <span>×</span>
+                <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 10px;">
+                    <div style="font-size: 12px; color: #666;">TIEMPO</div>
+                    <div style="font-size: 18px; font-weight: bold;">${resultado.minutos} min</div>
+                </div>
+            </div>
+            
+            <!-- BOTONES -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button onclick="procesarViajeRapido(false); this.parentElement.parentElement.parentElement.remove()" 
+                        style="background: #dc3545; color: white; border: none; padding: 20px; border-radius: 10px; font-size: 18px; font-weight: bold;">
+                    ❌ RECHAZAR
                 </button>
-            </div>
-
-            <!-- TIEMPO AJUSTADO -->
-            <div class="tiempo-ajustado-section">
-                <div class="tiempo-original">
-                    <span class="tiempo-label">Estimado</span>
-                    <span class="tiempo-valor" id="modal-tiempo-original">${resultado.minutos || 0} min</span>
-                </div>
-                <div class="flecha-ajuste">→</div>
-                <div class="tiempo-real">
-                    <span class="tiempo-label">Con tráfico</span>
-                    <span class="tiempo-valor destacado" id="modal-tiempo-real">${tiempoReal} min</span>
-                </div>
-            </div>
-
-            <!-- RESULTADO PRINCIPAL -->
-            <div class="resultado-principal" id="modal-resultado-principal">
-                <div class="badge-rentabilidad ${resultado.rentabilidad}" id="modal-badge-rentabilidad">
-                    <div class="badge-emoji">${resultado.emoji}</div>
-                    <div class="badge-content">
-                        <div class="badge-title">${resultado.texto}</div>
-                        <div class="badge-subtitle" id="modal-badge-subtitle">${obtenerSubtituloRentabilidad(resultado)}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MÉTRICAS RÁPIDAS -->
-            <div class="metricas-grid-mejorado">
-                <div class="metrica-card">
-                    <div class="metrica-icono">💸</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-minuto">${resultado.gananciaPorMinuto ? formatearMoneda(resultado.gananciaPorMinuto) + '/min' : '--/min'}</div>
-                        <div class="metrica-label">Por minuto</div>
-                    </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">🛣️</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-km">${resultado.gananciaPorKm ? formatearMoneda(resultado.gananciaPorKm) + '/km' : '--/km'}</div>
-                        <div class="metrica-label">Por km</div>
-                    </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">📊</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-eficiencia">${calcularEficiencia(resultado)}%</div>
-                        <div class="metrica-label">Eficiencia</div>
-                    </div>
-                </div>
-            </div>
-
-            ${resultado.insights ? `
-            <!-- PREDICCIONES INTELIGENTES -->
-            <div class="predicciones-inteligentes">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <div style="font-weight: bold; color: #333; font-size: 0.9em;">
-                        🎯 Predicción
-                    </div>
-                    <div style="font-size: 0.8em; padding: 4px 8px; background: ${resultado.insights.dataSource === 'HISTORICAL' ? '#4CAF50' : '#FF9800'}; color: white; border-radius: 10px;">
-                        ${resultado.insights.dataSource === 'HISTORICAL' ? 'DATOS REALES' : 'ESTIMACIÓN'}
-                    </div>
-                </div>
-                <div style="font-size: 0.8em; color: #666;">
-                    ${resultado.insights.confidence}% confianza • ${resultado.insights.dataPoints || 0} viajes
-                </div>
-            </div>
-            ` : ''}
-
-            ${tieneTrafico ? `
-            <!-- IMPACTO TRÁFICO -->
-            <div class="impacto-trafico" id="modal-impacto-trafico">
-                <div class="impacto-header">
-                    <span class="impacto-icon">📈</span>
-                    <span class="impacto-title">Impacto del Tráfico</span>
-                </div>
-                <div class="impacto-content" id="modal-impacto-content">
-                    ${obtenerMensajeImpacto(resultado.trafficAnalysis)}
-                </div>
-            </div>
-            ` : ''}
-
-            <!-- ✅ ACCIONES MEJORADAS PARA MÓVIL -->
-            <div class="acciones-mejoradas">
-                <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
-                    <span class="btn-icon">❌</span>
-                    <span class="btn-text">Rechazar Viaje</span>
-                </button>
-                <button class="btn-aceptar-elegante" onclick="iniciarCronometroDesdeModal()" id="modal-btn-aceptar">
-                    <span class="btn-icon">✅</span>
-                    <span class="btn-text">Aceptar Viaje</span>
+                <button onclick="iniciarCronometroDesdeModal(); this.parentElement.parentElement.parentElement.remove()" 
+                        style="background: #28a745; color: white; border: none; padding: 20px; border-radius: 10px; font-size: 18px; font-weight: bold;">
+                    ✅ ACEPTAR
                 </button>
             </div>
         </div>
     `;
-
-    modal.classList.remove('hidden');
-    calculoActual = resultado;
     
-    // ✅ PREVENIR SCROLL DEL FONDO EN MÓVIL
-    if (esMovil) {
-        document.body.style.overflow = 'hidden';
-    }
+    document.body.appendChild(modal);
+    calculoActual = resultado;
 }
 
 // ✅ RESTAURAR SCROLL AL CERRAR
@@ -2494,6 +2413,13 @@ function cerrarModalRapido() {
     if (modalRapido) {
         modalRapido.classList.add('hidden');
         document.body.style.overflow = ''; // Restaurar scroll
+    }
+}
+
+function iniciarCronometroDesdeModal() {
+    if (calculoActual) {
+        iniciarCronometroConViaje(calculoActual);
+        cerrarModalRapido();
     }
 }
 
@@ -3700,6 +3626,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
