@@ -2353,6 +2353,59 @@ function guardarEnHistorial(resultado, aceptado) {
 // =============================================
 
 function mostrarResultadoRapido(resultado) {
+    if (!resultado) return;
+
+    // Crear modal extremadamente simple
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 20px 20px 0 0; padding: 20px;">
+            <!-- RESULTADO -->
+            <div style="text-align: center; padding: 20px 0; font-size: 24px; font-weight: bold; color: ${resultado.rentabilidad === 'rentable' ? 'green' : resultado.rentabilidad === 'oportunidad' ? 'orange' : 'red'};">
+                ${resultado.emoji} ${resultado.texto}
+            </div>
+            
+            <!-- INFORMACIÓN BÁSICA -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0;">
+                <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 10px;">
+                    <div style="font-size: 12px; color: #666;">GANANCIA</div>
+                    <div style="font-size: 18px; font-weight: bold;">${formatearMoneda(resultado.tarifa)}</div>
+                </div>
+                <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 10px;">
+                    <div style="font-size: 12px; color: #666;">TIEMPO</div>
+                    <div style="font-size: 18px; font-weight: bold;">${resultado.minutos} min</div>
+                </div>
+            </div>
+            
+            <!-- BOTONES -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button onclick="procesarViajeRapido(false); this.parentElement.parentElement.parentElement.remove()" 
+                        style="background: #dc3545; color: white; border: none; padding: 20px; border-radius: 10px; font-size: 18px; font-weight: bold;">
+                    ❌ RECHAZAR
+                </button>
+                <button onclick="iniciarCronometroDesdeModal(); this.parentElement.parentElement.parentElement.remove()" 
+                        style="background: #28a745; color: white; border: none; padding: 20px; border-radius: 10px; font-size: 18px; font-weight: bold;">
+                    ✅ ACEPTAR
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    calculoActual = resultado;
+}
 
 // ✅ RESTAURAR SCROLL AL CERRAR
 function cerrarModalRapido() {
@@ -3573,6 +3626,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
