@@ -2365,23 +2365,20 @@ function mostrarResultadoRapido(resultado) {
 
     const tieneTrafico = resultado.trafficAnalysis;
     const trafficInfo = tieneTrafico ? resultado.trafficAnalysis.trafficInfo : { emoji: '🚦', text: 'SIN DATOS' };
+    const tiempoReal = resultado.tiempoAjustado || (tieneTrafico ? resultado.trafficAnalysis.adjustedTime : resultado.minutos);
     
-    // ✅ USAR TIEMPO AJUSTADO POR PREDICCIÓN si está disponible
-    const tiempoReal = resultado.tiempoAjustado || 
-                      (tieneTrafico ? resultado.trafficAnalysis.adjustedTime : resultado.minutos);
-    
-    // ✅ DETERMINAR COLOR SEGÚN FUENTE DE DATOS
-    const dataSourceColor = resultado.fuenteDatos === 'HISTORICAL' ? '#4CAF50' : 
-                           resultado.fuenteDatos === 'CONSERVATIVE' ? '#FF9800' : '#9E9E9E';
+    // ✅ DETECTAR SI ES MÓVIL
+    const esMovil = window.innerWidth <= 768;
     
     modal.innerHTML = `
         <div class="modal-rapido-contenido-mejorado">
+            <!-- HEADER DE TRÁFICO -->
             <div class="modal-trafico-header ${tieneTrafico ? 'trafico-' + resultado.trafficAnalysis.trafficCondition : 'trafico-low'}">
-                <div class="trafico-status" id="modal-trafico-status">
+                <div class="trafico-status">
                     <span class="trafico-emoji-big">${trafficInfo.emoji}</span>
                     <div class="trafico-info">
                         <div class="trafico-title">Análisis de Tráfico</div>
-                        <div class="trafico-condition" id="modal-trafico-condition">${trafficInfo.text.toUpperCase()}</div>
+                        <div class="trafico-condition">${trafficInfo.text.toUpperCase()}</div>
                     </div>
                 </div>
                 <button class="modal-cerrar-elegante" onclick="cerrarModalRapido()">
@@ -2389,18 +2386,20 @@ function mostrarResultadoRapido(resultado) {
                 </button>
             </div>
 
+            <!-- TIEMPO AJUSTADO -->
             <div class="tiempo-ajustado-section">
                 <div class="tiempo-original">
-                    <span class="tiempo-label">Tiempo estimado:</span>
+                    <span class="tiempo-label">Estimado</span>
                     <span class="tiempo-valor" id="modal-tiempo-original">${resultado.minutos || 0} min</span>
                 </div>
-                <div class="flecha-ajuste">↓</div>
+                <div class="flecha-ajuste">→</div>
                 <div class="tiempo-real">
-                    <span class="tiempo-label">Con análisis predictivo:</span>
+                    <span class="tiempo-label">Con tráfico</span>
                     <span class="tiempo-valor destacado" id="modal-tiempo-real">${tiempoReal} min</span>
                 </div>
             </div>
 
+            <!-- RESULTADO PRINCIPAL -->
             <div class="resultado-principal" id="modal-resultado-principal">
                 <div class="badge-rentabilidad ${resultado.rentabilidad}" id="modal-badge-rentabilidad">
                     <div class="badge-emoji">${resultado.emoji}</div>
@@ -2411,36 +2410,50 @@ function mostrarResultadoRapido(resultado) {
                 </div>
             </div>
 
-            <!-- ✅ NUEVA SECCIÓN: PREDICCIONES INTELIGENTES -->
+            <!-- MÉTRICAS RÁPIDAS -->
+            <div class="metricas-grid-mejorado">
+                <div class="metrica-card">
+                    <div class="metrica-icono">💸</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-ganancia-minuto">${resultado.gananciaPorMinuto ? formatearMoneda(resultado.gananciaPorMinuto) + '/min' : '--/min'}</div>
+                        <div class="metrica-label">Por minuto</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">🛣️</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-ganancia-km">${resultado.gananciaPorKm ? formatearMoneda(resultado.gananciaPorKm) + '/km' : '--/km'}</div>
+                        <div class="metrica-label">Por km</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">📊</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-eficiencia">${calcularEficiencia(resultado)}%</div>
+                        <div class="metrica-label">Eficiencia</div>
+                    </div>
+                </div>
+            </div>
+
             ${resultado.insights ? `
-            <div class="predicciones-inteligentes" style="margin: 15px 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid ${dataSourceColor};">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <div style="font-weight: bold; color: #333;">
-                        🎯 Análisis Predictivo
+            <!-- PREDICCIONES INTELIGENTES -->
+            <div class="predicciones-inteligentes">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-weight: bold; color: #333; font-size: 0.9em;">
+                        🎯 Predicción
                     </div>
-                    <div style="font-size: 0.8em; padding: 4px 8px; background: ${dataSourceColor}; color: white; border-radius: 12px;">
-                        ${resultado.insights.dataSource === 'HISTORICAL' ? 'DATOS REALES' : 'ESTIMACIÓN BASE'}
-                    </div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 1.2em; font-weight: bold; color: #007cba;">${resultado.insights.confidence}%</div>
-                        <div style="font-size: 0.7em; color: #666;">Confianza</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 1.2em; font-weight: bold; color: #4CAF50;">${resultado.insights.successRate}%</div>
-                        <div style="font-size: 0.7em; color: #666;">Tasa de éxito</div>
+                    <div style="font-size: 0.8em; padding: 4px 8px; background: ${resultado.insights.dataSource === 'HISTORICAL' ? '#4CAF50' : '#FF9800'}; color: white; border-radius: 10px;">
+                        ${resultado.insights.dataSource === 'HISTORICAL' ? 'DATOS REALES' : 'ESTIMACIÓN'}
                     </div>
                 </div>
-                
-                <div style="font-size: 0.8em; color: #666; text-align: center;">
-                    ${resultado.insights.message}
+                <div style="font-size: 0.8em; color: #666;">
+                    ${resultado.insights.confidence}% confianza • ${resultado.insights.dataPoints || 0} viajes
                 </div>
             </div>
             ` : ''}
 
             ${tieneTrafico ? `
+            <!-- IMPACTO TRÁFICO -->
             <div class="impacto-trafico" id="modal-impacto-trafico">
                 <div class="impacto-header">
                     <span class="impacto-icon">📈</span>
@@ -2452,30 +2465,35 @@ function mostrarResultadoRapido(resultado) {
             </div>
             ` : ''}
 
-    <div class="acciones-mejoradas">
-    <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
-        <span class="btn-icon">❌</span>
-        <span class="btn-text">Rechazar Viaje</span>
-        <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
-    </button>
-    <button class="btn-aceptar-elegante" id="modal-btn-aceptar-cronometro">
-        <span class="btn-icon">✅</span>
-        <span class="btn-text">Aceptar y Cronometrar</span>
-        <span class="btn-badge" id="modal-badge-aceptar">${resultado.rentabilidad === 'rentable' ? 'Recomendado' : 'Con cuidado'}</span>
-    </button>
-</div>
+            <!-- ✅ ACCIONES MEJORADAS PARA MÓVIL -->
+            <div class="acciones-mejoradas">
+                <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
+                    <span class="btn-icon">❌</span>
+                    <span class="btn-text">Rechazar Viaje</span>
+                </button>
+                <button class="btn-aceptar-elegante" onclick="iniciarCronometroDesdeModal()" id="modal-btn-aceptar">
+                    <span class="btn-icon">✅</span>
+                    <span class="btn-text">Aceptar Viaje</span>
+                </button>
+            </div>
         </div>
     `;
 
     modal.classList.remove('hidden');
     calculoActual = resultado;
     
- // ✅ CORRECCIÓN: Agregar event listener después de crear el modal
-    const btnAceptar = document.getElementById('modal-btn-aceptar-cronometro');
-    if (btnAceptar) {
-        btnAceptar.onclick = function() {
-            iniciarCronometroConViaje(resultado);
-        };
+    // ✅ PREVENIR SCROLL DEL FONDO EN MÓVIL
+    if (esMovil) {
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// ✅ RESTAURAR SCROLL AL CERRAR
+function cerrarModalRapido() {
+    const modalRapido = document.getElementById('modal-rapido');
+    if (modalRapido) {
+        modalRapido.classList.add('hidden');
+        document.body.style.overflow = ''; // Restaurar scroll
     }
 }
 
@@ -2488,7 +2506,14 @@ function obtenerSubtituloRentabilidad(resultado) {
 }
 
 function calcularEficiencia(resultado) {
-    const eficiencia = Math.min((resultado.gananciaPorMinuto / 25) * 100, 100);
+    if (!perfilActual) return '0';
+    
+    const baseEfficiency = perfilActual.umbralMinutoRentable || 6.0;
+    const actualEfficiency = resultado.gananciaPorMinuto || 0;
+    
+    if (actualEfficiency <= 0) return '0';
+    
+    const eficiencia = Math.min(100, (actualEfficiency / baseEfficiency) * 100);
     return eficiencia.toFixed(0);
 }
 
@@ -3675,6 +3700,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
