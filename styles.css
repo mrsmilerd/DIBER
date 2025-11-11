@@ -3766,174 +3766,150 @@ function agregarEstilosTrafico() {
     }
 }
 
-/* MODAL RÁPIDO - DISEÑO MÓVIL OPTIMIZADO */
-@media (max-width: 768px) {
-    .modal-rapido-mejorado {
-        padding: 0 !important;
-        align-items: flex-end !important;
-        background: rgba(0, 0, 0, 0.8);
-    }
     
-    .modal-rapido-contenido-mejorado {
-        width: 100% !important;
-        max-width: 100% !important;
-        max-height: 85vh;
-        border-radius: 20px 20px 0 0 !important;
-        margin: 0 !important;
-        animation: slideUpMobile 0.3s ease-out;
-    }
-    
-    @keyframes slideUpMobile {
-        from {
-            transform: translateY(100%);
-        }
-        to {
-            transform: translateY(0);
-        }
-    }
-    
-    .modal-trafico-header {
+    /* ✅ ACCIONES MEJORADAS - BOTONES GRANDES Y CLAROS */
+    .acciones-mejoradas {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
         padding: 20px !important;
-        border-radius: 20px 20px 0 0;
-        flex-direction: row;
-        align-items: center;
+        background: white;
+        border-top: 1px solid #f0f0f0;
     }
     
-    .trafico-status {
-        flex: 1;
-        justify-content: flex-start;
+    .btn-rechazar-elegante, 
+    .btn-aceptar-elegante {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 18px !important;
+        border: none !important;
+        border-radius: 12px !important;
+        font-size: 1.1em !important;
+        font-weight: bold !important;
+        cursor: pointer !important;
+        width: 100% !important;
+        min-height: 60px !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    .btn-rechazar-elegante {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3) !important;
+    }
+    
+    .btn-aceptar-elegante {
+        background: linear-gradient(135deg, #51cf66 0%, #40c057 100%) !important;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(81, 207, 102, 0.3) !important;
+    }
+    
+    .btn-rechazar-elegante:active, 
+    .btn-aceptar-elegante:active {
+        transform: scale(0.98) !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+    }
+    
+    .btn-icon {
+        font-size: 1.4em !important;
+        margin-right: 10px !important;
+    }
+    
+    .btn-text {
+        font-size: 1em !important;
+        font-weight: 600 !important;
+    }
+    
+    .btn-badge {
+        display: none !important; /* Ocultar en móvil para más espacio */
+    }
+    
+    /* PREDICCIONES INTELIGENTES COMPACTAS */
+    .predicciones-inteligentes {
+        margin: 15px !important;
+        padding: 15px !important;
+        border-radius: 12px;
+        background: #e7f3ff;
+        border-left: 4px solid #007cba;
+    }
+    
+    /* SCROLL SUAVE */
+    .modal-rapido-contenido-mejorado {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* MÓVILES MUY PEQUEÑOS */
+@media (max-width: 360px) {
+    .modal-trafico-header {
+        padding: 15px !important;
     }
     
     .trafico-emoji-big {
-        font-size: 2em !important;
+        font-size: 1.8em !important;
     }
     
-    .trafico-info {
-        text-align: left;
+    .trafico-title {
+        font-size: 1em !important;
     }
     
-    .modal-cerrar-elegante {
-        background: rgba(255,255,255,0.2);
-        border: none;
-        width: 36px;
-        height: 36px;
-        font-size: 1.2em;
-    }
-    
-    /* SECCIÓN DE TIEMPO COMPACTA */
-    .tiempo-ajustado-section {
-        padding: 15px 20px !important;
-        background: #f8f9fa;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .tiempo-original, .tiempo-real {
-        flex: 1;
-        text-align: center;
-    }
-    
-    .flecha-ajuste {
-        margin: 0 10px;
-        color: #666;
-    }
-    
-    .tiempo-label {
-        font-size: 0.8em;
-        color: #666;
-        display: block;
-        margin-bottom: 4px;
-    }
-    
-    .tiempo-valor {
-        font-size: 1.1em;
-        font-weight: bold;
-    }
-    
-    .tiempo-valor.destacado {
-        color: #007cba;
-        font-size: 1.2em;
-    }
-    
-    /* RESULTADO PRINCIPAL COMPACTO */
-    .resultado-principal {
-        padding: 20px !important;
-        text-align: center;
-        background: white;
+    .trafico-condition {
+        font-size: 0.8em !important;
     }
     
     .badge-rentabilidad {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 20px;
-        border-radius: 12px;
-        max-width: 90%;
+        padding: 10px 15px !important;
+        gap: 10px !important;
     }
     
     .badge-emoji {
-        font-size: 1.8em;
-    }
-    
-    .badge-content {
-        text-align: left;
+        font-size: 1.5em !important;
     }
     
     .badge-title {
-        font-size: 1.1em;
-        font-weight: bold;
+        font-size: 1em !important;
     }
     
-    .badge-subtitle {
-        font-size: 0.9em;
-        opacity: 0.8;
-    }
-    
-    /* MÉTRICAS EN GRID COMPACTO */
     .metricas-grid-mejorado {
         grid-template-columns: repeat(3, 1fr) !important;
-        gap: 8px !important;
-        padding: 15px !important;
-        background: #f8f9fa;
+        gap: 6px !important;
+        padding: 10px !important;
     }
     
     .metrica-card {
-        padding: 12px 8px !important;
-        border-radius: 10px;
-        background: white;
-        border: 1px solid #e0e0e0;
-    }
-    
-    .metrica-icono {
-        font-size: 1.3em;
-        margin-bottom: 5px;
+        padding: 10px 6px !important;
     }
     
     .metrica-valor {
-        font-size: 0.9em;
-        font-weight: bold;
-        margin-bottom: 3px;
+        font-size: 0.8em !important;
     }
     
     .metrica-label {
-        font-size: 0.75em;
-        color: #666;
+        font-size: 0.7em !important;
     }
     
-    /* IMPACTO TRÁFICO COMPACTO */
-    .impacto-trafico {
-        margin: 0 15px 15px !important;
-        padding: 15px !important;
-        border-radius: 12px;
-        border-left: 4px solid #ffc107;
+    .btn-rechazar-elegante, 
+    .btn-aceptar-elegante {
+        padding: 16px !important;
+        min-height: 55px !important;
+        font-size: 1em !important;
     }
     
-    .impacto-header {
-        margin-bottom: 8px;
+    .btn-icon {
+        font-size: 1.3em !important;
+        margin-right: 8px !important;
+    }
+}
+
+/* MEJORAS PARA IOS SAFARI */
+@supports (-webkit-touch-callout: none) {
+    .modal-rapido-contenido-mejorado {
+        max-height: 82vh; /* Ajuste para Safari */
     }
     
-    .impacto-content {
-        font-size: 0.9em;
-        line-height: 1.4;
+    .acciones-mejoradas {
+        padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
     }
+}
