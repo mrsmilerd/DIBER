@@ -890,6 +890,10 @@ class FirebaseSync {
     }
 }
 
+// =============================================
+// Limpiar Datos MultiDispositivos
+// =============================================
+    
 async function limpiarDatosMultiDispositivo() {
     if (!firebaseSync || !firebaseSync.initialized) {
         mostrarError('Firebase no disponible para limpieza multi-dispositivo');
@@ -941,7 +945,7 @@ async function limpiarDatosMultiDispositivo() {
             mostrarError('Error limpiando datos en la nube');
         }
     }
-} // ✅ LLAVE DE CIERRE
+}
 
 // =============================================
 // INICIALIZACIÓN DE ELEMENTOS DOM - CORREGIDA
@@ -3751,6 +3755,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
