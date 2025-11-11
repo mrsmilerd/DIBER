@@ -210,6 +210,26 @@ function actualizarTextoEstado(minutosTranscurridos) {
     }
 }
 
+function actualizarTextoEstado(minutosTranscurridos) {
+    const estadoElement = document.getElementById('cronometro-estado');
+    if (!estadoElement || !cronometro.viajeActual) return;
+    
+    const { tiempoBase, tiempoMaximo } = cronometro.viajeActual;
+    const estado = estadoElement.querySelector('.estado-texto');
+    const icono = estadoElement.querySelector('.estado-icono');
+    
+    if (minutosTranscurridos <= tiempoBase) {
+        estado.textContent = 'Dentro de tu tiempo estimado';
+        icono.textContent = '✅';
+    } else if (minutosTranscurridos <= tiempoMaximo) {
+        estado.textContent = 'Dentro del tiempo con tráfico';
+        icono.textContent = '⚠️';
+    } else {
+        estado.textContent = 'Tiempo excedido';
+        icono.textContent = '🔴';
+    }
+}
+
 function actualizarColoresProgreso(minutosTranscurridos) {
     const modal = document.getElementById('modal-cronometro');
     if (!modal || !cronometro.viajeActual) return;
@@ -3542,6 +3562,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
