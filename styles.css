@@ -3662,3 +3662,106 @@ function agregarEstilosTrafico() {
         font-size: 1.2em;
     }
 }
+
+/* MODAL RÁPIDO - VERSIÓN MÓVIL COMPACTA */
+@media (max-width: 768px) {
+    .modal-rapido-contenido-mejorado {
+        max-width: 95% !important;
+        margin: 10px !important;
+        padding: 15px !important;
+    }
+    
+    .modal-trafico-header {
+        padding: 15px !important;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .trafico-status {
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .tiempo-ajustado-section {
+        padding: 15px !important;
+    }
+    
+    .resultado-principal {
+        padding: 15px !important;
+    }
+    
+    .metricas-grid-mejorado {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        padding: 0 10px 15px !important;
+    }
+    
+    .metrica-card {
+        padding: 10px !important;
+    }
+    
+    .impacto-trafico {
+        margin: 0 10px 15px !important;
+        padding: 12px !important;
+    }
+    
+    .acciones-mejoradas {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+        padding: 0 10px 15px !important;
+    }
+    
+    /* Hacer el modal más compacto */
+    .modal-rapido-mejorado {
+        padding: 10px !important;
+        align-items: flex-start !important;
+        padding-top: 20px !important;
+    }
+    
+    .modal-rapido-contenido-mejorado {
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+}
+
+/* Versión extra compacta para pantallas muy pequeñas */
+@media (max-width: 480px) {
+    .modal-rapido-contenido-mejorado {
+        max-width: 98% !important;
+        margin: 5px !important;
+        padding: 10px !important;
+    }
+    
+    .modal-trafico-header {
+        padding: 12px !important;
+    }
+    
+    .trafico-emoji-big {
+        font-size: 2em !important;
+    }
+    
+    .tiempo-ajustado-section {
+        padding: 10px !important;
+    }
+    
+    .tiempo-valor {
+        font-size: 1.1em !important;
+    }
+    
+    .tiempo-valor.destacado {
+        font-size: 1.2em !important;
+    }
+    
+    .badge-rentabilidad {
+        padding: 10px 15px !important;
+        gap: 10px !important;
+    }
+    
+    .badge-emoji {
+        font-size: 1.5em !important;
+    }
+    
+    .badge-title {
+        font-size: 1em !important;
+    }
+}
