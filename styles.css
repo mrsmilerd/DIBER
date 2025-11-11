@@ -3663,253 +3663,220 @@ function agregarEstilosTrafico() {
     }
 }
 
-/* MODAL RÁPIDO - VERSIÓN MÓVIL COMPACTA */
+/* MODAL MÓVIL - DISEÑO ULTRA SIMPLE */
 @media (max-width: 768px) {
-    .modal-rapido-contenido-mejorado {
-        max-width: 95% !important;
-        margin: 10px !important;
-        padding: 15px !important;
-    }
-    
-    .modal-trafico-header {
-        padding: 15px !important;
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .trafico-status {
-        justify-content: center;
-        text-align: center;
-    }
-    
-    .tiempo-ajustado-section {
-        padding: 15px !important;
-    }
-    
-    .resultado-principal {
-        padding: 15px !important;
-    }
-    
-    .metricas-grid-mejorado {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px !important;
-        padding: 0 10px 15px !important;
-    }
-    
-    .metrica-card {
-        padding: 10px !important;
-    }
-    
-    .impacto-trafico {
-        margin: 0 10px 15px !important;
-        padding: 12px !important;
-    }
-    
-    .acciones-mejoradas {
-        grid-template-columns: 1fr !important;
-        gap: 8px !important;
-        padding: 0 10px 15px !important;
-    }
-    
-    /* Hacer el modal más compacto */
     .modal-rapido-mejorado {
-        padding: 10px !important;
-        align-items: flex-start !important;
-        padding-top: 20px !important;
+        padding: 0 !important;
+        align-items: flex-end !important;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
     }
     
     .modal-rapido-contenido-mejorado {
-        max-height: 85vh;
-        overflow-y: auto;
-    }
-}
-
-/* Versión extra compacta para pantallas muy pequeñas */
-@media (max-width: 480px) {
-    .modal-rapido-contenido-mejorado {
-        max-width: 98% !important;
-        margin: 5px !important;
-        padding: 10px !important;
-    }
-    
-    .modal-trafico-header {
-        padding: 12px !important;
-    }
-    
-    .trafico-emoji-big {
-        font-size: 2em !important;
-    }
-    
-    .tiempo-ajustado-section {
-        padding: 10px !important;
-    }
-    
-    .tiempo-valor {
-        font-size: 1.1em !important;
-    }
-    
-    .tiempo-valor.destacado {
-        font-size: 1.2em !important;
-    }
-    
-    .badge-rentabilidad {
-        padding: 10px 15px !important;
-        gap: 10px !important;
-    }
-    
-    .badge-emoji {
-        font-size: 1.5em !important;
-    }
-    
-    .badge-title {
-        font-size: 1em !important;
-    }
-}
-
-    
-    /* ✅ ACCIONES MEJORADAS - BOTONES GRANDES Y CLAROS */
-    .acciones-mejoradas {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 10px !important;
-        padding: 20px !important;
-        background: white;
-        border-top: 1px solid #f0f0f0;
-    }
-    
-    .btn-rechazar-elegante, 
-    .btn-aceptar-elegante {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 18px !important;
-        border: none !important;
-        border-radius: 12px !important;
-        font-size: 1.1em !important;
-        font-weight: bold !important;
-        cursor: pointer !important;
         width: 100% !important;
-        min-height: 60px !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    .btn-rechazar-elegante {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3) !important;
-    }
-    
-    .btn-aceptar-elegante {
-        background: linear-gradient(135deg, #51cf66 0%, #40c057 100%) !important;
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(81, 207, 102, 0.3) !important;
-    }
-    
-    .btn-rechazar-elegante:active, 
-    .btn-aceptar-elegante:active {
-        transform: scale(0.98) !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
-    }
-    
-    .btn-icon {
-        font-size: 1.4em !important;
-        margin-right: 10px !important;
-    }
-    
-    .btn-text {
-        font-size: 1em !important;
-        font-weight: 600 !important;
-    }
-    
-    .btn-badge {
-        display: none !important; /* Ocultar en móvil para más espacio */
-    }
-    
-    /* PREDICCIONES INTELIGENTES COMPACTAS */
-    .predicciones-inteligentes {
-        margin: 15px !important;
-        padding: 15px !important;
-        border-radius: 12px;
-        background: #e7f3ff;
-        border-left: 4px solid #007cba;
-    }
-    
-    /* SCROLL SUAVE */
-    .modal-rapido-contenido-mejorado {
+        max-width: 100% !important;
+        height: auto;
+        max-height: 90vh;
+        border-radius: 20px 20px 0 0 !important;
+        margin: 0 !important;
+        background: white;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
-}
-
-/* MÓVILES MUY PEQUEÑOS */
-@media (max-width: 360px) {
+    
+    /* HEADER SIMPLE */
     .modal-trafico-header {
-        padding: 15px !important;
+        padding: 15px 20px !important;
+        background: #007cba !important;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 20px 20px 0 0;
+    }
+    
+    .trafico-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
     
     .trafico-emoji-big {
-        font-size: 1.8em !important;
+        font-size: 24px;
+    }
+    
+    .trafico-info {
+        flex: 1;
     }
     
     .trafico-title {
-        font-size: 1em !important;
+        font-size: 14px;
+        font-weight: bold;
     }
     
     .trafico-condition {
-        font-size: 0.8em !important;
+        font-size: 12px;
+        opacity: 0.9;
+    }
+    
+    .modal-cerrar-elegante {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        font-size: 18px;
+        cursor: pointer;
+    }
+    
+    /* CONTENIDO PRINCIPAL */
+    .resultado-principal {
+        padding: 20px;
+        text-align: center;
+        background: white;
+        border-bottom: 1px solid #f0f0f0;
     }
     
     .badge-rentabilidad {
-        padding: 10px 15px !important;
-        gap: 10px !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 15px 20px;
+        border-radius: 15px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    
+    .badge-rentabilidad.rentable {
+        background: #d4edda;
+        color: #155724;
+        border: 2px solid #c3e6cb;
+    }
+    
+    .badge-rentabilidad.oportunidad {
+        background: #fff3cd;
+        color: #856404;
+        border: 2px solid #ffeaa7;
+    }
+    
+    .badge-rentabilidad.no-rentable {
+        background: #f8d7da;
+        color: #721c24;
+        border: 2px solid #f5c6cb;
     }
     
     .badge-emoji {
-        font-size: 1.5em !important;
+        font-size: 24px;
     }
     
-    .badge-title {
-        font-size: 1em !important;
+    /* INFORMACIÓN RÁPIDA */
+    .info-rapida {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        border-bottom: 1px solid #e9ecef;
     }
     
-    .metricas-grid-mejorado {
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 6px !important;
-        padding: 10px !important;
+    .info-item-rapida {
+        text-align: center;
+        padding: 10px;
+        background: white;
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
     }
     
-    .metrica-card {
-        padding: 10px 6px !important;
+    .info-label-rapida {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 5px;
     }
     
-    .metrica-valor {
-        font-size: 0.8em !important;
+    .info-valor-rapida {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
     }
     
-    .metrica-label {
-        font-size: 0.7em !important;
+    /* ✅ BOTONES GRANDES Y CLAROS */
+    .acciones-mejoradas {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
     }
     
-    .btn-rechazar-elegante, 
-    .btn-aceptar-elegante {
-        padding: 16px !important;
-        min-height: 55px !important;
-        font-size: 1em !important;
+    .btn-accion-movil {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        border: none;
+        border-radius: 15px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        width: 100%;
+        gap: 10px;
+        transition: all 0.2s;
     }
     
-    .btn-icon {
-        font-size: 1.3em !important;
-        margin-right: 8px !important;
+    .btn-accion-movil:active {
+        transform: scale(0.98);
+    }
+    
+    .btn-rechazar-movil {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-aceptar-movil {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-icono-movil {
+        font-size: 20px;
     }
 }
 
-/* MEJORAS PARA IOS SAFARI */
-@supports (-webkit-touch-callout: none) {
+/* PEQUEÑAS MEJORAS ADICIONALES */
+@media (max-width: 480px) {
     .modal-rapido-contenido-mejorado {
-        max-height: 82vh; /* Ajuste para Safari */
+        max-height: 85vh;
+    }
+    
+    .resultado-principal {
+        padding: 15px;
+    }
+    
+    .badge-rentabilidad {
+        padding: 12px 15px;
+        font-size: 16px;
+    }
+    
+    .info-rapida {
+        padding: 12px 15px;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    
+    .info-item-rapida {
+        padding: 8px;
+    }
+    
+    .info-valor-rapida {
+        font-size: 14px;
     }
     
     .acciones-mejoradas {
-        padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+        padding: 15px;
+    }
+    
+    .btn-accion-movil {
+        padding: 18px;
+        font-size: 16px;
     }
 }
