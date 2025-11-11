@@ -941,13 +941,13 @@ async function limpiarDatosMultiDispositivo() {
             mostrarError('Error limpiando datos en la nube');
         }
     }
-}
-    
+} // ✅ LLAVE DE CIERRE
+
 // =============================================
 // INICIALIZACIÓN DE ELEMENTOS DOM - CORREGIDA
 // =============================================
 
-function inicializarElementosDOM() {
+    function inicializarElementosDOM() {
     console.log('🔍 Inicializando elementos DOM...');
     
     const ids = [
@@ -3751,6 +3751,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
