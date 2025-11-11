@@ -2168,9 +2168,11 @@ function actualizarUnidades() {
 }
 
 function formatearMoneda(valor) {
+    if (typeof valor !== 'number') return 'RD$0.00';
+    
     const moneda = perfilActual?.moneda || 'DOP';
     const simbolo = moneda === 'USD' ? '$' : 'RD$';
-    return `${simbolo}${typeof valor === 'number' ? valor.toFixed(2) : '0.00'}`;
+    return `${simbolo}${valor.toFixed(2)}`;
 }
 
 function mostrarError(mensaje) {
@@ -2355,56 +2357,107 @@ function guardarEnHistorial(resultado, aceptado) {
 function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
 
-    // Crear modal extremadamente simple
+    // Cerrar modal existente si hay
+    cerrarModalRapido();
+
     const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        z-index: 10000;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-    `;
+    modal.id = 'modal-rapido';
+    modal.className = 'modal-centrado-elegante';
+    
+    // Determinar clase de rentabilidad
+    const claseRentabilidad = resultado.rentabilidad || 'oportunidad';
     
     modal.innerHTML = `
-        <div style="background: white; border-radius: 20px 20px 0 0; padding: 20px;">
-            <!-- RESULTADO -->
-            <div style="text-align: center; padding: 20px 0; font-size: 24px; font-weight: bold; color: ${resultado.rentabilidad === 'rentable' ? 'green' : resultado.rentabilidad === 'oportunidad' ? 'orange' : 'red'};">
-                ${resultado.emoji} ${resultado.texto}
+        <div class="modal-contenido-centrado ${claseRentabilidad}">
+            <!-- HEADER -->
+            <div class="modal-header-centrado">
+                <div class="modal-titulo">🎯 Análisis Completado</div>
+                <div class="modal-subtitulo">Resultado del cálculo automático</div>
             </div>
-            
-            <!-- INFORMACIÓN BÁSICA -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0;">
-                <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 10px;">
-                    <div style="font-size: 12px; color: #666;">GANANCIA</div>
-                    <div style="font-size: 18px; font-weight: bold;">${formatearMoneda(resultado.tarifa)}</div>
-                </div>
-                <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 10px;">
-                    <div style="font-size: 12px; color: #666;">TIEMPO</div>
-                    <div style="font-size: 18px; font-weight: bold;">${resultado.minutos} min</div>
+
+            <!-- BADGE DE RESULTADO -->
+            <div style="text-align: center;">
+                <div class="badge-resultado-centrado">
+                    <div class="badge-emoji-grande">${resultado.emoji}</div>
+                    <div class="badge-texto-grande">${resultado.texto}</div>
                 </div>
             </div>
-            
-            <!-- BOTONES -->
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button onclick="procesarViajeRapido(false); this.parentElement.parentElement.parentElement.remove()" 
-                        style="background: #dc3545; color: white; border: none; padding: 20px; border-radius: 10px; font-size: 18px; font-weight: bold;">
-                    ❌ RECHAZAR
+
+            <!-- CUERPO CON MÉTRICAS -->
+            <div class="modal-body-centrado">
+                <div class="metricas-grid-centrado">
+                    <div class="metrica-item-centrado">
+                        <div class="metrica-valor-centrado">${formatearMoneda(resultado.tarifa || resultado.ganancia)}</div>
+                        <div class="metrica-label-centrado">Ganancia</div>
+                    </div>
+                    <div class="metrica-item-centrado">
+                        <div class="metrica-valor-centrado">${resultado.minutos} min</div>
+                        <div class="metrica-label-centrado">Tiempo</div>
+                    </div>
+                    <div class="metrica-item-centrado">
+                        <div class="metrica-valor-centrado">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
+                        <div class="metrica-label-centrado">Por minuto</div>
+                    </div>
+                    <div class="metrica-item-centrado">
+                        <div class="metrica-valor-centrado">${resultado.distancia} km</div>
+                        <div class="metrica-label-centrado">Distancia</div>
+                    </div>
+                </div>
+
+                ${resultado.insights ? `
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; border-left: 4px solid #4CAF50; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 600;">🧠 Predicción Inteligente</span>
+                        <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 10px;">
+                            ${resultado.insights.confidence}% confianza
+                        </span>
+                    </div>
+                    <div style="font-size: 0.9em; opacity: 0.9;">
+                        ${resultado.insights.message}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+
+            <!-- BOTONES DE ACCIÓN -->
+            <div class="modal-actions-centrado">
+                <button class="btn-accion-grande btn-rechazar-grande" onclick="procesarViajeRapido(false)">
+                    <span class="btn-icono-grande">❌</span>
+                    Rechazar Viaje
                 </button>
-                <button onclick="iniciarCronometroDesdeModal(); this.parentElement.parentElement.parentElement.remove()" 
-                        style="background: #28a745; color: white; border: none; padding: 20px; border-radius: 10px; font-size: 18px; font-weight: bold;">
-                    ✅ ACEPTAR
+                <button class="btn-accion-grande btn-aceptar-grande" onclick="iniciarCronometroDesdeModal()">
+                    <span class="btn-icono-grande">✅</span>
+                    Aceptar y Cronometrar
                 </button>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
     calculoActual = resultado;
+    
+    // Agregar evento para cerrar al hacer clic fuera
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            cerrarModalRapido();
+        }
+    });
+}
+
+function iniciarCronometroDesdeModal() {
+    if (calculoActual) {
+        iniciarCronometroConViaje(calculoActual);
+        cerrarModalRapido();
+    } else {
+        mostrarError('No hay datos del viaje. Por favor, calcula nuevamente.');
+    }
+}
+
+function cerrarModalRapido() {
+    const modal = document.getElementById('modal-rapido');
+    if (modal) {
+        modal.remove();
+    }
 }
 
 // ✅ RESTAURAR SCROLL AL CERRAR
@@ -3626,6 +3679,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
