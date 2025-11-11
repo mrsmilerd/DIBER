@@ -2353,124 +2353,6 @@ function guardarEnHistorial(resultado, aceptado) {
 // =============================================
 
 function mostrarResultadoRapido(resultado) {
-    if (!resultado) return;
-
-    let modal = document.getElementById('modal-rapido');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modal-rapido';
-        modal.className = 'modal-rapido-mejorado hidden';
-        document.body.appendChild(modal);
-    }
-
-    const tieneTrafico = resultado.trafficAnalysis;
-    const trafficInfo = tieneTrafico ? resultado.trafficAnalysis.trafficInfo : { emoji: '🚦', text: 'SIN DATOS' };
-    
-    // ✅ USAR TIEMPO AJUSTADO POR PREDICCIÓN si está disponible
-    const tiempoReal = resultado.tiempoAjustado || 
-                      (tieneTrafico ? resultado.trafficAnalysis.adjustedTime : resultado.minutos);
-    
-    // ✅ DETERMINAR COLOR SEGÚN FUENTE DE DATOS
-    const dataSourceColor = resultado.fuenteDatos === 'HISTORICAL' ? '#4CAF50' : 
-                           resultado.fuenteDatos === 'CONSERVATIVE' ? '#FF9800' : '#9E9E9E';
-    
-    modal.innerHTML = `
-        <div class="modal-rapido-contenido-mejorado">
-            <div class="modal-trafico-header ${tieneTrafico ? 'trafico-' + resultado.trafficAnalysis.trafficCondition : 'trafico-low'}">
-                <div class="trafico-status" id="modal-trafico-status">
-                    <span class="trafico-emoji-big">${trafficInfo.emoji}</span>
-                    <div class="trafico-info">
-                        <div class="trafico-title">Análisis de Tráfico</div>
-                        <div class="trafico-condition" id="modal-trafico-condition">${trafficInfo.text.toUpperCase()}</div>
-                    </div>
-                </div>
-                <button class="modal-cerrar-elegante" onclick="cerrarModalRapido()">
-                    <span>×</span>
-                </button>
-            </div>
-
-            <div class="tiempo-ajustado-section">
-                <div class="tiempo-original">
-                    <span class="tiempo-label">Tiempo estimado:</span>
-                    <span class="tiempo-valor" id="modal-tiempo-original">${resultado.minutos || 0} min</span>
-                </div>
-                <div class="flecha-ajuste">↓</div>
-                <div class="tiempo-real">
-                    <span class="tiempo-label">Con análisis predictivo:</span>
-                    <span class="tiempo-valor destacado" id="modal-tiempo-real">${tiempoReal} min</span>
-                </div>
-            </div>
-
-            <div class="resultado-principal" id="modal-resultado-principal">
-                <div class="badge-rentabilidad ${resultado.rentabilidad}" id="modal-badge-rentabilidad">
-                    <div class="badge-emoji">${resultado.emoji}</div>
-                    <div class="badge-content">
-                        <div class="badge-title">${resultado.texto}</div>
-                        <div class="badge-subtitle" id="modal-badge-subtitle">${obtenerSubtituloRentabilidad(resultado)}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ✅ NUEVA SECCIÓN: PREDICCIONES INTELIGENTES -->
-            ${resultado.insights ? `
-            <div class="predicciones-inteligentes" style="margin: 15px 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid ${dataSourceColor};">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <div style="font-weight: bold; color: #333;">
-                        🎯 Análisis Predictivo
-                    </div>
-                    <div style="font-size: 0.8em; padding: 4px 8px; background: ${dataSourceColor}; color: white; border-radius: 12px;">
-                        ${resultado.insights.dataSource === 'HISTORICAL' ? 'DATOS REALES' : 'ESTIMACIÓN BASE'}
-                    </div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 1.2em; font-weight: bold; color: #007cba;">${resultado.insights.confidence}%</div>
-                        <div style="font-size: 0.7em; color: #666;">Confianza</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 1.2em; font-weight: bold; color: #4CAF50;">${resultado.insights.successRate}%</div>
-                        <div style="font-size: 0.7em; color: #666;">Tasa de éxito</div>
-                    </div>
-                </div>
-                
-                <div style="font-size: 0.8em; color: #666; text-align: center;">
-                    ${resultado.insights.message}
-                </div>
-            </div>
-            ` : ''}
-
-            ${tieneTrafico ? `
-            <div class="impacto-trafico" id="modal-impacto-trafico">
-                <div class="impacto-header">
-                    <span class="impacto-icon">📈</span>
-                    <span class="impacto-title">Impacto del Tráfico</span>
-                </div>
-                <div class="impacto-content" id="modal-impacto-content">
-                    ${obtenerMensajeImpacto(resultado.trafficAnalysis)}
-                </div>
-            </div>
-            ` : ''}
-
-            <div class="acciones-mejoradas">
-                <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
-                    <span class="btn-icon">❌</span>
-                    <span class="btn-text">Rechazar Viaje</span>
-                    <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
-                </button>
-                <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)" id="modal-btn-aceptar">
-                    <span class="btn-icon">✅</span>
-                    <span class="btn-text">Aceptar Viaje</span>
-                    <span class="btn-badge" id="modal-badge-aceptar">${resultado.rentabilidad === 'rentable' ? 'Recomendado' : 'Con cuidado'}</span>
-                </button>
-            </div>
-        </div>
-    `;
-
-    modal.classList.remove('hidden');
-    calculoActual = resultado;
-}
-
 
 // ✅ RESTAURAR SCROLL AL CERRAR
 function cerrarModalRapido() {
@@ -3691,6 +3573,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
