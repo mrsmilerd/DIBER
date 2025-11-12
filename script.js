@@ -82,11 +82,12 @@ function crearModalCronometro(resultado) {
     modalFondo.id = 'modal-cronometro';
     modalFondo.className = 'modal-cronometro-fondo';
     
-    // Calcular porcentajes para los marcadores
-    const porcentajeVerde = calcularPorcentaje(
-        resultado.minutos, 
-        resultado.tiempoAjustado || resultado.minutos
-    );
+    // ✅ CORREGIDO: Calcular porcentajes con el orden correcto
+    // Tu tiempo estimado primero, tiempo con tráfico después
+    const tiempoUsuario = resultado.minutos; // ✅ Este es el tiempo que INGRESASTE (4 min)
+    const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos; // ✅ Este es el cálculo automático (6 min)
+    
+    const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoAjustado);
     
     modalFondo.innerHTML = `
         <div class="modal-cronometro-contenido estado-verde">
@@ -105,15 +106,15 @@ function crearModalCronometro(resultado) {
             <div class="cronometro-info">
                 <div class="info-item">
                     <span class="info-label">Tu estimación</span>
-                    <span class="info-valor">${resultado.minutos} min</span>
+                    <span class="info-valor">${tiempoUsuario} min</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Con tráfico</span>
-                    <span class="info-valor">${resultado.tiempoAjustado || resultado.minutos} min</span>
+                    <span class="info-valor">${tiempoAjustado} min</span>
                 </div>
             </div>
             
-            <!-- PROGRESO -->
+            <!-- PROGRESO - CORREGIDO EL ORDEN -->
             <div class="cronometro-progreso">
                 <div class="barra-progreso-container">
                     <div class="barra-progreso">
@@ -121,8 +122,8 @@ function crearModalCronometro(resultado) {
                     </div>
                     <div class="marcadores-tiempo">
                         <span class="marcador inicio">0</span>
-                        <span class="marcador verde" style="left: ${porcentajeVerde}%">${resultado.minutos}</span>
-                        <span class="marcador fin">${resultado.tiempoAjustado || resultado.minutos}</span>
+                        <span class="marcador verde" style="left: ${porcentajeUsuario}%">${tiempoUsuario}</span>
+                        <span class="marcador fin">${tiempoAjustado}</span>
                     </div>
                 </div>
             </div>
@@ -133,7 +134,7 @@ function crearModalCronometro(resultado) {
                 <span class="estado-texto">Dentro de tu tiempo estimado</span>
             </div>
             
-            <!-- ACCIONES - BOTÓN RESTAURADO -->
+            <!-- ACCIONES -->
             <div class="cronometro-acciones">
                 <button class="btn-detener-viaje" onclick="detenerCronometro()">
                     <span class="btn-icono">🛑</span>
@@ -144,13 +145,13 @@ function crearModalCronometro(resultado) {
         </div>
     `;
     
-    document.body.appendChild(modalFondo);
+     document.body.appendChild(modalFondo);
     
     setTimeout(agregarEfectosVisuales, 100);
 }
 
 function calcularPorcentaje(tiempoBase, tiempoTotal) {
-    return (tiempoBase / tiempoTotal) * 100;
+    return Math.min(100, (tiempoBase / tiempoTotal) * 100);
 }
 
 function iniciarCronometroConViaje(resultado) {
@@ -164,22 +165,23 @@ function iniciarCronometroConViaje(resultado) {
 
     // ✅ OBTENER EL TIEMPO QUE INGRESÓ EL USUARIO (no el ajustado)
     const tiempoUsuario = parseFloat(elementos.minutos.value) || resultado.minutos;
+    const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
     
     console.log('🎯 Tiempos para cronómetro:', {
-        tiempoUsuario: tiempoUsuario,
-        tiempoAjustado: resultado.tiempoAjustado || resultado.minutos,
+        tiempoUsuario: tiempoUsuario, // ✅ TU tiempo (4 min)
+        tiempoAjustado: tiempoAjustado, // ✅ Tiempo con tráfico (6 min)
         tiempoOriginalResultado: resultado.minutos
     });
 
-    // Guardar datos del viaje CON EL TIEMPO DEL USUARIO
+    // ✅ GUARDAR DATOS CON ORDEN CORRECTO
     cronometro.viajeActual = {
         ...resultado,
         timestampInicio: new Date().toISOString(),
-        tiempoEstimado: tiempoUsuario, // ✅ USAR TIEMPO DEL USUARIO
-        tiempoAjustado: resultado.tiempoAjustado || resultado.minutos,
+        tiempoEstimado: tiempoUsuario, // ✅ TU TIEMPO PRIMERO (4 min)
+        tiempoAjustado: tiempoAjustado, // ✅ TIEMPO AJUSTADO DESPUÉS (6 min)
         // Para los colores - usar tiempo usuario como base
-        tiempoBase: tiempoUsuario, // ✅ TIEMPO QUE INGRESÓ EL USUARIO
-        tiempoMaximo: resultado.tiempoAjustado || resultado.minutos
+        tiempoBase: tiempoUsuario, // ✅ TU TIEMPO ES LA BASE
+        tiempoMaximo: tiempoAjustado // ✅ TIEMPO MÁXIMO ES EL AJUSTADO
     };
 
     // Iniciar cronómetro
@@ -187,10 +189,11 @@ function iniciarCronometroConViaje(resultado) {
     cronometro.inicio = Date.now();
     cronometro.tiempoTranscurridoSegundos = 0;
 
-    // Mostrar banner modal
+    // Mostrar banner modal CON ORDEN CORRECTO
     crearModalCronometro({
         ...resultado,
-        minutos: tiempoUsuario // ✅ Pasar el tiempo del usuario al modal
+        minutos: tiempoUsuario, // ✅ Pasar el tiempo del usuario
+        tiempoAjustado: tiempoAjustado // ✅ Pasar el tiempo ajustado
     });
     
     // Actualizar cada segundo
@@ -889,19 +892,36 @@ class FirebaseSync {
     try {
         console.log('🔍 Buscando datos REALES para predicción...');
         
-        // Buscar CUALQUIER dato histórico del usuario, sin filtros estrictos
+        // CONSULTA SIMPLIFICADA que no requiere índice complejo
         const learningRef = this.db.collection('route_learning')
             .where('userId', '==', this.userId)
-            .orderBy('timestamp', 'desc')
-            .limit(20); // Últimos 20 viajes
+            .limit(20); // Solo límite, sin ordenamiento complejo
 
         const snapshot = await learningRef.get();
         
         if (!snapshot.empty) {
             console.log(`📊 Encontrados ${snapshot.size} viajes históricos`);
             
+            // Filtrar localmente por timestamp si es necesario
+            const recentTrips = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                // Filtrar viajes recientes (últimos 30 días)
+                const tripDate = new Date(data.timestamp);
+                const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+                
+                if (tripDate >= thirtyDaysAgo) {
+                    recentTrips.push(data);
+                }
+            });
+
+            if (recentTrips.length === 0) {
+                console.log('📊 No hay viajes recientes');
+                return null;
+            }
+
             const stats = {
-                totalTrips: snapshot.size,
+                totalTrips: recentTrips.length,
                 avgEfficiency: 0,
                 avgTrafficFactor: 0,
                 profitabilityRate: 0
@@ -911,8 +931,7 @@ class FirebaseSync {
             let totalTrafficFactor = 0;
             let profitableTrips = 0;
 
-            snapshot.forEach(doc => {
-                const data = doc.data();
+            recentTrips.forEach(data => {
                 totalEfficiency += data.efficiency || 0;
                 totalTrafficFactor += data.trafficFactor || 1.0;
                 
@@ -921,9 +940,9 @@ class FirebaseSync {
                 }
             });
 
-            stats.avgEfficiency = parseFloat((totalEfficiency / snapshot.size).toFixed(2));
-            stats.avgTrafficFactor = parseFloat((totalTrafficFactor / snapshot.size).toFixed(3));
-            stats.profitabilityRate = parseFloat(((profitableTrips / snapshot.size) * 100).toFixed(1));
+            stats.avgEfficiency = parseFloat((totalEfficiency / recentTrips.length).toFixed(2));
+            stats.avgTrafficFactor = parseFloat((totalTrafficFactor / recentTrips.length).toFixed(3));
+            stats.profitabilityRate = parseFloat(((profitableTrips / recentTrips.length) * 100).toFixed(1));
 
             console.log('🎯 Estadísticas REALES obtenidas:', stats);
             return stats;
@@ -934,6 +953,13 @@ class FirebaseSync {
         
     } catch (error) {
         console.error('❌ Error obteniendo estadísticas:', error);
+        
+        // Si es error de índice, usar datos conservadores
+        if (error.code === 'failed-precondition') {
+            console.log('📊 Usando datos conservadores por falta de índice');
+            return null;
+        }
+        
         return null;
     }
 }
@@ -3969,6 +3995,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
