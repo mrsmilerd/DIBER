@@ -89,33 +89,60 @@ function crearModalCronometro(resultado) {
     );
     
     modalFondo.innerHTML = `
-    <div class="modal-cronometro-contenido estado-verde">
-        <!-- HEADER -->
-        <div class="cronometro-header">
-            <div class="cronometro-titulo">
-                <span class="cronometro-icono">🚗</span>
-                <span>Viaje en Curso</span>
+        <div class="modal-cronometro-contenido estado-verde">
+            <!-- HEADER -->
+            <div class="cronometro-header">
+                <div class="cronometro-titulo">
+                    <span class="cronometro-icono">🚗</span>
+                    <span>Viaje en Curso</span>
+                </div>
+                <div class="cronometro-tiempo-display" id="cronometro-tiempo-display">
+                    00:00
+                </div>
             </div>
-            <div class="cronometro-tiempo-display" id="cronometro-tiempo-display">
-                00:00
+            
+            <!-- INFO -->
+            <div class="cronometro-info">
+                <div class="info-item">
+                    <span class="info-label">Tu estimación</span>
+                    <span class="info-valor">${resultado.minutos} min</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Con tráfico</span>
+                    <span class="info-valor">${resultado.tiempoAjustado || resultado.minutos} min</span>
+                </div>
+            </div>
+            
+            <!-- PROGRESO -->
+            <div class="cronometro-progreso">
+                <div class="barra-progreso-container">
+                    <div class="barra-progreso">
+                        <div class="progreso-fill" id="progreso-fill"></div>
+                    </div>
+                    <div class="marcadores-tiempo">
+                        <span class="marcador inicio">0</span>
+                        <span class="marcador verde" style="left: ${porcentajeVerde}%">${resultado.minutos}</span>
+                        <span class="marcador fin">${resultado.tiempoAjustado || resultado.minutos}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ESTADO -->
+            <div class="cronometro-estado" id="cronometro-estado">
+                <span class="estado-icono">✅</span>
+                <span class="estado-texto">Dentro de tu tiempo estimado</span>
+            </div>
+            
+            <!-- ACCIONES - BOTÓN RESTAURADO -->
+            <div class="cronometro-acciones">
+                <button class="btn-detener-viaje" onclick="detenerCronometro()">
+                    <span class="btn-icono">🛑</span>
+                    <span class="btn-texto">Finalizar Viaje</span>
+                </button>
+                <div class="instruccion">Toca cuando llegues a tu destino</div>
             </div>
         </div>
-        
-        <!-- INFO CORREGIDA -->
-        <div class="cronometro-info">
-            <div class="info-item">
-                <span class="info-label">Tu estimación</span>
-                <span class="info-valor">${resultado.minutos} min</span> <!-- ✅ Tu tiempo -->
-            </div>
-            <div class="info-item">
-                <span class="info-label">Con tráfico</span>
-                <span class="info-valor">${resultado.tiempoAjustado || resultado.minutos} min</span> <!-- ✅ Tiempo ajustado -->
-            </div>
-        </div>
-        
-        <!-- ... resto del código igual ... -->
-    </div>
-`;
+    `;
     
     document.body.appendChild(modalFondo);
     
@@ -3936,4 +3963,5 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
