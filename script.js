@@ -2724,20 +2724,22 @@ function mostrarResultadoRapido(resultado) {
                 </div>
             </div>
 
-            <!-- CUERPO CON MÉTRICAS -->
+            <!-- CUERPO CON MÉTRICAS - MODIFICADO -->
             <div class="modal-body-centrado">
                 <div class="metricas-grid-centrado">
+                    <!-- CAMBIO 1: Por minuto en lugar de Ganancia -->
                     <div class="metrica-item-centrado">
-                        <div class="metrica-valor-centrado">${formatearMoneda(resultado.tarifa || resultado.ganancia)}</div>
-                        <div class="metrica-label-centrado">Ganancia</div>
+                        <div class="metrica-valor-centrado">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
+                        <div class="metrica-label-centrado">Por minuto</div>
                     </div>
                     <div class="metrica-item-centrado">
                         <div class="metrica-valor-centrado">${resultado.minutos} min</div>
                         <div class="metrica-label-centrado">Tiempo</div>
                     </div>
+                    <!-- CAMBIO 2: Por kilómetro en lugar de Por minuto -->
                     <div class="metrica-item-centrado">
-                        <div class="metrica-valor-centrado">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
-                        <div class="metrica-label-centrado">Por minuto</div>
+                        <div class="metrica-valor-centrado">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
+                        <div class="metrica-label-centrado">Por kilómetro</div>
                     </div>
                     <div class="metrica-item-centrado">
                         <div class="metrica-valor-centrado">${resultado.distancia} km</div>
@@ -2760,7 +2762,7 @@ function mostrarResultadoRapido(resultado) {
                 ` : ''}
             </div>
 
-            <!-- BOTONES DE ACCIÓN -->
+            <!-- BOTONES DE ACCIÓN (sin cambios) -->
             <div class="modal-actions-centrado">
                 <button class="btn-accion-grande btn-rechazar-grande" onclick="procesarViajeRapido(false)">
                     <span class="btn-icono-grande">❌</span>
@@ -4021,6 +4023,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
