@@ -1555,26 +1555,37 @@ async function forzarSincronizacionCompleta() {
 historial = JSON.parse(localStorage.getItem('historialViajes')) || [];
 
 async function agregarAlHistorial(viaje) {
-    console.log('➕ agregarAlHistorial() llamado con:', viaje);
+    console.log('➕ agregarAlHistorial() llamado con:', { 
+        aceptado: viaje.aceptado, 
+        rentabilidad: viaje.rentabilidad 
+    });
     
     if (!viaje || (!viaje.tarifa && !viaje.ganancia)) {
         console.error('❌ Error: Viaje sin datos esenciales');
         return;
     }
 
-    const tarifa = viaje.tarifa || viaje.ganancia || 0;
-    const minutos = viaje.minutos || 0;
-    const distancia = viaje.distancia || 0;
-    const porMinuto = viaje.gananciaPorMinuto || (minutos > 0 ? (tarifa / minutos) : 0);
-    const porKm = viaje.gananciaPorKm || (distancia > 0 ? (tarifa / distancia) : 0);
-    
+    // ✅ SI EL VIAJE FUE RECHAZADO, MARCAR COMO NO RENTABLE
     let rentabilidad, emoji, texto;
     
-    if (viaje.rentabilidad) {
+    if (viaje.aceptado === false) {
+        // VIAJE RECHAZADO - siempre es "no rentable"
+        rentabilidad = 'rechazado';
+        emoji = '🚫';
+        texto = 'RECHAZADO';
+    } else if (viaje.rentabilidad) {
+        // VIAJE ACEPTADO - usar la rentabilidad calculada
         rentabilidad = viaje.rentabilidad;
         emoji = viaje.emoji;
         texto = viaje.texto;
     } else if (perfilActual) {
+        // CALCULAR RENTABILIDAD si no está definida
+        const tarifa = viaje.tarifa || viaje.ganancia || 0;
+        const minutos = viaje.minutos || 0;
+        const distancia = viaje.distancia || 0;
+        const porMinuto = minutos > 0 ? (tarifa / minutos) : 0;
+        const porKm = distancia > 0 ? (tarifa / distancia) : 0;
+        
         if (porMinuto >= perfilActual.umbralMinutoRentable && 
             porKm >= perfilActual.umbralKmRentable) {
             rentabilidad = 'rentable';
@@ -1598,19 +1609,17 @@ async function agregarAlHistorial(viaje) {
 
     const nuevoViaje = {
         id: 'viaje_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-        ganancia: tarifa,
-        tarifa: tarifa,
-        minutos: minutos,
-        distancia: distancia,
-        porMinuto: parseFloat(porMinuto.toFixed(2)),
-        porKm: parseFloat(porKm.toFixed(2)),
-        gananciaPorMinuto: parseFloat(porMinuto.toFixed(2)),
-        gananciaPorKm: parseFloat(porKm.toFixed(2)),
-        rentable: rentabilidad === 'rentable',
+        ganancia: viaje.tarifa || viaje.ganancia || 0,
+        tarifa: viaje.tarifa || viaje.ganancia || 0,
+        minutos: viaje.minutos || 0,
+        distancia: viaje.distancia || 0,
+        porMinuto: parseFloat((viaje.gananciaPorMinuto || 0).toFixed(2)),
+        porKm: parseFloat((viaje.gananciaPorKm || 0).toFixed(2)),
+        rentable: rentabilidad === 'rentable', // ✅ Basado en cálculo correcto
         rentabilidad: rentabilidad,
         emoji: emoji,
         texto: texto,
-        aceptado: viaje.aceptado !== undefined ? viaje.aceptado : true,
+        aceptado: viaje.aceptado !== undefined ? viaje.aceptado : true, // ✅ Respetar el valor
         fecha: new Date().toLocaleString('es-DO', {
             year: 'numeric',
             month: '2-digit',
@@ -1628,7 +1637,11 @@ async function agregarAlHistorial(viaje) {
         perfilNombre: perfilActual?.nombre
     };
     
-    console.log('📝 Viaje procesado para historial:', nuevoViaje);
+    console.log('📝 Viaje procesado para historial:', {
+        aceptado: nuevoViaje.aceptado,
+        rentabilidad: nuevoViaje.rentabilidad,
+        texto: nuevoViaje.texto
+    });
 
     historial.unshift(nuevoViaje);
     
@@ -1637,46 +1650,30 @@ async function agregarAlHistorial(viaje) {
     }
     
     localStorage.setItem('historialViajes', JSON.stringify(historial));
-    guardarDatos();
     
-     console.log('💾 Historial guardado localmente. Total viajes:', historial.length);
-    
-    // ✅ APRENDIZAJE MEJORADO CON TIEMPO REAL
-if (viaje.aceptado !== false) {
-    setTimeout(async () => {
-        if (window.routeLearningSystem && window.routeLearningSystem.learningEnabled) {
-            console.log('🧠 Iniciando análisis de aprendizaje...');
-            
-            // Si tenemos tiempo real, usarlo para aprendizaje más preciso
-            const datosAprendizaje = viaje.tiempoRealCapturado ? {
-                ...viaje,
-                minutos: viaje.tiempoReal, // Usar tiempo real para aprendizaje
-                gananciaPorMinuto: viaje.eficienciaReal
-            } : viaje;
-            
-            await window.routeLearningSystem.analyzeCompletedTrip(datosAprendizaje);
-        }
-    }, 1500);
-}
-    
-    if (firebaseSync && firebaseSync.initialized && nuevoViaje.aceptado) {
-        try {
-            console.log('☁️ Intentando sincronizar con Firebase...');
-            const exito = await firebaseSync.saveTrip(nuevoViaje);
-            if (exito) {
-                console.log('✅ Viaje sincronizado con Firebase');
-                mostrarStatus('✅ Viaje guardado y sincronizado', 'success');
-            } else {
-                console.log('⚠️ Viaje guardado localmente (Firebase falló)');
-                mostrarStatus('✅ Viaje guardado localmente', 'success');
+    // ✅ SOLO SINCRONIZAR Y APRENDER DE VIAJES ACEPTADOS
+    if (nuevoViaje.aceptado !== false) {
+        guardarDatos();
+        
+        if (firebaseSync && firebaseSync.initialized && nuevoViaje.aceptado) {
+            try {
+                console.log('☁️ Sincronizando viaje ACEPTADO con Firebase...');
+                await firebaseSync.saveTrip(nuevoViaje);
+                console.log('✅ Viaje aceptado sincronizado con Firebase');
+            } catch (error) {
+                console.error('❌ Error sincronizando con Firebase:', error);
             }
-        } catch (error) {
-            console.error('❌ Error sincronizando con Firebase:', error);
-            mostrarStatus('✅ Viaje guardado localmente', 'success');
+        }
+
+        // ✅ SOLO APRENDER DE VIAJES ACEPTADOS
+        if (window.routeLearningSystem && window.routeLearningSystem.learningEnabled) {
+            setTimeout(async () => {
+                console.log('🧠 Aprendiendo de viaje ACEPTADO...');
+                await window.routeLearningSystem.analyzeCompletedTrip(nuevoViaje);
+            }, 1500);
         }
     } else {
-        console.log('📱 Viaje guardado localmente (Firebase no disponible)');
-        mostrarStatus('✅ Viaje guardado localmente', 'success');
+        console.log('🚫 Viaje rechazado - no se sincroniza ni aprende');
     }
     
     if (nuevoViaje.aceptado) {
@@ -1717,37 +1714,46 @@ function actualizarHistorialConFiltros() {
         const distancia = viaje.distancia || 0;
         const porMinuto = viaje.porMinuto || viaje.gananciaPorMinuto || 0;
         const porKm = viaje.porKm || viaje.gananciaPorKm || 0;
-        const rentable = viaje.rentable !== undefined ? 
-                 Boolean(viaje.rentable) : 
-                 (viaje.rentabilidad === 'rentable');
+        const esAceptado = viaje.aceptado !== false;
+const esRentable = esAceptado ? (viaje.rentable !== undefined ? 
+         Boolean(viaje.rentable) : 
+         (viaje.rentabilidad === 'rentable')) : false;
         const fecha = viaje.fecha || 'Fecha desconocida';
         
         return `
-        <div class="history-item ${rentable ? 'rentable' : 'no-rentable'}">
-            <div class="history-header">
-                <span class="history-badge ${rentable ? 'badge-rentable' : 'badge-no-rentable'}">
-                    ${rentable ? '✅ RENTABLE' : '❌ NO RENTABLE'}
-                </span>
-                <span class="history-date">${fecha}</span>
-            </div>
-            <div class="history-details">
-                <div class="history-route">
-                    <strong>Ganancia:</strong> ${formatearMoneda(ganancia)}
-                </div>
-                <div class="history-metrics">
-                    <span class="metric">⏱️ ${minutos}min</span>
-                    <span class="metric">🛣️ ${distancia}${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}</span>
-                    <span class="metric">💰 ${formatearMoneda(porMinuto)}/min</span>
-                    <span class="metric">📏 ${formatearMoneda(porKm)}/${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}</span>
-                </div>
-            </div>
-            <div class="history-actions">
-                <button onclick="eliminarDelHistorial('${viaje.id}')" class="delete-btn" title="Eliminar">
-                    🗑️
-                </button>
-            </div>
+<div class="history-item ${esAceptado ? (esRentable ? 'rentable' : 'no-rentable') : 'rechazado'}">
+    <div class="history-header">
+        <span class="history-badge ${esAceptado ? (esRentable ? 'badge-rentable' : 'badge-no-rentable') : 'badge-rechazado'}">
+            ${viaje.emoji} ${viaje.texto}
+        </span>
+        <span class="history-date">${fecha}</span>
+    </div>
+    ${esAceptado ? `
+    <div class="history-details">
+        <div class="history-route">
+            <strong>Ganancia:</strong> ${formatearMoneda(ganancia)}
         </div>
-        `;
+        <div class="history-metrics">
+            <span class="metric">⏱️ ${minutos}min</span>
+            <span class="metric">🛣️ ${distancia}${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}</span>
+            <span class="metric">💰 ${formatearMoneda(porMinuto)}/min</span>
+            <span class="metric">📏 ${formatearMoneda(porKm)}/${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}</span>
+        </div>
+    </div>
+    ` : `
+    <div class="history-details">
+        <div class="history-route">
+            <em>Viaje rechazado - Sin ganancia</em>
+        </div>
+    </div>
+    `}
+    <div class="history-actions">
+        <button onclick="eliminarDelHistorial('${viaje.id}')" class="delete-btn" title="Eliminar">
+            🗑️
+        </button>
+    </div>
+</div>
+`;
     }).join('');
     
     console.log('✅ Historial actualizado correctamente');
@@ -2568,10 +2574,10 @@ function procesarViajeRapido(aceptado) {
     
     const viajeParaHistorial = {
         ...Actual,
-        aceptado: aceptado,
-        rentable: Actual.rentabilidad === 'rentable',
-        emoji: Actual.emoji,
-        texto: Actual.texto
+        aceptado: aceptado, // ✅ ESTO DEBE RESPETARSE
+        rentable: aceptado ? (Actual.rentabilidad === 'rentable') : false, // ✅ Si rechazas, NO es rentable
+        emoji: aceptado ? Actual.emoji : '❌', // ✅ Emoji diferente para rechazados
+        texto: aceptado ? Actual.texto : 'RECHAZADO' // ✅ Texto diferente
     };
     
     agregarAlHistorial(viajeParaHistorial);
@@ -3963,5 +3969,6 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
