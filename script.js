@@ -610,6 +610,10 @@ class RouteLearningSystem {
 
             // ✅ SISTEMA HÍBRIDO: Usa datos históricos O conservadores
             if (historicalStats && historicalStats.totalTrips >= 2) {
+                
+                const trafficFactor = Math.max(1.0, historicalStats.avgTrafficFactor); // ✅ Mínimo 1.0
+            const adjustedTime = Math.ceil(estimatedTime * trafficFactor);
+                
                 // Tenemos datos reales - usar predicción inteligente
                 return {
                     predictedEfficiency: historicalStats.avgEfficiency,
@@ -626,6 +630,9 @@ class RouteLearningSystem {
                 // Sin datos históricos - usar predicción conservadora
                 const conservative = this.conservativeData[timeSlot] || this.conservativeData.REGULAR;
                 const estimatedEfficiency = estimatedEarnings / estimatedTime;
+
+                 const trafficFactor = Math.max(1.0, conservative.trafficFactor);
+            const adjustedTime = Math.ceil(estimatedTime * trafficFactor);
                 
                 return {
                     predictedEfficiency: conservative.efficiency,
@@ -633,7 +640,7 @@ class RouteLearningSystem {
                     successRate: conservative.successRate,
                     confidence: 35,
                     dataPoints: 0,
-                    adjustedTime: Math.ceil(estimatedTime * conservative.trafficFactor),
+                   adjustedTime: adjustedTime,
                     recommendation: this.getConservativeRecommendation(estimatedEfficiency),
                     dataSource: 'CONSERVATIVE',
                     message: 'Predicción base - mejora con cada viaje'
@@ -666,6 +673,9 @@ class RouteLearningSystem {
     // Predicción conservadora de fallback
     getConservativePrediction(estimatedTime, timeSlot) {
         const conservative = this.conservativeData[timeSlot] || this.conservativeData.REGULAR;
+
+        const trafficFactor = Math.max(1.0, conservative.trafficFactor);
+    const adjustedTime = Math.ceil(estimatedTime * trafficFactor);
         
         return {
             predictedEfficiency: conservative.efficiency,
@@ -673,7 +683,7 @@ class RouteLearningSystem {
             successRate: conservative.successRate,
             confidence: 30,
             dataPoints: 0,
-            adjustedTime: Math.ceil(estimatedTime * conservative.trafficFactor),
+            adjustedTime: adjustedTime,
             recommendation: 'CONSERVATIVE_ESTIMATE',
             dataSource: 'FALLBACK',
             message: 'Usando datos base del sistema'
@@ -2029,17 +2039,33 @@ async function calcularAutomatico() {
             console.log('🎯 Solicitando predicciones inteligentes...');
             insights = await window.routeLearningSystem.getPredictiveInsights(minutos, distancia, tarifa);
             console.log('📈 Insights obtenidos:', insights);
+            
+            // ✅ DEBUG: Verificar qué está devolviendo el sistema
+            if (insights) {
+                console.log('🔍 DEBUG Insights:', {
+                    tiempoOriginal: minutos,
+                    tiempoAjustado: insights.adjustedTime,
+                    factorTrafico: insights.trafficFactor,
+                    deberiaSerMayor: insights.adjustedTime > minutos
+                });
+            }
         }
         
-        // Calcular rentabilidad con tiempo ajustado si hay insights
-        const tiempoParaCalculo = insights ? insights.adjustedTime : minutos;
+        // ✅ VERIFICAR LÓGICA: El tiempo ajustado DEBE ser mayor o igual
+        let tiempoParaCalculo = minutos;
+        if (insights) {
+            // ✅ CORREGIR: Asegurar que el tiempo con tráfico NUNCA sea menor
+            tiempoParaCalculo = Math.max(minutos, insights.adjustedTime);
+            console.log('✅ Tiempo final para cálculo:', tiempoParaCalculo);
+        }
+        
         const resultado = calcularRentabilidad(tarifa, tiempoParaCalculo, distancia);
         
         if (resultado) {
-            // ✅ AGREGAR INSIGHTS AL RESULTADO
+            // ✅ AGREGAR INSIGHTS CORREGIDOS
             if (insights) {
                 resultado.insights = insights;
-                resultado.tiempoAjustado = insights.adjustedTime;
+                resultado.tiempoAjustado = tiempoParaCalculo; // ✅ Usar el tiempo corregido
                 resultado.tiempoOriginal = minutos;
                 resultado.fuenteDatos = insights.dataSource;
             }
@@ -3995,6 +4021,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
