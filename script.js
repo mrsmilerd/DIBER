@@ -313,23 +313,28 @@ function detenerCronometro() {
     
     console.log('🛑 Cronómetro detenido. Tiempo real:', tiempoRealMinutos.toFixed(2), 'minutos');
 
-    // ✅ CORRECCIÓN: Remover modal ANTES de procesar
-    const modal = document.getElementById('modal-cronometro');
-    if (modal) {
-        modal.remove();
-        console.log('✅ Modal de cronómetro removido');
-    }
-
-    // Procesar viaje con tiempo real
+    // ✅ GUARDAR DATOS DEL VIAJE ANTES DE LIMPIAR
     if (cronometro.viajeActual) {
         procesarViajeConTiempoReal(tiempoRealMinutos);
     }
+    
+    // ✅ CERRAR MODAL DE CRONÓMETRO
+    const modalCronometro = document.getElementById('modal-cronometro');
+    if (modalCronometro) {
+        modalCronometro.remove();
+        console.log('✅ Modal de cronómetro cerrado');
+    }
+
+    // ✅ LIMPIAR FORMULARIO COMPLETAMENTE
+    limpiarFormularioCompleto();
     
     // Resetear cronómetro
     cronometro.activo = false;
     cronometro.inicio = null;
     cronometro.tiempoTranscurridoSegundos = 0;
     cronometro.viajeActual = null;
+    
+    console.log('✅ Flujo completado - De vuelta al formulario principal');
 }
 
 function debugCronometro() {
@@ -373,6 +378,11 @@ function procesarViajeConTiempoReal(tiempoRealMinutos) {
 
     // Mostrar resumen
     mostrarResumenTiempoReal(viajeConTiempoReal);
+    
+    // ✅ LIMPIAR FORMULARIO DESPUÉS DE MOSTRAR RESUMEN
+    setTimeout(() => {
+        limpiarFormularioCompleto();
+    }, 3000);
 }
 
 async function agregarAlHistorialConTiempoReal(viaje) {
@@ -421,6 +431,35 @@ function mostrarResumenTiempoReal(viaje) {
 ${mensaje}
 
 🧠 El sistema aprenderá de este tiempo real para mejorar las futuras predicciones!`);
+}
+
+function limpiarFormularioCompleto() {
+    console.log('🧹 Limpiando formulario completo...');
+    
+    // Limpiar timeout de cálculo automático
+    if (timeoutCalculoAutomatico) {
+        clearTimeout(timeoutCalculoAutomatico);
+        timeoutCalculoAutomatico = null;
+    }
+    
+    // Limpiar campos del formulario
+    if (elementos.tarifa) elementos.tarifa.value = '';
+    if (elementos.minutos) elementos.minutos.value = '';
+    if (elementos.distancia) elementos.distancia.value = '';
+    
+    // Ocultar resultado rápido
+    if (elementos['resultado-rapido']) {
+        elementos['resultado-rapido'].classList.add('hidden');
+    }
+    
+    // Limpiar variables
+    Actual = null;
+    calculoActual = null;
+    
+    // Cerrar cualquier modal abierto
+    cerrarModalRapido();
+    
+    console.log('✅ Formulario limpiado completamente');
 }
 
 // =============================================
@@ -2272,17 +2311,32 @@ function mostrarMensaje(mensaje, tipo = 'info') {
 }
 
 function limpiarFormulario() {
-     if (timeoutCalculoAutomatico) {
+    console.log('🧹 Limpiando formulario completo...');
+    
+    // Limpiar timeout de cálculo automático
+    if (timeoutCalculoAutomatico) {
         clearTimeout(timeoutCalculoAutomatico);
         timeoutCalculoAutomatico = null;
     }
     
+    // Limpiar campos del formulario
     if (elementos.tarifa) elementos.tarifa.value = '';
     if (elementos.minutos) elementos.minutos.value = '';
     if (elementos.distancia) elementos.distancia.value = '';
-    if (elementos['resultado-rapido']) elementos['resultado-rapido'].classList.add('hidden');
+    
+    // Ocultar resultado rápido
+    if (elementos['resultado-rapido']) {
+        elementos['resultado-rapido'].classList.add('hidden');
+    }
+    
+    // Limpiar variables
     Actual = null;
+    calculoActual = null;
+    
+    // Cerrar cualquier modal abierto
     cerrarModalRapido();
+    
+    console.log('✅ Formulario limpiado completamente');
 }
 
 function cerrarModal() {
@@ -2357,7 +2411,7 @@ function procesarViajeRapido(aceptado) {
         return;
     }
 
-    // ✅ CERRAR MODAL DE CÁLCULO RÁPIDO
+    // ✅ CERRAR MODAL DE CÁLCULO RÁPIDO INMEDIATAMENTE
     cerrarModalRapido();
     
     const viajeParaHistorial = {
@@ -2374,9 +2428,9 @@ function procesarViajeRapido(aceptado) {
         mostrarMensaje('✅ Viaje aceptado y guardado en historial', 'success');
     } else {
         mostrarMensaje('❌ Viaje rechazado', 'info');
+        // ✅ LIMPIAR FORMULARIO CUANDO SE RECHAZA
+        limpiarFormulario();
     }
-    
-    limpiarFormulario();
     
     actualizarEstadisticas();
     actualizarHistorialConFiltros();
@@ -2531,19 +2585,11 @@ function iniciarCronometroDesdeModal() {
 }
 
 function cerrarModalRapido() {
-    const modal = document.getElementById('modal-rapido');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-// ✅ RESTAURAR SCROLL AL CERRAR
-function cerrarModalRapido() {
     const modalRapido = document.getElementById('modal-rapido');
     if (modalRapido) {
-        modalRapido.classList.add('hidden');
-        document.body.style.overflow = ''; // Restaurar scroll
+        modalRapido.remove(); // ✅ ELIMINA COMPLETAMENTE EL MODAL
     }
+    calculoActual = null; // ✅ LIMPIA EL CÁLCULO ACTUAL
 }
 
 function iniciarCronometroDesdeModal() {
@@ -3695,6 +3741,8 @@ window.cerrarModal = cerrarModal;
 window.cerrarModalRapido = cerrarModalRapido;
 window.cerrarExportModal = cerrarExportModal;
 window.cerrarSyncPanel = cerrarSyncPanel;
+window.limpiarFormulario = limpiarFormulario;
+window.limpiarFormularioCompleto = limpiarFormularioCompleto;
 window.mostrarConfigPerfil = mostrarConfigPerfil;
 window.seleccionarPerfil = seleccionarPerfil;
 window.editarPerfil = editarPerfil;
@@ -3757,6 +3805,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
