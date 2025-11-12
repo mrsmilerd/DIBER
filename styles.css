@@ -3892,4 +3892,19 @@ function agregarEstilosTrafico() {
         padding: 16px;
         font-size: 1em;
     }
+
+    .history-item.rechazado {
+    background: #fff3f3;
+    border-left: 4px solid #ff6b6b;
 }
+
+.badge-rechazado {
+    background: #ff6b6b;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+}
+
