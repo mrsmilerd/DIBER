@@ -893,6 +893,63 @@ class FirebaseSync {
 }
 
 // =============================================
+// LIMPIAR DATOS MULTI-DISPOSITIVO - CORREGIDO
+// =============================================
+
+async function limpiarDatosMultiDispositivo() {
+    if (!firebaseSync || !firebaseSync.initialized) {
+        mostrarError('Firebase no disponible para limpieza multi-dispositivo');
+        return;
+    }
+    
+    if (confirm('¿Estás seguro? Esto eliminará TODOS tus viajes en TODOS los dispositivos. Esta acción no se puede deshacer.')) {
+        try {
+            mostrarStatus('🔄 Limpiando datos en todos los dispositivos...', 'info');
+            
+            // Limpiar localmente primero
+            historial = [];
+            localStorage.setItem('historialViajes', JSON.stringify(historial));
+            
+            // Limpiar en Firebase
+            const tripsRef = firebaseSync.db.collection('users').doc(userCodeSystem.userId)
+                .collection('trips');
+            
+            const snapshot = await tripsRef.get();
+            const batch = firebaseSync.db.batch();
+            
+            snapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            
+            await batch.commit();
+            
+            // Limpiar datos de aprendizaje
+            const learningRef = firebaseSync.db.collection('route_learning')
+                .where('userId', '==', userCodeSystem.userId);
+                
+            const learningSnapshot = await learningRef.get();
+            const learningBatch = firebaseSync.db.batch();
+            
+            learningSnapshot.forEach(doc => {
+                learningBatch.delete(doc.ref);
+            });
+            
+            await learningBatch.commit();
+            
+            console.log('✅ Datos limpiados en todos los dispositivos');
+            mostrarStatus('✅ Datos limpiados en todos los dispositivos', 'success');
+            
+            actualizarHistorialConFiltros();
+            actualizarEstadisticas();
+            
+        } catch (error) {
+            console.error('❌ Error limpiando datos multi-dispositivo:', error);
+            mostrarError('Error limpiando datos en la nube');
+        }
+    }
+}
+
+// =============================================
 // INICIALIZACIÓN DE ELEMENTOS DOM - CORREGIDA
 // =============================================
 
@@ -3700,6 +3757,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
