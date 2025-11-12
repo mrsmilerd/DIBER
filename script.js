@@ -3703,6 +3703,7 @@ window.setUserCode = setUserCode;
 window.cambiarUsuario = cambiarUsuario;
 window.eliminarDelHistorial = eliminarDelHistorial;
 window.limpiarHistorialCompleto = limpiarHistorialCompleto;
+window.limpiarDatosMultiDispositivo = limpiarDatosMultiDispositivo;
 window.procesarViajeRapido = procesarViajeRapido;
 window.mostrarPanelSync = mostrarPanelSync;
 window.forzarSincronizacion = forzarSincronizacion;
@@ -3755,6 +3756,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
