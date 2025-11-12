@@ -889,12 +889,14 @@ class FirebaseSync {
         return null;
     }
 }
+    
+}
 
 // =============================================
 // INICIALIZACIÓN DE ELEMENTOS DOM - CORREGIDA
 // =============================================
 
-    function inicializarElementosDOM() {
+function inicializarElementosDOM() {
     console.log('🔍 Inicializando elementos DOM...');
     
     const ids = [
@@ -923,7 +925,6 @@ class FirebaseSync {
         'code-status', 'sync-perfil-info', 'sync-panel-status', 'current-device-icon',
         'current-device-name', 'current-device-id', 'firebase-status', 'last-sync-time',
         'cloud-profiles-count', 'cloud-history-count', 'force-sync-btn'
-        // 'user-code-banner' removido - se integrará en header-actions
     ];
 
     ids.forEach(id => {
@@ -3699,6 +3700,7 @@ window.onclick = function(event) {
         }
     }
 };
+
 
 
 
