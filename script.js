@@ -929,8 +929,81 @@ class FirebaseSync {
     }
 }
     
-}
+ async startRealTimeListeners() {
+        if (!this.initialized) return;
+        
+        try {
+            console.log('👂 Iniciando escuchadores en tiempo real...');
+            
+            // Escuchar cambios en viajes
+            this.tripsUnsubscribe = this.db.collection('users').doc(this.userId)
+                .collection('trips')
+                .onSnapshot(async (snapshot) => {
+                    console.log('🔄 Cambios detectados en viajes de Firebase');
+                    
+                    snapshot.docChanges().forEach(async (change) => {
+                        if (change.type === 'removed') {
+                            // ✅ VIAJE ELIMINADO EN OTRO DISPOSITIVO
+                            const deletedTripId = change.doc.id;
+                            console.log('🗑️ Viaje eliminado en otro dispositivo:', deletedTripId);
+                            
+                            // Eliminar localmente
+                            const index = historial.findIndex(viaje => viaje.id === deletedTripId);
+                            if (index !== -1) {
+                                historial.splice(index, 1);
+                                localStorage.setItem('historialViajes', JSON.stringify(historial));
+                                console.log('✅ Viaje eliminado localmente por sincronización');
+                                
+                                // Actualizar interfaz
+                                actualizarHistorialConFiltros();
+                                actualizarEstadisticas();
+                                mostrarStatus('🔄 Historial actualizado desde la nube', 'info');
+                            }
+                        }
+                        
+                        if (change.type === 'added') {
+                            // ✅ VIAJE AGREGADO EN OTRO DISPOSITIVO
+                            const newTrip = change.doc.data();
+                            console.log('➕ Viaje agregado en otro dispositivo:', newTrip.id);
+                            
+                            // Verificar si ya existe localmente
+                            const exists = historial.some(viaje => viaje.id === newTrip.id);
+                            if (!exists) {
+                                historial.unshift(newTrip);
+                                
+                                // Limitar a 100 viajes
+                                if (historial.length > 100) {
+                                    historial = historial.slice(0, 100);
+                                }
+                                
+                                localStorage.setItem('historialViajes', JSON.stringify(historial));
+                                console.log('✅ Viaje agregado localmente por sincronización');
+                                
+                                // Actualizar interfaz
+                                actualizarHistorialConFiltros();
+                                actualizarEstadisticas();
+                                mostrarStatus('🔄 Nuevo viaje sincronizado', 'info');
+                            }
+                        }
+                    });
+                }, (error) => {
+                    console.error('❌ Error en escuchador de viajes:', error);
+                });
 
+            console.log('✅ Escuchadores en tiempo real activados');
+            
+        } catch (error) {
+            console.error('❌ Error iniciando escuchadores:', error);
+        }
+    }
+
+    stopRealTimeListeners() {
+        if (this.tripsUnsubscribe) {
+            this.tripsUnsubscribe();
+            console.log('🔇 Escuchadores detenidos');
+        }
+    }
+}
 // =============================================
 // LIMPIAR DATOS MULTI-DISPOSITIVO - CORREGIDO
 // =============================================
@@ -1243,6 +1316,11 @@ async function initializeFirebaseSync() {
         console.log('✅ Firebase Sync inicializado CORRECTAMENTE');
         firebaseInitialized = true;
         
+        // ✅ INICIAR ESCUCHADORES EN TIEMPO REAL
+        setTimeout(() => {
+            firebaseSync.startRealTimeListeners();
+        }, 2000);
+        
         if (!loadingData) {
             setTimeout(async () => {
                 await cargarDatos();
@@ -1397,6 +1475,67 @@ async function guardarDatos() {
         } catch (error) {
             console.error('❌ Error sincronizando con Firebase:', error);
         }
+    }
+}
+
+async function forzarSincronizacionCompleta() {
+    if (!firebaseSync || !firebaseSync.initialized) {
+        mostrarError('Firebase no está disponible');
+        return;
+    }
+    
+    console.log('🔄 INICIANDO SINCRONIZACIÓN COMPLETA BIDIRECCIONAL...');
+    mostrarStatus('🔄 Sincronizando todos los datos...', 'info');
+    
+    try {
+        // ✅ 1. SUBIR DATOS LOCALES
+        console.log('📤 Subiendo perfiles...');
+        for (const perfil of perfiles) {
+            await firebaseSync.saveProfile(perfil);
+        }
+        
+        console.log('📤 Subiendo viajes locales...');
+        const viajesLocales = historial.filter(item => item.aceptado !== false);
+        let viajesSubidos = 0;
+        
+        for (const viaje of viajesLocales) {
+            const exito = await firebaseSync.saveTrip(viaje);
+            if (exito) viajesSubidos++;
+        }
+        
+        // ✅ 2. DESCARGAR DATOS DE FIREBASE
+        console.log('📥 Descargando viajes de Firebase...');
+        const cloudTrips = await firebaseSync.loadTrips();
+        if (cloudTrips && cloudTrips.length > 0) {
+            let viajesDescargados = 0;
+            
+            cloudTrips.forEach(cloudTrip => {
+                const exists = historial.some(localTrip => localTrip.id === cloudTrip.id);
+                if (!exists) {
+                    historial.unshift(cloudTrip);
+                    viajesDescargados++;
+                }
+            });
+            
+            // Ordenar y limitar
+            historial = historial
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .slice(0, 100);
+            
+            localStorage.setItem('historialViajes', JSON.stringify(historial));
+            console.log(`✅ ${viajesDescargados} viajes descargados de Firebase`);
+        }
+        
+        console.log('✅ Sincronización bidireccional completada');
+        mostrarStatus(`✅ Sincronizado: ${viajesSubidos} subidos, ${historial.length} en total`, 'success');
+        
+        // Actualizar interfaz
+        actualizarEstadisticas();
+        actualizarHistorialConFiltros();
+        
+    } catch (error) {
+        console.error('❌ Error en sincronización completa:', error);
+        mostrarStatus('❌ Error en sincronización', 'error');
     }
 }
 
@@ -1628,25 +1767,20 @@ async function eliminarDelHistorial(viajeId) {
         
         console.log('✅ Viaje eliminado correctamente. Nuevo total:', historial.length);
         
-        actualizarHistorialConFiltros();
-        actualizarEstadisticas();
-        
-        mostrarMensaje('Viaje eliminado correctamente', 'success');
-        
-        // ✅ SINCRONIZAR ELIMINACIÓN CON FIREBASE
+        // ✅ SINCRONIZAR ELIMINACIÓN CON FIREBASE INMEDIATAMENTE
         if (firebaseSync && firebaseSync.initialized) {
             try {
-                console.log('☁️ Intentando eliminar de Firebase...');
+                console.log('☁️ Sincronizando eliminación con Firebase...');
+                
+                // 1. Eliminar de la colección de trips
                 const tripRef = firebaseSync.db.collection('users').doc(userCodeSystem.userId)
                     .collection('trips').doc(viajeId);
-                
                 await tripRef.delete();
-                console.log('✅ Viaje eliminado de Firebase');
                 
-                // También eliminar de route_learning si existe
+                // 2. También eliminar de route_learning si existe
                 const learningQuery = await firebaseSync.db.collection('route_learning')
                     .where('userId', '==', userCodeSystem.userId)
-                    .where('timestamp', '==', viajeEliminado.timestamp)
+                    .where('relatedTripId', '==', viajeId)
                     .get();
                 
                 if (!learningQuery.empty) {
@@ -1658,10 +1792,19 @@ async function eliminarDelHistorial(viajeId) {
                     console.log('✅ Datos de aprendizaje eliminados de Firebase');
                 }
                 
+                console.log('✅ Eliminación sincronizada con todos los dispositivos');
+                mostrarStatus('✅ Viaje eliminado y sincronizado', 'success');
+                
             } catch (error) {
-                console.error('❌ Error eliminando de Firebase:', error);
+                console.error('❌ Error sincronizando eliminación:', error);
+                mostrarStatus('✅ Viaje eliminado localmente', 'success');
             }
+        } else {
+            mostrarStatus('✅ Viaje eliminado localmente', 'success');
         }
+        
+        actualizarHistorialConFiltros();
+        actualizarEstadisticas();
     }
 }
 
@@ -3806,29 +3949,8 @@ window.onclick = function(event) {
     }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+window.addEventListener('beforeunload', function() {
+    if (firebaseSync) {
+        firebaseSync.stopRealTimeListeners();
+    }
+});
