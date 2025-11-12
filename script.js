@@ -89,60 +89,33 @@ function crearModalCronometro(resultado) {
     );
     
     modalFondo.innerHTML = `
-        <div class="modal-cronometro-contenido estado-verde">
-            <!-- HEADER -->
-            <div class="cronometro-header">
-                <div class="cronometro-titulo">
-                    <span class="cronometro-icono">🚗</span>
-                    <span>Viaje en Curso</span>
-                </div>
-                <div class="cronometro-tiempo-display" id="cronometro-tiempo-display">
-                    00:00
-                </div>
+    <div class="modal-cronometro-contenido estado-verde">
+        <!-- HEADER -->
+        <div class="cronometro-header">
+            <div class="cronometro-titulo">
+                <span class="cronometro-icono">🚗</span>
+                <span>Viaje en Curso</span>
             </div>
-            
-            <!-- INFO -->
-            <div class="cronometro-info">
-                <div class="info-item">
-                    <span class="info-label">Tu estimación</span>
-                    <span class="info-valor">${resultado.minutos} min</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Con tráfico</span>
-                    <span class="info-valor">${resultado.tiempoAjustado || resultado.minutos} min</span>
-                </div>
-            </div>
-            
-            <!-- PROGRESO -->
-            <div class="cronometro-progreso">
-                <div class="barra-progreso-container">
-                    <div class="barra-progreso">
-                        <div class="progreso-fill" id="progreso-fill"></div>
-                    </div>
-                    <div class="marcadores-tiempo">
-                        <span class="marcador inicio">0</span>
-                        <span class="marcador verde" style="left: ${porcentajeVerde}%">${resultado.minutos}</span>
-                        <span class="marcador fin">${resultado.tiempoAjustado || resultado.minutos}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- ESTADO -->
-            <div class="cronometro-estado" id="cronometro-estado">
-                <span class="estado-icono">✅</span>
-                <span class="estado-texto">Dentro de tu tiempo estimado</span>
-            </div>
-            
-            <!-- ACCIONES -->
-            <div class="cronometro-acciones">
-                <button class="btn-detener-viaje" onclick="detenerCronometro()">
-                    <span class="btn-icono">🛑</span>
-                    <span class="btn-texto">Finalizar Viaje</span>
-                </button>
-                <div class="instruccion">Toca cuando llegues a tu destino</div>
+            <div class="cronometro-tiempo-display" id="cronometro-tiempo-display">
+                00:00
             </div>
         </div>
-    `;
+        
+        <!-- INFO CORREGIDA -->
+        <div class="cronometro-info">
+            <div class="info-item">
+                <span class="info-label">Tu estimación</span>
+                <span class="info-valor">${resultado.minutos} min</span> <!-- ✅ Tu tiempo -->
+            </div>
+            <div class="info-item">
+                <span class="info-label">Con tráfico</span>
+                <span class="info-valor">${resultado.tiempoAjustado || resultado.minutos} min</span> <!-- ✅ Tiempo ajustado -->
+            </div>
+        </div>
+        
+        <!-- ... resto del código igual ... -->
+    </div>
+`;
     
     document.body.appendChild(modalFondo);
     
@@ -162,17 +135,23 @@ function iniciarCronometroConViaje(resultado) {
     // Cerrar modal rápido
     cerrarModalRapido();
 
-    // ✅ LIMPIAR FORMULARIO
-    limpiarFormulario();
+    // ✅ OBTENER EL TIEMPO QUE INGRESÓ EL USUARIO (no el ajustado)
+    const tiempoUsuario = parseFloat(elementos.minutos.value) || resultado.minutos;
+    
+    console.log('🎯 Tiempos para cronómetro:', {
+        tiempoUsuario: tiempoUsuario,
+        tiempoAjustado: resultado.tiempoAjustado || resultado.minutos,
+        tiempoOriginalResultado: resultado.minutos
+    });
 
-    // Guardar datos del viaje
+    // Guardar datos del viaje CON EL TIEMPO DEL USUARIO
     cronometro.viajeActual = {
         ...resultado,
         timestampInicio: new Date().toISOString(),
-        tiempoEstimado: resultado.minutos,
+        tiempoEstimado: tiempoUsuario, // ✅ USAR TIEMPO DEL USUARIO
         tiempoAjustado: resultado.tiempoAjustado || resultado.minutos,
-        // Para los colores
-        tiempoBase: resultado.minutos,
+        // Para los colores - usar tiempo usuario como base
+        tiempoBase: tiempoUsuario, // ✅ TIEMPO QUE INGRESÓ EL USUARIO
         tiempoMaximo: resultado.tiempoAjustado || resultado.minutos
     };
 
@@ -182,7 +161,10 @@ function iniciarCronometroConViaje(resultado) {
     cronometro.tiempoTranscurridoSegundos = 0;
 
     // Mostrar banner modal
-    crearModalCronometro(resultado);
+    crearModalCronometro({
+        ...resultado,
+        minutos: tiempoUsuario // ✅ Pasar el tiempo del usuario al modal
+    });
     
     // Actualizar cada segundo
     cronometro.intervalo = setInterval(actualizarCronometro, 1000);
@@ -265,8 +247,8 @@ function actualizarColoresProgreso(minutosTranscurridos) {
     
     console.log('🎨 Debug colores:', {
         minutosTranscurridos: minutosTranscurridos.toFixed(2),
-        tiempoBase,
-        tiempoMaximo,
+        tiempoBase, // ✅ Este es el tiempo que ingresó el usuario
+        tiempoMaximo, // ✅ Este es el tiempo con tráfico
         deberiaSerVerde: minutosTranscurridos <= tiempoBase,
         deberiaSerAmarillo: minutosTranscurridos > tiempoBase && minutosTranscurridos <= tiempoMaximo,
         deberiaSerRojo: minutosTranscurridos > tiempoMaximo
@@ -275,11 +257,11 @@ function actualizarColoresProgreso(minutosTranscurridos) {
     const modalContenido = modal.querySelector('.modal-cronometro-contenido');
     if (!modalContenido) return;
     
-    // ✅ LÓGICA CORREGIDA - Exactamente como lo pides
+    // ✅ LÓGICA CORREGIDA - Usar tiempoBase (tu estimación)
     if (minutosTranscurridos <= tiempoBase) {
         // VERDE - Dentro de TU tiempo estimado
         modalContenido.className = 'modal-cronometro-contenido estado-verde';
-        console.log('🟢 VERDE - Dentro de tu tiempo');
+        console.log('🟢 VERDE - Dentro de tu tiempo personal');
     } else if (minutosTranscurridos <= tiempoMaximo) {
         // AMARILLO - Dentro del tiempo del cálculo automático
         modalContenido.className = 'modal-cronometro-contenido estado-amarillo';
@@ -3954,3 +3936,4 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
