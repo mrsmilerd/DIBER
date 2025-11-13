@@ -11,30 +11,59 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-    <!-- GOOGLE MAPS API -->
+ <!-- ✅ SCRIPT MEJORADO PARA CARGAR GOOGLE MAPS -->
     <script>
-  // Configuración global de Google Maps
-  window.GOOGLE_MAPS_API_KEY = 'AIzaSyB17REl6ZbCavA4DKkn1ZjOdbnNWLBFKMs';
-</script>
-
-<!-- Cargar Google Maps API CORRECTAMENTE -->
-<script>
-  function loadGoogleMaps() {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyB17REl6ZbCavA4DKkn1ZjOdbnNWLBFKMs&libraries=geometry&loading=async&callback=initApp`;
-      script.async = true;
-      script.defer = true;
-      
-      window.initApp = function() {
-        resolve();
-      };
-      
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-  }
-</script>
+        // Configuración global de Google Maps
+        window.GOOGLE_MAPS_API_KEY = 'AIzaSyB17REl6ZbCavA4DKkn1ZjOdbnNWLBFKMs';
+        
+        // Función para cargar Google Maps de forma asíncrona
+        function loadGoogleMaps() {
+            return new Promise((resolve, reject) => {
+                // Si ya está cargado, resolver inmediatamente
+                if (window.google && window.google.maps) {
+                    console.log('✅ Google Maps ya estaba cargado');
+                    resolve();
+                    return;
+                }
+                
+                // Verificar si ya hay un script cargándose
+                if (window.googleMapsLoading) {
+                    console.log('🔄 Google Maps ya se está cargando...');
+                    // Esperar a que termine la carga actual
+                    const checkLoaded = setInterval(() => {
+                        if (window.google && window.google.maps) {
+                            clearInterval(checkLoaded);
+                            resolve();
+                        }
+                    }, 100);
+                    return;
+                }
+                
+                window.googleMapsLoading = true;
+                console.log('🗺️ Cargando Google Maps API...');
+                
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GOOGLE_MAPS_API_KEY}&libraries=geometry&callback=handleGoogleMapsLoaded`;
+                script.async = true;
+                script.defer = true;
+                
+                // Callback cuando Google Maps carga
+                window.handleGoogleMapsLoaded = function() {
+                    console.log('✅ Google Maps API cargada correctamente');
+                    window.googleMapsLoading = false;
+                    resolve();
+                };
+                
+                script.onerror = function(error) {
+                    console.error('❌ Error cargando Google Maps:', error);
+                    window.googleMapsLoading = false;
+                    reject(new Error('Failed to load Google Maps'));
+                };
+                
+                document.head.appendChild(script);
+            });
+        }
+    </script>
 </head>
 <body>
     <!-- Modal de Código de Usuario -->
@@ -1305,6 +1334,7 @@
     </style>
 </body>
 </html>
+
 
 
 
