@@ -3108,6 +3108,11 @@ async function inicializarSistemaTraficoCompleto() {
     console.log('🚗 Inicializando sistema de tráfico en tiempo real...');
     
     try {
+        // Verificar que Google Maps esté disponible
+        if (!window.google || !window.google.maps) {
+            throw new Error('Google Maps no está disponible');
+        }
+        
         realTimeTraffic = new RealTimeTrafficSystem();
         await realTimeTraffic.initializeGoogleMaps();
         
@@ -3124,6 +3129,7 @@ async function inicializarSistemaTraficoCompleto() {
     } catch (error) {
         console.error('❌ Error inicializando sistema de tráfico:', error);
         // No impedir que la app funcione si falla Google Maps
+        realTimeTraffic = null;
         return false;
     }
 }
@@ -4029,8 +4035,8 @@ async function inicializarApp() {
     inicializarElementosDOM();
     
     try {
-        // ✅ ESPERAR A QUE GOOGLE MAPS CARGUE PRIMERO
-        console.log('🗺️ Esperando carga de Google Maps...');
+        // ✅ CARGAR GOOGLE MAPS PRIMERO
+        console.log('🗺️ Cargando Google Maps...');
         await waitForGoogleMaps();
         console.log('✅ Google Maps cargado correctamente');
         
@@ -4041,8 +4047,8 @@ async function inicializarApp() {
             return;
         }
         
-        // ✅ INICIALIZAR GOOGLE MAPS
-        console.log('🗺️ Inicializando sistema de tráfico...');
+        // ✅ INICIALIZAR SISTEMA DE TRÁFICO
+        console.log('🚗 Inicializando sistema de tráfico...');
         const mapsInitialized = await inicializarSistemaTraficoCompleto();
         
         if (mapsInitialized) {
@@ -4051,6 +4057,7 @@ async function inicializarApp() {
             console.log('⚠️ Google Maps no disponible, usando modo local');
         }
         
+        // ✅ INICIALIZAR FIREBASE
         await initializeFirebaseSync();
         
         // ✅ INICIALIZAR SISTEMA DE AUTO-APRENDIZAJE
@@ -4085,8 +4092,20 @@ async function inicializarApp() {
         
     } catch (error) {
         console.error('❌ Error crítico en inicialización:', error);
-        mostrarPantalla('perfil');
-        mostrarStatus('Error al cargar la aplicación. Por favor, recarga la página.', 'error');
+        
+        // Modo de fallback sin Google Maps
+        mostrarStatus('⚠️ Modo local activado (Google Maps no disponible)', 'info');
+        
+        // Inicializar sin Google Maps
+        await initializeUserCodeSystem();
+        await initializeFirebaseSync();
+        await cargarDatos();
+        
+        if (perfiles.length === 0) {
+            mostrarPantalla('perfil');
+        } else {
+            mostrarPantalla('main');
+        }
     }
 }
 
@@ -4095,25 +4114,42 @@ function waitForGoogleMaps() {
     return new Promise((resolve, reject) => {
         // Si ya está cargado, resolver inmediatamente
         if (window.google && window.google.maps) {
+            console.log('✅ Google Maps ya estaba cargado');
             resolve();
             return;
         }
-        
-        // Esperar a que cargue
-        let attempts = 0;
-        const maxAttempts = 50; // 5 segundos máximo
-        
-        const checkInterval = setInterval(() => {
-            attempts++;
+
+        // Si no está cargado, usar el método global
+        if (window.loadGoogleMaps) {
+            console.log('🔄 Cargando Google Maps...');
+            window.loadGoogleMaps()
+                .then(() => {
+                    console.log('✅ Google Maps cargado exitosamente');
+                    resolve();
+                })
+                .catch(error => {
+                    console.error('❌ Error cargando Google Maps:', error);
+                    reject(error);
+                });
+        } else {
+            // Fallback: esperar a que cargue
+            let attempts = 0;
+            const maxAttempts = 50;
             
-            if (window.google && window.google.maps) {
-                clearInterval(checkInterval);
-                resolve();
-            } else if (attempts >= maxAttempts) {
-                clearInterval(checkInterval);
-                reject(new Error('Timeout: Google Maps no cargó después de 5 segundos'));
-            }
-        }, 100);
+            const checkInterval = setInterval(() => {
+                attempts++;
+                
+                if (window.google && window.google.maps) {
+                    clearInterval(checkInterval);
+                    console.log('✅ Google Maps detectado después de ' + attempts + ' intentos');
+                    resolve();
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    console.error('❌ Timeout: Google Maps no cargó');
+                    reject(new Error('Google Maps no cargó después de 5 segundos'));
+                }
+            }, 100);
+        }
     });
 }
 
@@ -4219,6 +4255,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
