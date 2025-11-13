@@ -388,7 +388,6 @@
             <div class="form-icon">🚗</div>
             <div class="form-title-content">
                 <h2 class="form-title">Calcular Viaje</h2>
-                <p class="form-subtitle">Ingresa los datos para analizar rentabilidad</p>
             </div>
         </div>
 
@@ -399,47 +398,35 @@
                 <div class="input-header">
                     <span class="input-icon">💰</span>
                     <label for="tarifa" class="input-label">Ganancia Ofrecida</label>
-                    <span class="required-badge">*</span>
-                </div>
+                    </div>
                 <div class="input-container-elegante">
                     <input type="number" id="tarifa" class="input-field-elegante" 
                            min="0" step="0.01" required inputmode="decimal"
                            placeholder="0.00">
-                    <span class="input-unit-elegante" id="moneda-tarifa">DOP</span>
                 </div>
-                <div class="input-hint">Ingresa el monto total del viaje</div>
-            </div>
 
             <!-- Campo Tiempo -->
             <div class="input-group-elegante">
                 <div class="input-header">
                     <span class="input-icon">⏱️</span>
                     <label for="minutos" class="input-label">Tiempo Estimado</label>
-                    <span class="required-badge">*</span>
                 </div>
                 <div class="input-container-elegante">
                     <input type="number" id="minutos" class="input-field-elegante" 
                            min="1" step="1" required inputmode="numeric"
                            placeholder="0">
-                    <span class="input-unit-elegante">min</span>
-                </div>
-                <div class="input-hint">Tiempo aproximado del viaje en minutos</div>
             </div>
 
             <!-- Campo Distancia -->
             <div class="input-group-elegante">
                 <div class="input-header">
                     <span class="input-icon">🛣️</span>
-                    <label for="distancia" class="input-label">Distancia Estimada</label>
-                    <span class="required-badge">*</span>
+                    <label for="distancia" class="input-label">Distancia Estimada</label>>
                 </div>
                 <div class="input-container-elegante">
                     <input type="number" id="distancia" class="input-field-elegante" 
                            min="0" step="0.1" required inputmode="decimal"
                            placeholder="0.0">
-                    <span class="input-unit-elegante" id="distancia-unit">Km</span>
-                </div>
-                <div class="input-hint">Distancia total del recorrido</div>
             </div>
         </div>
 
@@ -449,7 +436,6 @@
                 <span class="trafico-icon">📍</span>
                 <div class="trafico-info">
                     <span class="trafico-title">Análisis de Tráfico en Tiempo Real</span>
-                    <span class="trafico-desc">Mejora la precisión de tus cálculos</span>
                 </div>
             </div>
             <button type="button" id="activar-ubicacion-btn" class="btn-trafico-elegante">
@@ -458,7 +444,7 @@
             </button>
             <div id="location-status" class="location-status-elegante hidden">
                 <span class="status-icon">✅</span>
-                <span class="status-text">Ubicación activa - Tráfico monitoreado</span>
+                <span class="status-text">Tráfico monitoreado</span>
             </div>
         </div>
 
@@ -503,13 +489,7 @@
                 </button>
             </div>
         </div>
-
-        <!-- Indicador de Estado -->
-        <div class="form-status-elegante">
-            <div class="status-indicator-elegante hidden" id="status-indicator">
-                <div class="status-spinner"></div>
-                <span class="status-text" id="status-text">Calculando...</span>
-            </div>
+                
         </div>
     </div>
 </div>
@@ -1390,4 +1370,5 @@
     </style>
 </body>
 </html>
+
 
