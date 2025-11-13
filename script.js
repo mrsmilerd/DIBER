@@ -4015,17 +4015,8 @@ function diagnosticarSincronizacion() {
 }
 
 // =============================================
-// INICIALIZACIÓN MEJORADA CON GOOGLE MAPS
+// INICIALIZACIÓN MEJORADA - VERSIÓN CORREGIDA
 // =============================================
-
-function iniciarSincronizacionAutomatica() {
-    setInterval(async () => {
-        if (firebaseSync && firebaseSync.initialized && document.visibilityState === 'visible') {
-            console.log('🔄 Sincronización automática...');
-            await guardarDatos();
-        }
-    }, 30000); // 30 segundos
-}
 
 async function inicializarApp() {
     if (window.appInitialized) {
@@ -4038,6 +4029,11 @@ async function inicializarApp() {
     inicializarElementosDOM();
     
     try {
+        // ✅ ESPERAR A QUE GOOGLE MAPS CARGUE PRIMERO
+        console.log('🗺️ Esperando carga de Google Maps...');
+        await waitForGoogleMaps();
+        console.log('✅ Google Maps cargado correctamente');
+        
         const userCodeInitialized = await initializeUserCodeSystem();
         
         if (!userCodeInitialized) {
@@ -4045,8 +4041,15 @@ async function inicializarApp() {
             return;
         }
         
-        // ✅ INICIALIZAR GOOGLE MAPS PRIMERO
-        await inicializarSistemaTraficoCompleto();
+        // ✅ INICIALIZAR GOOGLE MAPS
+        console.log('🗺️ Inicializando sistema de tráfico...');
+        const mapsInitialized = await inicializarSistemaTraficoCompleto();
+        
+        if (mapsInitialized) {
+            console.log('✅ Sistema de tráfico inicializado correctamente');
+        } else {
+            console.log('⚠️ Google Maps no disponible, usando modo local');
+        }
         
         await initializeFirebaseSync();
         
@@ -4087,10 +4090,31 @@ async function inicializarApp() {
     }
 }
 
-// Función callback para Google Maps
-function inicializarAppMaps() {
-    console.log('✅ Google Maps API cargada correctamente');
-    // La app se inicializa desde inicializarApp()
+// ✅ NUEVA FUNCIÓN: Esperar a que Google Maps cargue
+function waitForGoogleMaps() {
+    return new Promise((resolve, reject) => {
+        // Si ya está cargado, resolver inmediatamente
+        if (window.google && window.google.maps) {
+            resolve();
+            return;
+        }
+        
+        // Esperar a que cargue
+        let attempts = 0;
+        const maxAttempts = 50; // 5 segundos máximo
+        
+        const checkInterval = setInterval(() => {
+            attempts++;
+            
+            if (window.google && window.google.maps) {
+                clearInterval(checkInterval);
+                resolve();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                reject(new Error('Timeout: Google Maps no cargó después de 5 segundos'));
+            }
+        }, 100);
+    });
 }
 
 // AGREGAR estas funciones utilitarias:
@@ -4195,6 +4219,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
