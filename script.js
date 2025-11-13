@@ -2712,75 +2712,170 @@ function mostrarResultadoRapido(resultado) {
 
     const modal = document.createElement('div');
     modal.id = 'modal-rapido';
-    modal.className = 'modal-centrado-elegante';
+    modal.className = 'modal-elegante';
     
     // Determinar clase de rentabilidad
     const claseRentabilidad = resultado.rentabilidad || 'oportunidad';
+    const descripcion = obtenerDescripcionRentabilidad(resultado);
     
     modal.innerHTML = `
-        <div class="modal-contenido-centrado ${claseRentabilidad}">
-            <!-- HEADER -->
-            <div class="modal-header-centrado">
-                <div class="modal-titulo">🎯 Análisis Completado</div>
-                <div class="modal-subtitulo">Resultado del cálculo automático</div>
-            </div>
-
-            <!-- BADGE DE RESULTADO -->
-            <div style="text-align: center;">
-                <div class="badge-resultado-centrado">
-                    <div class="badge-emoji-grande">${resultado.emoji}</div>
-                    <div class="badge-texto-grande">${resultado.texto}</div>
-                </div>
-            </div>
-
-            <!-- CUERPO CON MÉTRICAS - MODIFICADO -->
-            <div class="modal-body-centrado">
-                <div class="metricas-grid-centrado">
-                    <!-- CAMBIO 1: Por minuto en lugar de Ganancia -->
-                    <div class="metrica-item-centrado">
-                        <div class="metrica-valor-centrado">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
-                        <div class="metrica-label-centrado">Por minuto</div>
-                    </div>
-                    <div class="metrica-item-centrado">
-                        <div class="metrica-valor-centrado">${resultado.minutos} min</div>
-                        <div class="metrica-label-centrado">Tiempo</div>
-                    </div>
-                    <!-- CAMBIO 2: Por kilómetro en lugar de Por minuto -->
-                    <div class="metrica-item-centrado">
-                        <div class="metrica-valor-centrado">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
-                        <div class="metrica-label-centrado">Por kilómetro</div>
-                    </div>
-                    <div class="metrica-item-centrado">
-                        <div class="metrica-valor-centrado">${resultado.distancia} km</div>
-                        <div class="metrica-label-centrado">Distancia</div>
+        <div class="modal-contenido-elegante">
+            <!-- Header con gradiente -->
+            <div class="modal-header-elegante">
+                <div class="header-content">
+                    <div class="header-icon">🚗</div>
+                    <div class="header-text">
+                        <h3 class="modal-title">Análisis de Viaje</h3>
+                        <p class="modal-subtitle">Resultado en tiempo real con tráfico</p>
                     </div>
                 </div>
-
-                ${resultado.insights ? `
-                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; border-left: 4px solid #4CAF50; margin-top: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-weight: 600;">🧠 Predicción Inteligente</span>
-                        <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 10px;">
-                            ${resultado.insights.confidence}% confianza
-                        </span>
-                    </div>
-                    <div style="font-size: 0.9em; opacity: 0.9;">
-                        ${resultado.insights.message}
-                    </div>
-                </div>
-                ` : ''}
-            </div>
-
-            <!-- BOTONES DE ACCIÓN (sin cambios) -->
-            <div class="modal-actions-centrado">
-                <button class="btn-accion-grande btn-rechazar-grande" onclick="procesarViajeRapido(false)">
-                    <span class="btn-icono-grande">❌</span>
-                    Rechazar Viaje
+                <button class="btn-cerrar-elegante" onclick="cerrarModalRapido()">
+                    <span>×</span>
                 </button>
-                <button class="btn-accion-grande btn-aceptar-grande" onclick="iniciarCronometroDesdeModal()">
-                    <span class="btn-icono-grande">✅</span>
-                    Aceptar y Cronometrar
+            </div>
+
+            <!-- Indicador de Estado -->
+            <div class="estado-section">
+                <div class="estado-badge ${claseRentabilidad}" id="estado-badge">
+                    <span class="estado-emoji">${resultado.emoji}</span>
+                    <span class="estado-texto">${resultado.texto}</span>
+                </div>
+                <div class="estado-descripcion">
+                    ${descripcion}
+                </div>
+            </div>
+
+            <!-- Métricas Principales -->
+            <div class="metricas-principales">
+                <div class="metrica-grande">
+                    <div class="metrica-icon">💰</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor">${formatearMoneda(resultado.tarifa)}</div>
+                        <div class="metrica-label">Ganancia Total</div>
+                    </div>
+                </div>
+                
+                <div class="metricas-secundarias">
+                    <div class="metrica-pequena">
+                        <div class="metrica-icon">⏱️</div>
+                        <div class="metrica-info">
+                            <div class="metrica-valor">${resultado.minutos}min</div>
+                            <div class="metrica-label">Duración</div>
+                        </div>
+                    </div>
+                    <div class="metrica-pequena">
+                        <div class="metrica-icon">🛣️</div>
+                        <div class="metrica-info">
+                            <div class="metrica-valor">${resultado.distancia}km</div>
+                            <div class="metrica-label">Distancia</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Eficiencia y Tarifas -->
+            <div class="grid-eficiencia">
+                <div class="card-eficiencia">
+                    <div class="card-header">
+                        <span class="card-icon">📊</span>
+                        <span>Eficiencia</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="eficiencia-valor">${calcularEficiencia(resultado)}%</div>
+                        <div class="barra-eficiencia">
+                            <div class="barra-progreso" style="width: ${calcularEficiencia(resultado)}%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-eficiencia">
+                    <div class="card-header">
+                        <span class="card-icon">💸</span>
+                        <span>Por Minuto</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="tarifa-valor">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
+                        <div class="tarifa-comparacion">
+                            vs ${formatearMoneda(perfilActual?.umbralMinutoRentable || 6.00)} objetivo
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-eficiencia">
+                    <div class="card-header">
+                        <span class="card-icon">📏</span>
+                        <span>Por Kilómetro</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="tarifa-valor">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
+                        <div class="tarifa-comparacion">
+                            vs ${formatearMoneda(perfilActual?.umbralKmRentable || 25.00)} objetivo
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            ${resultado.trafficInsights ? `
+            <!-- Análisis de Tráfico -->
+            <div class="trafico-section ${obtenerClaseTrafico(resultado.trafficInsights.trafficCondition)}">
+                <div class="trafico-header">
+                    <span class="trafico-icon">🚦</span>
+                    <span>Impacto del Tráfico</span>
+                    <span class="trafico-estado">${formatearTextoTrafico(resultado.trafficInsights.trafficCondition)}</span>
+                </div>
+                <div class="trafico-content">
+                    <div class="trafico-tiempos">
+                        <div class="tiempo-item">
+                            <span class="tiempo-label">Estimado:</span>
+                            <span class="tiempo-valor">${resultado.tiempoOriginal || resultado.minutos}min</span>
+                        </div>
+                        <div class="flecha-trafico">→</div>
+                        <div class="tiempo-item">
+                            <span class="tiempo-label">Con tráfico:</span>
+                            <span class="tiempo-valor destacado">${resultado.tiempoAjustado || resultado.minutos}min</span>
+                        </div>
+                    </div>
+                    <div class="trafico-mensaje">
+                        ${resultado.trafficInsights.message}
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
+            ${resultado.learningInsights ? `
+            <!-- Recomendación Inteligente -->
+            <div class="recomendacion-section">
+                <div class="recomendacion-header">
+                    <span class="recomendacion-icon">🧠</span>
+                    <span>Recomendación Inteligente</span>
+                </div>
+                <div class="recomendacion-content">
+                    ${resultado.learningInsights.message} (${resultado.learningInsights.confidence}% confianza)
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Acciones -->
+            <div class="acciones-section">
+                <button class="btn-accion btn-rechazar" onclick="procesarViajeRapido(false)">
+                    <span class="btn-accion-icon">❌</span>
+                    <span class="btn-accion-texto">Rechazar</span>
+                    <span class="btn-accion-desc">No es rentable</span>
                 </button>
+                
+                <button class="btn-accion btn-aceptar" onclick="iniciarCronometroDesdeModal()">
+                    <span class="btn-accion-icon">✅</span>
+                    <span class="btn-accion-texto">Aceptar</span>
+                    <span class="btn-accion-desc">Iniciar viaje</span>
+                </button>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer-elegante">
+                <div class="footer-info">
+                    <span class="footer-icon">💡</span>
+                    <span>Los viajes aceptados se guardan automáticamente</span>
+                </div>
             </div>
         </div>
     `;
@@ -2796,27 +2891,75 @@ function mostrarResultadoRapido(resultado) {
     });
 }
 
+// 🔧 **FUNCIONES AUXILIARES NUEVAS**
+
+function obtenerDescripcionRentabilidad(resultado) {
+    const porMinuto = resultado.gananciaPorMinuto || 0;
+    const baseEfficiency = perfilActual?.umbralMinutoRentable || 6.0;
+    
+    if (porMinuto >= baseEfficiency * 1.5) {
+        return 'Excelentes ganancias por minuto 🚀';
+    } else if (porMinuto >= baseEfficiency * 1.2) {
+        return 'Buenas condiciones de rentabilidad ✅';
+    } else if (porMinuto >= baseEfficiency) {
+        return 'Condiciones regulares ⚠️';
+    } else if (porMinuto >= baseEfficiency * 0.8) {
+        return 'Ganancias por debajo del objetivo 📉';
+    } else {
+        return 'No cumple con los objetivos mínimos ❌';
+    }
+}
+
+function obtenerClaseTrafico(condicion) {
+    const clases = {
+        'light': 'leve',
+        'moderate': 'moderado', 
+        'heavy': 'pesado',
+        'severe': 'pesado'
+    };
+    return clases[condicion] || 'moderado';
+}
+
+function formatearTextoTrafico(condicion) {
+    const textos = {
+        'light': 'Leve',
+        'moderate': 'Moderado', 
+        'heavy': 'Pesado',
+        'severe': 'Severo'
+    };
+    return textos[condicion] || 'Moderado';
+}
+
+function calcularEficiencia(resultado) {
+    if (!perfilActual) return 0;
+    
+    const baseEfficiency = perfilActual.umbralMinutoRentable || 6.0;
+    const actualEfficiency = resultado.gananciaPorMinuto || 0;
+    
+    if (actualEfficiency <= 0) return 0;
+    
+    const eficiencia = Math.min(100, (actualEfficiency / baseEfficiency) * 100);
+    return Math.round(eficiencia);
+}
+
+// ✅ **ACTUALIZA LA FUNCIÓN cerrarModalRapido**
+
+function cerrarModalRapido() {
+    const modalRapido = document.getElementById('modal-rapido');
+    if (modalRapido) {
+        modalRapido.remove();
+    }
+    calculoActual = null;
+}
+
+// ✅ **ACTUALIZA LA FUNCIÓN iniciarCronometroDesdeModal**
+
 function iniciarCronometroDesdeModal() {
     if (calculoActual) {
         iniciarCronometroConViaje(calculoActual);
         cerrarModalRapido();
     } else {
         mostrarError('No hay datos del viaje. Por favor, calcula nuevamente.');
-    }
-}
-
-function cerrarModalRapido() {
-    const modalRapido = document.getElementById('modal-rapido');
-    if (modalRapido) {
-        modalRapido.remove(); // ✅ ELIMINA COMPLETAMENTE EL MODAL
-    }
-    calculoActual = null; // ✅ LIMPIA EL CÁLCULO ACTUAL
-}
-
-function iniciarCronometroDesdeModal() {
-    if (calculoActual) {
-        iniciarCronometroConViaje(calculoActual);
-        cerrarModalRapido();
     }
 }
 
@@ -4215,3 +4358,4 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
