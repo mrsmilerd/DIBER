@@ -2932,15 +2932,15 @@ class RealTimeTrafficSystem {
                     resolve(this.currentLocation);
                 },
                 {
-                    enableHighAccuracy: false, // Cambiar a true si quieres mayor precisión
+                    enableHighAccuracy: false,
                     timeout: 8000,
-                    maximumAge: 300000 // 5 minutos
+                    maximumAge: 300000
                 }
             );
         });
     }
 
-    // Analizar tráfico en el radio especificado
+   // Analizar tráfico en el radio especificado
     async analyzeTrafficInRadius() {
         if (!this.initialized) {
             throw new Error('Sistema de tráfico no inicializado');
@@ -2963,7 +2963,6 @@ class RealTimeTrafficSystem {
     async getTrafficData() {
         return new Promise((resolve) => {
             // Simulación de análisis de tráfico basado en hora y ubicación
-            // En una implementación real, aquí analizarías los datos del mapa
             setTimeout(() => {
                 const trafficCondition = this.estimateTrafficFromConditions();
                 resolve(trafficCondition);
@@ -3079,12 +3078,7 @@ class RealTimeTrafficSystem {
     }
 }
 
-// =============================================
-// INTEGRACIÓN CON TU CÓDIGO EXISTENTE
-// =============================================
-
-let realTimeTraffic = null;
-
+// ✅ FUNCIÓN DE INICIALIZACIÓN DEL SISTEMA DE TRÁFICO
 async function inicializarSistemaTraficoCompleto() {
     console.log('🚗 Inicializando sistema de tráfico en tiempo real...');
     
@@ -4106,7 +4100,7 @@ async function inicializarApp() {
     }
 }
 
-// ✅ NUEVA FUNCIÓN: Esperar a que Google Maps cargue
+// ✅ FUNCIÓN SIMPLIFICADA: Solo verifica si Google Maps está disponible
 function waitForGoogleMaps() {
     return new Promise((resolve, reject) => {
         if (window.google && window.google.maps) {
@@ -4116,40 +4110,6 @@ function waitForGoogleMaps() {
         
         // Si no está disponible, rechazar inmediatamente
         reject(new Error('Google Maps no está disponible'));
-    });
-}
-
-        // Si no está cargado, usar el método global
-        if (window.loadGoogleMaps) {
-            console.log('🔄 Cargando Google Maps...');
-            window.loadGoogleMaps()
-                .then(() => {
-                    console.log('✅ Google Maps cargado exitosamente');
-                    resolve();
-                })
-                .catch(error => {
-                    console.error('❌ Error cargando Google Maps:', error);
-                    reject(error);
-                });
-        } else {
-            // Fallback: esperar a que cargue
-            let attempts = 0;
-            const maxAttempts = 50;
-            
-            const checkInterval = setInterval(() => {
-                attempts++;
-                
-                if (window.google && window.google.maps) {
-                    clearInterval(checkInterval);
-                    console.log('✅ Google Maps detectado después de ' + attempts + ' intentos');
-                    resolve();
-                } else if (attempts >= maxAttempts) {
-                    clearInterval(checkInterval);
-                    console.error('❌ Timeout: Google Maps no cargó');
-                    reject(new Error('Google Maps no cargó después de 5 segundos'));
-                }
-            }, 100);
-        }
     });
 }
 
@@ -4255,6 +4215,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
