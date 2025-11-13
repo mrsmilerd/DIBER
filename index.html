@@ -17,9 +17,24 @@
   window.GOOGLE_MAPS_API_KEY = 'AIzaSyB17REl6ZbCavA4DKkn1ZjOdbnNWLBFKMs';
 </script>
 
-<!-- Cargar Google Maps API -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB17REl6ZbCavA4DKkn1ZjOdbnNWLBFKMs&libraries=geometry"
-        async defer></script>
+<!-- Cargar Google Maps API CORRECTAMENTE -->
+<script>
+  function loadGoogleMaps() {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyB17REl6ZbCavA4DKkn1ZjOdbnNWLBFKMs&libraries=geometry&loading=async&callback=initApp`;
+      script.async = true;
+      script.defer = true;
+      
+      window.initApp = function() {
+        resolve();
+      };
+      
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+</script>
 </head>
 <body>
     <!-- Modal de Código de Usuario -->
@@ -1290,5 +1305,6 @@
     </style>
 </body>
 </html>
+
 
 
