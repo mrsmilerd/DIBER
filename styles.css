@@ -1257,3 +1257,432 @@ select:focus-visible {
     background: var(--dark-grey);
 }
 
+/* FORMULARIO ELEGANTE - DISEÑO MODERNO */
+.form-section-elegante {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 20px;
+    padding: 0;
+    margin: 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.form-header-elegante {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.form-icon {
+    font-size: 2.5em;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.form-title-content {
+    flex: 1;
+}
+
+.form-title {
+    margin: 0;
+    font-size: 1.6em;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.form-subtitle {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+    font-size: 0.95em;
+}
+
+/* CAMPOS DE FORMULARIO ELEGANTES */
+.form-fields-elegante {
+    padding: 30px 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.input-group-elegante {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.input-group-elegante:focus-within {
+    border-color: #667eea;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+}
+
+.input-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.input-icon {
+    font-size: 1.3em;
+}
+
+.input-label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1em;
+    flex: 1;
+}
+
+.required-badge {
+    background: #e74c3c;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.input-container-elegante {
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 5px;
+    border: 2px solid #ecf0f1;
+    transition: all 0.3s ease;
+}
+
+.input-container-elegante:focus-within {
+    border-color: #667eea;
+    background: white;
+}
+
+.input-field-elegante {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 15px;
+    font-size: 1.1em;
+    font-weight: 500;
+    color: #2c3e50;
+    outline: none;
+}
+
+.input-field-elegante::placeholder {
+    color: #bdc3c7;
+}
+
+.input-unit-elegante {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #667eea;
+    margin-left: 5px;
+    min-width: 60px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.input-hint {
+    margin-top: 8px;
+    font-size: 0.85em;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+/* SECCIÓN TRÁFICO ELEGANTE */
+.trafico-section-elegante {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    margin: 0 25px 25px;
+    padding: 20px;
+    border-radius: 15px;
+    border-left: 4px solid #2196f3;
+}
+
+.trafico-header-elegante {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.trafico-icon {
+    font-size: 1.5em;
+}
+
+.trafico-info {
+    flex: 1;
+}
+
+.trafico-title {
+    display: block;
+    font-weight: 600;
+    color: #1565c0;
+    font-size: 1em;
+}
+
+.trafico-desc {
+    display: block;
+    font-size: 0.85em;
+    color: #1976d2;
+    margin-top: 2px;
+}
+
+.btn-trafico-elegante {
+    width: 100%;
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+}
+
+.btn-trafico-elegante:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+}
+
+.btn-trafico-icon {
+    font-size: 1.2em;
+}
+
+.location-status-elegante {
+    margin-top: 10px;
+    padding: 12px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 10px;
+    border-left: 4px solid #4caf50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.location-status-elegante .status-icon {
+    color: #4caf50;
+    font-size: 1.1em;
+}
+
+.location-status-elegante .status-text {
+    color: #2e7d32;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+/* RESULTADO RÁPIDO ELEGANTE */
+.resultado-rapido-elegante {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    margin: 0 25px 25px;
+    border-radius: 15px;
+    border: 2px solid #e0e0e0;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    animation: slideDown 0.4s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.resultado-header-elegante {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: white;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.resultado-icon {
+    font-size: 1.8em;
+}
+
+.resultado-title {
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+.resultado-subtitle {
+    margin: 3px 0 0 0;
+    opacity: 0.9;
+    font-size: 0.9em;
+}
+
+.resultado-content-elegante {
+    padding: 25px;
+}
+
+.resultado-badge-elegante {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border-radius: 25px;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    font-weight: 600;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.badge-emoji {
+    font-size: 1.3em;
+}
+
+.badge-text {
+    font-size: 1.1em;
+    letter-spacing: 0.5px;
+}
+
+.resultado-metricas-elegante {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.metrica-elegante {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    border: 1px solid #f0f0f0;
+}
+
+.metrica-elegante .metrica-icon {
+    font-size: 1.5em;
+    margin-bottom: 8px;
+}
+
+.metrica-elegante .metrica-valor {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+.metrica-elegante .metrica-label {
+    color: #7f8c8d;
+    font-size: 0.85em;
+}
+
+.resultado-actions {
+    text-align: center;
+}
+
+.btn-ver-detalles {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-ver-detalles:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* INDICADOR DE ESTADO ELEGANTE */
+.form-status-elegante {
+    padding: 0 25px 25px;
+}
+
+.status-indicator-elegante {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid #ffc107;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.status-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ffc107;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.status-text {
+    color: #856404;
+    font-weight: 500;
+}
+
+/* ESTADOS DINÁMICOS */
+.resultado-badge-elegante.rentable {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+}
+
+.resultado-badge-elegante.oportunidad {
+    background: linear-gradient(135deg, #FF9800, #F57C00);
+}
+
+.resultado-badge-elegante.no-rentable {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .form-header-elegante {
+        padding: 25px 20px;
+    }
+    
+    .form-fields-elegante {
+        padding: 20px;
+    }
+    
+    .resultado-metricas-elegante {
+        grid-template-columns: 1fr;
+    }
+    
+    .trafico-section-elegante,
+    .resultado-rapido-elegante {
+        margin: 0 20px 20px;
+    }
+}
