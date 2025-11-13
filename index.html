@@ -602,99 +602,165 @@
         </div>
     </div>
 
-    <!-- Modal Rápido Mejorado -->
-    <div id="modal-rapido" class="modal-rapido-mejorado hidden">
-        <div class="modal-rapido-contenido-mejorado">
-            <!-- Header con tráfico -->
-            <div class="modal-trafico-header" id="modal-trafico-header">
-                <div class="trafico-status" id="modal-trafico-status">
-                    <span class="trafico-emoji-big">🚦</span>
-                    <div class="trafico-info">
-                        <div class="trafico-title">Análisis de Tráfico</div>
-                        <div class="trafico-condition" id="modal-trafico-condition">Calculando...</div>
+       <!-- Modal Elegante - NUEVO DISEÑO -->
+    <div id="modal-rapido" class="modal-elegante hidden">
+        <div class="modal-contenido-elegante">
+            <!-- Header con gradiente -->
+            <div class="modal-header-elegante">
+                <div class="header-content">
+                    <div class="header-icon">🚗</div>
+                    <div class="header-text">
+                        <h3 class="modal-title">Análisis de Viaje</h3>
+                        <p class="modal-subtitle">Resultado en tiempo real con tráfico</p>
                     </div>
                 </div>
-                <button class="modal-cerrar-elegante" onclick="cerrarModalRapido()">
+                <button class="btn-cerrar-elegante" onclick="cerrarModalRapido()">
                     <span>×</span>
                 </button>
             </div>
 
-            <!-- Tiempo ajustado -->
-            <div class="tiempo-ajustado-section">
-                <div class="tiempo-original">
-                    <span class="tiempo-label">Tiempo estimado:</span>
-                    <span class="tiempo-valor" id="modal-tiempo-original">-- min</span>
+            <!-- Indicador de Estado -->
+            <div class="estado-section">
+                <div class="estado-badge" id="estado-badge">
+                    <span class="estado-emoji" id="estado-emoji">✅</span>
+                    <span class="estado-texto" id="estado-texto">RENTABLE</span>
                 </div>
-                <div class="flecha-ajuste">↓</div>
-                <div class="tiempo-real">
-                    <span class="tiempo-label">Con tráfico real:</span>
-                    <span class="tiempo-valor destacado" id="modal-tiempo-real">-- min</span>
+                <div class="estado-descripcion" id="estado-descripcion">
+                    Buenas condiciones para aceptar
                 </div>
             </div>
 
-            <!-- Resultado principal -->
-            <div class="resultado-principal" id="modal-resultado-principal">
-                <div class="badge-rentabilidad" id="modal-badge-rentabilidad">
-                    <div class="badge-emoji">✅</div>
-                    <div class="badge-content">
-                        <div class="badge-title">VIAJE RENTABLE</div>
-                        <div class="badge-subtitle" id="modal-badge-subtitle">Buenas condiciones</div>
+            <!-- Métricas Principales -->
+            <div class="metricas-principales">
+                <div class="metrica-grande">
+                    <div class="metrica-icon">💰</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="metrica-ganancia-total">RD$0</div>
+                        <div class="metrica-label">Ganancia Total</div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Métricas -->
-            <div class="metricas-grid-mejorado">
-                <div class="metrica-card">
-                    <div class="metrica-icono">💸</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-minuto">--/min</div>
-                        <div class="metrica-label">Por minuto</div>
+                
+                <div class="metricas-secundarias">
+                    <div class="metrica-pequena">
+                        <div class="metrica-icon">⏱️</div>
+                        <div class="metrica-info">
+                            <div class="metrica-valor" id="metrica-tiempo">0min</div>
+                            <div class="metrica-label">Duración</div>
+                        </div>
                     </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">🛣️</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-km">--/km</div>
-                        <div class="metrica-label">Por km</div>
-                    </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">📊</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-eficiencia">--%</div>
-                        <div class="metrica-label">Eficiencia</div>
+                    <div class="metrica-pequena">
+                        <div class="metrica-icon">🛣️</div>
+                        <div class="metrica-info">
+                            <div class="metrica-valor" id="metrica-distancia">0km</div>
+                            <div class="metrica-label">Distancia</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Impacto del tráfico -->
-            <div class="impacto-trafico" id="modal-impacto-trafico">
-                <div class="impacto-header">
-                    <span class="impacto-icon">📈</span>
-                    <span class="impacto-title">Impacto del Tráfico</span>
+            <!-- Eficiencia y Tarifas -->
+            <div class="grid-eficiencia">
+                <div class="card-eficiencia">
+                    <div class="card-header">
+                        <span class="card-icon">📊</span>
+                        <span>Eficiencia</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="eficiencia-valor" id="eficiencia-valor">0%</div>
+                        <div class="barra-eficiencia">
+                            <div class="barra-progreso" id="barra-eficiencia"></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="impacto-content" id="modal-impacto-content">
-                    El tráfico aumenta el tiempo en un <strong>0%</strong>
+                
+                <div class="card-eficiencia">
+                    <div class="card-header">
+                        <span class="card-icon">💸</span>
+                        <span>Por Minuto</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="tarifa-valor" id="tarifa-minuto">RD$0/min</div>
+                        <div class="tarifa-comparacion" id="comparacion-minuto">
+                            vs RD$6.00 objetivo
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-eficiencia">
+                    <div class="card-header">
+                        <span class="card-icon">📏</span>
+                        <span>Por Kilómetro</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="tarifa-valor" id="tarifa-kilometro">RD$0/km</div>
+                        <div class="tarifa-comparacion" id="comparacion-kilometro">
+                            vs RD$25.00 objetivo
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Análisis de Tráfico -->
+            <div class="trafico-section" id="trafico-section">
+                <div class="trafico-header">
+                    <span class="trafico-icon">🚦</span>
+                    <span>Impacto del Tráfico</span>
+                    <span class="trafico-estado" id="trafico-estado">Moderado</span>
+                </div>
+                <div class="trafico-content">
+                    <div class="trafico-tiempos">
+                        <div class="tiempo-item">
+                            <span class="tiempo-label">Estimado:</span>
+                            <span class="tiempo-valor" id="tiempo-original">0min</span>
+                        </div>
+                        <div class="flecha-trafico">→</div>
+                        <div class="tiempo-item">
+                            <span class="tiempo-label">Con tráfico:</span>
+                            <span class="tiempo-valor destacado" id="tiempo-real">0min</span>
+                        </div>
+                    </div>
+                    <div class="trafico-mensaje" id="trafico-mensaje">
+                        El tráfico aumenta el tiempo en 0%
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recomendación Inteligente -->
+            <div class="recomendacion-section" id="recomendacion-section">
+                <div class="recomendacion-header">
+                    <span class="recomendacion-icon">🧠</span>
+                    <span>Recomendación Inteligente</span>
+                </div>
+                <div class="recomendacion-content" id="recomendacion-content">
+                    Basado en tus viajes anteriores y condiciones actuales
                 </div>
             </div>
 
             <!-- Acciones -->
-            <div class="acciones-mejoradas">
-                <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
-                    <span class="btn-icon">❌</span>
-                    <span class="btn-text">Rechazar Viaje</span>
-                    <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
+            <div class="acciones-section">
+                <button class="btn-accion btn-rechazar" onclick="procesarViajeRapido(false)">
+                    <span class="btn-accion-icon">❌</span>
+                    <span class="btn-accion-texto">Rechazar</span>
+                    <span class="btn-accion-desc">No es rentable</span>
                 </button>
-                <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)" id="modal-btn-aceptar">
-                    <span class="btn-icon">✅</span>
-                    <span class="btn-text">Aceptar Viaje</span>
-                    <span class="btn-badge" id="modal-badge-aceptar">Recomendado</span>
+                
+                <button class="btn-accion btn-aceptar" onclick="iniciarCronometroDesdeModal()">
+                    <span class="btn-accion-icon">✅</span>
+                    <span class="btn-accion-texto">Aceptar</span>
+                    <span class="btn-accion-desc">Iniciar viaje</span>
                 </button>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer-elegante">
+                <div class="footer-info">
+                    <span class="footer-icon">💡</span>
+                    <span>Los viajes aceptados se guardan automáticamente</span>
+                </div>
             </div>
         </div>
     </div>
-
+                
     <!-- Modal de Exportación Mejorado -->
     <div id="exportModal" class="modal-fondo">
         <div class="modal-contenido">
@@ -1334,6 +1400,7 @@
     </style>
 </body>
 </html>
+
 
 
 
