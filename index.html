@@ -379,117 +379,81 @@
                     </button>
                 </div>
 
-<!-- Contenido de Pestañas - DISEÑO ELEGANTE -->
+                <!-- Contenido de Pestañas -->
 <div class="tab-content active" id="tab-calcular">
-    <!-- Formulario Principal Elegante -->
-    <div class="form-section-elegante">
-        <!-- Header del Formulario -->
-        <div class="form-header-elegante">
-            <div class="form-icon">🚗</div>
-            <div class="form-title-content">
-                <h2 class="form-title">Calcular Viaje</h2>
+    <!-- Formulario Principal -->
+    <div class="form-section">
+        <h2 class="section-title centered">📊 Datos del Viaje</h2>
+        
+        <div class="input-group">
+            <label for="tarifa">
+                💰 Ganancia Ofrecida
+                <span class="required">*</span>
+            </label>
+            <div class="input-with-unit">
+                <input type="number" id="tarifa" min="0" step="0.01" required inputmode="decimal">
+                <span id="moneda-tarifa" class="input-unit">DOP</span>
             </div>
+            <span class="error-message" id="tarifa-error"></span>
         </div>
 
-        <!-- Campos del Formulario -->
-        <div class="form-fields-elegante">
-            <!-- Campo Ganancia -->
-            <div class="input-group-elegante">
-                <div class="input-header">
-                    <span class="input-icon">💰</span>
-                    <label for="tarifa" class="input-label">Ganancia Ofrecida</label>
-                    </div>
-                <div class="input-container-elegante">
-                    <input type="number" id="tarifa" class="input-field-elegante" 
-                           min="0" step="0.01" required inputmode="decimal"
-                           placeholder="0.00">
-                </div>
-
-            <!-- Campo Tiempo -->
-            <div class="input-group-elegante">
-                <div class="input-header">
-                    <span class="input-icon">⏱️</span>
-                    <label for="minutos" class="input-label">Tiempo Estimado</label>
-                </div>
-                <div class="input-container-elegante">
-                    <input type="number" id="minutos" class="input-field-elegante" 
-                           min="1" step="1" required inputmode="numeric"
-                           placeholder="0">
+        <div class="input-group">
+            <label for="minutos">
+                ⏱️ Tiempo Estimado
+                <span class="required">*</span>
+            </label>
+            <div class="input-with-unit">
+                <input type="number" id="minutos" min="1" step="1" required inputmode="numeric">
+                <span class="input-unit">min</span>
             </div>
-
-            <!-- Campo Distancia -->
-            <div class="input-group-elegante">
-                <div class="input-header">
-                    <span class="input-icon">🛣️</span>
-                    <label for="distancia" class="input-label">Distancia Estimada</label>>
-                </div>
-                <div class="input-container-elegante">
-                    <input type="number" id="distancia" class="input-field-elegante" 
-                           min="0" step="0.1" required inputmode="decimal"
-                           placeholder="0.0">
-            </div>
+            <span class="error-message" id="minutos-error"></span>
         </div>
 
-        <!-- Sección de Análisis de Tráfico -->
-        <div class="trafico-section-elegante">
-            <div class="trafico-header-elegante">
-                <span class="trafico-icon">📍</span>
-                <div class="trafico-info">
-                    <span class="trafico-title">Análisis de Tráfico en Tiempo Real</span>
-                </div>
+        <div class="input-group">
+            <label for="distancia">
+                🛣️ Distancia Estimada
+                <span class="required">*</span>
+            </label>
+            <div class="input-with-unit">
+                <input type="number" id="distancia" min="0" step="0.1" required inputmode="decimal">
+                <span id="distancia-unit" class="input-unit">Km</span>
             </div>
-            <button type="button" id="activar-ubicacion-btn" class="btn-trafico-elegante">
-                <span class="btn-trafico-icon">🌐</span>
-                <span class="btn-trafico-text">Activar Análisis de Tráfico</span>
+            <span class="error-message" id="distancia-error"></span>
+        </div>
+
+<!-- ✅ AQUÍ VA EL BOTÓN DE ACTIVAR UBICACIÓN -->
+        <div class="location-permission-section">
+            <button type="button" id="activar-ubicacion-btn" class="location-permission-btn">
+                <span class="button-icon">📍</span>
+                Activar Análisis de Tráfico
             </button>
-            <div id="location-status" class="location-status-elegante hidden">
+            <div id="location-status" class="location-status hidden">
                 <span class="status-icon">✅</span>
                 <span class="status-text">Tráfico monitoreado</span>
             </div>
         </div>
-
-        <!-- Resultado Rápido Elegante -->
-        <div id="resultado-rapido" class="resultado-rapido-elegante hidden">
-            <div class="resultado-header-elegante">
-                <div class="resultado-icon">🎯</div>
-                <div class="resultado-title-content">
-                    <h3 class="resultado-title">Análisis Instantáneo</h3>
-                    <p class="resultado-subtitle">Resultado basado en tus umbrales</p>
-                </div>
+        
+        <!-- Resultado Rápido -->
+        <div id="resultado-rapido" class="resultado-rapido hidden">
+            <div class="resultado-header">
+                <h3>🎯 Resultado Instantáneo</h3>
             </div>
-            
-            <div class="resultado-content-elegante">
-                <div class="resultado-badge-elegante" id="resultado-badge">
-                    <span class="badge-emoji" id="resultado-emoji">✅</span>
-                    <span class="badge-text" id="resultado-texto">RENTABLE</span>
+            <div class="resultado-content">
+                <div class="resultado-badge" id="resultado-badge">
+                    <span id="resultado-emoji">✅</span>
+                    <span id="resultado-texto">RENTABLE</span>
                 </div>
-                
-                <div class="resultado-metricas-elegante">
-                    <div class="metrica-elegante">
-                        <div class="metrica-icon">💸</div>
-                        <div class="metrica-content">
-                            <div class="metrica-valor" id="metrica-minuto">--/min</div>
-                            <div class="metrica-label">Por minuto</div>
-                        </div>
+                <div class="resultado-metricas">
+                    <div class="metrica-rapida">
+                        <span class="metrica-label">Por minuto:</span>
+                        <span id="metrica-minuto" class="metrica-valor">--</span>
                     </div>
-                    <div class="metrica-elegante">
-                        <div class="metrica-icon">📏</div>
-                        <div class="metrica-content">
-                            <div class="metrica-valor" id="metrica-km">--/km</div>
-                            <div class="metrica-label">Por kilómetro</div>
-                        </div>
-                    </div>
+                    <div class="metrica-rapida">
+                        <span class="metrica-label">Por km:</span>
+                        <span id="metrica-km" class="metrica-valor">--</span>
+                   </div>
                 </div>
             </div>
-            
-            <div class="resultado-actions">
-                <button class="btn-ver-detalles" onclick="mostrarModalCompleto()">
-                    <span class="btn-icon">📊</span>
-                    Ver Análisis Completo
-                </button>
-            </div>
-        </div>
-                
         </div>
     </div>
 </div>
@@ -1370,5 +1334,3 @@
     </style>
 </body>
 </html>
-
-
