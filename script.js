@@ -2857,39 +2857,18 @@ class RealTimeTrafficSystem {
         this.map = null;
         this.trafficLayer = null;
         this.currentLocation = null;
-        this.radiusKm = 10; // Radio de 10 km como solicitas
+        this.radiusKm = 10;
         this.initialized = false;
     }
 
     async initializeGoogleMaps() {
-        return new Promise((resolve, reject) => {
-            // Verificar si Google Maps ya está cargado
-            if (window.google && window.google.maps) {
-                this.initializeMap();
-                resolve(true);
-                return;
-            }
+        // Verificar que Google Maps esté disponible
+        if (!window.google || !window.google.maps) {
+            throw new Error('Google Maps no está disponible');
+        }
 
-            // Si no está cargado, esperar a que se cargue
-            const checkInterval = setInterval(() => {
-                if (window.google && window.google.maps) {
-                    clearInterval(checkInterval);
-                    this.initializeMap();
-                    resolve(true);
-                }
-            }, 100);
-
-            // Timeout después de 10 segundos
-            setTimeout(() => {
-                clearInterval(checkInterval);
-                reject(new Error('Timeout cargando Google Maps'));
-            }, 10000);
-        });
-    }
-
-    initializeMap() {
         try {
-            // Crear mapa oculto (no visible para el usuario)
+            // Crear mapa oculto
             const mapContainer = document.createElement('div');
             mapContainer.style.cssText = 'position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;';
             document.body.appendChild(mapContainer);
@@ -2911,9 +2890,11 @@ class RealTimeTrafficSystem {
 
             this.initialized = true;
             console.log('✅ Google Maps inicializado para análisis de tráfico');
+            return true;
             
         } catch (error) {
             console.error('❌ Error inicializando Google Maps:', error);
+            this.initialized = false;
             throw error;
         }
     }
@@ -4030,54 +4011,60 @@ async function inicializarApp() {
         return;
     }
     
-    console.log('🚀 Inicializando DIBER con Google Maps...');
+    console.log('🚀 Inicializando DIBER...');
     
     inicializarElementosDOM();
     
     try {
-        // ✅ CARGAR GOOGLE MAPS PRIMERO
-        console.log('🗺️ Cargando Google Maps...');
-        await waitForGoogleMaps();
-        console.log('✅ Google Maps cargado correctamente');
-        
+        // ✅ PRIMERO: Inicializar sistema de código de usuario (NO DEPENDE DE GOOGLE MAPS)
+        console.log('🔐 Inicializando sistema de código de usuario...');
         const userCodeInitialized = await initializeUserCodeSystem();
         
         if (!userCodeInitialized) {
             console.log('⏳ Esperando que el usuario ingrese código...');
             return;
         }
+
+        // ✅ SEGUNDO: Cargar Google Maps SOLO UNA VEZ
+        console.log('🗺️ Cargando Google Maps...');
+        await loadGoogleMaps(); // Esta función ahora está en el HTML
         
-        // ✅ INICIALIZAR SISTEMA DE TRÁFICO
+        // ✅ TERCERO: Inicializar sistema de tráfico CON Google Maps
         console.log('🚗 Inicializando sistema de tráfico...');
-        const mapsInitialized = await inicializarSistemaTraficoCompleto();
+        const trafficInitialized = await inicializarSistemaTraficoCompleto();
         
-        if (mapsInitialized) {
+        if (trafficInitialized) {
             console.log('✅ Sistema de tráfico inicializado correctamente');
         } else {
             console.log('⚠️ Google Maps no disponible, usando modo local');
         }
         
-        // ✅ INICIALIZAR FIREBASE
+        // ✅ CUARTO: Inicializar Firebase (NO DEPENDE DE GOOGLE MAPS)
         await initializeFirebaseSync();
         
-        // ✅ INICIALIZAR SISTEMA DE AUTO-APRENDIZAJE
+        // ✅ QUINTO: Inicializar sistema de auto-aprendizaje
         window.routeLearningSystem = new RouteLearningSystem();
         window.routeLearningSystem.initialized = true;
         console.log('🧠 Sistema de auto-aprendizaje inicializado');
         
+        // ✅ SEXTO: Cargar datos
         await cargarDatos();
         
-        // ✅ SINCRONIZAR APRENDIZAJE LOCAL
+        // ✅ SÉPTIMO: Sincronizar aprendizaje local
         if (firebaseSync && firebaseSync.initialized) {
             setTimeout(() => {
-                window.routeLearningSystem.syncLocalLearning();
+                if (window.routeLearningSystem) {
+                    window.routeLearningSystem.syncLocalLearning();
+                }
             }, 3000);
         }
 
+        // ✅ OCTAVO: Configurar interfaz
         aplicarTemaGuardado();
         configurarEventListeners();
         configurarModalExportacion();
         
+        // ✅ NOVENO: Mostrar pantalla correcta
         if (perfiles.length === 0) {
             mostrarPantalla('perfil');
             mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
@@ -4088,23 +4075,33 @@ async function inicializarApp() {
         }
         
         window.appInitialized = true;
-        console.log('🎉 DIBER con GOOGLE MAPS inicializado correctamente');
+        console.log('🎉 DIBER inicializado correctamente');
         
     } catch (error) {
         console.error('❌ Error crítico en inicialización:', error);
         
-        // Modo de fallback sin Google Maps
-        mostrarStatus('⚠️ Modo local activado (Google Maps no disponible)', 'info');
+        // ✅ MODO FALLBACK: Continuar sin Google Maps
+        mostrarStatus('⚠️ Modo local activado - Funcionalidad básica disponible', 'info');
         
-        // Inicializar sin Google Maps
-        await initializeUserCodeSystem();
-        await initializeFirebaseSync();
-        await cargarDatos();
-        
-        if (perfiles.length === 0) {
-            mostrarPantalla('perfil');
-        } else {
-            mostrarPantalla('main');
+        // Inicializar componentes que no dependen de Google Maps
+        try {
+            await initializeUserCodeSystem();
+            await initializeFirebaseSync();
+            await cargarDatos();
+            
+            if (perfiles.length === 0) {
+                mostrarPantalla('perfil');
+            } else {
+                mostrarPantalla('main');
+            }
+            
+            aplicarTemaGuardado();
+            configurarEventListeners();
+            configurarModalExportacion();
+            
+        } catch (fallbackError) {
+            console.error('❌ Error en modo fallback:', fallbackError);
+            mostrarStatus('❌ Error crítico. Recarga la página.', 'error');
         }
     }
 }
@@ -4112,12 +4109,15 @@ async function inicializarApp() {
 // ✅ NUEVA FUNCIÓN: Esperar a que Google Maps cargue
 function waitForGoogleMaps() {
     return new Promise((resolve, reject) => {
-        // Si ya está cargado, resolver inmediatamente
         if (window.google && window.google.maps) {
-            console.log('✅ Google Maps ya estaba cargado');
             resolve();
             return;
         }
+        
+        // Si no está disponible, rechazar inmediatamente
+        reject(new Error('Google Maps no está disponible'));
+    });
+}
 
         // Si no está cargado, usar el método global
         if (window.loadGoogleMaps) {
@@ -4255,6 +4255,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
