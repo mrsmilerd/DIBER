@@ -2639,20 +2639,20 @@ select:focus-visible {
 }
 
 .location-permission-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: 600;
-    width: 100%;
-    transition: all 0.3s ease;
+  background: var(--logo-blue);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-weight: bold;
+  font-size: 1em;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
 }
 
 .location-permission-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  background: var(--logo-orange);
+  transform: translateY(-2px);
 }
 
 .location-permission-btn:active {
@@ -3933,4 +3933,5 @@ function agregarEstilosTrafico() {
     font-weight: bold;
 }
 }
+
 
