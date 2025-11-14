@@ -4137,6 +4137,32 @@ function mostrarEstadisticasAprendizaje() {
 💾 Los datos se guardan localmente y se sincronizan con la nube.`);
 }
 
+// Navegación móvil
+function inicializarNavegacionMovil() {
+    const navItems = document.querySelectorAll('.nav-item');
+    
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remover active de todos los items
+            navItems.forEach(nav => nav.classList.remove('active'));
+            
+            // Agregar active al item clickeado
+            this.classList.add('active');
+            
+            // Cambiar a la pestaña correspondiente
+            const tabId = this.getAttribute('data-tab');
+            cambiarPestana(tabId);
+        });
+    });
+}
+
+// Llamar en la inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarNavegacionMovil();
+});
+
 // =============================================
 // FUNCIONES GLOBALES
 // =============================================
@@ -4215,3 +4241,4 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
