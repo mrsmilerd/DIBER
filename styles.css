@@ -3932,6 +3932,57 @@ function agregarEstilosTrafico() {
     font-size: 0.8em;
     font-weight: bold;
 }
+
+.icono-naranja {
+  color: var(--logo-orange);
+  font-size: 1.2em;
+  margin-right: 6px;
 }
 
+.estadistica-item {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
 
+.estadistica-label {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  display: block;
+}
+
+.estadistica-valor {
+  font-size: 1.4em;
+  font-weight: bold;
+  color: var(--logo-blue);
+  margin-top: 4px;
+  display: block;
+}
+
+.filtros-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filtro-btn {
+  padding: 10px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--light-grey);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filtro-btn.active {
+  background: var(--logo-blue);
+  color: white;
+  border-color: var(--logo-blue);
+}
