@@ -458,27 +458,31 @@
 <!-- Pestaña Resumen - VERSIÓN MEJORADA -->
 <div class="tab-content" id="tab-resumen">
     <!-- Estadísticas del Día -->
-    <div class="estadisticas-container">
-        <h3>📈 Estadísticas del Día</h3>
-        <div class="estadisticas-grid">
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-viajes">0</span>
-                <span class="estadistica-label">Viajes</span>
-            </div>
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-ganancia">RD$0</span>
-                <span class="estadistica-label">Ganancia</span>
-            </div>
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-tiempo">0min</span>
-                <span class="estadistica-label">Tiempo</span>
-            </div>
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-rentables">0</span>
-                <span class="estadistica-label">Rentables</span>
-            </div>
-        </div>
+   <div class="form-section">
+  <h2 class="section-title centered">📊 Estadísticas del Día</h2>
+  <div class="estadisticas-grid">
+    <div class="estadistica-item">
+      <span class="icono-naranja">🚗</span>
+      <span class="estadistica-label">Viajes</span>
+      <span class="estadistica-valor" id="stats-viajes">0</span>
     </div>
+    <div class="estadistica-item">
+      <span class="icono-naranja">💰</span>
+      <span class="estadistica-label">Ganancia</span>
+      <span class="estadistica-valor" id="stats-ganancia">RD$0</span>
+    </div>
+    <div class="estadistica-item">
+      <span class="icono-naranja">⏱️</span>
+      <span class="estadistica-label">Tiempo</span>
+      <span class="estadistica-valor" id="stats-tiempo">0min</span>
+    </div>
+    <div class="estadistica-item">
+      <span class="icono-naranja">✅</span>
+      <span class="estadistica-label">Rentables</span>
+      <span class="estadistica-valor" id="stats-rentables">0</span>
+    </div>
+  </div>
+</div>
 
     <!-- Rendimiento - DISEÑO MEJORADO -->
     <div class="rendimiento-section-mejorada">
@@ -539,33 +543,29 @@
 </div>
 
 <!-- Pestaña Historial -->
-<div class="tab-content" id="tab-historial">
-    <!-- FILTROS NUEVOS -->
-    <div class="filtros-historial">
-        <h3>📋 Historial de Viajes</h3>
-        <div class="filtros-container">
-            <button class="filtro-btn active" data-filtro="hoy">Hoy</button>
-            <button class="filtro-btn" data-filtro="semana">Esta Semana</button>
-            <button class="filtro-btn" data-filtro="mes">Este Mes</button>
-            <button class="filtro-btn" data-filtro="todos">Todos</button>
-        </div>
-    </div>
+<div class="form-section">
+  <h2 class="section-title centered">📋 Historial de Viajes</h2>
+  <div class="filtros-container">
+    <button class="filtro-btn active" data-filtro="hoy">Hoy</button>
+    <button class="filtro-btn" data-filtro="semana">Esta Semana</button>
+    <button class="filtro-btn" data-filtro="mes">Este Mes</button>
+    <button class="filtro-btn" data-filtro="todos">Todos</button>
+  </div>
 
-    <!-- Historial de Cálculos -->
-    <div class="history-section">
-        <div id="history-list" class="history-list">
-            <!-- Los cálculos aparecerán aquí -->
-        </div>
-        <div class="history-actions">
-            <button id="exportar-historial" class="secondary-button small">
-                📤 Exportar Historial
-            </button>
-            <button id="clear-history" class="secondary-button small">
-                🗑️ Limpiar Historial
-            </button>
-        </div>
-    </div>
+  <div class="history-list" id="history-list">
+    <!-- Los cálculos aparecerán aquí -->
+  </div>
+
+  <div class="history-actions">
+    <button id="exportar-historial" class="secondary-button small">
+      📤 Exportar Historial
+    </button>
+    <button id="clear-history" class="secondary-button small">
+      🗑️ Limpiar Historial
+    </button>
+  </div>
 </div>
+
 
     <!-- Modal de Resultados Mejorado -->
     <div id="modalFondo" class="modal-fondo">
@@ -1331,5 +1331,6 @@
     </style>
 </body>
 </html>
+
 
 
