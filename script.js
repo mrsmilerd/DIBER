@@ -2630,15 +2630,15 @@ function procesarViajeRapido(aceptado) {
         return;
     }
 
-    // Cerrar modal de cálculo rápido inmediatamente
+    // ✅ CERRAR MODAL DE CÁLCULO RÁPIDO INMEDIATAMENTE
     cerrarModalRapido();
     
     const viajeParaHistorial = {
         ...Actual,
-        aceptado: aceptado,
-        rentable: aceptado ? (Actual.rentabilidad === 'rentable') : false,
-        emoji: aceptado ? Actual.emoji : '❌',
-        texto: aceptado ? Actual.texto : 'RECHAZADO'
+        aceptado: aceptado, // ✅ ESTO DEBE RESPETARSE
+        rentable: aceptado ? (Actual.rentabilidad === 'rentable') : false, // ✅ Si rechazas, NO es rentable
+        emoji: aceptado ? Actual.emoji : '❌', // ✅ Emoji diferente para rechazados
+        texto: aceptado ? Actual.texto : 'RECHAZADO' // ✅ Texto diferente
     };
     
     agregarAlHistorial(viajeParaHistorial);
@@ -2647,6 +2647,7 @@ function procesarViajeRapido(aceptado) {
         mostrarMensaje('✅ Viaje aceptado y guardado en historial', 'success');
     } else {
         mostrarMensaje('❌ Viaje rechazado', 'info');
+        // ✅ LIMPIAR FORMULARIO CUANDO SE RECHAZA
         limpiarFormulario();
     }
     
@@ -4214,4 +4215,3 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
-
