@@ -20,6 +20,10 @@
     --gradient-success: linear-gradient(135deg, #4CAF50, #45a049);
     --gradient-warning: linear-gradient(135deg, #FF9800, #f57c00);
     --gradient-error: linear-gradient(135deg, #f44336, #d32f2f);
+    --azul-brillante: #00AEEF;
+    --naranja-intenso: #F7941D;
+    --negro-suave: #333333;
+    --blanco-puro: #FFFFFF;
 }
 
 [data-theme="dark"] {
@@ -31,6 +35,8 @@
     --border-color: #444444;
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.6);
+    --negro-suave: #e0e0e0;
+    --blanco-puro: #2d2d2d;
 }
 
 /* --- Reset y Base --- */
@@ -1603,18 +1609,34 @@ select {
 }
 
 /* Modo oscuro mejorado */
-[data-theme="dark"] .modal-rapido-contenido {
-    background: linear-gradient(135deg, #2d2d2d, #1e1e1e);
-    border: 2px solid #444;
+[data-theme="dark"] .modal-rapido-contenido-mejorado {
+    background: #2d2d2d;
+    border-color: var(--azul-brillante);
 }
 
-[data-theme="dark"] .modal-rapido-metrica {
-    background: rgba(255, 255, 255, 0.08);
+[data-theme="dark"] .metrica-card {
+    background: #3d3d3d;
+    border-color: rgba(0, 174, 239, 0.2);
 }
 
-[data-theme="dark"] .modal-rapido-acciones .secondary-button {
-    background: rgba(255, 255, 255, 0.1);
+[data-theme="dark"] .btn-rechazar-elegante {
+    background: #3d3d3d;
     border-color: #555;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .impacto-trafico {
+    background: linear-gradient(135deg, rgba(0, 174, 239, 0.1), rgba(247, 148, 29, 0.1));
+}
+
+[data-theme="dark"] .tiempo-label,
+[data-theme="dark"] .tiempo-valor,
+[data-theme="dark"] .impacto-title,
+[data-theme="dark"] .impacto-content,
+[data-theme="dark"] .metrica-valor,
+[data-theme="dark"] .metrica-label,
+[data-theme="dark"] .badge-subtitle {
+    color: #e0e0e0;
 }
 
 /* ===== OPTIMIZACIONES PARA MODAL EN MÓVIL ===== */
@@ -2601,10 +2623,21 @@ select:focus-visible {
 }
 
 /* Estados de tráfico específicos */
-.trafico-low { border-color: #4CAF50 !important; }
-.trafico-moderate { border-color: #FF9800 !important; }
-.trafico-heavy { border-color: #F44336 !important; }
-.trafico-severe { border-color: #D32F2F !important; }
+.trafico-low .trafico-condition {
+    color: #4CAF50;
+}
+
+.trafico-moderate .trafico-condition {
+    color: var(--naranja-intenso);
+}
+
+.trafico-heavy .trafico-condition {
+    color: #FF9800;
+}
+
+.trafico-severe .trafico-condition {
+    color: #F44336;
+}
 
 /* Estilos para el sistema de ubicación */
 .location-permission-section {
@@ -2789,27 +2822,30 @@ function agregarEstilosTrafico() {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10000;
+    z-index: 10002;
     padding: 20px;
-    animation: fadeIn 0.3s ease;
+    box-sizing: border-box;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-rapido-mejorado.hidden {
+    display: none;
 }
 
 .modal-rapido-contenido-mejorado {
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    background: var(--blanco-puro);
     border-radius: 20px;
     width: 100%;
     max-width: 400px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-    animation: slideUp 0.4s ease;
-    color: white;
-    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+    border: 2px solid var(--azul-brillante);
 }
 
 @keyframes fadeIn {
@@ -2818,11 +2854,11 @@ function agregarEstilosTrafico() {
 }
 
 @keyframes slideUp {
-    from { 
+    from {
         opacity: 0;
         transform: translateY(30px) scale(0.95);
     }
-    to { 
+    to {
         opacity: 1;
         transform: translateY(0) scale(1);
     }
@@ -2891,10 +2927,12 @@ function agregarEstilosTrafico() {
     transform: scale(1.1);
 }
 
-/* Tiempo ajustado */
+/* Sección de tiempo ajustado */
 .tiempo-ajustado-section {
     padding: 20px 25px;
     text-align: center;
+    background: var(--blanco-puro);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .tiempo-original, .tiempo-real {
@@ -2905,26 +2943,29 @@ function agregarEstilosTrafico() {
 }
 
 .tiempo-label {
-    opacity: 0.8;
-    font-size: 0.9em;
+    color: var(--negro-suave);
+    font-weight: 600;
+    font-size: 0.95em;
 }
 
 .tiempo-valor {
     font-weight: 700;
     font-size: 1.1em;
+    color: var(--negro-suave);
 }
 
 .tiempo-valor.destacado {
-    background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+    color: var(--azul-brillante);
+    font-size: 1.3em;
+    background: linear-gradient(45deg, var(--azul-brillante), var(--naranja-intenso));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    font-size: 1.3em;
 }
 
 .flecha-ajuste {
     font-size: 1.5em;
-    opacity: 0.6;
+    color: var(--naranja-intenso);
     margin: 5px 0;
     animation: bounce 2s infinite;
 }
@@ -2937,128 +2978,152 @@ function agregarEstilosTrafico() {
 
 /* Resultado principal */
 .resultado-principal {
-    padding: 0 25px 20px 25px;
+    padding: 20px 25px;
+    text-align: center;
 }
 
 .badge-rentabilidad {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    border-radius: 15px;
-    padding: 20px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 20px 30px;
+    border-radius: 50px;
+    background: var(--blanco-puro);
+    border: 3px solid var(--azul-brillante);
+    box-shadow: 0 8px 25px var(--sombra-sutil);
     transition: all 0.3s ease;
 }
 
 .badge-rentabilidad:hover {
-    background: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(0, 174, 239, 0.2);
 }
 
 .badge-emoji {
     font-size: 2.5em;
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
 }
 
 .badge-content {
-    flex: 1;
+    text-align: left;
 }
 
 .badge-title {
-    font-size: 1.4em;
     font-weight: 800;
+    font-size: 1.4em;
+    color: var(--azul-brillante);
     margin-bottom: 5px;
 }
 
 .badge-subtitle {
+    font-size: 0.95em;
+    color: var(--negro-suave);
     opacity: 0.8;
-    font-size: 0.9em;
 }
+
 
 /* Métricas */
 .metricas-grid-mejorado {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    padding: 0 25px 20px 25px;
+    padding: 0 25px 20px;
 }
 
 .metrica-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    background: var(--blanco-puro);
+    border: 2px solid rgba(0, 174, 239, 0.1);
     border-radius: 12px;
     padding: 15px 10px;
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .metrica-card:hover {
-    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--azul-brillante);
     transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--sombra-sutil);
+}
+
+.metrica-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--azul-brillante), var(--naranja-intenso));
 }
 
 .metrica-icono {
-    font-size: 1.5em;
+    font-size: 1.8em;
     margin-bottom: 8px;
     opacity: 0.9;
 }
 
 .metrica-valor {
     font-weight: 700;
-    font-size: 0.95em;
+    font-size: 1.1em;
     margin-bottom: 4px;
+    color: var(--negro-suave);
 }
 
 .metrica-label {
-    font-size: 0.75em;
+    font-size: 0.8em;
+    color: var(--negro-suave);
     opacity: 0.7;
+    font-weight: 500;
 }
 
 /* Impacto del tráfico */
 .impacto-trafico {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    background: linear-gradient(135deg, rgba(0, 174, 239, 0.05), rgba(247, 148, 29, 0.05));
     border-radius: 12px;
-    margin: 0 25px 20px 25px;
-    padding: 15px;
-    border-left: 4px solid #4facfe;
+    margin: 0 25px 20px;
+    padding: 20px;
+    border-left: 4px solid var(--azul-brillante);
 }
 
 .impacto-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
+    gap: 12px;
+    margin-bottom: 10px;
 }
 
 .impacto-icon {
-    font-size: 1.2em;
+    font-size: 1.3em;
+    color: var(--azul-brillante);
 }
 
 .impacto-title {
-    font-weight: 600;
-    font-size: 0.9em;
+    font-weight: 700;
+    font-size: 1em;
+    color: var(--negro-suave);
 }
 
 .impacto-content {
-    font-size: 0.85em;
-    opacity: 0.9;
+    font-size: 0.9em;
     line-height: 1.4;
+    color: var(--negro-suave);
 }
 
-/* Acciones */
+.impacto-content strong {
+    color: var(--azul-brillante);
+}
+
+/* Botones de acción */
 .acciones-mejoradas {
-    padding: 0 25px 25px 25px;
+    padding: 0 25px 25px;
     display: flex;
     gap: 12px;
 }
 
 .btn-rechazar-elegante, .btn-aceptar-elegante {
     flex: 1;
-    padding: 16px 20px;
+    padding: 18px 20px;
     border: none;
     border-radius: 12px;
     font-weight: 700;
@@ -3070,21 +3135,31 @@ function agregarEstilosTrafico() {
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    font-size: 1em;
 }
 
 .btn-rechazar-elegante {
-    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
-    color: white;
+    background: var(--blanco-puro);
+    border: 2px solid #e0e0e0;
+    color: var(--negro-suave);
 }
 
 .btn-aceptar-elegante {
-    background: linear-gradient(135deg, #4facfe, #00f2fe);
-    color: white;
+    background: linear-gradient(135deg, var(--azul-brillante), #0090D0);
+    color: var(--blanco-puro);
+    box-shadow: 0 6px 20px rgba(0, 174, 239, 0.3);
 }
 
-.btn-rechazar-elegante:hover, .btn-aceptar-elegante:hover {
+.btn-rechazar-elegante:hover {
+    border-color: var(--naranja-intenso);
+    background: rgba(247, 148, 29, 0.1);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.btn-aceptar-elegante:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 174, 239, 0.4);
+    background: linear-gradient(135deg, #0090D0, var(--azul-brillante));
 }
 
 .btn-rechazar-elegante:active, .btn-aceptar-elegante:active {
@@ -3092,7 +3167,7 @@ function agregarEstilosTrafico() {
 }
 
 .btn-icon {
-    font-size: 1.2em;
+    font-size: 1.3em;
 }
 
 .btn-text {
@@ -3140,12 +3215,29 @@ function agregarEstilosTrafico() {
         max-width: none;
     }
     
+    .modal-trafico-header {
+        padding: 20px;
+    }
+    
     .metricas-grid-mejorado {
         grid-template-columns: 1fr;
+        gap: 10px;
     }
     
     .acciones-mejoradas {
         flex-direction: column;
+    }
+    
+    .badge-rentabilidad {
+        padding: 15px 20px;
+    }
+    
+    .badge-emoji {
+        font-size: 2em;
+    }
+    
+    .badge-title {
+        font-size: 1.2em;
     }
 }
 
@@ -3705,25 +3797,64 @@ function agregarEstilosTrafico() {
     }
 }
 
-/* HEADER DEL MODAL */
-.modal-header-centrado {
-    padding: 25px 25px 20px;
-    text-align: center;
-    background: rgba(255,255,255,0.1);
-    border-bottom: 1px solid rgba(255,255,255,0.2);
+/* Header del modal */
+.modal-trafico-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px;
+    background: linear-gradient(135deg, var(--azul-brillante), #0090D0);
+    color: var(--blanco-puro);
+    border-bottom: 3px solid var(--naranja-intenso);
 }
 
-.modal-titulo {
-    font-size: 1.4em;
-    font-weight: 700;
-    margin-bottom: 8px;
+.trafico-status {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.trafico-emoji-big {
+    font-size: 2.5em;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.trafico-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.trafico-title {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 4px;
+}
+
+.trafico-condition {
+    font-size: 1.3em;
+    font-weight: 800;
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-.modal-subtitulo {
-    font-size: 1em;
-    opacity: 0.9;
-    font-weight: 500;
+.modal-cerrar-elegante {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: var(--blanco-puro);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.modal-cerrar-elegante:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
 }
 
 /* BADGE DE RESULTADO */
@@ -3749,20 +3880,32 @@ function agregarEstilosTrafico() {
     font-weight: 700;
 }
 
-/* ESTADOS DE RENTABILIDAD */
-.rentable .badge-resultado-centrado {
-    background: rgba(46, 204, 113, 0.3);
-    border-color: rgba(46, 204, 113, 0.5);
+/* Estados de rentabilidad */
+.badge-rentabilidad.rentable {
+    border-color: #4CAF50;
+    background: linear-gradient(135deg, #E8F5E8, #C8E6C9);
 }
 
-.oportunidad .badge-resultado-centrado {
-    background: rgba(243, 156, 18, 0.3);
-    border-color: rgba(243, 156, 18, 0.5);
+.badge-rentabilidad.rentable .badge-title {
+    color: #2E7D32;
 }
 
-.no-rentable .badge-resultado-centrado {
-    background: rgba(231, 76, 60, 0.3);
-    border-color: rgba(231, 76, 60, 0.5);
+.badge-rentabilidad.oportunidad {
+    border-color: var(--naranja-intenso);
+    background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+}
+
+.badge-rentabilidad.oportunidad .badge-title {
+    color: var(--naranja-intenso);
+}
+
+.badge-rentabilidad.no-rentable {
+    border-color: #F44336;
+    background: linear-gradient(135deg, #FFEBEE, #FFCDD2);
+}
+
+.badge-rentabilidad.no-rentable .badge-title {
+    color: #C62828;
 }
 
 /* CUERPO DEL MODAL */
@@ -3907,3 +4050,4 @@ function agregarEstilosTrafico() {
     font-weight: bold;
 }
 }
+
