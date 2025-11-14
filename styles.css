@@ -20,6 +20,9 @@
     --gradient-success: linear-gradient(135deg, #4CAF50, #45a049);
     --gradient-warning: linear-gradient(135deg, #FF9800, #f57c00);
     --gradient-error: linear-gradient(135deg, #f44336, #d32f2f);
+    --logo-blue: #00AEEF;
+    --logo-orange: #F7941D;
+    --logo-dark: #333333;
 }
 
 [data-theme="dark"] {
@@ -111,10 +114,10 @@ body {
 }
 
 .tab-button.active {
-    background: var(--card-bg);
-    color: var(--primary-blue);
-    box-shadow: var(--shadow);
-    transform: translateY(-1px);
+  background: var(--logo-blue);
+  color: white;
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
 }
 
 .tab-icon {
@@ -731,10 +734,10 @@ input[type="number"] {
 input[type="number"]:focus,
 input[type="text"]:focus,
 select:focus {
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
-    outline: none;
-    transform: translateY(-2px);
+  border-color: var(--logo-blue);
+  box-shadow: 0 0 0 3px rgba(0, 174, 239, 0.2);
+  outline: none;
+  transform: translateY(-2px);
 }
 
 input[type="number"]:valid,
@@ -841,6 +844,29 @@ select {
 
 .button-icon {
     font-size: 1.1em;
+}
+
+.location-permission-btn {
+  background: var(--logo-blue);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-weight: bold;
+  font-size: 1em;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
+}
+
+.location-permission-btn:hover {
+  background: var(--logo-orange);
+  transform: translateY(-2px);
+}
+
+.icono-naranja {
+  color: var(--logo-orange);
+  font-size: 1.2em;
+  margin-right: 6px;
 }
 
 /* --- Toggle de Tema --- */
@@ -3907,3 +3933,4 @@ function agregarEstilosTrafico() {
     font-weight: bold;
 }
 }
+
