@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DIBER - Calculadora Inteligente para Conductores</title>
-    <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="logo_b.png" type="image/png">
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
- <!-- ✅ SCRIPT MEJORADO PARA CARGAR GOOGLE MAPS -->
+    <!-- ✅ SCRIPT MEJORADO PARA CARGAR GOOGLE MAPS -->
     <script>
         // Configuración global de Google Maps
         window.GOOGLE_MAPS_API_KEY = 'AIzaSyB17REl6ZbCavA4DKkn1ZjOdbnNWLBFKMs';
@@ -64,6 +63,1146 @@
             });
         }
     </script>
+
+    <style>
+        /* === SISTEMA DE DISEÑO MODERNO === */
+        :root {
+            /* Colores primarios mejorados */
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            
+            /* Sombras modernas */
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 8px 30px rgba(0,0,0,0.12);
+            --shadow-lg: 0 20px 60px rgba(0,0,0,0.15);
+            --shadow-xl: 0 25px 50px rgba(0,0,0,0.25);
+            
+            /* Bordes modernos */
+            --border-radius-sm: 12px;
+            --border-radius-md: 16px;
+            --border-radius-lg: 20px;
+            --border-radius-xl: 24px;
+            
+            /* Colores base */
+            --primary-blue: #1a73e8;
+            --secondary-orange: #f5a623;
+            --success-green: #4CAF50;
+            --warning-orange: #FF9800;
+            --error-red: #f44336;
+            --info-blue: #2196F3;
+            --dark-grey: #424242;
+            --medium-grey: #757575;
+            --light-grey: #f5f5f7;
+            --white: #ffffff;
+            --card-bg: #ffffff;
+            --text-primary: #424242;
+            --text-secondary: #757575;
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.15);
+            
+            /* Efectos de vidrio */
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --light-grey: #121212;
+            --white: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --border-color: #444444;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.6);
+            --glass-bg: rgba(0, 0, 0, 0.2);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        /* === ESTILOS BASE Y RESET === */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--light-grey) 0%, #e8eaed 100%);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* === SISTEMA DE PANTALLAS === */
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            width: 100%;
+            margin: 20px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* === HEADER MODERNO === */
+        .app-header-modern {
+            background: var(--primary-gradient);
+            border-radius: var(--border-radius-lg);
+            padding: 20px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-wrapper {
+            position: relative;
+        }
+
+        .app-logo-modern {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--border-radius-sm);
+            box-shadow: var(--shadow-md);
+        }
+
+        .logo-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulseGlow 2s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .app-title {
+            color: white;
+            font-size: 1.4em;
+            font-weight: 800;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .app-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85em;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Métricas en header */
+        .header-metrics {
+            display: flex;
+            gap: 12px;
+        }
+
+        .metric-pill {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .metric-icon {
+            font-size: 1.1em;
+        }
+
+        .metric-value {
+            font-size: 0.95em;
+            font-weight: 700;
+        }
+
+        .metric-label {
+            font-size: 0.75em;
+            opacity: 0.8;
+        }
+
+        /* Botones de icono modernos */
+        .header-actions-modern {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .icon-btn.premium {
+            background: var(--secondary-gradient);
+        }
+
+        .btn-pulse {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        /* === SISTEMA DE PESTAÑAS MODERNO === */
+        .tabs-container-modern {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius-lg);
+            padding: 8px;
+            border: 1px solid var(--glass-border);
+            margin: 20px 0;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tabs-header-modern {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius-md);
+            padding: 6px;
+            position: relative;
+        }
+
+        .tab-button-modern {
+            flex: 1;
+            padding: 16px 12px;
+            border: none;
+            background: transparent;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 2;
+        }
+
+        .tab-button-modern.active {
+            color: var(--primary-blue);
+            transform: translateY(-1px);
+        }
+
+        .tab-slider {
+            position: absolute;
+            top: 6px;
+            left: 0;
+            height: calc(100% - 12px);
+            background: var(--primary-gradient);
+            border-radius: var(--border-radius-sm);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-icon-modern {
+            font-size: 1.4em;
+            transition: transform 0.3s ease;
+        }
+
+        .tab-button-modern.active .tab-icon-modern {
+            transform: scale(1.1);
+        }
+
+        .tab-text-modern {
+            font-size: 0.75em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* === FORMULARIO MODERNO === */
+        .form-section-modern {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-lg);
+            padding: 0;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 24px;
+        }
+
+        .form-header-glow {
+            background: var(--primary-gradient);
+            padding: 24px;
+            color: white;
+            text-align: center;
+        }
+
+        .section-title-glow {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .form-subtitle {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+
+        .input-group-modern {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .input-group-modern:last-child {
+            border-bottom: none;
+        }
+
+        .input-label-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .input-label-modern {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95em;
+        }
+
+        .label-icon {
+            font-size: 1.1em;
+        }
+
+        .input-badge {
+            background: var(--primary-blue);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .input-badge.required {
+            background: var(--error-red);
+        }
+
+        .input-wrapper-modern {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-field-modern {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius-sm);
+            font-size: 1.1em;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
+        }
+
+        .input-field-modern:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+            outline: none;
+            transform: translateY(-1px);
+        }
+
+        .input-currency, .input-unit {
+            position: absolute;
+            right: 16px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        .input-focus-border {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--primary-blue);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .input-field-modern:focus ~ .input-focus-border {
+            width: 100%;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .input-group-modern.compact {
+            flex: 1;
+        }
+
+        /* Widget de tráfico */
+        .traffic-widget {
+            background: var(--primary-gradient);
+            margin: 20px 24px;
+            border-radius: var(--border-radius-md);
+            overflow: hidden;
+            color: white;
+        }
+
+        .traffic-header {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .traffic-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .traffic-toggle {
+            width: 44px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.3s ease;
+        }
+
+        .traffic-toggle.active {
+            background: #00ff88;
+        }
+
+        .toggle-switch {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .traffic-toggle.active .toggle-switch {
+            transform: translateX(20px);
+        }
+
+        .traffic-content {
+            padding: 15px 20px;
+        }
+
+        .traffic-loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+            opacity: 0.8;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* === RESULTADO RÁPIDO MODERNO === */
+        .resultado-rapido-modern {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-lg);
+            padding: 0;
+            margin: 24px 0;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+            animation: smoothAppear 0.5s ease-out;
+        }
+
+        @keyframes smoothAppear {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .resultado-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--success-gradient);
+        }
+
+        .resultado-header-modern {
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .resultado-badge-modern {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            border-radius: 25px;
+            background: var(--success-gradient);
+            color: white;
+            font-weight: 700;
+            font-size: 1.1em;
+            position: relative;
+            box-shadow: var(--shadow-md);
+        }
+
+        .badge-orb {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .badge-emoji {
+            font-size: 1.3em;
+        }
+
+        .metric-grid-modern {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding: 24px;
+        }
+
+        .metric-card-modern {
+            background: var(--light-grey);
+            border-radius: var(--border-radius-sm);
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .metric-card-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .metric-card-modern.highlight {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .metric-icon-wrapper {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .resultado-actions-modern {
+            padding: 20px 24px;
+            display: flex;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .btn-rechazar-modern, .btn-aceptar-modern {
+            flex: 1;
+            padding: 16px 24px;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-rechazar-modern {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-aceptar-modern {
+            background: var(--success-gradient);
+            color: white;
+        }
+
+        .btn-rechazar-modern:hover, .btn-aceptar-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* === PANEL DE RESUMEN MODERNO === */
+        .resumen-container-modern {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stats-card-modern {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .stats-header h3 {
+            color: var(--text-primary);
+            font-size: 1.2em;
+            margin: 0;
+        }
+
+        .stats-period {
+            background: var(--light-grey);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .stats-grid-modern {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .stat-item-modern {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: var(--border-radius-sm);
+            background: var(--light-grey);
+        }
+
+        .stat-item-modern.primary {
+            border-left: 4px solid var(--primary-blue);
+        }
+
+        .stat-item-modern.success {
+            border-left: 4px solid var(--success-green);
+        }
+
+        .stat-item-modern.warning {
+            border-left: 4px solid var(--warning-orange);
+        }
+
+        .stat-item-modern.info {
+            border-left: 4px solid var(--info-blue);
+        }
+
+        .stat-icon {
+            font-size: 1.5em;
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .chart-card-modern {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-header h4 {
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .chart-legend {
+            display: flex;
+            gap: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .legend-color.rentable {
+            background: var(--success-green);
+        }
+
+        .legend-color.no-rentable {
+            background: var(--error-red);
+        }
+
+        .chart-container {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .efficiency-chart {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(var(--success-green) 0% 75%, var(--error-red) 75% 100%);
+            position: relative;
+        }
+
+        .performance-card-modern {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .performance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .performance-header h4 {
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .performance-badge {
+            background: var(--success-gradient);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .performance-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .performance-metric {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .metric-progress {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .progress-track {
+            flex: 1;
+            height: 8px;
+            background: var(--light-grey);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 60px;
+        }
+
+        .metric-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        /* === ANIMACIONES Y MICRO-INTERACCIONES === */
+        .smooth-appear {
+            animation: smoothAppear 0.5s ease-out;
+        }
+
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius-sm);
+            padding: 16px 20px;
+            box-shadow: var(--shadow-xl);
+            border-left: 4px solid var(--success-green);
+            transform: translateX(400px);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10000;
+        }
+
+        .notification-toast.show {
+            transform: translateX(0);
+        }
+
+        /* === RESPONSIVE DESIGN === */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 20px;
+                margin: 10px 0;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .header-metrics {
+                justify-content: center;
+            }
+
+            .metric-grid-modern {
+                grid-template-columns: 1fr;
+            }
+
+            .input-row {
+                flex-direction: column;
+            }
+
+            .stats-grid-modern {
+                grid-template-columns: 1fr;
+            }
+
+            .metricas-grid-mejorado {
+                grid-template-columns: 1fr;
+            }
+
+            .tab-button-modern {
+                padding: 12px 8px;
+                min-height: 60px;
+            }
+
+            .resultado-actions-modern {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .metric-pill {
+                padding: 6px 12px;
+            }
+
+            .icon-btn {
+                width: 40px;
+                height: 40px;
+            }
+
+            .form-header-glow {
+                padding: 20px;
+            }
+
+            .input-group-modern {
+                padding: 16px 20px;
+            }
+        }
+
+        /* === COMPATIBILIDAD CON CÓDIGO EXISTENTE === */
+        /* Mantener estilos existentes para funcionalidad */
+        .hidden {
+            display: none !important;
+        }
+
+        .status-indicator {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.info {
+            background: var(--info-blue);
+        }
+
+        .status-indicator.success {
+            background: var(--success-green);
+        }
+
+        .status-indicator.warning {
+            background: var(--warning-orange);
+        }
+
+        .status-indicator.error {
+            background: var(--error-red);
+        }
+
+        /* Modal de código de usuario */
+        #user-code-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #user-code-modal.active {
+            display: flex !important;
+        }
+        
+        .modal-contenido {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+            margin: 20px;
+        }
+
+        /* Botones existentes */
+        .primary-button, .secondary-button {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            min-height: 50px;
+        }
+
+        .primary-button {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .secondary-button {
+            background: var(--light-grey);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        /* Asegurar compatibilidad con JavaScript existente */
+        #resultado-rapido, #tab-calcular, #tab-resumen, #tab-historial {
+            /* Estilos que el JS espera encontrar */
+        }
+
+        /* Transiciones suaves para cambios de tema */
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+    </style>
 </head>
 <body>
     <!-- Modal de Código de Usuario -->
@@ -140,7 +1279,7 @@
     <div id="perfil-screen" class="screen active">
         <div class="container">
             <div class="logo-container">
-                <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
+                <img src="logo_b.png" alt="Logo DIBER" class="app-logo-modern">
             </div>
 
             <div class="perfil-section">
@@ -177,140 +1316,208 @@
             <form id="perfil-form" class="perfil-form">
                 <input type="hidden" id="perfil-id">
                 
-                <div class="input-group">
-                    <label for="nombre-perfil">
-                        👤 Nombre del Perfil
-                        <span class="required">*</span>
-                    </label>
-                    <input type="text" id="nombre-perfil" required placeholder="Ej: Mi Perfil Principal">
+                <div class="input-group-modern">
+                    <div class="input-label-container">
+                        <label for="nombre-perfil" class="input-label-modern">
+                            <span class="label-icon">👤</span>
+                            Nombre del Perfil
+                        </label>
+                        <div class="input-badge required">Requerido</div>
+                    </div>
+                    <div class="input-wrapper-modern">
+                        <input type="text" id="nombre-perfil" class="input-field-modern" required placeholder="Ej: Mi Perfil Principal">
+                        <div class="input-focus-border"></div>
+                    </div>
                 </div>
 
-                <div class="form-section">
-                    <h3>🚗 Configuración del Vehículo</h3>
+                <div class="form-section-modern">
+                    <div class="form-header-glow">
+                        <h3 class="section-title-glow">🚗 Configuración del Vehículo</h3>
+                    </div>
                     
-                    <div class="input-group">
-                        <label for="tipo-medida">
-                            📏 Sistema de Medida
-                            <span class="required">*</span>
-                        </label>
-                        <select id="tipo-medida" required>
-                            <option value="km">Kilómetros (Km)</option>
-                            <option value="mi">Millas (Mi)</option>
-                        </select>
+                    <div class="input-group-modern">
+                        <div class="input-label-container">
+                            <label for="tipo-medida" class="input-label-modern">
+                                <span class="label-icon">📏</span>
+                                Sistema de Medida
+                            </label>
+                            <div class="input-badge required">Requerido</div>
+                        </div>
+                        <div class="input-wrapper-modern">
+                            <select id="tipo-medida" class="input-field-modern" required>
+                                <option value="km">Kilómetros (Km)</option>
+                                <option value="mi">Millas (Mi)</option>
+                            </select>
+                            <div class="input-focus-border"></div>
+                        </div>
                     </div>
 
-                    <div class="input-group">
-                        <label for="tipo-combustible">
-                            ⛽ Tipo de Combustible
-                            <span class="required">*</span>
-                        </label>
-                        <select id="tipo-combustible" required>
-                            <option value="glp">Gas Licuado de Petróleo (GLP)</option>
-                            <option value="gas">Gasolina (GSL)</option>
-                        </select>
+                    <div class="input-group-modern">
+                        <div class="input-label-container">
+                            <label for="tipo-combustible" class="input-label-modern">
+                                <span class="label-icon">⛽</span>
+                                Tipo de Combustible
+                            </label>
+                            <div class="input-badge required">Requerido</div>
+                        </div>
+                        <div class="input-wrapper-modern">
+                            <select id="tipo-combustible" class="input-field-modern" required>
+                                <option value="glp">Gas Licuado de Petróleo (GLP)</option>
+                                <option value="gas">Gasolina (GSL)</option>
+                            </select>
+                            <div class="input-focus-border"></div>
+                        </div>
                     </div>
 
-                    <div class="input-group">
-                        <label for="rendimiento">
-                            🎯 Rendimiento del Vehículo
-                            <span class="required">*</span>
-                        </label>
-                        <div class="input-with-unit">
-                            <input type="number" id="rendimiento" min="1" step="0.1" required placeholder="22.0" inputmode="decimal">
+                    <div class="input-group-modern">
+                        <div class="input-label-container">
+                            <label for="rendimiento" class="input-label-modern">
+                                <span class="label-icon">🎯</span>
+                                Rendimiento del Vehículo
+                            </label>
+                            <div class="input-badge required">Requerido</div>
+                        </div>
+                        <div class="input-wrapper-modern">
+                            <input type="number" id="rendimiento" class="input-field-modern" min="1" step="0.1" required placeholder="22.0" inputmode="decimal">
                             <span id="rendimiento-unit" class="input-unit">Km/Gl</span>
+                            <div class="input-focus-border"></div>
                         </div>
                     </div>
 
-                    <div class="input-group">
-                        <label for="precio-combustible">
-                            💰 Precio del Combustible
-                            <span class="required">*</span>
-                        </label>
-                        <div class="input-with-unit">
-                            <input type="number" id="precio-combustible" min="0" step="0.01" required placeholder="137.20" inputmode="decimal">
+                    <div class="input-group-modern">
+                        <div class="input-label-container">
+                            <label for="precio-combustible" class="input-label-modern">
+                                <span class="label-icon">💰</span>
+                                Precio del Combustible
+                            </label>
+                            <div class="input-badge required">Requerido</div>
+                        </div>
+                        <div class="input-wrapper-modern">
+                            <input type="number" id="precio-combustible" class="input-field-modern" min="0" step="0.01" required placeholder="137.20" inputmode="decimal">
                             <span id="precio-combustible-unit" class="input-unit">DOP/Gl</span>
+                            <div class="input-focus-border"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="form-section">
-                    <h3>💰 Configuración de Rentabilidad</h3>
+                <div class="form-section-modern">
+                    <div class="form-header-glow">
+                        <h3 class="section-title-glow">💰 Configuración de Rentabilidad</h3>
+                    </div>
                     
-                    <div class="input-group">
-                        <label for="moneda">
-                            💵 Moneda
-                            <span class="required">*</span>
-                        </label>
-                        <select id="moneda" required>
-                            <option value="DOP">Peso Dominicano (DOP)</option>
-                            <option value="USD">Dólar Americano (USD)</option>
-                        </select>
+                    <div class="input-group-modern">
+                        <div class="input-label-container">
+                            <label for="moneda" class="input-label-modern">
+                                <span class="label-icon">💵</span>
+                                Moneda
+                            </label>
+                            <div class="input-badge required">Requerido</div>
+                        </div>
+                        <div class="input-wrapper-modern">
+                            <select id="moneda" class="input-field-modern" required>
+                                <option value="DOP">Peso Dominicano (DOP)</option>
+                                <option value="USD">Dólar Americano (USD)</option>
+                            </select>
+                            <div class="input-focus-border"></div>
+                        </div>
                     </div>
 
-                    <div class="config-grid">
-                        <div class="input-group">
-                            <label for="umbral-minuto-rentable">
-                                ✅ Viaje Rentable - Por Minuto
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-with-unit">
-                                <input type="number" id="umbral-minuto-rentable" min="0" step="0.01" required value="6.00" inputmode="decimal">
+                    <div class="input-row">
+                        <div class="input-group-modern compact">
+                            <div class="input-label-container">
+                                <label for="umbral-minuto-rentable" class="input-label-modern">
+                                    <span class="label-icon">✅</span>
+                                    Por Minuto Rentable
+                                </label>
+                                <div class="input-badge required">Requerido</div>
+                            </div>
+                            <div class="input-wrapper-modern">
+                                <input type="number" id="umbral-minuto-rentable" class="input-field-modern" min="0" step="0.01" required value="6.00" inputmode="decimal">
                                 <span class="input-unit umbral-minuto">DOP/min</span>
+                                <div class="input-focus-border"></div>
                             </div>
                         </div>
 
-                        <div class="input-group">
-                            <label for="umbral-km-rentable">
-                                ✅ Viaje Rentable - Por Distancia
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-with-unit">
-                                <input type="number" id="umbral-km-rentable" min="0" step="0.01" required value="25.00" inputmode="decimal">
+                        <div class="input-group-modern compact">
+                            <div class="input-label-container">
+                                <label for="umbral-km-rentable" class="input-label-modern">
+                                    <span class="label-icon">✅</span>
+                                    Por Km Rentable
+                                </label>
+                                <div class="input-badge required">Requerido</div>
+                            </div>
+                            <div class="input-wrapper-modern">
+                                <input type="number" id="umbral-km-rentable" class="input-field-modern" min="0" step="0.01" required value="25.00" inputmode="decimal">
                                 <span id="umbral-km-unit" class="input-unit">DOP/Km</span>
+                                <div class="input-focus-border"></div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="input-group">
-                            <label for="umbral-minuto-oportunidad">
-                                ⚠️ Viaje Oportunidad - Por Minuto
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-with-unit">
-                                <input type="number" id="umbral-minuto-oportunidad" min="0" step="0.01" required value="5.00" inputmode="decimal">
+                    <div class="input-row">
+                        <div class="input-group-modern compact">
+                            <div class="input-label-container">
+                                <label for="umbral-minuto-oportunidad" class="input-label-modern">
+                                    <span class="label-icon">⚠️</span>
+                                    Por Minuto Oportunidad
+                                </label>
+                                <div class="input-badge required">Requerido</div>
+                            </div>
+                            <div class="input-wrapper-modern">
+                                <input type="number" id="umbral-minuto-oportunidad" class="input-field-modern" min="0" step="0.01" required value="5.00" inputmode="decimal">
                                 <span class="input-unit umbral-minuto">DOP/min</span>
+                                <div class="input-focus-border"></div>
                             </div>
                         </div>
 
-                        <div class="input-group">
-                            <label for="umbral-km-oportunidad">
-                                ⚠️ Viaje Oportunidad - Por Distancia
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-with-unit">
-                                <input type="number" id="umbral-km-oportunidad" min="0" step="0.01" required value="23.00" inputmode="decimal">
+                        <div class="input-group-modern compact">
+                            <div class="input-label-container">
+                                <label for="umbral-km-oportunidad" class="input-label-modern">
+                                    <span class="label-icon">⚠️</span>
+                                    Por Km Oportunidad
+                                </label>
+                                <div class="input-badge required">Requerido</div>
+                            </div>
+                            <div class="input-wrapper-modern">
+                                <input type="number" id="umbral-km-oportunidad" class="input-field-modern" min="0" step="0.01" required value="23.00" inputmode="decimal">
                                 <span id="umbral-km-oportunidad-unit" class="input-unit">DOP/Km</span>
+                                <div class="input-focus-border"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="form-section">
-                    <h3>📊 Costos Mensuales</h3>
+                <div class="form-section-modern">
+                    <div class="form-header-glow">
+                        <h3 class="section-title-glow">📊 Costos Mensuales</h3>
+                    </div>
                     
-                    <div class="config-grid">
-                        <div class="input-group">
-                            <label for="costo-seguro">Seguro Mensual</label>
-                            <div class="input-with-unit">
-                                <input type="number" id="costo-seguro" min="0" step="0.01" value="0" inputmode="decimal">
+                    <div class="input-row">
+                        <div class="input-group-modern compact">
+                            <div class="input-label-container">
+                                <label for="costo-seguro" class="input-label-modern">
+                                    <span class="label-icon">🛡️</span>
+                                    Seguro Mensual
+                                </label>
+                            </div>
+                            <div class="input-wrapper-modern">
+                                <input type="number" id="costo-seguro" class="input-field-modern" min="0" step="0.01" value="0" inputmode="decimal">
                                 <span class="input-unit costo-mensual">DOP</span>
+                                <div class="input-focus-border"></div>
                             </div>
                         </div>
 
-                        <div class="input-group">
-                            <label for="costo-mantenimiento">Mantenimiento Mensual</label>
-                            <div class="input-with-unit">
-                                <input type="number" id="costo-mantenimiento" min="0" step="0.01" value="0" inputmode="decimal">
+                        <div class="input-group-modern compact">
+                            <div class="input-label-container">
+                                <label for="costo-mantenimiento" class="input-label-modern">
+                                    <span class="label-icon">🔧</span>
+                                    Mantenimiento Mensual
+                                </label>
+                            </div>
+                            <div class="input-wrapper-modern">
+                                <input type="number" id="costo-mantenimiento" class="input-field-modern" min="0" step="0.01" value="0" inputmode="decimal">
                                 <span class="input-unit costo-mensual">DOP</span>
+                                <div class="input-focus-border"></div>
                             </div>
                         </div>
                     </div>
@@ -331,464 +1538,579 @@
     </div>
 
     <!-- Pantalla Principal de Cálculos -->
-<div id="main-screen" class="screen">
-    <div class="container">
-      <div class="app-header">
-    <div class="header-left">
-        <!-- Botón de código de usuario - SOLO EMOJI -->
-        <button id="user-code-button" class="secondary-button small user-code-button" title="Código de sincronización" style="display: none;">
-            <span class="button-icon">🔑</span>
-        </button>
-          <button id="cambiar-perfil" class="secondary-button small" title="Cambiar/Editar perfil">
-            <span class="button-icon">👤</span>
-        </button>
-    </div>
-    
-    <div class="logo-container">
-        <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
-    </div>
-    
-    <div class="header-actions">
-        <button id="sync-status-btn" class="secondary-button small" title="Sincronización">
-            <span class="button-icon" id="sync-btn-icon">🌐</span>
-        </button>
-        <button id="theme-toggle" class="theme-toggle" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
-            <span class="theme-icon">🌙</span>
-        </button>
-    </div>
-</div>
+    <div id="main-screen" class="screen">
+        <div class="container">
+            <!-- HEADER MODERNO -->
+            <div class="app-header-modern">
+                <div class="header-background"></div>
+                
+                <div class="header-content">
+                    <!-- Logo y título mejorados -->
+                    <div class="brand-section">
+                        <div class="logo-wrapper">
+                            <img src="logo_b.png" alt="DIBER" class="app-logo-modern">
+                            <div class="logo-glow"></div>
+                        </div>
+                        <div class="brand-text">
+                            <h1 class="app-title">DIBER</h1>
+                            <p class="app-subtitle">Calculadora Inteligente</p>
+                        </div>
+                    </div>
+
+                    <!-- Métricas rápidas en header -->
+                    <div class="header-metrics">
+                        <div class="metric-pill">
+                            <span class="metric-icon">💰</span>
+                            <span class="metric-value" id="header-ganancia-hoy">RD$0</span>
+                            <span class="metric-label">Hoy</span>
+                        </div>
+                        <div class="metric-pill">
+                            <span class="metric-icon">⏱️</span>
+                            <span class="metric-value" id="header-tiempo-hoy">0m</span>
+                            <span class="metric-label">Tiempo</span>
+                        </div>
+                    </div>
+
+                    <!-- Acciones con diseño moderno -->
+                    <div class="header-actions-modern">
+                        <button class="icon-btn premium" id="user-code-button" title="Código de sincronización">
+                            <span class="btn-icon">🔗</span>
+                            <div class="btn-pulse"></div>
+                        </button>
+                        
+                        <button class="icon-btn" id="cambiar-perfil" title="Cambiar perfil">
+                            <span class="btn-icon">👤</span>
+                        </button>
+                        
+                        <button class="icon-btn" id="theme-toggle" title="Cambiar tema">
+                            <span class="btn-icon">🌙</span>
+                        </button>
+                        
+                        <button class="icon-btn sync-indicator" id="sync-status-btn" title="Sincronización">
+                            <span class="btn-icon" id="sync-btn-icon">🌐</span>
+                            <div class="sync-dot"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Indicador de Estado -->
             <div id="status-indicator" class="status-indicator hidden">
                 <span id="status-text">Calculando...</span>
             </div>
 
-            <!-- Sistema de Pestañas -->
-            <div class="tabs-container">
-                <div class="tabs-header">
-                    <button class="tab-button active" data-tab="calcular">
-                        <span class="tab-icon">🧮</span>
-                        <span class="tab-text">CALCULAR</span>
+            <!-- SISTEMA DE PESTAÑAS MODERNO -->
+            <div class="tabs-container-modern">
+                <div class="tabs-header-modern">
+                    <div class="tab-slider"></div>
+                    <button class="tab-button-modern active" data-tab="calcular">
+                        <span class="tab-icon-modern">🧮</span>
+                        <span class="tab-text-modern">CALCULAR</span>
                     </button>
-                    <button class="tab-button" data-tab="resumen">
-                        <span class="tab-icon">📊</span>
-                        <span class="tab-text">RESUMEN</span>
+                    <button class="tab-button-modern" data-tab="resumen">
+                        <span class="tab-icon-modern">📊</span>
+                        <span class="tab-text-modern">RESUMEN</span>
                     </button>
-                    <button class="tab-button" data-tab="historial">
-                        <span class="tab-icon">📋</span>
-                        <span class="tab-text">HISTORIAL</span>
+                    <button class="tab-button-modern" data-tab="historial">
+                        <span class="tab-icon-modern">📋</span>
+                        <span class="tab-text-modern">HISTORIAL</span>
                     </button>
                 </div>
 
                 <!-- Contenido de Pestañas -->
-<div class="tab-content active" id="tab-calcular">
-    <!-- Formulario Principal -->
-    <div class="form-section">
-        <h2 class="section-title centered">📊 Datos del Viaje</h2>
-        
-        <div class="input-group">
-            <label for="tarifa">
-                💰 Ganancia Ofrecida
-                <span class="required">*</span>
-            </label>
-            <div class="input-with-unit">
-                <input type="number" id="tarifa" min="0" step="0.01" required inputmode="decimal">
-                <span id="moneda-tarifa" class="input-unit">DOP</span>
-            </div>
-            <span class="error-message" id="tarifa-error"></span>
-        </div>
+                <div class="tab-content active" id="tab-calcular">
+                    <!-- Formulario Principal Moderno -->
+                    <div class="form-section-modern">
+                        <div class="form-header-glow">
+                            <h2 class="section-title-glow">📊 Datos del Viaje</h2>
+                            <div class="form-subtitle">Ingresa los detalles para analizar rentabilidad</div>
+                        </div>
 
-        <div class="input-group">
-            <label for="minutos">
-                ⏱️ Tiempo Estimado
-                <span class="required">*</span>
-            </label>
-            <div class="input-with-unit">
-                <input type="number" id="minutos" min="1" step="1" required inputmode="numeric">
-                <span class="input-unit">min</span>
-            </div>
-            <span class="error-message" id="minutos-error"></span>
-        </div>
+                        <div class="input-group-modern">
+                            <div class="input-label-container">
+                                <label for="tarifa" class="input-label-modern">
+                                    <span class="label-icon">💰</span>
+                                    Ganancia Ofrecida
+                                </label>
+                                <div class="input-badge required">Requerido</div>
+                            </div>
+                            <div class="input-wrapper-modern">
+                                <input type="number" id="tarifa" class="input-field-modern" min="0" step="0.01" required placeholder="0.00" inputmode="decimal">
+                                <span id="moneda-tarifa" class="input-currency">DOP</span>
+                                <div class="input-focus-border"></div>
+                            </div>
+                            <span class="error-message" id="tarifa-error"></span>
+                        </div>
 
-        <div class="input-group">
-            <label for="distancia">
-                🛣️ Distancia Estimada
-                <span class="required">*</span>
-            </label>
-            <div class="input-with-unit">
-                <input type="number" id="distancia" min="0" step="0.1" required inputmode="decimal">
-                <span id="distancia-unit" class="input-unit">Km</span>
-            </div>
-            <span class="error-message" id="distancia-error"></span>
-        </div>
+                        <div class="input-row">
+                            <div class="input-group-modern compact">
+                                <div class="input-label-container">
+                                    <label for="minutos" class="input-label-modern">
+                                        <span class="label-icon">⏱️</span>
+                                        Minutos
+                                    </label>
+                                    <div class="input-badge required">Requerido</div>
+                                </div>
+                                <div class="input-wrapper-modern">
+                                    <input type="number" id="minutos" class="input-field-modern" min="1" step="1" required placeholder="0" inputmode="numeric">
+                                    <span class="input-unit">min</span>
+                                    <div class="input-focus-border"></div>
+                                </div>
+                                <span class="error-message" id="minutos-error"></span>
+                            </div>
 
-<!-- ✅ AQUÍ VA EL BOTÓN DE ACTIVAR UBICACIÓN -->
-        <div class="location-permission-section">
-            <button type="button" id="activar-ubicacion-btn" class="location-permission-btn">
-                <span class="button-icon">📍</span>
-                Activar Análisis de Tráfico
-            </button>
-            <div id="location-status" class="location-status hidden">
-                <span class="status-icon">✅</span>
-                <span class="status-text">Tráfico monitoreado</span>
-            </div>
-        </div>
-        
-        <!-- Resultado Rápido -->
-        <div id="resultado-rapido" class="resultado-rapido hidden">
-            <div class="resultado-header">
-                <h3>🎯 Resultado Instantáneo</h3>
-            </div>
-            <div class="resultado-content">
-                <div class="resultado-badge" id="resultado-badge">
-                    <span id="resultado-emoji">✅</span>
-                    <span id="resultado-texto">RENTABLE</span>
-                </div>
-                <div class="resultado-metricas">
-                    <div class="metrica-rapida">
-                        <span class="metrica-label">Por minuto:</span>
-                        <span id="metrica-minuto" class="metrica-valor">--</span>
+                            <div class="input-group-modern compact">
+                                <div class="input-label-container">
+                                    <label for="distancia" class="input-label-modern">
+                                        <span class="label-icon">🛣️</span>
+                                        Distancia
+                                    </label>
+                                    <div class="input-badge required">Requerido</div>
+                                </div>
+                                <div class="input-wrapper-modern">
+                                    <input type="number" id="distancia" class="input-field-modern" min="0" step="0.1" required placeholder="0.0" inputmode="decimal">
+                                    <span id="distancia-unit" class="input-unit">Km</span>
+                                    <div class="input-focus-border"></div>
+                                </div>
+                                <span class="error-message" id="distancia-error"></span>
+                            </div>
+                        </div>
+
+                        <!-- Widget de Tráfico Inteligente -->
+                        <div class="traffic-widget" id="traffic-widget">
+                            <div class="traffic-header">
+                                <div class="traffic-title">
+                                    <span class="traffic-icon">🚗</span>
+                                    Análisis de Tráfico Inteligente
+                                </div>
+                                <button class="traffic-toggle" id="toggle-traffic">
+                                    <span class="toggle-switch"></span>
+                                </button>
+                            </div>
+                            <div class="traffic-content" id="traffic-content">
+                                <div class="traffic-loading">
+                                    <div class="loading-spinner"></div>
+                                    <span>Analizando condiciones de tráfico...</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="metrica-rapida">
-                        <span class="metrica-label">Por km:</span>
-                        <span id="metrica-km" class="metrica-valor">--</span>
-                   </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Pestaña Resumen - VERSIÓN MEJORADA -->
-<div class="tab-content" id="tab-resumen">
-    <!-- Estadísticas del Día -->
-    <div class="estadisticas-container">
-        <h3>📈 Estadísticas del Día</h3>
-        <div class="estadisticas-grid">
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-viajes">0</span>
-                <span class="estadistica-label">Viajes</span>
-            </div>
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-ganancia">RD$0</span>
-                <span class="estadistica-label">Ganancia</span>
-            </div>
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-tiempo">0min</span>
-                <span class="estadistica-label">Tiempo</span>
-            </div>
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-rentables">0</span>
-                <span class="estadistica-label">Rentables</span>
-            </div>
-        </div>
-    </div>
+                    <!-- Resultado Rápido Moderno -->
+                    <div id="resultado-rapido-modern" class="resultado-rapido-modern hidden">
+                        <div class="resultado-glow"></div>
+                        
+                        <div class="resultado-header-modern">
+                            <div class="resultado-badge-modern" id="resultado-badge-modern">
+                                <div class="badge-orb"></div>
+                                <span class="badge-emoji" id="resultado-emoji-modern">✅</span>
+                                <span class="badge-text" id="resultado-texto-modern">RENTABLE</span>
+                            </div>
+                            <div class="resultado-confidence">
+                                <div class="confidence-meter">
+                                    <div class="confidence-fill" style="width: 85%"></div>
+                                </div>
+                                <span class="confidence-text">85% confianza</span>
+                            </div>
+                        </div>
 
-    <!-- Rendimiento - DISEÑO MEJORADO -->
-    <div class="rendimiento-section-mejorada">
-        <div class="rendimiento-header">
-            <h3>🚀 Rendimiento</h3>
-            <div class="eficiencia-global" id="rendimiento-eficiencia-badge">
-                <span class="eficiencia-icon">📊</span>
-                <span class="eficiencia-texto">Eficiencia: <strong>0.0%</strong></span>
-            </div>
-        </div>
-        
-        <!-- Métricas Principales en Grid -->
-        <div class="metricas-principales-grid">
-            <div class="metrica-principal">
-                <div class="metica-icono">💸</div>
-                <div class="metrica-contenido">
-                    <div class="metrica-valor" id="rendimiento-ganancia-hora-card">RD$0.00</div>
-                    <div class="metrica-label">Ganancia por Hora</div>
-                    <div class="metrica-subtexto" id="rendimiento-ganancia-hora-linea">RD$0.00 por hora</div>
-                </div>
-            </div>
-            
-            <div class="metrica-principal">
-                <div class="metrica-icono">📦</div>
-                <div class="metrica-contenido">
-                    <div class="metrica-valor" id="rendimiento-viaje-promedio-linea">RD$0.00</div>
-                    <div class="metrica-label">Viaje Promedio</div>
-                    <div class="metrica-subtexto">Por viaje aceptado</div>
-                </div>
-            </div>
-            
-            <div class="metrica-principal">
-                <div class="metrica-icono">🛣️</div>
-                <div class="metrica-contenido">
-                    <div class="metrica-valor" id="rendimiento-distancia-total-card">0 km</div>
-                    <div class="metrica-label">Distancia Total</div>
-                    <div class="metrica-subtexto">Recorrido hoy</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Barra de Progreso de Eficiencia -->
-        <div class="progreso-eficiencia">
-            <div class="progreso-header">
-                <span class="progreso-label">Nivel de Eficiencia</span>
-                <span class="progreso-porcentaje" id="rendimiento-eficiencia-card">0.0%</span>
-            </div>
-            <div class="progreso-barra">
-                <div class="progreso-fill" id="progreso-eficiencia-fill" style="width: 0%"></div>
-            </div>
-            <div class="progreso-marcadores">
-                <span>0%</span>
-                <span>50%</span>
-                <span>100%</span>
-            </div>
-        </div>
-    </div>
-</div>
+                        <div class="metric-grid-modern">
+                            <div class="metric-card-modern">
+                                <div class="metric-icon-wrapper">
+                                    <span class="metric-emoji">💸</span>
+                                </div>
+                                <div class="metric-content">
+                                    <div class="metric-value" id="metrica-minuto-modern">--/min</div>
+                                    <div class="metric-label">Por minuto</div>
+                                </div>
+                            </div>
 
-<!-- Pestaña Historial -->
-<div class="tab-content" id="tab-historial">
-    <!-- FILTROS NUEVOS -->
-    <div class="filtros-historial">
-        <h3>📋 Historial de Viajes</h3>
-        <div class="filtros-container">
-            <button class="filtro-btn active" data-filtro="hoy">Hoy</button>
-            <button class="filtro-btn" data-filtro="semana">Esta Semana</button>
-            <button class="filtro-btn" data-filtro="mes">Este Mes</button>
-            <button class="filtro-btn" data-filtro="todos">Todos</button>
-        </div>
-    </div>
+                            <div class="metric-card-modern">
+                                <div class="metric-icon-wrapper">
+                                    <span class="metric-emoji">🛣️</span>
+                                </div>
+                                <div class="metric-content">
+                                    <div class="metric-value" id="metrica-km-modern">--/km</div>
+                                    <div class="metric-label">Por kilómetro</div>
+                                </div>
+                            </div>
 
-    <!-- Historial de Cálculos -->
-    <div class="history-section">
-        <div id="history-list" class="history-list">
-            <!-- Los cálculos aparecerán aquí -->
-        </div>
-        <div class="history-actions">
-            <button id="exportar-historial" class="secondary-button small">
-                📤 Exportar Historial
-            </button>
-            <button id="clear-history" class="secondary-button small">
-                🗑️ Limpiar Historial
-            </button>
-        </div>
-    </div>
-</div>
+                            <div class="metric-card-modern highlight">
+                                <div class="metric-icon-wrapper">
+                                    <span class="metric-emoji">📈</span>
+                                </div>
+                                <div class="metric-content">
+                                    <div class="metric-value" id="metrica-eficiencia-modern">--%</div>
+                                    <div class="metric-label">Eficiencia</div>
+                                </div>
+                            </div>
+                        </div>
 
-    <!-- Modal de Resultados Mejorado -->
-    <div id="modalFondo" class="modal-fondo">
-        <div id="modalContenido" class="modal-contenido">
-            <span class="cerrar-btn" onclick="cerrarModal()">&times;</span>
-            
-            <div class="modal-header">
-                <h2>📊 Resultado del Análisis</h2>
-                <div id="modal-badge" class="result-badge">
-                    <span id="modal-emoji">✅</span>
-                    <span id="modal-texto">RENTABLE</span>
-                </div>
-            </div>
-
-            <div id="modalResultadosDoble" class="modal-resultados-doble">
-                <!-- Los resultados aparecerán aquí -->
-            </div>
-
-            <div class="modal-actions">
-                <button id="rechazar-viaje" class="secondary-button">
-                    ❌ Rechazar Viaje
-                </button>
-                <button id="aceptar-viaje" class="primary-button">
-                    ✅ Aceptar Viaje
-                </button>
-            </div>
-
-            <p class="modal-footer small-info">
-                💡 Los viajes aceptados se guardan en tu historial semanal
-            </p>
-        </div>
-    </div>
-
-    <!-- Modal Rápido Mejorado -->
-    <div id="modal-rapido" class="modal-rapido-mejorado hidden">
-        <div class="modal-rapido-contenido-mejorado">
-            <!-- Header con tráfico -->
-            <div class="modal-trafico-header" id="modal-trafico-header">
-                <div class="trafico-status" id="modal-trafico-status">
-                    <span class="trafico-emoji-big">🚦</span>
-                    <div class="trafico-info">
-                        <div class="trafico-title">Análisis de Tráfico</div>
-                        <div class="trafico-condition" id="modal-trafico-condition">Calculando...</div>
-                    </div>
-                </div>
-                <button class="modal-cerrar-elegante" onclick="cerrarModalRapido()">
-                    <span>×</span>
-                </button>
-            </div>
-
-            <!-- Tiempo ajustado -->
-            <div class="tiempo-ajustado-section">
-                <div class="tiempo-original">
-                    <span class="tiempo-label">Tiempo estimado:</span>
-                    <span class="tiempo-valor" id="modal-tiempo-original">-- min</span>
-                </div>
-                <div class="flecha-ajuste">↓</div>
-                <div class="tiempo-real">
-                    <span class="tiempo-label">Con tráfico real:</span>
-                    <span class="tiempo-valor destacado" id="modal-tiempo-real">-- min</span>
-                </div>
-            </div>
-
-            <!-- Resultado principal -->
-            <div class="resultado-principal" id="modal-resultado-principal">
-                <div class="badge-rentabilidad" id="modal-badge-rentabilidad">
-                    <div class="badge-emoji">✅</div>
-                    <div class="badge-content">
-                        <div class="badge-title">VIAJE RENTABLE</div>
-                        <div class="badge-subtitle" id="modal-badge-subtitle">Buenas condiciones</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Métricas -->
-            <div class="metricas-grid-mejorado">
-                <div class="metrica-card">
-                    <div class="metrica-icono">💸</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-minuto">--/min</div>
-                        <div class="metrica-label">Por minuto</div>
-                    </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">🛣️</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-km">--/km</div>
-                        <div class="metrica-label">Por km</div>
-                    </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">📊</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-eficiencia">--%</div>
-                        <div class="metrica-label">Eficiencia</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Impacto del tráfico -->
-            <div class="impacto-trafico" id="modal-impacto-trafico">
-                <div class="impacto-header">
-                    <span class="impacto-icon">📈</span>
-                    <span class="impacto-title">Impacto del Tráfico</span>
-                </div>
-                <div class="impacto-content" id="modal-impacto-content">
-                    El tráfico aumenta el tiempo en un <strong>0%</strong>
-                </div>
-            </div>
-
-            <!-- Acciones -->
-            <div class="acciones-mejoradas">
-                <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
-                    <span class="btn-icon">❌</span>
-                    <span class="btn-text">Rechazar Viaje</span>
-                    <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
-                </button>
-                <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)" id="modal-btn-aceptar">
-                    <span class="btn-icon">✅</span>
-                    <span class="btn-text">Aceptar Viaje</span>
-                    <span class="btn-badge" id="modal-badge-aceptar">Recomendado</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Exportación Mejorado -->
-    <div id="exportModal" class="modal-fondo">
-        <div class="modal-contenido">
-            <span class="cerrar-btn" onclick="cerrarExportModal()">&times;</span>
-            <div class="modal-header">
-                <h2>📤 Exportar Historial</h2>
-            </div>
-            <div class="modal-body">
-                <p>¿Deseas generar un reporte PDF con todo tu historial?</p>
-                <p class="small-info">El reporte incluirá estadísticas completas y desglose de costos</p>
-                <div class="export-options" style="justify-content: center;">
-                    <button id="exportar-pdf" class="primary-button" style="max-width: 200px;">
-                        📄 Generar PDF
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Panel de Sincronización Firebase -->
-    <div id="sync-panel" class="modal-fondo">
-        <div class="modal-contenido">
-            <span class="cerrar-btn" onclick="cerrarSyncPanel()">&times;</span>
-            <div class="modal-header">
-                <h2>🌐 Sincronización Multi-Dispositivo</h2>
-                <div class="sync-status-badge" id="sync-panel-status">
-                    <span class="sync-icon">🔄</span>
-                    <span>Conectando...</span>
-                </div>
-            </div>
-            
-            <div class="sync-panel-content">
-                <div class="sync-info-section">
-                    <h3>📱 Dispositivo Actual</h3>
-                    <div class="device-info-current">
-                        <span class="device-icon" id="current-device-icon">📱</span>
-                        <div class="device-details">
-                            <strong id="current-device-name">Teléfono Principal</strong>
-                            <span class="device-id" id="current-device-id">ID: cargando...</span>
+                        <div class="resultado-actions-modern">
+                            <button class="btn-rechazar-modern" onclick="procesarViajeRapido(false)">
+                                <span class="btn-icon">✕</span>
+                                Rechazar
+                            </button>
+                            <button class="btn-aceptar-modern" onclick="iniciarCronometroDesdeModal()">
+                                <span class="btn-icon">✓</span>
+                                Aceptar Viaje
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="sync-status-section">
-                    <h3>🔗 Estado de Conexión</h3>
-                    <div class="connection-status">
-                        <div class="status-item">
-                            <span class="status-label">Firebase:</span>
-                            <span class="status-value" id="firebase-status">Conectando...</span>
+                <!-- Pestaña Resumen Moderna -->
+                <div class="tab-content" id="tab-resumen">
+                    <div class="resumen-container-modern">
+                        <!-- Tarjeta de estadísticas principales -->
+                        <div class="stats-card-modern">
+                            <div class="stats-header">
+                                <h3>📈 Resumen del Día</h3>
+                                <div class="stats-period">Hoy</div>
+                            </div>
+                            
+                            <div class="stats-grid-modern">
+                                <div class="stat-item-modern primary">
+                                    <div class="stat-icon">🚗</div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="stats-viajes-modern">0</div>
+                                        <div class="stat-label">Viajes</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item-modern success">
+                                    <div class="stat-icon">💰</div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="stats-ganancia-modern">RD$0</div>
+                                        <div class="stat-label">Ganancia</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item-modern warning">
+                                    <div class="stat-icon">⏱️</div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="stats-tiempo-modern">0m</div>
+                                        <div class="stat-label">Tiempo</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item-modern info">
+                                    <div class="stat-icon">📊</div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="stats-rentables-modern">0</div>
+                                        <div class="stat-label">Rentables</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="status-item">
-                            <span class="status-label">Última sync:</span>
-                            <span class="status-value" id="last-sync-time">--</span>
+
+                        <!-- Gráfico de eficiencia -->
+                        <div class="chart-card-modern">
+                            <div class="chart-header">
+                                <h4>🎯 Eficiencia del Día</h4>
+                                <div class="chart-legend">
+                                    <div class="legend-item">
+                                        <div class="legend-color rentable"></div>
+                                        <span>Rentables</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-color no-rentable"></div>
+                                        <span>No Rentables</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <div class="efficiency-chart" id="efficiency-chart">
+                                    <!-- Gráfico generado con CSS/JS -->
+                                </div>
+                            </div>
                         </div>
-                        <div class="status-item">
-                            <span class="status-label">Perfiles en nube:</span>
-                            <span class="status-value" id="cloud-profiles-count">--</span>
-                        </div>
-                        <div class="status-item">
-                            <span class="status-label">Historial en nube:</span>
-                            <span class="status-value" id="cloud-history-count">--</span>
+
+                        <!-- Métricas de rendimiento mejoradas -->
+                        <div class="performance-card-modern">
+                            <div class="performance-header">
+                                <h4>🚀 Rendimiento</h4>
+                                <div class="performance-badge" id="performance-badge">
+                                    <span>Alto</span>
+                                </div>
+                            </div>
+                            
+                            <div class="performance-metrics">
+                                <div class="performance-metric">
+                                    <div class="metric-progress">
+                                        <div class="progress-track">
+                                            <div class="progress-fill" style="width: 75%"></div>
+                                        </div>
+                                        <div class="metric-value">RD$450/h</div>
+                                    </div>
+                                    <div class="metric-label">Ganancia por hora</div>
+                                </div>
+                                
+                                <div class="performance-metric">
+                                    <div class="metric-progress">
+                                        <div class="progress-track">
+                                            <div class="progress-fill" style="width: 60%"></div>
+                                        </div>
+                                        <div class="metric-value">78%</div>
+                                    </div>
+                                    <div class="metric-label">Tasa de éxito</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="sync-actions-panel">
-                    <button id="force-sync-btn" class="primary-button" onclick="forzarSincronizacion()">
-                        <span class="button-icon">🔄</span>
-                        Sincronizar Ahora
-                    </button>
+                <!-- Pestaña Historial -->
+                <div class="tab-content" id="tab-historial">
+                    <!-- FILTROS NUEVOS -->
+                    <div class="filtros-historial">
+                        <h3>📋 Historial de Viajes</h3>
+                        <div class="filtros-container">
+                            <button class="filtro-btn active" data-filtro="hoy">Hoy</button>
+                            <button class="filtro-btn" data-filtro="semana">Esta Semana</button>
+                            <button class="filtro-btn" data-filtro="mes">Este Mes</button>
+                            <button class="filtro-btn" data-filtro="todos">Todos</button>
+                        </div>
+                    </div>
+
+                    <!-- Historial de Cálculos -->
+                    <div class="history-section">
+                        <div id="history-list" class="history-list">
+                            <!-- Los cálculos aparecerán aquí -->
+                        </div>
+                        <div class="history-actions">
+                            <button id="exportar-historial" class="secondary-button small">
+                                📤 Exportar Historial
+                            </button>
+                            <button id="clear-history" class="secondary-button small">
+                                🗑️ Limpiar Historial
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Resultados Mejorado -->
+            <div id="modalFondo" class="modal-fondo">
+                <div id="modalContenido" class="modal-contenido">
+                    <span class="cerrar-btn" onclick="cerrarModal()">&times;</span>
                     
-                    <button class="secondary-button" onclick="mostrarInfoSync()">
-                        <span class="button-icon">ℹ️</span>
-                        Cómo Funciona
-                    </button>
-                    <button class="secondary-button" onclick="showUserCodeModal()">
-                        <span class="button-icon">🔑</span>
-                        Cambiar Código
-                    </button>
-                    <button class="secondary-button" onclick="diagnosticarSync()">
-                        <span class="button-icon">🔧</span>
-                        Diagnóstico
-                    </button>
-                </div>
+                    <div class="modal-header">
+                        <h2>📊 Resultado del Análisis</h2>
+                        <div id="modal-badge" class="result-badge">
+                            <span id="modal-emoji">✅</span>
+                            <span id="modal-texto">RENTABLE</span>
+                        </div>
+                    </div>
 
-                <div class="sync-tips">
-                    <h4>💡 Tips de Sincronización</h4>
-                    <ul>
-                        <li>Los perfiles se sincronizan automáticamente entre dispositivos</li>
-                        <li>Usa el MISMO código en todos tus dispositivos</li>
-                        <li>Los datos se mantienen seguros en Firebase</li>
-                        <li>Funciona sin conexión con respaldo local</li>
-                        <li>Sincronización en tiempo real</li>
-                    </ul>
+                    <div id="modalResultadosDoble" class="modal-resultados-doble">
+                        <!-- Los resultados aparecerán aquí -->
+                    </div>
+
+                    <div class="modal-actions">
+                        <button id="rechazar-viaje" class="secondary-button">
+                            ❌ Rechazar Viaje
+                        </button>
+                        <button id="aceptar-viaje" class="primary-button">
+                            ✅ Aceptar Viaje
+                        </button>
+                    </div>
+
+                    <p class="modal-footer small-info">
+                        💡 Los viajes aceptados se guardan en tu historial semanal
+                    </p>
+                </div>
+            </div>
+
+            <!-- Modal Rápido Mejorado -->
+            <div id="modal-rapido" class="modal-rapido-mejorado hidden">
+                <div class="modal-rapido-contenido-mejorado">
+                    <!-- Header con tráfico -->
+                    <div class="modal-trafico-header" id="modal-trafico-header">
+                        <div class="trafico-status" id="modal-trafico-status">
+                            <span class="trafico-emoji-big">🚦</span>
+                            <div class="trafico-info">
+                                <div class="trafico-title">Análisis de Tráfico</div>
+                                <div class="trafico-condition" id="modal-trafico-condition">Calculando...</div>
+                            </div>
+                        </div>
+                        <button class="modal-cerrar-elegante" onclick="cerrarModalRapido()">
+                            <span>×</span>
+                        </button>
+                    </div>
+
+                    <!-- Tiempo ajustado -->
+                    <div class="tiempo-ajustado-section">
+                        <div class="tiempo-original">
+                            <span class="tiempo-label">Tiempo estimado:</span>
+                            <span class="tiempo-valor" id="modal-tiempo-original">-- min</span>
+                        </div>
+                        <div class="flecha-ajuste">↓</div>
+                        <div class="tiempo-real">
+                            <span class="tiempo-label">Con tráfico real:</span>
+                            <span class="tiempo-valor destacado" id="modal-tiempo-real">-- min</span>
+                        </div>
+                    </div>
+
+                    <!-- Resultado principal -->
+                    <div class="resultado-principal" id="modal-resultado-principal">
+                        <div class="badge-rentabilidad" id="modal-badge-rentabilidad">
+                            <div class="badge-emoji">✅</div>
+                            <div class="badge-content">
+                                <div class="badge-title">VIAJE RENTABLE</div>
+                                <div class="badge-subtitle" id="modal-badge-subtitle">Buenas condiciones</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Métricas -->
+                    <div class="metricas-grid-mejorado">
+                        <div class="metrica-card">
+                            <div class="metrica-icono">💸</div>
+                            <div class="metrica-content">
+                                <div class="metrica-valor" id="modal-ganancia-minuto">--/min</div>
+                                <div class="metrica-label">Por minuto</div>
+                            </div>
+                        </div>
+                        <div class="metrica-card">
+                            <div class="metrica-icono">🛣️</div>
+                            <div class="metrica-content">
+                                <div class="metrica-valor" id="modal-ganancia-km">--/km</div>
+                                <div class="metrica-label">Por km</div>
+                            </div>
+                        </div>
+                        <div class="metrica-card">
+                            <div class="metrica-icono">📊</div>
+                            <div class="metrica-content">
+                                <div class="metrica-valor" id="modal-eficiencia">--%</div>
+                                <div class="metrica-label">Eficiencia</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Impacto del tráfico -->
+                    <div class="impacto-trafico" id="modal-impacto-trafico">
+                        <div class="impacto-header">
+                            <span class="impacto-icon">📈</span>
+                            <span class="impacto-title">Impacto del Tráfico</span>
+                        </div>
+                        <div class="impacto-content" id="modal-impacto-content">
+                            El tráfico aumenta el tiempo en un <strong>0%</strong>
+                        </div>
+                    </div>
+
+                    <!-- Acciones -->
+                    <div class="acciones-mejoradas">
+                        <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
+                            <span class="btn-icon">❌</span>
+                            <span class="btn-text">Rechazar Viaje</span>
+                            <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
+                        </button>
+                        <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)" id="modal-btn-aceptar">
+                            <span class="btn-icon">✅</span>
+                            <span class="btn-text">Aceptar Viaje</span>
+                            <span class="btn-badge" id="modal-badge-aceptar">Recomendado</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Exportación Mejorado -->
+            <div id="exportModal" class="modal-fondo">
+                <div class="modal-contenido">
+                    <span class="cerrar-btn" onclick="cerrarExportModal()">&times;</span>
+                    <div class="modal-header">
+                        <h2>📤 Exportar Historial</h2>
+                    </div>
+                    <div class="modal-body">
+                        <p>¿Deseas generar un reporte PDF con todo tu historial?</p>
+                        <p class="small-info">El reporte incluirá estadísticas completas y desglose de costos</p>
+                        <div class="export-options" style="justify-content: center;">
+                            <button id="exportar-pdf" class="primary-button" style="max-width: 200px;">
+                                📄 Generar PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Sincronización Firebase -->
+            <div id="sync-panel" class="modal-fondo">
+                <div class="modal-contenido">
+                    <span class="cerrar-btn" onclick="cerrarSyncPanel()">&times;</span>
+                    <div class="modal-header">
+                        <h2>🌐 Sincronización Multi-Dispositivo</h2>
+                        <div class="sync-status-badge" id="sync-panel-status">
+                            <span class="sync-icon">🔄</span>
+                            <span>Conectando...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="sync-panel-content">
+                        <div class="sync-info-section">
+                            <h3>📱 Dispositivo Actual</h3>
+                            <div class="device-info-current">
+                                <span class="device-icon" id="current-device-icon">📱</span>
+                                <div class="device-details">
+                                    <strong id="current-device-name">Teléfono Principal</strong>
+                                    <span class="device-id" id="current-device-id">ID: cargando...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sync-status-section">
+                            <h3>🔗 Estado de Conexión</h3>
+                            <div class="connection-status">
+                                <div class="status-item">
+                                    <span class="status-label">Firebase:</span>
+                                    <span class="status-value" id="firebase-status">Conectando...</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Última sync:</span>
+                                    <span class="status-value" id="last-sync-time">--</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Perfiles en nube:</span>
+                                    <span class="status-value" id="cloud-profiles-count">--</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Historial en nube:</span>
+                                    <span class="status-value" id="cloud-history-count">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sync-actions-panel">
+                            <button id="force-sync-btn" class="primary-button" onclick="forzarSincronizacion()">
+                                <span class="button-icon">🔄</span>
+                                Sincronizar Ahora
+                            </button>
+                            
+                            <button class="secondary-button" onclick="mostrarInfoSync()">
+                                <span class="button-icon">ℹ️</span>
+                                Cómo Funciona
+                            </button>
+                            <button class="secondary-button" onclick="showUserCodeModal()">
+                                <span class="button-icon">🔑</span>
+                                Cambiar Código
+                            </button>
+                            <button class="secondary-button" onclick="diagnosticarSync()">
+                                <span class="button-icon">🔧</span>
+                                Diagnóstico
+                            </button>
+                        </div>
+
+                        <div class="sync-tips">
+                            <h4>💡 Tips de Sincronización</h4>
+                            <ul>
+                                <li>Los perfiles se sincronizan automáticamente entre dispositivos</li>
+                                <li>Usa el MISMO código en todos tus dispositivos</li>
+                                <li>Los datos se mantienen seguros en Firebase</li>
+                                <li>Funciona sin conexión con respaldo local</li>
+                                <li>Sincronización en tiempo real</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -796,541 +2118,67 @@
 
     <script src="script.js"></script>
     
-    <!-- Estilos adicionales para el sistema de código -->
-    <style>
-        /* Estilos para el modal de código de usuario */
-        #user-code-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        #user-code-modal.active {
-            display: flex !important;
-        }
-        
-        #user-code-modal.hidden {
-            display: none !important;
-        }
-        
-        .modal-contenido {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            max-width: 500px;
-            width: 90%;
-            margin: 20px;
-        }
-        
-        #user-code-input:focus {
-            outline: none;
-            border-color: #007cba;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-        }
-        
-        #user-code-banner {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            margin: 10px 0;
-            padding: 10px 15px;
-        }
-        
-        #user-code-banner .sync-info {
-            color: white;
-        }
-        
-        #user-code-banner .sync-details-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-        
-        #user-code-banner .sync-details-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        /* Asegurar que los modales tengan buen z-index */
-        .modal-fondo {
-            z-index: 10000;
-        }
-        
-        #user-code-modal {
-            z-index: 10001;
-        }
-        
-        /* Estilos para el botón Conectar */
-        #user-code-modal button {
-            background: #007cba !important;
-            color: white !important;
-            border: none !important;
-            padding: 15px !important;
-            border-radius: 10px !important;
-            font-size: 16px !important;
-            font-weight: bold !important;
-            cursor: pointer !important;
-            width: 100% !important;
-        }
-        
-        #user-code-modal button:hover {
-            background: #005a87 !important;
-        }
-
-        /* Estilos para el panel de sincronización */
-        .sync-panel-content {
-            padding: 20px;
-        }
-
-        .sync-info-section,
-        .sync-status-section {
-            margin-bottom: 25px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #007cba;
-        }
-
-        .device-info-current {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .device-icon {
-            font-size: 24px;
-        }
-
-        .device-details {
-            flex: 1;
-        }
-
-        .device-id {
-            font-size: 12px;
-            color: #666;
-            display: block;
-            margin-top: 5px;
-        }
-
-        .connection-status {
-            display: grid;
-            gap: 10px;
-        }
-
-        .status-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .status-item:last-child {
-            border-bottom: none;
-        }
-
-        .status-label {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .status-value {
-            color: #007cba;
-            font-weight: 500;
-        }
-
-        .sync-actions-panel {
-            display: grid;
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .sync-tips {
-            background: #fff3cd;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #ffc107;
-        }
-
-        .sync-tips h4 {
-            margin: 0 0 10px 0;
-            color: #856404;
-        }
-
-        .sync-tips ul {
-            margin: 0;
-            padding-left: 20px;
-            color: #856404;
-        }
-
-        .sync-tips li {
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .sync-status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 15px;
-            background: #e7f3ff;
-            border-radius: 20px;
-            color: #007cba;
-            font-weight: 500;
-        }
-
-        /* Barra de estado de sincronización */
-        .sync-status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--light-grey);
-            border-radius: 10px;
-            padding: 12px 15px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--primary-blue);
-        }
-
-        .sync-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--text-primary);
-        }
-
-        .sync-icon {
-            font-size: 1.1em;
-        }
-
-        .sync-text {
-            font-size: 0.9em;
-            font-weight: 500;
-        }
-
-        .sync-details-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.8em;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.3s;
-        }
-
-        .sync-details-btn:hover {
-            border-color: var(--primary-blue);
-            background: rgba(26, 115, 232, 0.1);
-        }
-
-        .sync-info-small {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 15px;
-            padding: 10px;
-            background: var(--light-grey);
-            border-radius: 8px;
-            font-size: 0.85em;
-            color: var(--text-secondary);
-        }
-
-        /* Estilos para el modal rápido mejorado */
-        .modal-rapido-mejorado {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10002;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .modal-rapido-mejorado.hidden {
-            display: none;
-        }
-
-        .modal-rapido-contenido-mejorado {
-            background: white;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            animation: modalAppear 0.3s ease-out;
-        }
-
-        @keyframes modalAppear {
-            from {
-                opacity: 0;
-                transform: scale(0.9) translateY(20px);
+    <script>
+        // JavaScript para el nuevo sistema de pestañas moderno
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabButtons = document.querySelectorAll('.tab-button-modern');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const tabSlider = document.querySelector('.tab-slider');
+            
+            // Actualizar posición del slider inicialmente
+            updateTabSlider();
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    
+                    // Remover clase active de todos los botones y contenidos
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // Agregar clase active al botón clickeado y contenido correspondiente
+                    this.classList.add('active');
+                    document.getElementById(`tab-${targetTab}`).classList.add('active');
+                    
+                    // Actualizar posición del slider
+                    updateTabSlider();
+                });
+            });
+            
+            function updateTabSlider() {
+                const activeButton = document.querySelector('.tab-button-modern.active');
+                if (activeButton && tabSlider) {
+                    const buttonRect = activeButton.getBoundingClientRect();
+                    const containerRect = activeButton.parentElement.getBoundingClientRect();
+                    
+                    tabSlider.style.width = `${buttonRect.width}px`;
+                    tabSlider.style.transform = `translateX(${buttonRect.left - containerRect.left}px)`;
+                }
             }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
+            
+            // Recalcular slider en resize
+            window.addEventListener('resize', updateTabSlider);
+            
+            // Inicializar métricas del header
+            updateHeaderMetrics();
+        });
+        
+        function updateHeaderMetrics() {
+            // Esta función se conectará con tu JavaScript existente
+            // para actualizar las métricas en tiempo real
+            const gananciaHoy = document.getElementById('header-ganancia-hoy');
+            const tiempoHoy = document.getElementById('header-tiempo-hoy');
+            
+            // Ejemplo de actualización - conectar con tus datos reales
+            if (gananciaHoy) gananciaHoy.textContent = 'RD$0';
+            if (tiempoHoy) tiempoHoy.textContent = '0m';
         }
-
-        .modal-trafico-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .trafico-status {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .trafico-emoji-big {
-            font-size: 2.5em;
-        }
-
-        .trafico-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .trafico-title {
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-
-        .trafico-condition {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
-        .modal-cerrar-elegante {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5em;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .modal-cerrar-elegante:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .tiempo-ajustado-section {
-            padding: 20px;
-            text-align: center;
-            background: #f8f9fa;
-        }
-
-        .tiempo-original, .tiempo-real {
-            margin: 10px 0;
-        }
-
-        .tiempo-label {
-            display: block;
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .tiempo-valor {
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-
-        .tiempo-valor.destacado {
-            color: #007cba;
-            font-size: 1.4em;
-        }
-
-        .flecha-ajuste {
-            font-size: 1.5em;
-            color: #007cba;
-            margin: 5px 0;
-        }
-
-        .resultado-principal {
-            padding: 20px;
-            text-align: center;
-        }
-
-        .badge-rentabilidad {
-            display: inline-flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px 25px;
-            border-radius: 15px;
-            background: #e8f5e8;
-            border: 2px solid #4caf50;
-        }
-
-        .badge-emoji {
-            font-size: 2em;
-        }
-
-        .badge-content {
-            text-align: left;
-        }
-
-        .badge-title {
-            font-weight: bold;
-            font-size: 1.2em;
-            color: #2e7d32;
-        }
-
-        .badge-subtitle {
-            font-size: 0.9em;
-            color: #666;
-        }
-
-        .metricas-grid-mejorado {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            padding: 0 20px 20px;
-        }
-
-        .metrica-card {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .metrica-icono {
-            font-size: 1.5em;
-            margin-bottom: 8px;
-        }
-
-        .metrica-valor {
-            font-weight: bold;
-            font-size: 1.1em;
-            margin-bottom: 5px;
-        }
-
-        .metrica-label {
-            font-size: 0.8em;
-            color: #666;
-        }
-
-        .impacto-trafico {
-            padding: 15px 20px;
-            background: #fff3cd;
-            margin: 0 20px 20px;
-            border-radius: 10px;
-            border-left: 4px solid #ffc107;
-        }
-
-        .impacto-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-
-        .impacto-icon {
-            font-size: 1.2em;
-        }
-
-        .impacto-title {
-            font-weight: bold;
-        }
-
-        .impacto-content {
-            font-size: 0.9em;
-        }
-
-        .acciones-mejoradas {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            padding: 0 20px 20px;
-        }
-
-        .btn-rechazar-elegante, .btn-aceptar-elegante {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: bold;
-        }
-
-        .btn-rechazar-elegante {
-            background: #ffebee;
-            color: #c62828;
-            border: 2px solid #ffcdd2;
-        }
-
-        .btn-aceptar-elegante {
-            background: #e8f5e8;
-            color: #2e7d32;
-            border: 2px solid #c8e6c9;
-        }
-
-        .btn-rechazar-elegante:hover {
-            background: #ffcdd2;
-        }
-
-        .btn-aceptar-elegante:hover {
-            background: #c8e6c9;
-        }
-
-        .btn-icon {
-            font-size: 1.5em;
-            margin-bottom: 5px;
-        }
-
-        .btn-text {
-            margin-bottom: 5px;
-        }
-
-        .btn-badge {
-            font-size: 0.8em;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-weight: normal;
-        }
-
-        .btn-rechazar-elegante .btn-badge {
-            background: #ffcdd2;
-        }
-
-        .btn-aceptar-elegante .btn-badge {
-            background: #c8e6c9;
-        }
-    </style>
+        
+        // Función de ejemplo para el widget de tráfico
+        document.getElementById('toggle-traffic')?.addEventListener('click', function() {
+            this.classList.toggle('active');
+            // Aquí iría la lógica para activar/desactivar el análisis de tráfico
+        });
+    </script>
 </body>
 </html>
