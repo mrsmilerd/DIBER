@@ -3222,6 +3222,16 @@ function activarUbicacion() {
     
     const btn = document.getElementById('activar-ubicacion-btn');
     const status = document.getElementById('location-status');
+
+    // ANILLO DE ESTADO DEL LOGO (DECLARAR UNA VEZ)
+    const ring = document.getElementById('logo-status');
+
+    // Mostrar aro amarillo (cargando)
+    const ring = document.getElementById('logo-status');
+    if (ring) {
+        ring.classList.remove("active", "error");
+        ring.classList.add("loading");
+    }
     
     if (btn) {
         btn.innerHTML = '<span class="button-icon">🔄</span> Obteniendo ubicación...';
@@ -3231,6 +3241,12 @@ function activarUbicacion() {
     navigator.geolocation.getCurrentPosition(
         (position) => {
             console.log('✅ Ubicación obtenida correctamente');
+
+            // Aro verde: ubicación activa
+    if (ring) {
+        ring.classList.remove("error", "loading");
+        ring.classList.add("active");
+    }
             
             if (btn) {
                 btn.style.display = 'none';
@@ -3259,6 +3275,12 @@ function activarUbicacion() {
         },
         (error) => {
             console.error('❌ Error obteniendo ubicación:', error);
+
+            // Aro rojo: error de ubicación
+    if (ring) {
+        ring.classList.remove("active", "loading");
+        ring.classList.add("error");
+    }
             
             if (btn) {
                 btn.innerHTML = '<span class="button-icon">📍</span> Activar Análisis de Tráfico';
@@ -4281,6 +4303,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
