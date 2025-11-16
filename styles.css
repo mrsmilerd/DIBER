@@ -3712,7 +3712,7 @@ select:focus-visible {
     object-fit: contain;
 }
 
-//* ===== Bloque 1: Header y Branding (Mejorado, responsivo) ===== */
+/* ===== Bloque 1: Header y Branding (Mejorado, responsivo) ===== */
 
 .app-header {
     display: grid;
@@ -3744,7 +3744,7 @@ select:focus-visible {
     border: 1px solid rgba(0,0,0,0.06);
     box-shadow: 0 6px 18px rgba(8,35,65,0.06);
     transition: transform 0.18s ease, box-shadow 0.18s ease;
-    cursor: pointer; /* indica clicable aunque no cambiemos funcionalidad */
+    cursor: pointer;
     min-width: 56px;
     min-height: 56px;
     -webkit-tap-highlight-color: transparent;
@@ -3766,7 +3766,7 @@ select:focus-visible {
     display: block;
 }
 
-/* Header actions (botones a la derecha) */
+/* Header actions */
 .header-actions {
     display: flex;
     align-items: center;
@@ -3774,7 +3774,7 @@ select:focus-visible {
     justify-self: end;
 }
 
-/* Botones redondos compactos (mantienen ids y clases existentes) */
+/* Botones compactos */
 .header-action-btn,
 .secondary-button.small,
 .secondary-button.small .button-icon {
@@ -3788,20 +3788,18 @@ select:focus-visible {
     font-size: 1.05rem;
 }
 
-/* Mejor contraste en modo oscuro */
+/* Oscuro */
 [data-theme="dark"] .logo-container {
     background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
     border: 1px solid rgba(255,255,255,0.03);
 }
 
-/* Responsive: reducir logo en pantallas pequeñas */
 @media (max-width: 420px) {
     .app-logo { width: 52px; height: 52px; }
     .app-header { grid-template-columns: auto 1fr auto; gap: 0.5rem; padding: 0.5rem 0; }
     .tab-button { min-height: 56px; }
 }
 
-/* Pequeño helper para texto oculto accesible (si quieres añadir labels) */
 .sr-only {
     position: absolute !important;
     height: 1px; width: 1px;
