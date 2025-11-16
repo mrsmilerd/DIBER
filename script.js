@@ -1149,7 +1149,7 @@ function inicializarElementosDOM() {
         }
     });
 
-    elementos.tabButtons = document.querySelectorAll('.tab-button');
+    elementos.tabButtons = document.querySelectorAll('.nav-item');
     elementos.tabContents = document.querySelectorAll('.tab-content');
     
     console.log('✅ Elementos DOM inicializados correctamente');
@@ -4295,6 +4295,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
