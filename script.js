@@ -3227,7 +3227,6 @@ function activarUbicacion() {
     const ring = document.getElementById('logo-status');
 
     // Mostrar aro amarillo (cargando)
-    const ring = document.getElementById('logo-status');
     if (ring) {
         ring.classList.remove("active", "error");
         ring.classList.add("loading");
@@ -4303,6 +4302,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
