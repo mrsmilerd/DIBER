@@ -3769,3 +3769,53 @@ body,
         transform: scale(0.96);
     }
 }
+
+/* ========================================================= */
+/* BLOQUE 3 – FORMULARIO OPTIMIZADO PARA MÓVIL (VERTICAL)    */
+/* ========================================================= */
+@media (max-width: 600px) {
+
+    /* Contenedor más compacto y moderno */
+    .card {
+        padding: 0.9rem !important;
+        border-radius: 14px !important;
+        margin-bottom: 0.9rem !important;
+    }
+
+    /* Etiquetas del formulario */
+    .input-label {
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem !important;
+    }
+
+    /* Inputs táctiles */
+    .input-field {
+        width: 100%;
+        padding: 0.9rem 0.75rem !important;
+        font-size: 1rem !important;
+        border-radius: 12px !important;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        transition: all 0.2s ease;
+    }
+
+    .input-field:focus {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(0, 174, 239, 0.2);
+    }
+
+    /* Dropdown/Select */
+    select.input-field {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg width='14' height='10' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.8rem center;
+    }
+
+    /* Separación entre campos */
+    .form-group {
+        margin-bottom: 1rem !important;
+    }
+}
