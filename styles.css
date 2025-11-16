@@ -3668,3 +3668,57 @@ body,
     margin-top: 0 !important;
     padding-top: 0 !important;
 }
+
+/* ========================================================= */
+/* BLOQUE 1 – HEADER OPTIMIZADO PARA MÓVIL (VERTICAL)        */
+/* Se aplica solo cuando el ancho es menor a 600px           */
+/* ========================================================= */
+@media (max-width: 600px) {
+
+    /* Header compacto */
+    .app-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 0.4rem 0.3rem !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Botones laterales pequeños y pegados a las esquinas */
+    .header-left button,
+    .header-actions button,
+    .theme-toggle {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 0.95rem !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: 10px !important;
+    }
+
+    /* Compactar la fila izquierda/derecha */
+    .header-left {
+        gap: 0.25rem !important;
+    }
+
+    .header-actions {
+        gap: 0.25rem !important;
+    }
+
+    /* Logo más grande y más protagonista */
+    .logo-container {
+        padding: 0.25rem !important;
+        border-radius: 12px !important;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    /* Tamaño final del logo destacado */
+    .app-logo {
+        width: 72px !important;
+        height: 72px !important;
+        object-fit: contain !important;
+    }
+}
