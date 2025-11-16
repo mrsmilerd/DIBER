@@ -4525,8 +4525,3 @@ body,
     transform: scale(0.88);
 }
 
-.tabs-header,
-.tabs-header::before,
-.tab-button {
-    display: none !important;
-}
