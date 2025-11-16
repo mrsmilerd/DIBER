@@ -332,12 +332,6 @@
 
     <!-- Pantalla Principal de Cálculos -->
 <div id="main-screen" class="screen">
-    <div class="tabs">
-        <button class="tab-button active" data-tab="calcular">Calcular Ruta</button>
-        <button class="tab-button" data-tab="resultados">Resultados</button>
-        <button class="tab-button" data-tab="historial">Historial</button>
-        <button class="tab-button" data-tab="configuracion">Configuración</button>
-    </div>
     <div class="container">
       <div class="app-header">
     <div class="header-left">
@@ -350,10 +344,9 @@
         </button>
     </div>
     
-   <div class="logo-container">
-    <div id="logo-status-ring" class="logo-status-ring"></div>
-    <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
-</div>
+    <div class="logo-container">
+        <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
+    </div>
     
     <div class="header-actions">
         <button id="sync-status-btn" class="secondary-button small" title="Sincronización">
@@ -368,40 +361,23 @@
             <div id="status-indicator" class="status-indicator hidden">
                 <span id="status-text">Calculando...</span>
             </div>
-        
+
             <!-- Sistema de Pestañas -->
-<nav class="bottom-nav">
-    <button class="nav-item active" data-tab="calcular">
-        <!-- Icono CALCULAR (calculadora clean) -->
-        <svg class="nav-svg" viewBox="0 0 24 24">
-            <rect x="3" y="2" width="18" height="20" rx="4" ry="4" stroke-width="2" fill="none"/>
-            <line x1="3" y1="8" x2="21" y2="8" stroke-width="2"/>
-            <line x1="8" y1="12" x2="10" y2="12" stroke-width="2"/>
-            <line x1="14" y1="12" x2="16" y2="12" stroke-width="2"/>
-            <line x1="8" y1="16" x2="16" y2="16" stroke-width="2"/>
-        </svg>
-        <span class="nav-label">CALCULAR</span>
-    </button>
-
-    <button class="nav-item" data-tab="resumen">
-        <!-- Icono RESUMEN (gráfico de barras moderno) -->
-        <svg class="nav-svg" viewBox="0 0 24 24">
-            <rect x="4" y="10" width="4" height="10" rx="1"/>
-            <rect x="10" y="6" width="4" height="14" rx="1"/>
-            <rect x="16" y="3" width="4" height="17" rx="1"/>
-        </svg>
-        <span class="nav-label">RESUMEN</span>
-    </button>
-
-    <button class="nav-item" data-tab="historial">
-        <!-- Icono HISTORIAL (portapapeles premium) -->
-        <svg class="nav-svg" viewBox="0 0 24 24">
-            <path d="M16 4h1a3 3 0 013 3v12a3 3 0 01-3 3H7a3 3 0 01-3-3V7a3 3 0 013-3h1"/>
-            <rect x="9" y="2" width="6" height="4" rx="1"/>
-        </svg>
-        <span class="nav-label">HISTORIAL</span>
-    </button>
-</nav>
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-button active" data-tab="calcular">
+                        <span class="tab-icon">🧮</span>
+                        <span class="tab-text">CALCULAR</span>
+                    </button>
+                    <button class="tab-button" data-tab="resumen">
+                        <span class="tab-icon">📊</span>
+                        <span class="tab-text">RESUMEN</span>
+                    </button>
+                    <button class="tab-button" data-tab="historial">
+                        <span class="tab-icon">📋</span>
+                        <span class="tab-text">HISTORIAL</span>
+                    </button>
+                </div>
 
                 <!-- Contenido de Pestañas -->
 <div class="tab-content active" id="tab-calcular">
@@ -412,6 +388,7 @@
         <div class="input-group">
             <label for="tarifa">
                 💰 Ganancia Ofrecida
+                <span class="required">*</span>
             </label>
             <div class="input-with-unit">
                 <input type="number" id="tarifa" min="0" step="0.01" required inputmode="decimal">
@@ -423,6 +400,7 @@
         <div class="input-group">
             <label for="minutos">
                 ⏱️ Tiempo Estimado
+                <span class="required">*</span>
             </label>
             <div class="input-with-unit">
                 <input type="number" id="minutos" min="1" step="1" required inputmode="numeric">
@@ -434,6 +412,7 @@
         <div class="input-group">
             <label for="distancia">
                 🛣️ Distancia Estimada
+                <span class="required">*</span>
             </label>
             <div class="input-with-unit">
                 <input type="number" id="distancia" min="0" step="0.1" required inputmode="decimal">
@@ -448,7 +427,12 @@
                 <span class="button-icon">📍</span>
                 Activar Análisis de Tráfico
             </button>
-            
+            <div id="location-status" class="location-status hidden">
+                <span class="status-icon">✅</span>
+                <span class="status-text">Tráfico monitoreado</span>
+            </div>
+        </div>
+        
         <!-- Resultado Rápido -->
         <div id="resultado-rapido" class="resultado-rapido hidden">
             <div class="resultado-header">
@@ -1350,16 +1334,6 @@
     </style>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
 
 
 
