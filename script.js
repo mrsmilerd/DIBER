@@ -1968,6 +1968,9 @@ function cambiarFiltroHistorial(nuevoFiltro) {
 // SISTEMA DE PESTAÑAS
 // =============================================
 
+elementos.tabButtons = document.querySelectorAll('.nav-item');
+elementos.tabContents = document.querySelectorAll('.tab-content');
+
 function inicializarTabs() {
     console.log('🔄 Inicializando sistema de pestañas...');
     
@@ -4318,6 +4321,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
