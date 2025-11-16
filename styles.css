@@ -8,9 +8,8 @@
 
 :root {
     /* Paleta de Colores Principal */
-    --primary-blue: #00AEEF;       /* azul de marca */
-    --primary-blue-dark: #0086bd;  /* hover/intensidad */
-    --secondary-orange: #F7941D;   /* naranja de marca */
+    --primary-blue: #1a73e8;
+    --secondary-orange: #f5a623;
     --success-green: #4CAF50;
     --warning-orange: #FF9800;
     --error-red: #f44336;
@@ -101,12 +100,12 @@ body {
 }
 
 /* ============================================= */
-/* 4. HEADER Y BRANDING MEJORADO - VERSIÓN LIMPIA */
+/* 4. HEADER Y BRANDING MEJORADO */
 /* ============================================= */
 
 .app-header {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
     padding: 1rem 0;
     margin-bottom: 1.5rem;
@@ -115,7 +114,12 @@ body {
     width: 100%;
 }
 
-/* Contenedor del logo */
+.header-left {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
 .logo-container {
     display: flex;
     justify-content: center;
@@ -128,33 +132,32 @@ body {
     transition: all 0.3s ease;
     z-index: 20;
 }
+
 .logo-container:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     transform: translateY(-1px);
 }
 
-/* Logo escalable */
 .app-logo {
     width: 70px;
     height: 70px;
     border-radius: 14px;
     object-fit: contain;
 }
-@media (max-width: 768px) {
-    .app-logo { width: 60px; height: 60px; }
-}
-@media (max-width: 480px) {
-    .app-logo { width: 50px; height: 50px; }
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: flex-end;
 }
 
-/* Botones del header unificados */
-.header-action-btn,
-.secondary-button.small {
+.header-action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;   /* tamaño compacto para móvil */
-    height: 40px;
+    width: 44px;
+    height: 44px;
     padding: 0;
     border: 1.5px solid var(--border-color);
     border-radius: 10px;
@@ -162,12 +165,12 @@ body {
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    font-size: 1em;
+    font-size: 1.1em;
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
 }
-.header-action-btn:hover,
-.secondary-button.small:hover {
+
+.header-action-btn:hover {
     border-color: var(--primary-blue);
     color: var(--primary-blue);
     background: rgba(26, 115, 232, 0.04);
@@ -180,20 +183,17 @@ body {
     color: var(--success-green);
     background: rgba(76, 175, 80, 0.08);
 }
+
 #sync-status-btn.syncing {
     border-color: var(--primary-blue);
     color: var(--primary-blue);
     background: rgba(26, 115, 232, 0.08);
 }
+
 #sync-status-btn.error {
     border-color: var(--error-red);
     color: var(--error-red);
     background: rgba(244, 67, 54, 0.08);
-}
-
-/* Botón de código de usuario oculto por defecto */
-.user-code-button {
-    display: none;
 }
 
 /* ============================================= */
@@ -215,14 +215,14 @@ body {
     position: relative;
 }
 
-/* Indicador deslizante para 3 tabs */
+/* Indicador deslizante */
 .tabs-header::before {
     content: '';
     position: absolute;
     top: 6px;
     bottom: 6px;
     left: 6px;
-    width: calc(33.333% - 6px);
+    width: calc(25% - 6px);
     background: var(--card-bg);
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -230,10 +230,11 @@ body {
     z-index: 1;
 }
 
-/* Posiciones del indicador (3 tabs) */
+/* Posiciones del indicador */
 .tabs-header[data-active-tab="0"]::before { transform: translateX(0); }
 .tabs-header[data-active-tab="1"]::before { transform: translateX(100%); }
 .tabs-header[data-active-tab="2"]::before { transform: translateX(200%); }
+.tabs-header[data-active-tab="3"]::before { transform: translateX(300%); }
 
 .tab-button {
     flex: 1;
@@ -874,24 +875,28 @@ select:focus {
 }
 
 /* ============================================= */
-/* 9. SISTEMA DE MODALES MEJORADO - VERSIÓN LIMPIA */
+/* 9. SISTEMA DE MODALES MEJORADO */
 /* ============================================= */
 
 .modal-fondo {
-  display: none; /* Oculto al inicio */
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    animation: fadeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .modal-fondo.activo {
-  display: flex; /* Se muestra solo cuando se activa */
+    display: flex;
 }
 
 .modal-contenido {
@@ -899,8 +904,7 @@ select:focus {
     padding: 0;
     border-radius: 24px;
     width: 100%;
-    max-width: 500px;   /* ← antes estaba inline */
-    color: var(--text-primary); /* ← antes estaba inline */
+    max-width: 500px;
     position: relative;
     animation: modalSlideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     max-height: 90vh;
@@ -911,33 +915,28 @@ select:focus {
         0 0 0 1px rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
+
 [data-theme="dark"] .modal-contenido {
     background: linear-gradient(135deg, var(--card-bg) 0%, rgba(30, 30, 30, 0.98) 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Header del modal */
 .modal-header {
-    padding: 20px;   /* ← antes inline */
-    text-align: center; /* ← antes inline */
-    border-bottom: 2px solid var(--primary-blue); /* ← antes inline */
+    padding: 2rem 2rem 1.5rem;
+    text-align: center;
     background: linear-gradient(135deg, rgba(26, 115, 232, 0.05) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border-color);
     position: relative;
 }
+
 .modal-header h2 {
-    margin: 0; /* ← antes inline */
-    color: var(--text-primary); /* ← antes inline */
+    color: var(--text-primary);
+    margin-bottom: 1rem;
     font-size: 1.5em;
     font-weight: 700;
     letter-spacing: -0.01em;
 }
 
-/* Cuerpo del modal */
-.modal-body {
-    padding: 20px; /* ← antes inline */
-}
-
-/* Botón cerrar */
 .cerrar-btn {
     position: absolute;
     top: 1.5rem;
@@ -957,10 +956,85 @@ select:focus {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 }
+
 .cerrar-btn:hover {
     background: rgba(244, 67, 54, 0.1);
     color: #f44336;
     transform: scale(1.1) rotate(90deg);
+}
+
+/* Resultados en modal */
+.modal-resultados-doble {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 2rem;
+    padding: 0;
+}
+
+.resultado-columna {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--light-grey) 0%, rgba(255, 255, 255, 0.8) 100%);
+    border: 1.5px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+[data-theme="dark"] .resultado-columna {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.resultado-columna:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary-blue);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+}
+
+.resultado-columna h3 {
+    margin-bottom: 1.25rem;
+    font-size: 1em;
+    color: var(--text-primary);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.resultado-valor {
+    font-size: 2.2em;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.resultado-valor.rentable {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.resultado-valor.oportunidad {
+    background: linear-gradient(135deg, #FF9800, #f57c00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.resultado-valor.no-rentable {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.resultado-comparacion {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-weight: 500;
 }
 
 /* ============================================= */
@@ -1162,7 +1236,7 @@ select:focus {
         top: 4px;
         bottom: 4px;
         left: 4px;
-        width: calc(33.333% - 4px);
+        width: calc(25% - 4px);
         border-radius: 8px;
     }
     
@@ -1348,7 +1422,7 @@ select:focus {
         top: 3px;
         bottom: 3px;
         left: 3px;
-        width: calc(33.333% - 3px);
+        width: calc(25% - 3px);
         border-radius: 7px;
     }
     
@@ -4034,12 +4108,29 @@ body,
 }
 
 /* ========================================================= */
-/* BLOQUE 12 – ACENTOS DE LA MARCA                          */
+/* BLOQUE 12 – PALETA MEJORADA                               */
 /* ========================================================= */
 
-.primary-button:hover { background-color: var(--primary-blue-dark) !important; }
-.text-accent { color: var(--primary-blue) !important; }
-.bg-accent { background-color: var(--primary-blue) !important; }
+/* Ajustes sutiles del azul */
+:root {
+    --primary-blue: #00AEEF;  /* tu azul brillante */
+    --primary-blue-dark: #0086bd;
+    --primary-orange: #F7941D; /* tu naranja intenso */
+}
+
+/* Hover del azul */
+.primary-button:hover {
+    background-color: var(--primary-blue-dark) !important;
+}
+
+/* Acentos */
+.text-accent {
+    color: var(--primary-blue) !important;
+}
+
+.bg-accent {
+    background-color: var(--primary-blue) !important;
+}
 
 /* ========================================================= */
 /* BLOQUE 13 – RENDIMIENTO                                   */
@@ -4110,8 +4201,3 @@ body,
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
-
-
-
-
-
