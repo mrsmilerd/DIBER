@@ -1049,7 +1049,6 @@ class FirebaseSync {
         }
     }
 }
-
 // =============================================
 // LIMPIAR DATOS MULTI-DISPOSITIVO - CORREGIDO
 // =============================================
@@ -1149,7 +1148,7 @@ function inicializarElementosDOM() {
         }
     });
 
-    elementos.tabButtons = document.querySelectorAll('.nav-item');
+    elementos.tabButtons = document.querySelectorAll('.tab-button');
     elementos.tabContents = document.querySelectorAll('.tab-content');
     
     console.log('✅ Elementos DOM inicializados correctamente');
@@ -1725,20 +1724,13 @@ async function agregarAlHistorial(viaje) {
 
 function actualizarHistorialConFiltros() {
     console.log('🔄 actualizarHistorialConFiltros() ejecutándose...');
-    console.log('📊 Total de viajes en historial:', historial.length);
     
     if (!elementos['history-list']) {
         console.error('❌ Elemento history-list no encontrado');
-        // Intentar encontrar el elemento nuevamente
-        elementos['history-list'] = document.getElementById('history-list');
-        if (!elementos['history-list']) {
-            console.error('❌ history-list realmente no existe en el DOM');
-            return;
-        }
+        return;
     }
 
     const viajesFiltrados = filtrarHistorial(historial, filtroActual);
-    console.log('📋 Viajes filtrados:', viajesFiltrados.length);
     
     if (!viajesFiltrados || viajesFiltrados.length === 0) {
         elementos['history-list'].innerHTML = `
@@ -1978,20 +1970,12 @@ function cambiarFiltroHistorial(nuevoFiltro) {
 function inicializarTabs() {
     console.log('🔄 Inicializando sistema de pestañas...');
     
-    // Sistema Mobile
-    const navItems = document.querySelectorAll('.nav-item');
-    // Sistema Desktop  
-    const tabButtons = document.querySelectorAll('.tab-button');
-    
-    // Combinar ambos sistemas
-    const todosLosBotones = [...navItems, ...tabButtons];
-    
-    if (todosLosBotones.length === 0) {
+    if (!elementos.tabButtons || elementos.tabButtons.length === 0) {
         console.error('❌ No se encontraron botones de pestañas');
         return;
     }
     
-    todosLosBotones.forEach(button => {
+    elementos.tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const tabId = button.dataset.tab;
             console.log('📁 Cambiando a pestaña:', tabId);
@@ -2003,56 +1987,21 @@ function inicializarTabs() {
 }
 
 function cambiarPestana(tabId) {
-    console.log('🎯 Cambiando a pestaña:', tabId);
+    if (!elementos.tabButtons || !elementos.tabContents) return;
     
-    // Ocultar todos los contenidos
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
+    elementos.tabButtons.forEach(button => {
+        button.classList.toggle('active', button.dataset.tab === tabId);
     });
     
-    // Mostrar contenido seleccionado
-    const activeContent = document.getElementById(`tab-${tabId}`);
-    if (activeContent) {
-        activeContent.classList.add('active');
-        console.log('✅ Contenido mostrado:', activeContent.id);
-        
-        // Forzar redibujado
-        setTimeout(() => {
-            activeContent.style.display = 'block';
-            activeContent.style.opacity = '1';
-            activeContent.style.visibility = 'visible';
-        }, 50);
-        
-        // Actualizar contenido específico
-        if (tabId === 'resumen') {
-            setTimeout(() => {
-                actualizarEstadisticas();
-                console.log('📊 Estadísticas actualizadas');
-            }, 100);
-        } else if (tabId === 'historial') {
-            setTimeout(() => {
-                actualizarHistorialConFiltros();
-                console.log('📋 Historial actualizado');
-            }, 100);
-        }
-    } else {
-        console.error('❌ Contenido no encontrado para pestaña:', tabId);
+    elementos.tabContents.forEach(content => {
+        content.classList.toggle('active', content.id === `tab-${tabId}`);
+    });
+    
+    if (tabId === 'resumen') {
+        actualizarEstadisticas();
+    } else if (tabId === 'historial') {
+        actualizarHistorialConFiltros();
     }
-    
-    // Actualizar botones activos en AMBOS sistemas
-    document.querySelectorAll('.nav-item, .tab-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    // Activar en sistema mobile
-    document.querySelectorAll(`.nav-item[data-tab="${tabId}"]`).forEach(btn => {
-        btn.classList.add('active');
-    });
-    
-    // Activar en sistema desktop
-    document.querySelectorAll(`.tab-button[data-tab="${tabId}"]`).forEach(btn => {
-        btn.classList.add('active');
-    });
 }
 
 // Agregar después de tu código existente de pestañas
@@ -2062,29 +2011,6 @@ function updateTabIndicator(activeIndex) {
         tabsHeader.setAttribute('data-active-tab', activeIndex);
     }
 }
-
-// ==================================================
-// NUEVO CONTROL PARA LA BARRA DE NAVEGACIÓN PREMIUM
-// ==================================================
-document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-
-        // Vibración háptica (solo móviles compatibles)
-        if (navigator.vibrate) navigator.vibrate(15);
-
-        const tabId = btn.dataset.tab;
-
-        // Quitar activo de todos
-        document.querySelectorAll('.nav-item')
-            .forEach(item => item.classList.remove('active'));
-
-        // Activar esta
-        btn.classList.add('active');
-
-        // Activar pestaña con tu sistema actual
-        cambiarPestana(tabId);
-    });
-});
 
 // =============================================
 // SISTEMA DE CÁLCULO - CORREGIDO
@@ -3196,14 +3122,6 @@ async function inicializarSistemaTraficoCompleto() {
 // =============================================
 
 function configurarEventListeners() {
-    // Event listeners para tabs
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('click', function() {
-            const tabName = this.getAttribute('data-tab');
-            cambiarPestana(tabName);
-        });
-    });
-    
     console.log('🎯 Configurando event listeners...');
     
     inicializarTabs();
@@ -3303,12 +3221,6 @@ function activarUbicacion() {
     
     const btn = document.getElementById('activar-ubicacion-btn');
     const status = document.getElementById('location-status');
-
-  const ring = document.getElementById('logo-status-ring');
-if (ring) {
-    ring.classList.remove("active", "error");
-    ring.classList.add("loading"); // 🟡 cargando
-}
     
     if (btn) {
         btn.innerHTML = '<span class="button-icon">🔄</span> Obteniendo ubicación...';
@@ -3318,11 +3230,6 @@ if (ring) {
     navigator.geolocation.getCurrentPosition(
         (position) => {
             console.log('✅ Ubicación obtenida correctamente');
-
- if (ring) {
-    ring.classList.remove("loading", "error");
-    ring.classList.add("active"); // 🟢 activo
-}
             
             if (btn) {
                 btn.style.display = 'none';
@@ -3342,6 +3249,8 @@ if (ring) {
                 };
             }
             
+            mostrarMensaje('📍 Ubicación activada - Análisis de tráfico funcionando', 'success');
+            
             const minutos = parseFloat(elementos.minutos?.value) || 0;
             if (minutos > 0) {
                 setTimeout(calcularAutomatico, 500);
@@ -3349,11 +3258,6 @@ if (ring) {
         },
         (error) => {
             console.error('❌ Error obteniendo ubicación:', error);
-
-  if (ring) {
-    ring.classList.remove("loading", "active");
-    ring.classList.add("error"); // 🔴 error
-}
             
             if (btn) {
                 btn.innerHTML = '<span class="button-icon">📍</span> Activar Análisis de Tráfico';
@@ -4114,7 +4018,7 @@ async function inicializarApp() {
     inicializarElementosDOM();
     
     try {
-        // ✅ PRIMERO: Inicializar sistema de código de usuario
+        // ✅ PRIMERO: Inicializar sistema de código de usuario (NO DEPENDE DE GOOGLE MAPS)
         console.log('🔐 Inicializando sistema de código de usuario...');
         const userCodeInitialized = await initializeUserCodeSystem();
         
@@ -4123,11 +4027,11 @@ async function inicializarApp() {
             return;
         }
 
-        // ✅ SEGUNDO: Cargar Google Maps
+        // ✅ SEGUNDO: Cargar Google Maps SOLO UNA VEZ
         console.log('🗺️ Cargando Google Maps...');
-        await loadGoogleMaps();
+        await loadGoogleMaps(); // Esta función ahora está en el HTML
         
-        // ✅ TERCERO: Inicializar sistema de tráfico
+        // ✅ TERCERO: Inicializar sistema de tráfico CON Google Maps
         console.log('🚗 Inicializando sistema de tráfico...');
         const trafficInitialized = await inicializarSistemaTraficoCompleto();
         
@@ -4137,10 +4041,10 @@ async function inicializarApp() {
             console.log('⚠️ Google Maps no disponible, usando modo local');
         }
         
-        // ✅ CUARTO: Inicializar Firebase
+        // ✅ CUARTO: Inicializar Firebase (NO DEPENDE DE GOOGLE MAPS)
         await initializeFirebaseSync();
         
-        // ✅ QUINTO: Sistema de auto-aprendizaje
+        // ✅ QUINTO: Inicializar sistema de auto-aprendizaje
         window.routeLearningSystem = new RouteLearningSystem();
         window.routeLearningSystem.initialized = true;
         console.log('🧠 Sistema de auto-aprendizaje inicializado');
@@ -4157,9 +4061,8 @@ async function inicializarApp() {
             }, 3000);
         }
 
-        // ✅ OCTAVO: Configurar interfaz (UNA SOLA VEZ)
+        // ✅ OCTAVO: Configurar interfaz
         aplicarTemaGuardado();
-        inicializarTabs(); // ← ESTO ES IMPORTANTE
         configurarEventListeners();
         configurarModalExportacion();
         
@@ -4169,8 +4072,6 @@ async function inicializarApp() {
             mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
         } else if (perfilActual) {
             mostrarPantalla('main');
-            // Asegurar que la pestaña calcular esté activa al inicio
-            setTimeout(() => cambiarPestana('calcular'), 100);
         } else {
             mostrarPantalla('perfil');
         }
@@ -4181,26 +4082,24 @@ async function inicializarApp() {
     } catch (error) {
         console.error('❌ Error crítico en inicialización:', error);
         
-        // ✅ MODO FALLBACK
+        // ✅ MODO FALLBACK: Continuar sin Google Maps
         mostrarStatus('⚠️ Modo local activado - Funcionalidad básica disponible', 'info');
         
+        // Inicializar componentes que no dependen de Google Maps
         try {
             await initializeUserCodeSystem();
             await initializeFirebaseSync();
             await cargarDatos();
             
-            // Configurar interfaz en modo fallback
-            aplicarTemaGuardado();
-            inicializarTabs(); // ← TABS también en modo fallback
-            configurarEventListeners();
-            configurarModalExportacion();
-            
             if (perfiles.length === 0) {
                 mostrarPantalla('perfil');
             } else {
                 mostrarPantalla('main');
-                setTimeout(() => cambiarPestana('calcular'), 100);
             }
+            
+            aplicarTemaGuardado();
+            configurarEventListeners();
+            configurarModalExportacion();
             
         } catch (fallbackError) {
             console.error('❌ Error en modo fallback:', fallbackError);
@@ -4289,52 +4188,6 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarApp();
 });
 
-// ===============================
-// CONTROL DE ESTADOS DE SINCRONIZACIÓN
-// ===============================
-
-// Selecciona el botón de sincronización y su icono
-const syncBtn = document.getElementById("sync-status-btn");
-const syncIcon = document.getElementById("sync-btn-icon");
-
-// 👉 Inicia la sincronización
-function startSync() {
-    // Limpia estados previos
-    syncBtn.classList.remove("connected", "error");
-    // Activa animación
-    syncBtn.classList.add("syncing");
-    // Cambia icono a "cargando"
-    syncIcon.textContent = "🔄";
-
-    // Simulación de proceso (ejemplo: 3 segundos)
-    setTimeout(() => {
-        // Aquí decides si terminó bien o con error
-        const success = Math.random() > 0.2; // 80% éxito
-        if (success) {
-            syncSuccess();
-        } else {
-            syncError();
-        }
-    }, 3000);
-}
-
-// 👉 Éxito en la sincronización
-function syncSuccess() {
-    syncBtn.classList.remove("syncing", "error");
-    syncBtn.classList.add("connected");
-    syncIcon.textContent = "✅";
-}
-
-// 👉 Error en la sincronización
-function syncError() {
-    syncBtn.classList.remove("syncing", "connected");
-    syncBtn.classList.add("error");
-    syncIcon.textContent = "❌";
-}
-
-// 👉 Evento: al hacer clic en el botón, inicia sync
-syncBtn.addEventListener("click", startSync);
-
 window.addEventListener('beforeunload', function(e) {
     const tieneDatosPendientes = (elementos.tarifa && elementos.tarifa.value) || 
                                  (elementos.minutos && elementos.minutos.value) || 
@@ -4370,34 +4223,6 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
-
-document.addEventListener("DOMContentLoaded", () => {
-    try {
-        if (typeof activarUbicacion === "function") {
-            console.log("📍 Autoiniciando análisis de tráfico...");
-            activarUbicacion();  // Se activa solo
-        }
-    } catch (e) {
-        console.warn("❌ No se pudo activar automáticamente:", e);
-    }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
