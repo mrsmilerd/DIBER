@@ -67,47 +67,47 @@
 </head>
 <body>
     <!-- Modal de Código de Usuario -->
-    <div id="user-code-modal" class="modal-fondo">
-        <div class="modal-contenido" style="max-width: 500px; background: white; color: #333;">
-            <div class="modal-header" style="text-align: center; padding: 20px; border-bottom: 2px solid #007cba;">
-                <h2 style="margin: 0; color: #333;">🔄 Conectar Dispositivos</h2>
-                <p style="color: #666; margin: 10px 0 0 0;">Usa el MISMO código en todos tus dispositivos</p>
+<div id="user-code-modal" class="modal-fondo">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <h2>🔄 Conectar Dispositivos</h2>
+            <p>Usa el MISMO código en todos tus dispositivos</p>
+        </div>
+        
+        <div class="modal-body">
+            <!-- Indicador de estado -->
+            <div id="code-status" style="display: none;" class="code-status"></div>
+            
+            <div class="input-group">
+                <label for="user-code-input">
+                    🔑 Tu Código de Sincronización:
+                </label>
+                <input type="text" id="user-code-input" 
+                       placeholder="Ej: ABC123 - Escribe aquí tu código"
+                       maxlength="6">
+                <div class="code-actions">
+                    <button onclick="generateUserCode()" class="secondary-button small">
+                        ✨ Generar Código Automático
+                    </button>
+                </div>
             </div>
             
-            <div class="modal-body" style="padding: 20px;">
-                <!-- Indicador de estado -->
-                <div id="code-status" style="display: none; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;"></div>
-                
-                <div style="margin: 20px 0;">
-                    <label for="user-code-input" style="display: block; margin-bottom: 10px; font-weight: bold; color: #333;">
-                        🔑 Tu Código de Sincronización:
-                    </label>
-                    <input type="text" id="user-code-input" 
-                           placeholder="Ej: ABC123 - Escribe aquí tu código"
-                           style="width: 100%; 
-                                  padding: 15px; 
-                                  font-size: 18px; 
-                                  text-align: center; 
-                                  letter-spacing: 2px;
-                                  border: 2px solid #ddd;
-                                  border-radius: 10px;
-                                  background: #f9f9f9;
-                                  color: #333;
-                                  text-transform: uppercase;"
-                           maxlength="6">
-                    <div style="text-align: center; margin-top: 10px;">
-                        <button onclick="generateUserCode()" 
-                                style="padding: 8px 16px; 
-                                       background: transparent; 
-                                       color: #007cba; 
-                                       border: 1px solid #007cba;
-                                       border-radius: 20px;
-                                       cursor: pointer;
-                                       font-size: 14px;">
-                            ✨ Generar Código Automático
-                        </button>
-                    </div>
-                </div>
+            <div class="alert-info">
+                ⚠️ <strong>Importante:</strong><br>
+                • Escribe un código o genera uno automático<br>
+                • Usa el <strong>MISMO código</strong> en PC, móvil y tablet<br>
+                • Ejemplos: ABC123, PC123, MOV456
+            </div>
+            
+            <div class="action-buttons">
+                <button onclick="setUserCode()" class="primary-button">
+                    🚀 Conectar con este Código
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
                 
                 <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #ffc107;">
                     <p style="margin: 0; font-size: 14px; color: #856404; text-align: center;">
@@ -336,7 +336,7 @@
       <div class="app-header">
     <div class="header-left">
         <!-- Botón de código de usuario - SOLO EMOJI -->
-        <button id="user-code-button" class="secondary-button small user-code-button" title="Código de sincronización" style="display: none;">
+        <button id="user-code-button" class="secondary-button small user-code-button" title="Código de sincronización">
             <span class="button-icon">🔑</span>
         </button>
           <button id="cambiar-perfil" class="secondary-button small" title="Cambiar/Editar perfil">
@@ -570,37 +570,37 @@
     </div>
 </div>
 
-    <!-- Modal de Resultados Mejorado -->
-    <div id="modalFondo" class="modal-fondo">
-        <div id="modalContenido" class="modal-contenido">
-            <span class="cerrar-btn" onclick="cerrarModal()">&times;</span>
-            
-            <div class="modal-header">
-                <h2>📊 Resultado del Análisis</h2>
-                <div id="modal-badge" class="result-badge">
-                    <span id="modal-emoji">✅</span>
-                    <span id="modal-texto">RENTABLE</span>
-                </div>
+   <!-- Modal de Resultados Mejorado -->
+<div id="modalFondo" class="modal-fondo">
+    <div id="modalContenido" class="modal-contenido">
+        <button class="cerrar-btn" onclick="cerrarModal()">&times;</button>
+        
+        <div class="modal-header">
+            <h2>📊 Resultado del Análisis</h2>
+            <div id="modal-badge" class="result-badge">
+                <span id="modal-emoji">✅</span>
+                <span id="modal-texto">RENTABLE</span>
             </div>
-
-            <div id="modalResultadosDoble" class="modal-resultados-doble">
-                <!-- Los resultados aparecerán aquí -->
-            </div>
-
-            <div class="modal-actions">
-                <button id="rechazar-viaje" class="secondary-button">
-                    ❌ Rechazar Viaje
-                </button>
-                <button id="aceptar-viaje" class="primary-button">
-                    ✅ Aceptar Viaje
-                </button>
-            </div>
-
-            <p class="modal-footer small-info">
-                💡 Los viajes aceptados se guardan en tu historial semanal
-            </p>
         </div>
+
+        <div id="modalResultadosDoble" class="modal-resultados-doble">
+            <!-- Los resultados aparecerán aquí -->
+        </div>
+
+        <div class="modal-actions">
+            <button id="rechazar-viaje" class="secondary-button">
+                ❌ Rechazar Viaje
+            </button>
+            <button id="aceptar-viaje" class="primary-button">
+                ✅ Aceptar Viaje
+            </button>
+        </div>
+
+        <p class="modal-footer small-info">
+            💡 Los viajes aceptados se guardan en tu historial semanal
+        </p>
     </div>
+</div>
 
     <!-- Modal Rápido Mejorado -->
     <div id="modal-rapido" class="modal-rapido-mejorado hidden">
@@ -1334,6 +1334,7 @@
     </style>
 </body>
 </html>
+
 
 
 
