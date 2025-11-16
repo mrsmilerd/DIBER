@@ -333,35 +333,30 @@
     <!-- Pantalla Principal de Cálculos -->
 <div id="main-screen" class="screen">
     <div class="container">
-      <div class="app-header" role="banner" aria-label="Encabezado de DIBER">
-  <div class="header-left" aria-hidden="false">
-      <!-- Botón de código de usuario (empujamos como botón pequeño) -->
-      <button id="user-code-button" class="secondary-button small user-code-button" title="Código de sincronización" aria-label="Código de sincronización" style="display: none;">
-          <span class="button-icon">🔑</span>
-      </button>
-
-      <!-- Botón cambiar perfil -->
-      <button id="cambiar-perfil" class="secondary-button small" title="Cambiar perfil" aria-label="Cambiar perfil">
-          <span class="button-icon">👤</span>
-      </button>
-  </div>
-
-  <!-- Logo central (clicable para volver a home si lo deseas) -->
-  <div class="logo-container" role="img" aria-label="DIBER - Calculadora inteligente">
-      <img src="logo_b.png" alt="Logo DIBER" class="app-logo" />
-  </div>
-
-  <div class="header-actions" role="navigation" aria-label="Acciones de la aplicación">
-      <button id="sync-status-btn" class="header-action-btn secondary-button small" title="Sincronización" aria-label="Estado de sincronización">
-          <span class="button-icon" id="sync-btn-icon">🌐</span>
-      </button>
-
-      <button id="theme-toggle" class="header-action-btn theme-toggle" title="Cambiar tema" aria-label="Cambiar tema">
-          <span class="theme-icon">🌙</span>
-      </button>
-  </div>
+      <div class="app-header">
+    <div class="header-left">
+        <!-- Botón de código de usuario - SOLO EMOJI -->
+        <button id="user-code-button" class="secondary-button small user-code-button" title="Código de sincronización" style="display: none;">
+            <span class="button-icon">🔑</span>
+        </button>
+          <button id="cambiar-perfil" class="secondary-button small" title="Cambiar/Editar perfil">
+            <span class="button-icon">👤</span>
+        </button>
+    </div>
+    
+    <div class="logo-container">
+        <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
+    </div>
+    
+    <div class="header-actions">
+        <button id="sync-status-btn" class="secondary-button small" title="Sincronización">
+            <span class="button-icon" id="sync-btn-icon">🌐</span>
+        </button>
+        <button id="theme-toggle" class="theme-toggle" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
+            <span class="theme-icon">🌙</span>
+        </button>
+    </div>
 </div>
-
             <!-- Indicador de Estado -->
             <div id="status-indicator" class="status-indicator hidden">
                 <span id="status-text">Calculando...</span>
