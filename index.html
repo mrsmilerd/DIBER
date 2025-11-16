@@ -144,7 +144,83 @@
                     <span>×</span>
                 </button>
             </div>
-    
+
+<!-- Tiempo ajustado -->
+            <div class="tiempo-ajustado-section">
+                <div class="tiempo-original">
+                    <span class="tiempo-label">Tiempo estimado:</span>
+                    <span class="tiempo-valor" id="modal-tiempo-original">-- min</span>
+                </div>
+                <div class="flecha-ajuste">↓</div>
+                <div class="tiempo-real">
+                    <span class="tiempo-label">Con tráfico real:</span>
+                    <span class="tiempo-valor destacado" id="modal-tiempo-real">-- min</span>
+                </div>
+            </div>
+
+            <!-- Resultado principal -->
+            <div class="resultado-principal" id="modal-resultado-principal">
+                <div class="badge-rentabilidad" id="modal-badge-rentabilidad">
+                    <div class="badge-emoji">✅</div>
+                    <div class="badge-content">
+                        <div class="badge-title">VIAJE RENTABLE</div>
+                        <div class="badge-subtitle" id="modal-badge-subtitle">Buenas condiciones</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Métricas -->
+            <div class="metricas-grid-mejorado">
+                <div class="metrica-card">
+                    <div class="metrica-icono">💸</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-ganancia-minuto">--/min</div>
+                        <div class="metrica-label">Por minuto</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">🛣️</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-ganancia-km">--/km</div>
+                        <div class="metrica-label">Por km</div>
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-icono">📊</div>
+                    <div class="metrica-content">
+                        <div class="metrica-valor" id="modal-eficiencia">--%</div>
+                        <div class="metrica-label">Eficiencia</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Impacto del tráfico -->
+            <div class="impacto-trafico" id="modal-impacto-trafico">
+                <div class="impacto-header">
+                    <span class="impacto-icon">📈</span>
+                    <span class="impacto-title">Impacto del Tráfico</span>
+                </div>
+                <div class="impacto-content" id="modal-impacto-content">
+                    El tráfico aumenta el tiempo en un <strong>0%</strong>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="acciones-mejoradas">
+                <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
+                    <span class="btn-icon">❌</span>
+                    <span class="btn-text">Rechazar Viaje</span>
+                    <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
+                </button>
+                <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)" id="modal-btn-aceptar">
+                    <span class="btn-icon">✅</span>
+                    <span class="btn-text">Aceptar Viaje</span>
+                    <span class="btn-badge" id="modal-badge-aceptar">Recomendado</span>
+                </button>
+            </div>
+        </div>
+    </div>
+            
     <!-- Pantalla de Selección de Perfil -->
     <div id="perfil-screen" class="screen active">
         <div class="container">
@@ -578,82 +654,6 @@
         </div>
     </div>
 </div>
-                
-            <!-- Tiempo ajustado -->
-            <div class="tiempo-ajustado-section">
-                <div class="tiempo-original">
-                    <span class="tiempo-label">Tiempo estimado:</span>
-                    <span class="tiempo-valor" id="modal-tiempo-original">-- min</span>
-                </div>
-                <div class="flecha-ajuste">↓</div>
-                <div class="tiempo-real">
-                    <span class="tiempo-label">Con tráfico real:</span>
-                    <span class="tiempo-valor destacado" id="modal-tiempo-real">-- min</span>
-                </div>
-            </div>
-
-            <!-- Resultado principal -->
-            <div class="resultado-principal" id="modal-resultado-principal">
-                <div class="badge-rentabilidad" id="modal-badge-rentabilidad">
-                    <div class="badge-emoji">✅</div>
-                    <div class="badge-content">
-                        <div class="badge-title">VIAJE RENTABLE</div>
-                        <div class="badge-subtitle" id="modal-badge-subtitle">Buenas condiciones</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Métricas -->
-            <div class="metricas-grid-mejorado">
-                <div class="metrica-card">
-                    <div class="metrica-icono">💸</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-minuto">--/min</div>
-                        <div class="metrica-label">Por minuto</div>
-                    </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">🛣️</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-ganancia-km">--/km</div>
-                        <div class="metrica-label">Por km</div>
-                    </div>
-                </div>
-                <div class="metrica-card">
-                    <div class="metrica-icono">📊</div>
-                    <div class="metrica-content">
-                        <div class="metrica-valor" id="modal-eficiencia">--%</div>
-                        <div class="metrica-label">Eficiencia</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Impacto del tráfico -->
-            <div class="impacto-trafico" id="modal-impacto-trafico">
-                <div class="impacto-header">
-                    <span class="impacto-icon">📈</span>
-                    <span class="impacto-title">Impacto del Tráfico</span>
-                </div>
-                <div class="impacto-content" id="modal-impacto-content">
-                    El tráfico aumenta el tiempo en un <strong>0%</strong>
-                </div>
-            </div>
-
-            <!-- Acciones -->
-            <div class="acciones-mejoradas">
-                <button class="btn-rechazar-elegante" onclick="procesarViajeRapido(false)">
-                    <span class="btn-icon">❌</span>
-                    <span class="btn-text">Rechazar Viaje</span>
-                    <span class="btn-badge" id="modal-badge-rechazar">No rentable</span>
-                </button>
-                <button class="btn-aceptar-elegante" onclick="procesarViajeRapido(true)" id="modal-btn-aceptar">
-                    <span class="btn-icon">✅</span>
-                    <span class="btn-text">Aceptar Viaje</span>
-                    <span class="btn-badge" id="modal-badge-aceptar">Recomendado</span>
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Modal de Exportación Mejorado -->
     <div id="exportModal" class="modal-fondo">
@@ -1294,6 +1294,7 @@
     </style>
 </body>
 </html>
+
 
 
 
