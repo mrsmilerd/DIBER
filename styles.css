@@ -4410,11 +4410,74 @@ body,
     }
 }
 
-/* QUITAR EL CUADRO BLANCO DE CALCULAR SOLO EN MÓVIL */
+/* =============================================== */
+/* CALCULAR — UNIFICAR ESTILO CON HISTORIAL Y RESUMEN */
+/* =============================================== */
 @media (max-width: 600px) {
-    #calcular-tab .card {
+
+    /* Quitar la tarjeta blanca antigua */
+    #calcular-tab .card,
+    #calcular-tab .form-card {
         background: transparent !important;
-        box-shadow: none !important;
         border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+
+    /* Contenedor general */
+    #calcular-tab {
+        padding: 0 1rem;
+    }
+
+    /* Inputs estilo moderno, igual que historial/resumen */
+    #calcular-tab .input-box {
+        background: var(--card-bg);
+        padding: 0.8rem 1rem;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    }
+
+    /* Labels */
+    #calcular-tab .input-box label {
+        font-size: 0.9rem;
+        opacity: 0.85;
+        margin-bottom: 0.3rem;
+        display: block;
+    }
+
+    /* Inputs internos */
+    #calcular-tab .input-box input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        font-size: 1rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.25s ease;
+    }
+
+    #calcular-tab .input-box input:focus {
+        border-bottom: 1px solid var(--primary-blue);
+        outline: none;
+    }
+
+    /* Botón calcular — estilo uniforme */
+    #calcular-btn {
+        width: 100%;
+        padding: 1rem;
+        border-radius: 14px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        background: var(--primary-blue);
+        color: white;
+        border: none;
+        margin-top: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    #calcular-btn:active {
+        transform: scale(0.97);
     }
 }
