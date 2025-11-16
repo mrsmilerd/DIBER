@@ -3261,8 +3261,6 @@ if (ring) {
                 };
             }
             
-            mostrarMensaje('📍 Ubicación activada - Análisis de tráfico funcionando', 'success');
-            
             const minutos = parseFloat(elementos.minutos?.value) || 0;
             if (minutos > 0) {
                 setTimeout(calcularAutomatico, 500);
@@ -4297,6 +4295,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
