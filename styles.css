@@ -222,18 +222,19 @@ body {
     top: 6px;
     bottom: 6px;
     left: 6px;
-    /* Antes: width: calc(25% - 6px); */
-    width: calc(33.333% - 6px);
+    width: calc(25% - 6px);
     background: var(--card-bg);
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     z-index: 1;
+}
 
 /* Posiciones del indicador */
 .tabs-header[data-active-tab="0"]::before { transform: translateX(0); }
 .tabs-header[data-active-tab="1"]::before { transform: translateX(100%); }
 .tabs-header[data-active-tab="2"]::before { transform: translateX(200%); }
+.tabs-header[data-active-tab="3"]::before { transform: translateX(300%); }
 
 .tab-button {
     flex: 1;
@@ -266,25 +267,6 @@ body {
     background: transparent;
     box-shadow: none;
     transform: translateY(0);
-}
-
-    /* Subrayado elegante para la pestaña activa */
-.tab-button.active::after {
-    content: '';
-    position: absolute;
-    bottom: 8px;
-    width: 32px;
-    height: 3px;
-    border-radius: 3px;
-    background: var(--primary-blue);
-    opacity: 0.15;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    transform: translateY(0);
-}
-
-.tab-button.active:hover::after {
-    opacity: 0.25;
-    transform: translateY(-1px);
 }
 
 .tab-icon {
@@ -1254,11 +1236,9 @@ select:focus {
         top: 4px;
         bottom: 4px;
         left: 4px;
-        /* Antes: width: calc(25% - 4px); */
-        width: calc(33.333% - 4px);
+        width: calc(25% - 4px);
         border-radius: 8px;
     }
-}
     
     .tab-button {
         padding: 12px 6px;
@@ -1442,8 +1422,7 @@ select:focus {
         top: 3px;
         bottom: 3px;
         left: 3px;
-        /* Antes: width: calc(25% - 3px); */
-        width: calc(33.333% - 3px);
+        width: calc(25% - 3px);
         border-radius: 7px;
     }
     
@@ -3544,170 +3523,3 @@ select:focus-visible {
     background-clip: text;
 }
 
-/* ===== Bloque 2: Tarjeta Datos del Viaje ===== */
-
-.section-title.centered {
-    margin-bottom: 1rem;
-    font-size: 1.25em;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: var(--text-primary);
-    text-align: center;
-}
-
-/* Contenedor visual de la tarjeta */
-.form-section.datos-viaje {
-    background: var(--card-bg);
-    border: 1.5px solid var(--border-color);
-    border-left: 4px solid var(--primary-blue);
-    border-radius: 16px;
-    box-shadow: var(--shadow);
-    padding: 1.25rem;
-    margin-bottom: 1.25rem;
-}
-
-/* Grid de campos para mejor orden en pantallas medianas+ */
-.datos-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-}
-
-@media (min-width: 560px) {
-    .datos-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-/* Afinar bloques de entrada */
-.datos-viaje .input-group {
-    margin-bottom: 0.75rem;
-}
-
-.datos-viaje label {
-    margin-bottom: 0.5rem;
-    font-weight: 700;
-    font-size: 0.9em;
-    color: var(--text-primary);
-}
-
-/* Inputs con unidad: resaltar la cápsula de unidad */
-.datos-viaje .input-with-unit .input-unit {
-    background: var(--light-grey);
-    border: 1px solid var(--border-color);
-    font-weight: 600;
-}
-
-/* Estado de error compacto */
-.datos-viaje .error-message {
-    font-size: 0.78em;
-    padding-left: 0;
-}
-
-/* Afinar el botón de tráfico para integrarlo visualmente */
-.location-permission-section {
-    margin-top: 0.75rem;
-}
-
-.location-permission-btn {
-    border-radius: 12px;
-    font-size: 0.95em;
-}
-
-/* Resultado rápido: reducir densidad y reforzar jerarquía */
-.resultado-rapido {
-    margin: 1rem 0;
-    padding: 1.25rem;
-}
-
-.resultado-header h3 {
-    font-size: 1.05em;
-}
-
-.resultado-badge {
-    padding: 0.75rem 1.5rem;
-    font-size: 1.02em;
-}
-
-.resultado-metricas {
-    gap: 0.75rem;
-}
-
-.metrica-rapida {
-    padding: 1rem 0.75rem;
-}
-
-/* Micro ajustes de tipografía en métricas */
-.metrica-label {
-    font-size: 0.78em;
-}
-
-.metrica-valor {
-    font-size: 1.12em;
-}
-
-/* Bloque 3: Grid de Datos del Viaje */
-.datos-viaje {
-    background: var(--card-bg);
-    border: 1.5px solid var(--border-color);
-    border-left: 4px solid var(--primary-blue);
-    border-radius: 16px;
-    box-shadow: var(--shadow);
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.datos-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-}
-
-@media (min-width: 560px) {
-    .datos-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-/* Bloque 3: Header refinado */
-
-.header-action-btn.small {
-    width: 42px;
-    height: 42px;
-    font-size: 1.2em;
-    border-radius: 12px;
-    background: var(--card-bg);
-    border: 1.5px solid var(--border-color);
-    color: var(--text-secondary);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.header-action-btn.small:hover {
-    background: rgba(26, 115, 232, 0.05);
-    border-color: var(--primary-blue);
-    color: var(--primary-blue);
-    transform: translateY(-1px);
-}
-
-.logo-container {
-    padding: 0.5rem;
-    border-radius: 14px;
-    background: var(--card-bg);
-    border: 1.5px solid var(--border-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-}
-
-.logo-container:hover {
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-    transform: translateY(-1px);
-}
-
-.app-logo {
-    width: 72px;
-    height: 72px;
-    border-radius: 16px;
-    object-fit: contain;
-}
