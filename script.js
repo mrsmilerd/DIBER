@@ -1725,13 +1725,20 @@ async function agregarAlHistorial(viaje) {
 
 function actualizarHistorialConFiltros() {
     console.log('🔄 actualizarHistorialConFiltros() ejecutándose...');
+    console.log('📊 Total de viajes en historial:', historial.length);
     
     if (!elementos['history-list']) {
         console.error('❌ Elemento history-list no encontrado');
-        return;
+        // Intentar encontrar el elemento nuevamente
+        elementos['history-list'] = document.getElementById('history-list');
+        if (!elementos['history-list']) {
+            console.error('❌ history-list realmente no existe en el DOM');
+            return;
+        }
     }
 
     const viajesFiltrados = filtrarHistorial(historial, filtroActual);
+    console.log('📋 Viajes filtrados:', viajesFiltrados.length);
     
     if (!viajesFiltrados || viajesFiltrados.length === 0) {
         elementos['history-list'].innerHTML = `
@@ -1968,11 +1975,12 @@ function cambiarFiltroHistorial(nuevoFiltro) {
 // SISTEMA DE PESTAÑAS
 // =============================================
 
-elementos.tabButtons = document.querySelectorAll('.nav-item');
-elementos.tabContents = document.querySelectorAll('.tab-content');
-
 function inicializarTabs() {
     console.log('🔄 Inicializando sistema de pestañas...');
+    
+    // Usar la barra de navegación inferior
+    elementos.tabButtons = document.querySelectorAll('.nav-item');
+    elementos.tabContents = document.querySelectorAll('.tab-content');
     
     if (!elementos.tabButtons || elementos.tabButtons.length === 0) {
         console.error('❌ No se encontraron botones de pestañas');
@@ -1984,27 +1992,76 @@ function inicializarTabs() {
             const tabId = button.dataset.tab;
             console.log('📁 Cambiando a pestaña:', tabId);
             cambiarPestana(tabId);
+            
+            // Actualizar estadísticas e historial según la pestaña
+            if (tabId === 'resumen') {
+                setTimeout(() => {
+                    actualizarEstadisticas();
+                    console.log('📊 Estadísticas actualizadas para resumen');
+                }, 100);
+            } else if (tabId === 'historial') {
+                setTimeout(() => {
+                    actualizarHistorialConFiltros();
+                    console.log('📋 Historial actualizado');
+                }, 100);
+            }
         });
     });
+    
+    // Asegurar que la pestaña activa se muestre correctamente
+    const activeTab = document.querySelector('.nav-item.active');
+    if (activeTab) {
+        const tabId = activeTab.dataset.tab;
+        cambiarPestana(tabId);
+    }
     
     console.log('✅ Sistema de pestañas inicializado');
 }
 
 function cambiarPestana(tabId) {
-    if (!elementos.tabButtons || !elementos.tabContents) return;
+    console.log('🎯 Cambiando a pestaña:', tabId);
     
+    if (!elementos.tabButtons || !elementos.tabContents) {
+        console.error('❌ Elementos de pestañas no encontrados');
+        return;
+    }
+    
+    // Remover activo de todos los botones
     elementos.tabButtons.forEach(button => {
-        button.classList.toggle('active', button.dataset.tab === tabId);
+        button.classList.remove('active');
     });
     
+    // Ocultar todos los contenidos
     elementos.tabContents.forEach(content => {
-        content.classList.toggle('active', content.id === `tab-${tabId}`);
+        content.classList.remove('active');
     });
     
-    if (tabId === 'resumen') {
-        actualizarEstadisticas();
-    } else if (tabId === 'historial') {
-        actualizarHistorialConFiltros();
+    // Activar botón seleccionado
+    const activeButton = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+    if (activeButton) {
+        activeButton.classList.add('active');
+    }
+    
+    // Mostrar contenido seleccionado
+    const activeContent = document.getElementById(`tab-${tabId}`);
+    if (activeContent) {
+        activeContent.classList.add('active');
+        console.log('✅ Contenido mostrado:', activeContent.id);
+        
+        // Forzar actualización de contenido específico
+        if (tabId === 'resumen') {
+            setTimeout(() => {
+                actualizarEstadisticas();
+                console.log('📈 Estadísticas forzadas');
+            }, 50);
+        } else if (tabId === 'historial') {
+            setTimeout(() => {
+                actualizarHistorialConFiltros();
+                console.log('📚 Historial forzado');
+            }, 50);
+        }
+    } else {
+        console.error('❌ Contenido no encontrado para pestaña:', tabId);
     }
 }
 
@@ -4145,8 +4202,25 @@ async function inicializarApp() {
         } catch (fallbackError) {
             console.error('❌ Error en modo fallback:', fallbackError);
             mostrarStatus('❌ Error crítico. Recarga la página.', 'error');
-        }
+        }// ✅ CONFIGURAR PESTAÑAS DESPUÉS DE CARGAR DATOS
+        setTimeout(() => {
+            inicializarTabs();
+            configurarEventListeners();
+            
+            // Asegurar que el contenido se muestre
+            if (perfiles.length > 0 && perfilActual) {
+                cambiarPestana('calcular'); // Empezar con calcular
+            }
+        }, 500);
+        
+        window.appInitialized = true;
+        console.log('🎉 DIBER inicializado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error crítico en inicialización:', error);
+        // ... manejo de errores existente ...
     }
+}
 }
 
 // ✅ FUNCIÓN SIMPLIFICADA: Solo verifica si Google Maps está disponible
@@ -4321,6 +4395,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
