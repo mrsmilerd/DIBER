@@ -4201,3 +4201,63 @@ body,
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
+/* ========================================================= */
+/* HEADER — LOGO GRANDE Y EMOJIS PEQUEÑOS (MÓVIL VERTICAL)   */
+/* ========================================================= */
+@media (max-width: 600px) {
+
+    /* Header compacto y alto */
+    .app-header {
+        margin-top: 0 !important;
+        padding-top: 0.2rem !important;
+        padding-bottom: 0.4rem !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: flex-start !important; /* ⬅️ Importante */
+        position: relative !important;
+    }
+
+    /* LOGO GRANDE Y PROTAGONISTA */
+    .logo-container {
+        padding: 0.3rem !important;
+        border-radius: 14px !important;
+    }
+
+    .app-logo {
+        width: 90px !important;   /* ⬅️ mucho más grande */
+        height: 90px !important;  /* ⬅️ protagonismo total */
+        object-fit: contain !important;
+    }
+
+    /* BOTONES - EMOJIS MÁS PEQUEÑOS */
+    .header-left button,
+    .header-actions button,
+    .theme-toggle {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 0.8rem !important;  /* ⬅️ emoji más discreto */
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* BOTONES PEGADOS A LAS ESQUINAS */
+    .header-left {
+        position: absolute;
+        top: 4px;
+        left: 6px;
+        gap: 0.25rem !important;
+    }
+
+    .header-actions {
+        position: absolute;
+        top: 4px;
+        right: 6px;
+        gap: 0.25rem !important;
+    }
+
+    /* Logo centrado totalmente */
+    .logo-container {
+        margin: 0 auto !important;
+    }
+}
