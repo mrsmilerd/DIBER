@@ -4270,26 +4270,27 @@ body,
 }
 
 /* ========================================================= */
-/* ANILLO DE ESTADO ALREDEDOR DEL LOGO                      */
+/* ANILLO DE ESTADO PARA LOGO CUADRADO CON BORDES REDONDOS   */
 /* ========================================================= */
 
 .logo-container {
     position: relative;
     display: inline-block;
+    border-radius: 16px; /* MISMO RADIO QUE TU LOGO */
 }
 
-/* Aro */
+/* Marco indicador */
 .logo-status-ring {
     position: absolute;
-    top: -8px;
-    left: -8px;
-    right: -8px;
-    bottom: -8px;
-    border-radius: 50%;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    border-radius: 18px; /* 🔥 un poco más grande que el logo */
     border: 3px solid transparent;
-    z-index: 5; /* 🔥 Asegura que esté encima */
+    z-index: 5;
     pointer-events: none;
-    opacity: 1; /* 🔥 Siempre visible */
+    opacity: 1;
     transition: border-color 0.30s ease;
 }
 
