@@ -4206,7 +4206,9 @@ async function inicializarApp() {
         window.appInitialized = true;
         console.log('🎉 DIBER inicializado correctamente');
         
-    } catch (error) {
+    } 
+    
+    catch (error) {
         console.error('❌ Error crítico en inicialización:', error);
         // ... manejo de errores existente ...
     }
@@ -4385,6 +4387,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
