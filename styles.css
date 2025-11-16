@@ -4410,74 +4410,60 @@ body,
     }
 }
 
-/* =============================================== */
-/* CALCULAR — UNIFICAR ESTILO CON HISTORIAL Y RESUMEN */
-/* =============================================== */
-@media (max-width: 600px) {
+/* ========================================================= */
+/* BARRA DE NAVEGACIÓN INFERIOR — ESTILO FLAT UNIFICADO      */
+/* ========================================================= */
 
-    /* Quitar la tarjeta blanca antigua */
-    #calcular-tab .card,
-    #calcular-tab .form-card {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-    }
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 72px;
+    background: #F5F5F5; /* Fondo gris claro unificado */
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid #E0E0E0;
+    z-index: 1000;
+}
 
-    /* Contenedor general */
-    #calcular-tab {
-        padding: 0 1rem;
-    }
+/* Cada pestaña */
+.nav-item {
+    flex: 1;
+    height: 100%;
+    background: transparent;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease;
+}
 
-    /* Inputs estilo moderno, igual que historial/resumen */
-    #calcular-tab .input-box {
-        background: var(--card-bg);
-        padding: 0.8rem 1rem;
-        margin-bottom: 1rem;
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-    }
+/* Ícono */
+.nav-icon {
+    font-size: 1.45rem;
+    display: block;
+}
 
-    /* Labels */
-    #calcular-tab .input-box label {
-        font-size: 0.9rem;
-        opacity: 0.85;
-        margin-bottom: 0.3rem;
-        display: block;
-    }
+/* Texto */
+.nav-label {
+    font-size: 0.70rem;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
 
-    /* Inputs internos */
-    #calcular-tab .input-box input {
-        width: 100%;
-        border: none;
-        background: transparent;
-        font-size: 1rem;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid transparent;
-        transition: border-color 0.25s ease;
-    }
+/* Estado inactivo */
+.nav-item {
+    color: #424242; /* Gris oscuro */
+}
 
-    #calcular-tab .input-box input:focus {
-        border-bottom: 1px solid var(--primary-blue);
-        outline: none;
-    }
-
-    /* Botón calcular — estilo uniforme */
-    #calcular-btn {
-        width: 100%;
-        padding: 1rem;
-        border-radius: 14px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        background: var(--primary-blue);
-        color: white;
-        border: none;
-        margin-top: 0.5rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-    }
-
-    #calcular-btn:active {
-        transform: scale(0.97);
-    }
+/* Estado activo */
+.nav-item.active {
+    background: #1976D2; /* Azul */
+    color: #FFFFFF;      /* Blanco */
 }
