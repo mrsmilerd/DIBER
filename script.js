@@ -4271,6 +4271,16 @@ window.addEventListener('beforeunload', function() {
     }
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+    try {
+        if (typeof activarUbicacion === "function") {
+            console.log("📍 Autoiniciando análisis de tráfico...");
+            activarUbicacion();  // Se activa solo
+        }
+    } catch (e) {
+        console.warn("❌ No se pudo activar automáticamente:", e);
+    }
+});
 
 
 
