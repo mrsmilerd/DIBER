@@ -1050,53 +1050,6 @@ class FirebaseSync {
     }
 }
 
-// ===============================
-// CONTROL DE ESTADOS DE SINCRONIZACIÓN
-// ===============================
-
-// Selecciona el botón de sincronización y su icono
-const syncBtn = document.getElementById("sync-status-btn");
-const syncIcon = document.getElementById("sync-btn-icon");
-
-// 👉 Inicia la sincronización
-function startSync() {
-    // Limpia estados previos
-    syncBtn.classList.remove("connected", "error");
-    // Activa animación
-    syncBtn.classList.add("syncing");
-    // Cambia icono a "cargando"
-    syncIcon.textContent = "🔄";
-
-    // Simulación de proceso (ejemplo: 3 segundos)
-    setTimeout(() => {
-        // Aquí decides si terminó bien o con error
-        const success = Math.random() > 0.2; // 80% éxito
-        if (success) {
-            syncSuccess();
-        } else {
-            syncError();
-        }
-    }, 3000);
-}
-
-// 👉 Éxito en la sincronización
-function syncSuccess() {
-    syncBtn.classList.remove("syncing", "error");
-    syncBtn.classList.add("connected");
-    syncIcon.textContent = "✅";
-}
-
-// 👉 Error en la sincronización
-function syncError() {
-    syncBtn.classList.remove("syncing", "connected");
-    syncBtn.classList.add("error");
-    syncIcon.textContent = "❌";
-}
-
-// 👉 Evento: al hacer clic en el botón, inicia sync
-syncBtn.addEventListener("click", startSync);
-
-
 // =============================================
 // LIMPIAR DATOS MULTI-DISPOSITIVO - CORREGIDO
 // =============================================
@@ -4236,6 +4189,52 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarApp();
 });
 
+// ===============================
+// CONTROL DE ESTADOS DE SINCRONIZACIÓN
+// ===============================
+
+// Selecciona el botón de sincronización y su icono
+const syncBtn = document.getElementById("sync-status-btn");
+const syncIcon = document.getElementById("sync-btn-icon");
+
+// 👉 Inicia la sincronización
+function startSync() {
+    // Limpia estados previos
+    syncBtn.classList.remove("connected", "error");
+    // Activa animación
+    syncBtn.classList.add("syncing");
+    // Cambia icono a "cargando"
+    syncIcon.textContent = "🔄";
+
+    // Simulación de proceso (ejemplo: 3 segundos)
+    setTimeout(() => {
+        // Aquí decides si terminó bien o con error
+        const success = Math.random() > 0.2; // 80% éxito
+        if (success) {
+            syncSuccess();
+        } else {
+            syncError();
+        }
+    }, 3000);
+}
+
+// 👉 Éxito en la sincronización
+function syncSuccess() {
+    syncBtn.classList.remove("syncing", "error");
+    syncBtn.classList.add("connected");
+    syncIcon.textContent = "✅";
+}
+
+// 👉 Error en la sincronización
+function syncError() {
+    syncBtn.classList.remove("syncing", "connected");
+    syncBtn.classList.add("error");
+    syncIcon.textContent = "❌";
+}
+
+// 👉 Evento: al hacer clic en el botón, inicia sync
+syncBtn.addEventListener("click", startSync);
+
 window.addEventListener('beforeunload', function(e) {
     const tieneDatosPendientes = (elementos.tarifa && elementos.tarifa.value) || 
                                  (elementos.minutos && elementos.minutos.value) || 
@@ -4271,6 +4270,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
