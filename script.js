@@ -4203,16 +4203,12 @@ async function inicializarApp() {
             }
         }, 500);
         
-        window.appInitialized = true;
-        console.log('🎉 DIBER inicializado correctamente');
-        
-    } 
-    
-    catch (error) {
-        console.error('❌ Error crítico en inicialización:', error);
-        // ... manejo de errores existente ...
-    }
-}
+window.appInitialized = true;
+console.log('🎉 DIBER inicializado correctamente');
+
+} catch (error) {
+    console.error('❌ Error crítico en inicialización:', error);
+    // ... manejo de errores existente ...
 }
 
 // ✅ FUNCIÓN SIMPLIFICADA: Solo verifica si Google Maps está disponible
@@ -4387,6 +4383,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
