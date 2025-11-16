@@ -4330,3 +4330,82 @@ body,
         box-shadow: 0 0 8px rgba(76, 175, 80, 0.55);
     }
 }
+
+/* =============================================== */
+/* TÍTULO CENTRALIZADO PARA DATOS DEL VIAJE        */
+/* =============================================== */
+.section-title {
+    text-align: center !important;
+    width: 100%;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+/* =============================================== */
+/* INPUTS PREMIUM PARA MOVIL                       */
+/* =============================================== */
+@media (max-width: 600px) {
+
+    .input-box {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-bottom: 1rem;
+    }
+
+    .input-box label {
+        font-size: 0.95rem;
+        font-weight: 500;
+        opacity: 0.85;
+    }
+
+    .input-box input {
+        width: 100%;
+        padding: 0.9rem 1rem;
+        font-size: 1rem;
+        border-radius: 12px;
+        border: 1.8px solid var(--border-color);
+        background: var(--card-bg);
+        transition: 0.25s ease;
+    }
+
+    .input-box input:focus {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 6px rgba(0, 174, 239, 0.35);
+    }
+}
+
+/* =============================================== */
+/* BOTÓN PRINCIPAL OPTIMIZADO                      */
+/* =============================================== */
+@media (max-width: 600px) {
+    #calcular-btn {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 14px;
+        background: var(--primary-blue);
+        color: #fff;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        margin-top: 1rem;
+    }
+
+    #calcular-btn:active {
+        transform: scale(0.98);
+    }
+}
+
+/* =============================================== */
+/* FORMULARIO CENTRADO Y COMPACTO                  */
+/* =============================================== */
+@media (max-width: 600px) {
+    .form-section {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+}
