@@ -1978,42 +1978,26 @@ function cambiarFiltroHistorial(nuevoFiltro) {
 function inicializarTabs() {
     console.log('🔄 Inicializando sistema de pestañas...');
     
-    // Usar la barra de navegación inferior
-    elementos.tabButtons = document.querySelectorAll('.nav-item');
-    elementos.tabContents = document.querySelectorAll('.tab-content');
+    // Sistema Mobile
+    const navItems = document.querySelectorAll('.nav-item');
+    // Sistema Desktop  
+    const tabButtons = document.querySelectorAll('.tab-button');
     
-    if (!elementos.tabButtons || elementos.tabButtons.length === 0) {
+    // Combinar ambos sistemas
+    const todosLosBotones = [...navItems, ...tabButtons];
+    
+    if (todosLosBotones.length === 0) {
         console.error('❌ No se encontraron botones de pestañas');
         return;
     }
     
-    elementos.tabButtons.forEach(button => {
+    todosLosBotones.forEach(button => {
         button.addEventListener('click', () => {
             const tabId = button.dataset.tab;
             console.log('📁 Cambiando a pestaña:', tabId);
             cambiarPestana(tabId);
-            
-            // Actualizar estadísticas e historial según la pestaña
-            if (tabId === 'resumen') {
-                setTimeout(() => {
-                    actualizarEstadisticas();
-                    console.log('📊 Estadísticas actualizadas para resumen');
-                }, 100);
-            } else if (tabId === 'historial') {
-                setTimeout(() => {
-                    actualizarHistorialConFiltros();
-                    console.log('📋 Historial actualizado');
-                }, 100);
-            }
         });
     });
-    
-    // Asegurar que la pestaña activa se muestre correctamente
-    const activeTab = document.querySelector('.nav-item.active');
-    if (activeTab) {
-        const tabId = activeTab.dataset.tab;
-        cambiarPestana(tabId);
-    }
     
     console.log('✅ Sistema de pestañas inicializado');
 }
@@ -2021,26 +2005,10 @@ function inicializarTabs() {
 function cambiarPestana(tabId) {
     console.log('🎯 Cambiando a pestaña:', tabId);
     
-    if (!elementos.tabButtons || !elementos.tabContents) {
-        console.error('❌ Elementos de pestañas no encontrados');
-        return;
-    }
-    
-    // Remover activo de todos los botones
-    elementos.tabButtons.forEach(button => {
-        button.classList.remove('active');
-    });
-    
     // Ocultar todos los contenidos
-    elementos.tabContents.forEach(content => {
+    document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.remove('active');
     });
-    
-    // Activar botón seleccionado
-    const activeButton = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
-    if (activeButton) {
-        activeButton.classList.add('active');
-    }
     
     // Mostrar contenido seleccionado
     const activeContent = document.getElementById(`tab-${tabId}`);
@@ -2048,21 +2016,43 @@ function cambiarPestana(tabId) {
         activeContent.classList.add('active');
         console.log('✅ Contenido mostrado:', activeContent.id);
         
-        // Forzar actualización de contenido específico
+        // Forzar redibujado
+        setTimeout(() => {
+            activeContent.style.display = 'block';
+            activeContent.style.opacity = '1';
+            activeContent.style.visibility = 'visible';
+        }, 50);
+        
+        // Actualizar contenido específico
         if (tabId === 'resumen') {
             setTimeout(() => {
                 actualizarEstadisticas();
-                console.log('📈 Estadísticas forzadas');
-            }, 50);
+                console.log('📊 Estadísticas actualizadas');
+            }, 100);
         } else if (tabId === 'historial') {
             setTimeout(() => {
                 actualizarHistorialConFiltros();
-                console.log('📚 Historial forzado');
-            }, 50);
+                console.log('📋 Historial actualizado');
+            }, 100);
         }
     } else {
         console.error('❌ Contenido no encontrado para pestaña:', tabId);
     }
+    
+    // Actualizar botones activos en AMBOS sistemas
+    document.querySelectorAll('.nav-item, .tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Activar en sistema mobile
+    document.querySelectorAll(`.nav-item[data-tab="${tabId}"]`).forEach(btn => {
+        btn.classList.add('active');
+    });
+    
+    // Activar en sistema desktop
+    document.querySelectorAll(`.tab-button[data-tab="${tabId}"]`).forEach(btn => {
+        btn.classList.add('active');
+    });
 }
 
 // Agregar después de tu código existente de pestañas
@@ -4395,6 +4385,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
