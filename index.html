@@ -66,48 +66,45 @@
     </script>
 </head>
 <body>
-    
+
+    <!-- ✅ MODALES (fuera de las pantallas) -->
     <!-- Modal de Código de Usuario -->
-<div id="user-code-modal" class="modal-fondo">
-    <div class="modal-contenido">
-        <div class="modal-header">
-            <h2>🔄 Conectar Dispositivos</h2>
-            <p>Usa el MISMO código en todos tus dispositivos</p>
-        </div>
-        
-        <div class="modal-body">
-            <!-- Indicador de estado -->
-            <div id="code-status" style="display: none;" class="code-status"></div>
-            
-            <div class="input-group">
-                <label for="user-code-input">
-                    🔑 Tu Código de Sincronización:
-                </label>
-                <input type="text" id="user-code-input" 
-                       placeholder="Ej: ABC123 - Escribe aquí tu código"
-                       maxlength="6">
-                <div class="code-actions">
-                    <button onclick="generateUserCode()" class="secondary-button small">
-                        ✨ Generar Código Automático
+    <div id="user-code-modal" class="modal-fondo">
+        <div class="modal-contenido">
+            <div class="modal-header">
+                <h2>🔄 Conectar Dispositivos</h2>
+                <p>Usa el MISMO código en todos tus dispositivos</p>
+            </div>
+            <div class="modal-body">
+                <div id="code-status" style="display: none;" class="code-status"></div>
+                
+                <div class="input-group">
+                    <label for="user-code-input">🔑 Tu Código de Sincronización:</label>
+                    <input type="text" id="user-code-input" 
+                           placeholder="Ej: ABC123 - Escribe aquí tu código"
+                           maxlength="6">
+                    <div class="code-actions">
+                        <button onclick="generateUserCode()" class="secondary-button small">
+                            ✨ Generar Código Automático
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="alert-info">
+                    ⚠️ <strong>Importante:</strong><br>
+                    • Escribe un código o genera uno automático<br>
+                    • Usa el <strong>MISMO código</strong> en PC, móvil y tablet<br>
+                    • Ejemplos: ABC123, PC123, MOV456
+                </div>
+                
+                <div class="action-buttons">
+                    <button onclick="setUserCode()" class="primary-button">
+                        🚀 Conectar con este Código
                     </button>
                 </div>
             </div>
-            
-            <div class="alert-info">
-                ⚠️ <strong>Importante:</strong><br>
-                • Escribe un código o genera uno automático<br>
-                • Usa el <strong>MISMO código</strong> en PC, móvil y tablet<br>
-                • Ejemplos: ABC123, PC123, MOV456
-            </div>
-            
-            <div class="action-buttons">
-                <button onclick="setUserCode()" class="primary-button">
-                    🚀 Conectar con este Código
-                </button>
-            </div>
         </div>
     </div>
-</div>
 
     <!-- Pantalla de Selección de Perfil -->
     <div id="perfil-screen" class="screen active">
@@ -543,37 +540,27 @@
     </div>
 </div>
 
-   <!-- Modal de Resultados Mejorado -->
-<div id="modalFondo" class="modal-fondo">
-    <div id="modalContenido" class="modal-contenido">
-        <button class="cerrar-btn" onclick="cerrarModal()">&times;</button>
-        
-        <div class="modal-header">
-            <h2>📊 Resultado del Análisis</h2>
-            <div id="modal-badge" class="result-badge">
-                <span id="modal-emoji">✅</span>
-                <span id="modal-texto">RENTABLE</span>
+    <!-- Modal de Resultados -->
+    <div id="modalFondo" class="modal-fondo">
+        <div id="modalContenido" class="modal-contenido">
+            <button class="cerrar-btn" onclick="cerrarModal()">&times;</button>
+            <div class="modal-header">
+                <h2>📊 Resultado del Análisis</h2>
+                <div id="modal-badge" class="result-badge">
+                    <span id="modal-emoji">✅</span>
+                    <span id="modal-texto">RENTABLE</span>
+                </div>
             </div>
+            <div id="modalResultadosDoble" class="modal-resultados-doble">
+                <!-- Los resultados aparecerán aquí -->
+            </div>
+            <div class="modal-actions">
+                <button id="rechazar-viaje" class="secondary-button">❌ Rechazar Viaje</button>
+                <button id="aceptar-viaje" class="primary-button">✅ Aceptar Viaje</button>
+            </div>
+            <p class="modal-footer small-info">💡 Los viajes aceptados se guardan en tu historial semanal</p>
         </div>
-
-        <div id="modalResultadosDoble" class="modal-resultados-doble">
-            <!-- Los resultados aparecerán aquí -->
-        </div>
-
-        <div class="modal-actions">
-            <button id="rechazar-viaje" class="secondary-button">
-                ❌ Rechazar Viaje
-            </button>
-            <button id="aceptar-viaje" class="primary-button">
-                ✅ Aceptar Viaje
-            </button>
-        </div>
-
-        <p class="modal-footer small-info">
-            💡 Los viajes aceptados se guardan en tu historial semanal
-        </p>
     </div>
-</div>
 
     <!-- Modal Rápido Mejorado -->
     <div id="modal-rapido" class="modal-rapido-mejorado hidden">
@@ -1307,6 +1294,7 @@
     </style>
 </body>
 </html>
+
 
 
 
