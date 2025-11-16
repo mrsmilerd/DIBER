@@ -4459,9 +4459,3 @@ body,
     background: #1976D2;
     color: white;
 }
-
-.tabs-header,
-.tabs-header::before,
-.tab-button {
-    display: none !important;
-}
