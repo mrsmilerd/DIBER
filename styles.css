@@ -4270,38 +4270,38 @@ body,
 }
 
 /* ========================================================= */
-/* ANILLO DE ESTADO ALREDEDOR DEL LOGO                       */
+/* ANILLO DE ESTADO ALREDEDOR DEL LOGO                      */
 /* ========================================================= */
 
 .logo-container {
     position: relative;
+    display: inline-block;
 }
 
+/* Aro */
 .logo-status-ring {
     position: absolute;
-    top: -6px;
-    left: -6px;
-    right: -6px;
-    bottom: -6px;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
     border-radius: 50%;
     border: 3px solid transparent;
-    opacity: 0;
-    transition: all 0.30s ease;
+    z-index: 5; /* 🔥 Asegura que esté encima */
     pointer-events: none;
+    opacity: 1; /* 🔥 Siempre visible */
+    transition: border-color 0.30s ease;
 }
 
 /* Estados */
+.logo-status-ring.loading {
+    border-color: #FFC107; /* Amarillo */
+}
+
 .logo-status-ring.active {
     border-color: #4CAF50; /* Verde */
-    opacity: 1;
 }
 
 .logo-status-ring.error {
     border-color: #F44336; /* Rojo */
-    opacity: 1;
-}
-
-.logo-status-ring.loading {
-    border-color: #FFC107; /* Amarillo */
-    opacity: 1;
 }
