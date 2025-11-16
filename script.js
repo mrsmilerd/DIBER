@@ -2004,6 +2004,14 @@ function cambiarPestana(tabId) {
     }
 }
 
+// Agregar después de tu código existente de pestañas
+function updateTabIndicator(activeIndex) {
+    const tabsHeader = document.querySelector('.tabs-header');
+    if (tabsHeader) {
+        tabsHeader.setAttribute('data-active-tab', activeIndex);
+    }
+}
+
 // =============================================
 // SISTEMA DE CÁLCULO - CORREGIDO
 // =============================================
@@ -4215,3 +4223,4 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
