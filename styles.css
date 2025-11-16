@@ -4268,3 +4268,40 @@ body,
         display: none !important;
     }
 }
+
+/* ========================================================= */
+/* ANILLO DE ESTADO ALREDEDOR DEL LOGO                       */
+/* ========================================================= */
+
+.logo-container {
+    position: relative;
+}
+
+.logo-status-ring {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    opacity: 0;
+    transition: all 0.30s ease;
+    pointer-events: none;
+}
+
+/* Estados */
+.logo-status-ring.active {
+    border-color: #4CAF50; /* Verde */
+    opacity: 1;
+}
+
+.logo-status-ring.error {
+    border-color: #F44336; /* Rojo */
+    opacity: 1;
+}
+
+.logo-status-ring.loading {
+    border-color: #FFC107; /* Amarillo */
+    opacity: 1;
+}
