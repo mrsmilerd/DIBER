@@ -197,110 +197,106 @@ body {
 }
 
 /* ============================================= */
-/* SISTEMA DE PESTAÑAS DESKTOP (mayor a 768px)  */
+/* 5. SISTEMA DE PESTAÑAS MEJORADO */
 /* ============================================= */
-@media (min-width: 769px) {
-    .tabs-container {
-        margin-top: 1.5rem;
-    }
 
-    .tabs-header {
-        display: flex;
-        background: var(--light-grey);
-        border-radius: 14px;
-        padding: 6px;
-        margin-bottom: 1.5rem;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        position: relative;
-    }
-
-    .tabs-header::before {
-        content: '';
-        position: absolute;
-        top: 6px;
-        bottom: 6px;
-        left: 6px;
-        width: calc(25% - 6px);
-        background: var(--card-bg);
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        z-index: 1;
-    }
-
-    .tab-button {
-        flex: 1;
-        padding: 14px 8px;
-        border: none;
-        background: transparent;
-        border-radius: 10px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 0.82em;
-        color: var(--text-secondary);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        min-height: 64px;
-        position: relative;
-        z-index: 2;
-    }
-
-    .tab-button.active {
-        color: var(--primary-blue);
-    }
-
-    /* OCULTAR sistema mobile en desktop */
-    .bottom-nav {
-        display: none !important;
-    }
+.tabs-container {
+    margin-top: 1.5rem;
 }
 
-/* ============================================= */
-/* SISTEMA DE PESTAÑAS MOBILE (menor a 768px)   */
-/* ============================================= */
-@media (max-width: 768px) {
-    .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 74px;
-        background: #F5F5F5;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        border-top: 1px solid #E0E0E0;
-        z-index: 2000;
-    }
+.tabs-header {
+    display: flex;
+    background: var(--light-grey);
+    border-radius: 14px;
+    padding: 6px;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    position: relative;
+}
 
-    .nav-item {
-        flex: 1;
-        height: 100%;
-        border: none;
-        background: transparent;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 4px;
-        color: #424242;
-        font-weight: 600;
-        cursor: pointer;
-    }
+/* Indicador deslizante */
+.tabs-header::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 6px;
+    width: calc(25% - 6px);
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 1;
+}
 
-    .nav-item.active {
-        background: #1976D2;
-        color: white;
-    }
+/* Posiciones del indicador */
+.tabs-header[data-active-tab="0"]::before { transform: translateX(0); }
+.tabs-header[data-active-tab="1"]::before { transform: translateX(100%); }
+.tabs-header[data-active-tab="2"]::before { transform: translateX(200%); }
+.tabs-header[data-active-tab="3"]::before { transform: translateX(300%); }
 
-    /* OCULTAR sistema desktop en mobile */
-    .tabs-container {
-        display: none !important;
-    }
+.tab-button {
+    flex: 1;
+    padding: 14px 8px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.82em;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    min-height: 64px;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    z-index: 2;
+}
+
+.tab-button:hover {
+    color: var(--primary-blue);
+    transform: translateY(-1px);
+}
+
+.tab-button.active {
+    color: var(--primary-blue);
+    background: transparent;
+    box-shadow: none;
+    transform: translateY(0);
+}
+
+.tab-icon {
+    font-size: 1.3em;
+    transition: transform 0.2s ease;
+}
+
+.tab-button:hover .tab-icon,
+.tab-button.active .tab-icon {
+    transform: scale(1.1);
+}
+
+.tab-button.active .tab-icon {
+    filter: drop-shadow(0 2px 4px rgba(26, 115, 232, 0.2));
+}
+
+.tab-text {
+    font-size: 0.75em;
+    white-space: nowrap;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.tab-content.active {
+    display: block;
 }
 
 /* ============================================= */
@@ -4206,379 +4202,3 @@ body,
     to   { transform: rotate(360deg); }
 }
 
-/* ========================================================= */
-/* HEADER — LOGO GRANDE Y EMOJIS PEQUEÑOS (MÓVIL VERTICAL)   */
-/* ========================================================= */
-@media (max-width: 600px) {
-
-    /* Header compacto y alto */
-    .app-header {
-        margin-top: 0 !important;
-        padding-top: 0.2rem !important;
-        padding-bottom: 0.4rem !important;
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: flex-start !important; /* ⬅️ Importante */
-        position: relative !important;
-    }
-
-    /* LOGO GRANDE Y PROTAGONISTA */
-    .logo-container {
-        padding: 0.3rem !important;
-        border-radius: 14px !important;
-    }
-
-    .app-logo {
-        width: 90px !important;   /* ⬅️ mucho más grande */
-        height: 90px !important;  /* ⬅️ protagonismo total */
-        object-fit: contain !important;
-    }
-
-    /* BOTONES - EMOJIS MÁS PEQUEÑOS */
-    .header-left button,
-    .header-actions button,
-    .theme-toggle {
-        width: 30px !important;
-        height: 30px !important;
-        font-size: 0.8rem !important;  /* ⬅️ emoji más discreto */
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    /* BOTONES PEGADOS A LAS ESQUINAS */
-    .header-left {
-        position: absolute;
-        top: 4px;
-        left: 6px;
-        gap: 0.25rem !important;
-    }
-
-    .header-actions {
-        position: absolute;
-        top: 4px;
-        right: 6px;
-        gap: 0.25rem !important;
-    }
-
-    /* Logo centrado totalmente */
-    .logo-container {
-        margin: 0 auto !important;
-    }
-}
-
-@media (max-width: 600px) {
-    #activar-analisis-container,
-    #activar-analisis-btn {
-        display: none !important;
-    }
-}
-
-/* ========================================================= */
-/* ANILLO PREMIUM PARA LOGO CUADRADO CON ANIMACIÓN           */
-/* ========================================================= */
-
-.logo-container {
-    position: relative;
-    display: inline-block;
-    border-radius: 16px;
-}
-
-/* Anillo base: línea muy fina */
-.logo-status-ring {
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-    border-radius: 16px;
-    border: 1.5px solid transparent;    /* 🔥 Línea mucho más fina */
-    pointer-events: none;
-    z-index: 5;
-    opacity: 1;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-/* ⭐ ESTADOS */
-
-/* 🟡 Cargando */
-.logo-status-ring.loading {
-    border-color: #FFC107;
-    box-shadow: 0 0 6px rgba(255, 193, 7, 0.45);
-}
-
-/* 🟢 Activo */
-.logo-status-ring.active {
-    border-color: #4CAF50;
-    box-shadow: 0 0 8px rgba(76, 175, 80, 0.55);
-    animation: logoPulse 1.6s ease-in-out infinite; /* 💓 Latido suave */
-}
-
-/* 🔴 Error */
-.logo-status-ring.error {
-    border-color: #F44336;
-    box-shadow: 0 0 8px rgba(244, 67, 54, 0.55);
-}
-
-/* 💓 ANIMACIÓN DE LATIDO (solo para activo) */
-@keyframes logoPulse {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0 8px rgba(76, 175, 80, 0.55);
-    }
-    50% {
-        transform: scale(1.03);  /* Latido pequeño, profesional */
-        box-shadow: 0 0 14px rgba(76, 175, 80, 0.75);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 8px rgba(76, 175, 80, 0.55);
-    }
-}
-
-/* =============================================== */
-/* TÍTULO CENTRALIZADO PARA DATOS DEL VIAJE        */
-/* =============================================== */
-.section-title {
-    text-align: center !important;
-    width: 100%;
-    margin-top: 1rem;
-    margin-bottom: 1rem;
-    font-weight: 600;
-    font-size: 1.2rem;
-}
-
-/* =============================================== */
-/* INPUTS PREMIUM PARA MOVIL                       */
-/* =============================================== */
-@media (max-width: 600px) {
-
-    .input-box {
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-        margin-bottom: 1rem;
-    }
-
-    .input-box label {
-        font-size: 0.95rem;
-        font-weight: 500;
-        opacity: 0.85;
-    }
-
-    .input-box input {
-        width: 100%;
-        padding: 0.9rem 1rem;
-        font-size: 1rem;
-        border-radius: 12px;
-        border: 1.8px solid var(--border-color);
-        background: var(--card-bg);
-        transition: 0.25s ease;
-    }
-
-    .input-box input:focus {
-        border-color: var(--primary-blue);
-        box-shadow: 0 0 6px rgba(0, 174, 239, 0.35);
-    }
-}
-
-/* =============================================== */
-/* BOTÓN PRINCIPAL OPTIMIZADO                      */
-/* =============================================== */
-@media (max-width: 600px) {
-    #calcular-btn {
-        width: 100%;
-        padding: 1rem;
-        font-size: 1.1rem;
-        font-weight: 600;
-        border-radius: 14px;
-        background: var(--primary-blue);
-        color: #fff;
-        border: none;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        margin-top: 1rem;
-    }
-
-    #calcular-btn:active {
-        transform: scale(0.98);
-    }
-}
-
-/* =============================================== */
-/* FORMULARIO CENTRADO Y COMPACTO                  */
-/* =============================================== */
-@media (max-width: 600px) {
-    .form-section {
-        max-width: 480px;
-        margin: 0 auto;
-        padding: 0 1rem;
-    }
-}
-
-/* ========================================================= */
-/* BARRA DE NAVEGACIÓN INFERIOR — ESTILO FLAT UNIFICADO      */
-/* ========================================================= */
-
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 70px;
-    background: #F5F5F5;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    border-top: 1px solid #E0E0E0;
-    z-index: 1000;
-}
-
-.nav-item {
-    flex: 1;
-    height: 100%;
-    background: transparent;
-    border: none;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-    font-family: inherit;
-    cursor: pointer;
-    color: #424242;
-    transition: background 0.25s ease, color 0.25s ease;
-}
-
-.nav-icon {
-    font-size: 1.45rem;
-}
-
-.nav-label {
-    font-size: 0.70rem;
-    letter-spacing: 0.5px;
-    font-weight: 600;
-}
-
-/* ACTIVA */
-.nav-item.active {
-    background: #1976D2;
-    color: white;
-}
-
-/* ============================================= */
-/* BARRA DE NAVEGACIÓN PROFESIONAL (MOBILE-FIRST) */
-/* ============================================= */
-
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 74px;
-    background: #F5F5F5;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    border-top: 1px solid #E0E0E0;
-    z-index: 2000;
-}
-
-.nav-item {
-    flex: 1;
-    height: 100%;
-    border: none;
-    background: transparent;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-    color: #424242;
-    font-weight: 600;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: background 0.25s ease, color 0.25s ease;
-}
-
-.nav-label {
-    font-size: 0.70rem;
-    letter-spacing: 0.5px;
-}
-
-.nav-svg {
-    width: 22px;
-    height: 22px;
-    stroke: currentColor;
-    fill: none;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    transition: transform 0.25s ease;
-}
-
-/* Estilo ACTIVO */
-.nav-item.active {
-    background: #1976D2;
-    color: white;
-}
-
-.nav-item.active .nav-svg {
-    transform: scale(1.15);
-}
-
-/* Tocar = animación */
-.nav-item:active .nav-svg {
-    transform: scale(0.88);
-}
-
-/* ============================================= */
-/* SOLUCIÓN EMERGENCIA - FORZAR VISIBILIDAD      */
-/* ============================================= */
-
-/* Forzar que el contenido de las pestañas sea visible SIEMPRE */
-.tab-content.active {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-/* Asegurar que el contenido específico se vea */
-#tab-resumen,
-#tab-historial {
-    min-height: 300px;
-    padding: 20px 0;
-}
-
-/* Forzar visibilidad de componentes internos */
-.estadisticas-container,
-.rendimiento-section-mejorada,
-.filtros-historial,
-.history-section,
-.history-list {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-/* Debug visual temporal */
-#tab-resumen::before {
-    content: "📊 PESTAÑA RESUMEN - VISIBLE";
-    display: block;
-    background: #4CAF50;
-    color: white;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 15px;
-    font-weight: bold;
-    text-align: center;
-}
-
-#tab-historial::before {
-    content: "📋 PESTAÑA HISTORIAL - VISIBLE";
-    display: block;
-    background: #2196F3;
-    color: white;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 15px;
-    font-weight: bold;
-    text-align: center;
-}
