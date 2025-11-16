@@ -3722,3 +3722,50 @@ body,
         object-fit: contain !important;
     }
 }
+
+/* ========================================================= */
+/* BLOQUE 2 – TABS OPTIMIZADOS PARA MÓVIL (VERTICAL)         */
+/* ========================================================= */
+@media (max-width: 600px) {
+
+    /* Contenedor más compacto */
+    .tab-nav {
+        display: flex !important;
+        justify-content: space-between !important;
+        padding: 0.2rem 0.4rem !important;
+        margin-bottom: 0.6rem !important;
+        background: var(--card-bg);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+
+    /* Cada tab tipo botón */
+    .tab-button {
+        flex: 1;
+        padding: 0.55rem 0.3rem !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        border-radius: 10px !important;
+        margin: 0 0.15rem !important;
+        transition: all 0.25s ease;
+        min-height: 42px !important; /* táctil */
+    }
+
+    /* Tab activo */
+    .tab-button.active {
+        background: var(--primary-blue);
+        color: white !important;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
+
+    /* Tab inactivo */
+    .tab-button:not(.active) {
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+    }
+
+    /* Hover para pantallas táctiles (leve animación) */
+    .tab-button:active {
+        transform: scale(0.96);
+    }
+}
