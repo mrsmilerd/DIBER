@@ -4261,3 +4261,10 @@ body,
         margin: 0 auto !important;
     }
 }
+
+@media (max-width: 600px) {
+    #activar-analisis-container,
+    #activar-analisis-btn {
+        display: none !important;
+    }
+}
