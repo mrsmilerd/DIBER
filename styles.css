@@ -4409,3 +4409,12 @@ body,
         padding: 0 1rem;
     }
 }
+
+/* QUITAR EL CUADRO BLANCO DE CALCULAR SOLO EN MÓVIL */
+@media (max-width: 600px) {
+    #calcular-tab .card {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+}
