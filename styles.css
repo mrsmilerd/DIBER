@@ -3646,3 +3646,26 @@ select:focus-visible {
     font-size: 1.12em;
 }
 
+/* Bloque 3: Grid de Datos del Viaje */
+.datos-viaje {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border-color);
+    border-left: 4px solid var(--primary-blue);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.datos-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 560px) {
+    .datos-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
