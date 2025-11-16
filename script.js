@@ -2013,6 +2013,29 @@ function updateTabIndicator(activeIndex) {
     }
 }
 
+// ==================================================
+// NUEVO CONTROL PARA LA BARRA DE NAVEGACIÓN PREMIUM
+// ==================================================
+document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+
+        // Vibración háptica (solo móviles compatibles)
+        if (navigator.vibrate) navigator.vibrate(15);
+
+        const tabId = btn.dataset.tab;
+
+        // Quitar activo de todos
+        document.querySelectorAll('.nav-item')
+            .forEach(item => item.classList.remove('active'));
+
+        // Activar esta
+        btn.classList.add('active');
+
+        // Activar pestaña con tu sistema actual
+        cambiarPestana(tabId);
+    });
+});
+
 // =============================================
 // SISTEMA DE CÁLCULO - CORREGIDO
 // =============================================
@@ -4295,6 +4318,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
