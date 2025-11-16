@@ -3196,6 +3196,14 @@ async function inicializarSistemaTraficoCompleto() {
 // =============================================
 
 function configurarEventListeners() {
+    // Event listeners para tabs
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            cambiarPestana(tabName);
+        });
+    });
+    
     console.log('🎯 Configurando event listeners...');
     
     inicializarTabs();
@@ -4106,7 +4114,7 @@ async function inicializarApp() {
     inicializarElementosDOM();
     
     try {
-        // ✅ PRIMERO: Inicializar sistema de código de usuario (NO DEPENDE DE GOOGLE MAPS)
+        // ✅ PRIMERO: Inicializar sistema de código de usuario
         console.log('🔐 Inicializando sistema de código de usuario...');
         const userCodeInitialized = await initializeUserCodeSystem();
         
@@ -4115,11 +4123,11 @@ async function inicializarApp() {
             return;
         }
 
-        // ✅ SEGUNDO: Cargar Google Maps SOLO UNA VEZ
+        // ✅ SEGUNDO: Cargar Google Maps
         console.log('🗺️ Cargando Google Maps...');
-        await loadGoogleMaps(); // Esta función ahora está en el HTML
+        await loadGoogleMaps();
         
-        // ✅ TERCERO: Inicializar sistema de tráfico CON Google Maps
+        // ✅ TERCERO: Inicializar sistema de tráfico
         console.log('🚗 Inicializando sistema de tráfico...');
         const trafficInitialized = await inicializarSistemaTraficoCompleto();
         
@@ -4129,10 +4137,10 @@ async function inicializarApp() {
             console.log('⚠️ Google Maps no disponible, usando modo local');
         }
         
-        // ✅ CUARTO: Inicializar Firebase (NO DEPENDE DE GOOGLE MAPS)
+        // ✅ CUARTO: Inicializar Firebase
         await initializeFirebaseSync();
         
-        // ✅ QUINTO: Inicializar sistema de auto-aprendizaje
+        // ✅ QUINTO: Sistema de auto-aprendizaje
         window.routeLearningSystem = new RouteLearningSystem();
         window.routeLearningSystem.initialized = true;
         console.log('🧠 Sistema de auto-aprendizaje inicializado');
@@ -4149,8 +4157,9 @@ async function inicializarApp() {
             }, 3000);
         }
 
-        // ✅ OCTAVO: Configurar interfaz
+        // ✅ OCTAVO: Configurar interfaz (UNA SOLA VEZ)
         aplicarTemaGuardado();
+        inicializarTabs(); // ← ESTO ES IMPORTANTE
         configurarEventListeners();
         configurarModalExportacion();
         
@@ -4160,20 +4169,11 @@ async function inicializarApp() {
             mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
         } else if (perfilActual) {
             mostrarPantalla('main');
+            // Asegurar que la pestaña calcular esté activa al inicio
+            setTimeout(() => cambiarPestana('calcular'), 100);
         } else {
             mostrarPantalla('perfil');
         }
-        
-        // ✅ CONFIGURAR PESTAÑAS DESPUÉS DE CARGAR DATOS
-        setTimeout(() => {
-            inicializarTabs();
-            configurarEventListeners();
-            
-            // Asegurar que el contenido se muestre
-            if (perfiles.length > 0 && perfilActual) {
-                cambiarPestana('calcular'); // Empezar con calcular
-            }
-        }, 500);
         
         window.appInitialized = true;
         console.log('🎉 DIBER inicializado correctamente');
@@ -4181,24 +4181,26 @@ async function inicializarApp() {
     } catch (error) {
         console.error('❌ Error crítico en inicialización:', error);
         
-        // ✅ MODO FALLBACK: Continuar sin Google Maps
+        // ✅ MODO FALLBACK
         mostrarStatus('⚠️ Modo local activado - Funcionalidad básica disponible', 'info');
         
-        // Inicializar componentes que no dependen de Google Maps
         try {
             await initializeUserCodeSystem();
             await initializeFirebaseSync();
             await cargarDatos();
             
+            // Configurar interfaz en modo fallback
+            aplicarTemaGuardado();
+            inicializarTabs(); // ← TABS también en modo fallback
+            configurarEventListeners();
+            configurarModalExportacion();
+            
             if (perfiles.length === 0) {
                 mostrarPantalla('perfil');
             } else {
                 mostrarPantalla('main');
+                setTimeout(() => cambiarPestana('calcular'), 100);
             }
-            
-            aplicarTemaGuardado();
-            configurarEventListeners();
-            configurarModalExportacion();
             
         } catch (fallbackError) {
             console.error('❌ Error en modo fallback:', fallbackError);
@@ -4379,6 +4381,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
