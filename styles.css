@@ -3888,3 +3888,43 @@ body,
         border-radius: 12px !important;
     }
 }
+
+/* ========================================================= */
+/* BLOQUE 5 – BOTÓN PRINCIPAL OPTIMIZADO PARA MÓVIL          */
+/* ========================================================= */
+@media (max-width: 600px) {
+
+    /* Botón principal */
+    .primary-button {
+        width: 100% !important;
+        padding: 1rem !important;
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        border-radius: 14px !important;
+        margin-top: 0.5rem !important;
+        margin-bottom: 0.8rem !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        letter-spacing: 0.2px;
+        transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    /* Efecto táctil */
+    .primary-button:active {
+        transform: scale(0.96);
+        opacity: 0.85;
+    }
+
+    /* Botón secundario (si existe en tu UI) */
+    .secondary-button {
+        padding: 0.8rem !important;
+        font-size: 0.95rem !important;
+        border-radius: 12px !important;
+        transition: transform 0.15s ease;
+    }
+
+    .secondary-button:active {
+        transform: scale(0.96);
+    }
+}
