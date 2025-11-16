@@ -4005,6 +4005,36 @@ function diagnosticarSincronizacion() {
 }
 
 // =============================================
+// BOTÓN DE SINCRONIZACIÓN DIRECTA
+// =============================================
+const syncBtn = document.getElementById("sync-status-btn");
+const syncIcon = document.getElementById("sync-btn-icon");
+
+syncBtn.addEventListener("click", async () => {
+    console.log("🌐 Iniciando sincronización directa...");
+
+    // Activa animación
+    syncBtn.classList.add("syncing");
+    syncIcon.textContent = "🔄";
+
+    try {
+        // Usa tu función ya creada
+        await forzarSincronizacion(); // o resincronizarCompleta()
+
+        // Éxito
+        syncBtn.classList.remove("syncing", "error");
+        syncBtn.classList.add("connected");
+        syncIcon.textContent = "✅";
+    } catch (error) {
+        // Error
+        syncBtn.classList.remove("syncing", "connected");
+        syncBtn.classList.add("error");
+        syncIcon.textContent = "❌";
+    }
+});
+
+
+// =============================================
 // INICIALIZACIÓN MEJORADA - VERSIÓN CORREGIDA
 // =============================================
 
@@ -4270,6 +4300,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
