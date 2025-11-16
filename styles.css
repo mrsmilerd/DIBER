@@ -3561,3 +3561,47 @@ select:focus-visible {
     gap: 0.35rem !important;
 }
 
+/* ===== Ajuste de espaciado superior e inferior del Header ===== */
+
+.header-wrapper,
+.app-header {
+    margin-top: 0 !important;
+    padding-top: 0.25rem !important;
+}
+
+.app-header {
+    padding-bottom: 0.25rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* ===== Alineación perfecta de botones del header ===== */
+
+.header-left,
+.header-actions {
+    display: flex;
+    align-items: center;
+    height: 42px; /* Fuerza alineación vertical */
+}
+
+.header-left button,
+.header-actions button,
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Tamaño más uniforme (versión final compacta) */
+.header-left button,
+.header-actions button,
+.theme-toggle {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+}
+
+.logo-container {
+    margin-top: -2px;
+}
