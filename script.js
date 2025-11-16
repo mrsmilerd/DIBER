@@ -4164,6 +4164,17 @@ async function inicializarApp() {
             mostrarPantalla('perfil');
         }
         
+        // ✅ CONFIGURAR PESTAÑAS DESPUÉS DE CARGAR DATOS
+        setTimeout(() => {
+            inicializarTabs();
+            configurarEventListeners();
+            
+            // Asegurar que el contenido se muestre
+            if (perfiles.length > 0 && perfilActual) {
+                cambiarPestana('calcular'); // Empezar con calcular
+            }
+        }, 500);
+        
         window.appInitialized = true;
         console.log('🎉 DIBER inicializado correctamente');
         
@@ -4192,22 +4203,7 @@ async function inicializarApp() {
         } catch (fallbackError) {
             console.error('❌ Error en modo fallback:', fallbackError);
             mostrarStatus('❌ Error crítico. Recarga la página.', 'error');
-        }// ✅ CONFIGURAR PESTAÑAS DESPUÉS DE CARGAR DATOS
-        setTimeout(() => {
-            inicializarTabs();
-            configurarEventListeners();
-            
-            // Asegurar que el contenido se muestre
-            if (perfiles.length > 0 && perfilActual) {
-                cambiarPestana('calcular'); // Empezar con calcular
-            }
-        }, 500);
-        
-window.appInitialized = true;
-        console.log('🎉 DIBER inicializado correctamente');
-        
-    } catch (error) {
-        console.error('❌ Error crítico en inicialización:', error);
+        }
     }
 }
 
@@ -4383,6 +4379,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ No se pudo activar automáticamente:", e);
     }
 });
+
 
 
 
