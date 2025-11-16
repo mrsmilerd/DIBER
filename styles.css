@@ -3819,3 +3819,72 @@ body,
         margin-bottom: 1rem !important;
     }
 }
+
+/* ========================================================= */
+/* BLOQUE 4 – TARJETAS OPTIMIZADAS PARA MÓVIL (VERTICAL)     */
+/* ========================================================= */
+@media (max-width: 600px) {
+
+    /* Tarjeta general */
+    .card {
+        padding: 1rem !important;
+        border-radius: 14px !important;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 1rem !important;
+    }
+
+    /* Títulos dentro de tarjetas */
+    .card-title {
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        margin-bottom: 0.7rem !important;
+        color: var(--text-primary);
+    }
+
+    /* Texto de información en las tarjetas */
+    .card-content p,
+    .info-row,
+    .summary-row {
+        font-size: 0.92rem !important;
+        line-height: 1.35rem !important;
+        margin-bottom: 0.4rem !important;
+    }
+
+    /* Filas de datos alineadas mejor */
+    .info-row,
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Acento de números */
+    .value,
+    .resultado-numero,
+    .summary-value {
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        color: var(--primary-blue);
+    }
+
+    /* Estados especiales (rentable / no rentable) */
+    .rentable {
+        color: var(--success-green) !important;
+        font-weight: 700 !important;
+    }
+
+    .no-rentable {
+        color: var(--error-red) !important;
+        font-weight: 700 !important;
+    }
+
+    /* Botón dentro de tarjeta */
+    .card button {
+        width: 100%;
+        padding: 0.9rem !important;
+        font-size: 1rem !important;
+        border-radius: 12px !important;
+    }
+}
