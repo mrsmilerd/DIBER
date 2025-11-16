@@ -4235,35 +4235,6 @@ function syncError() {
 // 👉 Evento: al hacer clic en el botón, inicia sync
 syncBtn.addEventListener("click", startSync);
 
-// =============================================
-// BOTÓN DE SINCRONIZACIÓN DIRECTA
-// =============================================
-const syncBtn = document.getElementById("sync-status-btn");
-const syncIcon = document.getElementById("sync-btn-icon");
-
-syncBtn.addEventListener("click", async () => {
-    console.log("🌐 Iniciando sincronización directa...");
-
-    // Activa animación
-    syncBtn.classList.add("syncing");
-    syncIcon.textContent = "🔄";
-
-    try {
-        // Usa tu función ya creada
-        await forzarSincronizacion(); // o resincronizarCompleta()
-
-        // Éxito
-        syncBtn.classList.remove("syncing", "error");
-        syncBtn.classList.add("connected");
-        syncIcon.textContent = "✅";
-    } catch (error) {
-        // Error
-        syncBtn.classList.remove("syncing", "connected");
-        syncBtn.classList.add("error");
-        syncIcon.textContent = "❌";
-    }
-});
-
 window.addEventListener('beforeunload', function(e) {
     const tieneDatosPendientes = (elementos.tarifa && elementos.tarifa.value) || 
                                  (elementos.minutos && elementos.minutos.value) || 
@@ -4299,6 +4270,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
