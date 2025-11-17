@@ -5351,518 +5351,279 @@ select:focus-visible {
     --border-color: #444444;
 }
 
-/* ========================================================= */
-/* BLOQUE 2 – TABS OPTIMIZADOS PARA MÓVIL (VERTICAL)         */
-/* ========================================================= */
-@media (max-width: 600px) {
+/* ============================================= */
+/* BLOQUE 15 - SISTEMA RESPONSIVE UNIFICADO */
+/* ============================================= */
 
-    /* Contenedor más compacto */
-    .tab-nav {
-        display: flex !important;
-        justify-content: space-between !important;
-        padding: 0.2rem 0.4rem !important;
-        margin-bottom: 0.6rem !important;
-        background: var(--card-bg);
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
+/* 1. BREAKPOINTS UNIFICADOS */
+:root {
+    --breakpoint-mobile: 480px;
+    --breakpoint-tablet: 768px;
+    --breakpoint-desktop: 1024px;
+    --breakpoint-wide: 1200px;
+}
+
+/* 2. MEDIA QUERIES OPTIMIZADAS */
+@media (max-width: 768px) {
+    /* Header optimizado para móvil */
+    .app-header {
+        grid-template-columns: auto 1fr auto;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+    }
+    
+    .header-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1em;
+    }
+    
+    .app-logo {
+        width: 55px;
+        height: 55px;
     }
 
-    /* Cada tab tipo botón */
+    /* Tabs optimizados para móvil */
+    .tabs-header {
+        padding: 4px;
+        margin-bottom: 1.25rem;
+    }
+    
     .tab-button {
-        flex: 1;
-        padding: 0.55rem 0.3rem !important;
-        font-size: 0.9rem !important;
-        font-weight: 600 !important;
-        border-radius: 10px !important;
-        margin: 0 0.15rem !important;
-        transition: all 0.25s ease;
-        min-height: 42px !important; /* táctil */
+        padding: 12px 6px;
+        min-height: 58px;
+        font-size: 0.78em;
+    }
+    
+    .tab-icon {
+        font-size: 1.2em;
     }
 
-    /* Tab activo */
-    .tab-button.active {
-        background: var(--primary-blue);
-        color: white !important;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    /* Formulario móvil */
+    .config-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .input-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    input[type="number"],
+    input[type="text"],
+    select {
+        padding: 1rem;
+        font-size: 16px; /* Previene zoom en iOS */
     }
 
-    /* Tab inactivo */
-    .tab-button:not(.active) {
-        background: transparent !important;
-        color: var(--text-secondary) !important;
+    /* Resultados móvil */
+    .resultado-rapido {
+        padding: 1.5rem;
+        margin: 1.25rem 0;
+    }
+    
+    .resultado-metricas {
+        grid-template-columns: 1fr;
     }
 
-    /* Hover para pantallas táctiles (leve animación) */
-    .tab-button:active {
-        transform: scale(0.96);
+    /* Modal móvil */
+    .modal-contenido {
+        max-width: 100%;
+        margin: 1rem;
     }
-}
-
-/* ========================================================= */
-/* BLOQUE 3 – FORMULARIO OPTIMIZADO PARA MÓVIL (VERTICAL)    */
-/* ========================================================= */
-@media (max-width: 600px) {
-
-    /* Contenedor más compacto y moderno */
-    .card {
-        padding: 0.9rem !important;
-        border-radius: 14px !important;
-        margin-bottom: 0.9rem !important;
-    }
-
-    /* Etiquetas del formulario */
-    .input-label {
-        font-size: 0.9rem !important;
-        font-weight: 600 !important;
-        color: var(--text-secondary);
-        margin-bottom: 0.25rem !important;
-    }
-
-    /* Inputs táctiles */
-    .input-field {
-        width: 100%;
-        padding: 0.9rem 0.75rem !important;
-        font-size: 1rem !important;
-        border-radius: 12px !important;
-        border: 1px solid var(--border-color);
-        background: var(--card-bg);
-        transition: all 0.2s ease;
-    }
-
-    .input-field:focus {
-        border-color: var(--primary-blue);
-        box-shadow: 0 0 0 3px rgba(0, 174, 239, 0.2);
-    }
-
-    /* Dropdown/Select */
-    select.input-field {
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg width='14' height='10' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 0.8rem center;
-    }
-
-    /* Separación entre campos */
-    .form-group {
-        margin-bottom: 1rem !important;
+    
+    .modal-resultados-doble {
+        grid-template-columns: 1fr;
     }
 }
 
-/* ========================================================= */
-/* BLOQUE 4 – TARJETAS OPTIMIZADAS PARA MÓVIL (VERTICAL)     */
-/* ========================================================= */
-@media (max-width: 600px) {
-
-    /* Tarjeta general */
-    .card {
-        padding: 1rem !important;
-        border-radius: 14px !important;
-        border: 1px solid var(--border-color);
-        background: var(--card-bg);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        margin-bottom: 1rem !important;
+@media (max-width: 480px) {
+    /* Header ultra compacto */
+    .app-header {
+        grid-template-columns: auto 1fr auto;
+        gap: 0.3rem;
+    }
+    
+    .header-btn {
+        width: 38px;
+        height: 38px;
+    }
+    
+    .app-logo {
+        width: 50px;
+        height: 50px;
     }
 
-    /* Títulos dentro de tarjetas */
-    .card-title {
-        font-size: 1.05rem !important;
-        font-weight: 700 !important;
-        margin-bottom: 0.7rem !important;
-        color: var(--text-primary);
+    /* Tabs ultra compactos */
+    .tabs-header {
+        padding: 3px;
+    }
+    
+    .tab-button {
+        padding: 10px 4px;
+        min-height: 52px;
+        font-size: 0.74em;
     }
 
-    /* Texto de información en las tarjetas */
-    .card-content p,
-    .info-row,
-    .summary-row {
-        font-size: 0.92rem !important;
-        line-height: 1.35rem !important;
-        margin-bottom: 0.4rem !important;
+    /* Formulario ultra compacto */
+    .container {
+        padding: 1rem;
+    }
+    
+    .form-section {
+        padding: 1rem;
     }
 
-    /* Filas de datos alineadas mejor */
-    .info-row,
-    .summary-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    /* Acento de números */
-    .value,
-    .resultado-numero,
-    .summary-value {
-        font-size: 1.05rem !important;
-        font-weight: 700 !important;
-        color: var(--primary-blue);
-    }
-
-    /* Estados especiales (rentable / no rentable) */
-    .rentable {
-        color: var(--success-green) !important;
-        font-weight: 700 !important;
-    }
-
-    .no-rentable {
-        color: var(--error-red) !important;
-        font-weight: 700 !important;
-    }
-
-    /* Botón dentro de tarjeta */
-    .card button {
-        width: 100%;
-        padding: 0.9rem !important;
-        font-size: 1rem !important;
-        border-radius: 12px !important;
-    }
-}
-
-/* ========================================================= */
-/* BLOQUE 5 – BOTÓN PRINCIPAL OPTIMIZADO PARA MÓVIL          */
-/* ========================================================= */
-@media (max-width: 600px) {
-
-    /* Botón principal */
-    .primary-button {
-        width: 100% !important;
-        padding: 1rem !important;
-        font-size: 1.05rem !important;
-        font-weight: 700 !important;
-        border-radius: 14px !important;
-        margin-top: 0.5rem !important;
-        margin-bottom: 0.8rem !important;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        letter-spacing: 0.2px;
-        transition: transform 0.15s ease, opacity 0.15s ease;
-    }
-
-    /* Efecto táctil */
-    .primary-button:active {
-        transform: scale(0.96);
-        opacity: 0.85;
-    }
-
-    /* Botón secundario (si existe en tu UI) */
-    .secondary-button {
-        padding: 0.8rem !important;
-        font-size: 0.95rem !important;
-        border-radius: 12px !important;
-        transition: transform 0.15s ease;
-    }
-
-    .secondary-button:active {
-        transform: scale(0.96);
-    }
-}
-
-/* ========================================================= */
-/* BLOQUE 6 – HISTORIAL OPTIMIZADO PARA MÓVIL                */
-/* ========================================================= */
-@media (max-width: 600px) {
-
-    /* Contenedor de la lista */
-    #historial-lista {
-        display: flex;
+    /* Botones en columna */
+    .action-buttons {
         flex-direction: column;
-        gap: 0.75rem !important;
-        padding-bottom: 1.5rem;
-    }
-
-    /* Tarjeta individual */
-    .historial-card {
-        padding: 0.9rem 1rem !important;
-        border-radius: 14px !important;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    /* Fecha + ID */
-    .historial-header {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.5rem !important;
-        font-size: 0.85rem !important;
-        color: var(--text-secondary);
-    }
-
-    /* Información principal */
-    .historial-info {
-        font-size: 0.9rem !important;
-        line-height: 1.35rem !important;
-        margin-bottom: 0.4rem !important;
-    }
-
-    /* Acento de números */
-    .historial-info .value {
-        font-weight: 700 !important;
-        color: var(--primary-blue);
-        font-size: 1rem;
-    }
-
-    /* Botón eliminar */
-    .historial-delete {
-        width: 100% !important;
-        padding: 0.75rem !important;
-        font-size: 0.9rem !important;
-        border-radius: 12px !important;
-        margin-top: 0.4rem !important;
     }
 }
 
-/* ========================================================= */
-/* BLOQUE 7 – AJUSTES GLOBALES PARA MÓVIL                    */
-/* ========================================================= */
-@media (max-width: 600px) {
+/* ============================================= */
+/* BLOQUE 16 - COMPONENTES ESPECÍFICOS ACTUALIZADOS */
+/* ============================================= */
 
-    /* Tipografía general */
-    body {
-        font-size: 15px !important;
-        line-height: 1.45 !important;
-    }
-
-    /* Contenedores principales */
-    .main-content {
-        padding: 0.7rem !important;
-    }
-
-    /* Margen bajo tabs */
-    .tab-content.active {
-        padding-top: 0.3rem !important;
-    }
-
-    /* Títulos */
-    h2, h3, .title, .section-title {
-        font-size: 1.1rem !important;
-        margin-bottom: 0.6rem !important;
-    }
-
-    /* Filas informativas */
-    .row, .info-row, .summary-row {
-        gap: 0.35rem;
-    }
+/* 1. STATUS INDICATOR */
+.status-indicator {
+    background: var(--light-grey);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-weight: 600;
+    transition: all 0.3s ease;
 }
 
-/* ========================================================= */
-/* BLOQUE 8 – FOOTER MOBILE                                  */
-/* ========================================================= */
-@media (max-width: 600px) {
-    footer {
-        font-size: 0.85rem !important;
-        text-align: center !important;
-        padding: 1rem 0 !important;
-        opacity: 0.6;
-    }
+.status-indicator.hidden {
+    display: none;
 }
 
-/* ========================================================= */
-/* BLOQUE 9 – ANIMACIONES SUAVES                            */
-/* ========================================================= */
-@media (max-width: 600px) {
-
-    .card,
-    .historial-card,
-    .tab-button,
-    .primary-button,
-    .secondary-button {
-        transition: all 0.15s ease !important;
-    }
-
-    /* Toque suave */
-    .card:active,
-    .historial-card:active {
-        transform: scale(0.985);
-    }
+/* 2. SYNC INFO SMALL */
+.sync-info-small {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--light-grey);
+    border-radius: 10px;
+    margin-top: 1rem;
+    font-size: 0.85em;
+    color: var(--text-secondary);
 }
 
-/* ========================================================= */
-/* BLOQUE 10 – TEMA OSCURO OPTIMIZADO                        */
-/* ========================================================= */
-@media (max-width: 600px) and (prefers-color-scheme: dark) {
-
-    .card,
-    .historial-card {
-        background: rgba(255,255,255,0.04) !important;
-        border: 1px solid rgba(255,255,255,0.08) !important;
-    }
-
-    .tab-nav {
-        background: rgba(255,255,255,0.05) !important;
-        border: 1px solid rgba(255,255,255,0.07) !important;
-    }
-
-    .tab-button:not(.active) {
-        color: #c8c8c8 !important;
-    }
+.sync-icon {
+    font-size: 1.1em;
 }
 
-/* ========================================================= */
-/* BLOQUE 11 – OPTIMIZACIÓN PARA ESCRITORIO                  */
-/* ========================================================= */
-@media (min-width: 900px) {
-
-    /* Contenedor general más centrado */
-    .main-content {
-        max-width: 750px;
-        margin: 0 auto;
-        padding-top: 1rem;
-    }
-
-    /* Tabs con más espacio */
-    .tab-nav {
-        max-width: 700px;
-        margin: 0 auto 1rem auto;
-    }
-
-    /* Tarjetas más grandes */
-    .card {
-        padding: 1.4rem !important;
-        border-radius: 16px !important;
-    }
-
-    /* Input más elegante */
-    .input-field {
-        padding: 1rem !important;
-        font-size: 1.05rem !important;
-    }
-
-    /* Botón principal más grande */
-    .primary-button {
-        padding: 1.1rem !important;
-        font-size: 1.05rem !important;
-    }
+/* 3. LOCATION PERMISSION SECTION */
+.location-permission-section {
+    margin: 1.5rem 0;
+    text-align: center;
 }
 
-/* ========================================================= */
-/* BLOQUE 13 – RENDIMIENTO                                   */
-/* ========================================================= */
-
-* {
-    -webkit-tap-highlight-color: transparent;
-    scroll-behavior: smooth;
+.location-permission-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
-/* Quita sombras innecesarias en modo oscuro */
-@media (prefers-color-scheme: dark) {
-    .card, .historial-card {
-        backdrop-filter: blur(4px);
-    }
+.location-permission-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
 }
 
-/* ========================================================= */
-/* BLOQUE 14 – ANIMACIONES PREMIUM                           */
-/* ========================================================= */
-
-.fade-in {
-    animation: fadeIn 0.35s ease both;
+.location-status {
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--success-green);
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-top: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
-.slide-up {
-    animation: slideUp 0.35s ease both;
-}
+/* ============================================= */
+/* BLOQUE 17 - SISTEMA DE FILTROS ACTUALIZADO */
+/* ============================================= */
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-
-@keyframes slideUp {
-    from { transform: translateY(18px); opacity: 0; }
-    to   { transform: translateY(0); opacity: 1; }
-}
-
-/* Aplicación automática */
-.card,
-.historial-card,
-.tab-button,
-.primary-button {
-    animation: fadeIn 0.3s ease both;
-}
-
-/* ========================================================= */
-/* BLOQUE 16 – DETALLES UX JS (feedback)                     */
-/* ========================================================= */
-
-.loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.disabled {
-    opacity: 0.4;
-    pointer-events: none;
-}
-
-/* Estado de sincronización visible */
-#sync-status-btn.syncing {
-    animation: rotateIcon 1.2s linear infinite;
-}
-
-@keyframes rotateIcon {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
-}
-
-/* ========================================================= */
-/* ANILLO PREMIUM PARA LOGO CUADRADO CON ANIMACIÓN           */
-/* ========================================================= */
-
-.logo-container {
-    position: relative;
-    display: inline-block;
+.filtros-historial {
+    background: var(--card-bg);
     border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1.5px solid var(--border-color);
 }
 
-/* Anillo base: línea muy fina */
-.logo-status-ring {
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-    border-radius: 16px;
-    border: 1.5px solid transparent;    /* 🔥 Línea mucho más fina */
-    pointer-events: none;
-    z-index: 5;
-    opacity: 1;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+.filtros-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-top: 1rem;
 }
 
-/* ⭐ ESTADOS */
-
-/* 🟡 Cargando */
-.logo-status-ring.loading {
-    border-color: #FFC107;
-    box-shadow: 0 0 6px rgba(255, 193, 7, 0.45);
+.filtro-btn {
+    padding: 0.75rem 0.5rem;
+    border: 1.5px solid var(--border-color);
+    background: var(--light-grey);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.3s ease;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
 }
 
-/* 🟢 Activo */
-.logo-status-ring.active {
-    border-color: #4CAF50;
-    box-shadow: 0 0 8px rgba(76, 175, 80, 0.55);
-    animation: logoPulse 1.6s ease-in-out infinite; /* 💓 Latido suave */
+.filtro-btn.active {
+    background: linear-gradient(135deg, var(--primary-blue), #1565c0);
+    color: white;
+    border-color: var(--primary-blue);
 }
 
-/* 🔴 Error */
-.logo-status-ring.error {
-    border-color: #F44336;
-    box-shadow: 0 0 8px rgba(244, 67, 54, 0.55);
+/* ============================================= */
+/* BLOQUE 18 - HISTORY ACTIONS ACTUALIZADO */
+/* ============================================= */
+
+.history-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    justify-content: center;
 }
 
-/* 💓 ANIMACIÓN DE LATIDO (solo para activo) */
-@keyframes logoPulse {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0 8px rgba(76, 175, 80, 0.55);
-    }
-    50% {
-        transform: scale(1.03);  /* Latido pequeño, profesional */
-        box-shadow: 0 0 14px rgba(76, 175, 80, 0.75);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 8px rgba(76, 175, 80, 0.55);
-    }
+/* ============================================= */
+/* BLOQUE 19 - UTILITARIOS FINALES */
+/* ============================================= */
+
+.centered {
+    text-align: center;
+}
+
+.small-info {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.export-options {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    justify-content: center;
 }
