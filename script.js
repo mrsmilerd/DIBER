@@ -3220,8 +3220,6 @@ function activarUbicacion() {
     console.log('📍 Activando sistema de ubicación...');
     
     const btn = document.getElementById('activar-ubicacion-btn');
-    const status = document.getElementById('location-status');
-
     const ring = document.getElementById('logo-status-ring');
 if (ring) {
     ring.classList.remove("active", "error");
@@ -4239,6 +4237,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
