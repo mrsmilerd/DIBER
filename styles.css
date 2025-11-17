@@ -4107,6 +4107,289 @@ select:focus-visible {
     /* Para elementos que aún no pueden migrar a card-unificada */
 }
 
+/* ============================================= */
+/* BLOQUE 4 - SISTEMA DE COLORES Y ESTADOS UNIFICADO */
+/* ============================================= */
+
+/* 1. SISTEMA UNIFICADO DE ESTADOS DE COLOR */
+:root {
+    /* Estados de rentabilidad - SISTEMA UNIFICADO */
+    --estado-rentable-bg: linear-gradient(135deg, #4CAF50, #45a049);
+    --estado-rentable-text: #ffffff;
+    --estado-rentable-border: rgba(255, 255, 255, 0.3);
+    --estado-rentable-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    
+    --estado-oportunidad-bg: linear-gradient(135deg, #FF9800, #f57c00);
+    --estado-oportunidad-text: #ffffff;
+    --estado-oportunidad-border: rgba(255, 255, 255, 0.3);
+    --estado-oportunidad-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+    
+    --estado-no-rentable-bg: linear-gradient(135deg, #f44336, #d32f2f);
+    --estado-no-rentable-text: #ffffff;
+    --estado-no-rentable-border: rgba(255, 255, 255, 0.3);
+    --estado-no-rentable-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+    
+    --estado-rechazado-bg: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    --estado-rechazado-text: #ffffff;
+    --estado-rechazado-border: rgba(255, 255, 255, 0.3);
+    --estado-rechazado-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    
+    /* Estados de UI - SISTEMA UNIFICADO */
+    --estado-loading-bg: rgba(26, 115, 232, 0.1);
+    --estado-loading-text: var(--primary-blue);
+    --estado-loading-border: var(--primary-blue);
+    
+    --estado-success-bg: rgba(76, 175, 80, 0.1);
+    --estado-success-text: var(--success-green);
+    --estado-success-border: var(--success-green);
+    
+    --estado-warning-bg: rgba(255, 152, 0, 0.1);
+    --estado-warning-text: var(--warning-orange);
+    --estado-warning-border: var(--warning-orange);
+    
+    --estado-error-bg: rgba(244, 67, 54, 0.1);
+    --estado-error-text: var(--error-red);
+    --estado-error-border: var(--error-red);
+    
+    /* Gradientes unificados */
+    --gradiente-primario: linear-gradient(135deg, var(--primary-blue), #1565c0);
+    --gradiente-secundario: linear-gradient(135deg, var(--secondary-orange), #e65100);
+    --gradiente-success: linear-gradient(135deg, var(--success-green), #45a049);
+    --gradiente-warning: linear-gradient(135deg, var(--warning-orange), #f57c00);
+    --gradiente-error: linear-gradient(135deg, var(--error-red), #d32f2f);
+    
+    /* Efectos visuales unificados */
+    --sombra-suave: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --sombra-media: 0 8px 25px rgba(0, 0, 0, 0.15);
+    --sombra-intensa: 0 12px 35px rgba(0, 0, 0, 0.2);
+    --sombra-destacado: 0 0 0 3px rgba(26, 115, 232, 0.15);
+}
+
+/* 2. CLASES DE ESTADO UNIFICADAS - REUTILIZABLES */
+.estado-ui {
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.estado-ui:hover {
+    transform: translateY(-1px);
+}
+
+/* Estados de rentabilidad usando variables unificadas */
+.estado-rentabilidad-unificado.rentable {
+    background: var(--estado-rentable-bg);
+    color: var(--estado-rentable-text);
+    border-color: var(--estado-rentable-border);
+    box-shadow: var(--estado-rentable-shadow);
+}
+
+.estado-rentabilidad-unificado.oportunidad {
+    background: var(--estado-oportunidad-bg);
+    color: var(--estado-oportunidad-text);
+    border-color: var(--estado-oportunidad-border);
+    box-shadow: var(--estado-oportunidad-shadow);
+}
+
+.estado-rentabilidad-unificado.no-rentable {
+    background: var(--estado-no-rentable-bg);
+    color: var(--estado-no-rentable-text);
+    border-color: var(--estado-no-rentable-border);
+    box-shadow: var(--estado-no-rentable-shadow);
+}
+
+.estado-rentabilidad-unificado.rechazado {
+    background: var(--estado-rechazado-bg);
+    color: var(--estado-rechazado-text);
+    border-color: var(--estado-rechazado-border);
+    box-shadow: var(--estado-rechazado-shadow);
+    opacity: 0.8;
+}
+
+/* Estados de UI unificados */
+.estado-ui.loading {
+    background: var(--estado-loading-bg);
+    color: var(--estado-loading-text);
+    border-color: var(--estado-loading-border);
+}
+
+.estado-ui.success {
+    background: var(--estado-success-bg);
+    color: var(--estado-success-text);
+    border-color: var(--estado-success-border);
+}
+
+.estado-ui.warning {
+    background: var(--estado-warning-bg);
+    color: var(--estado-warning-text);
+    border-color: var(--estado-warning-border);
+}
+
+.estado-ui.error {
+    background: var(--estado-error-bg);
+    color: var(--estado-error-text);
+    border-color: var(--estado-error-border);
+}
+
+/* 3. SISTEMA DE GRADIENTES UNIFICADO */
+.gradiente-primario {
+    background: var(--gradiente-primario);
+    color: white;
+}
+
+.gradiente-secundario {
+    background: var(--gradiente-secundario);
+    color: white;
+}
+
+.gradiente-success {
+    background: var(--gradiente-success);
+    color: white;
+}
+
+.gradiente-warning {
+    background: var(--gradiente-warning);
+    color: white;
+}
+
+.gradiente-error {
+    background: var(--gradiente-error);
+    color: white;
+}
+
+/* 4. SISTEMA DE SOMBRAS UNIFICADO */
+.sombra-suave {
+    box-shadow: var(--sombra-suave);
+}
+
+.sombra-media {
+    box-shadow: var(--sombra-media);
+}
+
+.sombra-intensa {
+    box-shadow: var(--sombra-intensa);
+}
+
+.sombra-destacado {
+    box-shadow: var(--sombra-destacado);
+}
+
+/* 5. EFECTOS DE HOVER UNIFICADOS */
+.hover-elevar:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-media);
+}
+
+.hover-escala:hover {
+    transform: scale(1.02);
+}
+
+.hover-rotar:hover {
+    transform: rotate(5deg);
+}
+
+.hover-brillar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.6s;
+}
+
+.hover-brillar:hover::before {
+    left: 100%;
+}
+
+/* 6. ANIMACIONES DE ESTADO UNIFICADAS */
+@keyframes pulso-estado {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.animacion-pulso {
+    animation: pulso-estado 2s ease-in-out infinite;
+}
+
+.animacion-rotar {
+    animation: rotateIcon 1.2s linear infinite;
+}
+
+.animacion-deslizar {
+    animation: slideUp 0.35s ease both;
+}
+
+.animacion-aparecer {
+    animation: fadeIn 0.35s ease both;
+}
+
+/* 7. COMPATIBILIDAD CON SISTEMA EXISTENTE */
+/* Los componentes existentes seguirán funcionando con sus clases actuales */
+.resultado-badge.rentable,
+.history-item.rentable,
+.badge-rentable {
+    /* Compatibilidad con sistema existente */
+}
+
+/* 8. RESPONSIVE PARA SISTEMA DE ESTADOS */
+@media (max-width: 768px) {
+    .estado-ui {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.9em;
+        border-radius: 10px;
+    }
+    
+    .estado-rentabilidad-unificado {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 480px) {
+    .estado-ui {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85em;
+        border-radius: 8px;
+    }
+    
+    .estado-rentabilidad-unificado {
+        padding: 0.5rem 1rem;
+        font-size: 0.85em;
+    }
+}
+
+/* 9. MEJORA DEL SISTEMA DE TEMAS OSCURO */
+[data-theme="dark"] {
+    --estado-rentable-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    --estado-oportunidad-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+    --estado-no-rentable-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+    --estado-rechazado-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+    
+    --sombra-suave: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --sombra-media: 0 8px 25px rgba(0, 0, 0, 0.5);
+    --sombra-intensa: 0 12px 35px rgba(0, 0, 0, 0.6);
+}
+
+/* 10. UTILITARIOS PARA MIGRACIÓN PROGRESIVA */
+.texto-rentable { color: var(--success-green) !important; }
+.texto-oportunidad { color: var(--warning-orange) !important; }
+.texto-no-rentable { color: var(--error-red) !important; }
+
+.fondo-rentable { background: var(--estado-success-bg) !important; }
+.fondo-oportunidad { background: var(--estado-warning-bg) !important; }
+.fondo-no-rentable { background: var(--estado-error-bg) !important; }
+
+.borde-rentable { border-color: var(--success-green) !important; }
+.borde-oportunidad { border-color: var(--warning-orange) !important; }
+.borde-no-rentable { border-color: var(--error-red) !important; }
+
 /* ========================================================= */
 /* BLOQUE 2 – TABS OPTIMIZADOS PARA MÓVIL (VERTICAL)         */
 /* ========================================================= */
@@ -4560,5 +4843,6 @@ select:focus-visible {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
 
 
