@@ -3825,6 +3825,72 @@ select:focus-visible {
     }
 }
 
+/* ============================================= */
+/* AJUSTE DE ESPACIADO HEADER - BALANCE VISUAL */
+/* ============================================= */
+
+/* Ajuste específico para balancear los lados del header */
+.app-header {
+    grid-template-columns: minmax(100px, 1fr) auto minmax(100px, 1fr);
+}
+
+.header-left {
+    justify-content: flex-start;
+    padding-left: 0.5rem;
+}
+
+.header-actions {
+    justify-content: flex-end;
+    padding-right: 0.5rem;
+}
+
+/* Asegurar que el logo esté perfectamente centrado */
+.logo-container {
+    margin: 0 auto;
+}
+
+/* Responsive para el espaciado balanceado */
+@media (max-width: 768px) {
+    .app-header {
+        grid-template-columns: minmax(80px, 1fr) auto minmax(80px, 1fr);
+    }
+    
+    .header-left {
+        padding-left: 0.3rem;
+    }
+    
+    .header-actions {
+        padding-right: 0.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .app-header {
+        grid-template-columns: minmax(70px, 1fr) auto minmax(70px, 1fr);
+    }
+    
+    .header-left {
+        padding-left: 0.2rem;
+    }
+    
+    .header-actions {
+        padding-right: 0.2rem;
+    }
+}
+
+/* Ajuste fino para móviles muy pequeños */
+@media (max-width: 360px) {
+    .app-header {
+        grid-template-columns: minmax(60px, 1fr) auto minmax(60px, 1fr);
+        gap: 0.2rem;
+    }
+    
+    .header-left,
+    .header-actions {
+        gap: 0.2rem;
+    }
+}
+
 /* ========================================================= */
 /* BLOQUE 2 – TABS OPTIMIZADOS PARA MÓVIL (VERTICAL)         */
 /* ========================================================= */
@@ -4278,3 +4344,4 @@ select:focus-visible {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
