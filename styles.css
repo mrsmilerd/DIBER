@@ -101,103 +101,6 @@ body {
 }
 
 /* ============================================= */
-/* 4. HEADER Y BRANDING MEJORADO */
-/* ============================================= */
-
-.app-header {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    padding: 1rem 0;
-    margin-bottom: 1.5rem;
-    position: relative;
-    gap: 1rem;
-    width: 100%;
-}
-
-.header-left {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-}
-
-.logo-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0.5rem;
-    border-radius: 12px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-    z-index: 20;
-}
-
-.logo-container:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    transform: translateY(-1px);
-}
-
-.app-logo {
-    width: 70px;
-    height: 70px;
-    border-radius: 14px;
-    object-fit: contain;
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    justify-content: flex-end;
-}
-
-.header-action-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    border: 1.5px solid var(--border-color);
-    border-radius: 10px;
-    background: var(--card-bg);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    font-size: 1.1em;
-    text-decoration: none;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.header-action-btn:hover {
-    border-color: var(--primary-blue);
-    color: var(--primary-blue);
-    background: rgba(26, 115, 232, 0.04);
-    transform: translateY(-1px);
-}
-
-/* Estados específicos para sync */
-#sync-status-btn.connected {
-    border-color: var(--success-green);
-    color: var(--success-green);
-    background: rgba(76, 175, 80, 0.08);
-}
-
-#sync-status-btn.syncing {
-    border-color: var(--primary-blue);
-    color: var(--primary-blue);
-    background: rgba(26, 115, 232, 0.08);
-}
-
-#sync-status-btn.error {
-    border-color: var(--error-red);
-    color: var(--error-red);
-    background: rgba(244, 67, 54, 0.08);
-}
-
-/* ============================================= */
 /* 5. SISTEMA DE PESTAÑAS MEJORADO */
 /* ============================================= */
 
@@ -3523,203 +3426,166 @@ select:focus-visible {
     background-clip: text;
 }
 
-/* ===== Ajuste fino del Header (versión estable) ===== */
+/* ============================================= */
+/* BLOQUE 1 - HEADER UNIFICADO Y OPTIMIZADO */
+/* ============================================= */
 
+/* 1. SISTEMA DE HEADER UNIFICADO */
 .app-header {
-    margin-top: 0.5rem;
-    margin-bottom: 1rem !important;
-    padding: 0.5rem 0 !important;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 0.5rem 0;
+    margin: 0 0 1rem 0;
+    gap: 0.5rem;
+    width: 100%;
+    position: relative;
 }
-
-.logo-container {
-    padding: 0.35rem !important;
-    border-radius: 10px !important;
-}
-
-.app-logo {
-    width: 58px !important;
-    height: 58px !important;
-}
-
-.header-left button,
-.header-actions button {
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 1rem !important;
-}
-
-.theme-toggle {
-    width: 40px !important;
-    height: 40px !important;
-}
-
-.header-actions {
-    gap: 0.35rem !important;
-}
-
-.header-left {
-    gap: 0.35rem !important;
-}
-
-/* ===== Ajuste de espaciado superior e inferior del Header ===== */
-
-.header-wrapper,
-.app-header {
-    margin-top: 0 !important;
-    padding-top: 0.25rem !important;
-}
-
-.app-header {
-    padding-bottom: 0.25rem !important;
-    margin-bottom: 0.5rem !important;
-}
-
-/* ===== Alineación perfecta de botones del header ===== */
 
 .header-left,
 .header-actions {
     display: flex;
     align-items: center;
-    height: 42px; /* Fuerza alineación vertical */
+    gap: 0.4rem;
+    height: 44px;
 }
 
-.header-left button,
-.header-actions button,
-.theme-toggle {
+/* 2. BOTONES UNIFICADOS DEL HEADER */
+.header-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 !important;
-    padding: 0 !important;
+    font-size: 1.1em;
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* Tamaño más uniforme (versión final compacta) */
-.header-left button,
-.header-actions button,
-.theme-toggle {
-    width: 38px !important;
-    height: 38px !important;
-    border-radius: 10px !important;
+.header-btn:hover {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+    background: rgba(26, 115, 232, 0.04);
+    transform: translateY(-1px);
 }
 
+.header-btn:active {
+    transform: translateY(0);
+}
+
+/* 3. LOGO CENTRAL OPTIMIZADO */
 .logo-container {
-    margin-top: -2px;
-}
-
-/* ===== FIX GLOBAL DEL HEADER (VERSIÓN ESTABLE) ===== */
-
-/* Elimina espacio extra generado por contenedores */
-.app-container,
-.app-wrapper,
-.header-wrapper {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-}
-
-/* Header más compacto y alineado */
-.app-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding: 0.4rem 0 !important;
-    margin: 0 !important;
-}
-
-/* Alineación perfecta de botones */
-.header-left,
-.header-actions {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.4rem !important;
-}
-
-/* Tamaño uniforme de botones */
-.header-left button,
-.header-actions button,
-.theme-toggle {
-    width: 36px !important;
-    height: 36px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border-radius: 10px !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-}
-
-/* Logo ajustado */
-.logo-container {
-    padding: 0.25rem !important;
-    border-radius: 10px !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 12px;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.logo-container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
 }
 
 .app-logo {
-    width: 52px !important;
-    height: 52px !important;
-    object-fit: contain !important;
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    object-fit: contain;
 }
 
-/* Quitar espacios que heredan padding */
-body,
-.main-content,
-.tab-content {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
+/* 4. ESTADOS ESPECÍFICOS PARA BOTONES */
+#sync-status-btn.connected {
+    border-color: var(--success-green);
+    color: var(--success-green);
+    background: rgba(76, 175, 80, 0.08);
 }
 
-/* ========================================================= */
-/* BLOQUE 1 – HEADER OPTIMIZADO PARA MÓVIL (VERTICAL)        */
-/* Se aplica solo cuando el ancho es menor a 600px           */
-/* ========================================================= */
-@media (max-width: 600px) {
+#sync-status-btn.syncing {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+    background: rgba(26, 115, 232, 0.08);
+}
 
-    /* Header compacto */
+#sync-status-btn.error {
+    border-color: var(--error-red);
+    color: var(--error-red);
+    background: rgba(244, 67, 54, 0.08);
+}
+
+/* 5. RESPONSIVE MEJORADO */
+@media (max-width: 768px) {
     .app-header {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        padding: 0.4rem 0.3rem !important;
-        margin: 0 !important;
-        width: 100% !important;
+        grid-template-columns: auto 1fr auto;
+        gap: 0.4rem;
+        padding: 0.4rem 0;
+        margin: 0 0 0.8rem 0;
     }
-
-    /* Botones laterales pequeños y pegados a las esquinas */
-    .header-left button,
-    .header-actions button,
-    .theme-toggle {
-        width: 34px !important;
-        height: 34px !important;
-        font-size: 0.95rem !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border-radius: 10px !important;
-    }
-
-    /* Compactar la fila izquierda/derecha */
-    .header-left {
-        gap: 0.25rem !important;
-    }
-
+    
+    .header-left,
     .header-actions {
-        gap: 0.25rem !important;
+        gap: 0.3rem;
+        height: 40px;
     }
-
-    /* Logo más grande y más protagonista */
+    
+    .header-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        font-size: 1em;
+    }
+    
     .logo-container {
-        padding: 0.25rem !important;
-        border-radius: 12px !important;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 0.4rem;
     }
-
-    /* Tamaño final del logo destacado */
+    
     .app-logo {
-        width: 72px !important;
-        height: 72px !important;
-        object-fit: contain !important;
+        width: 55px;
+        height: 55px;
+        border-radius: 9px;
+    }
+}
+
+@media (max-width: 480px) {
+    .app-header {
+        grid-template-columns: auto 1fr auto;
+        gap: 0.3rem;
+        padding: 0.3rem 0;
+    }
+    
+    .header-left,
+    .header-actions {
+        gap: 0.25rem;
+        height: 38px;
+    }
+    
+    .header-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
+        font-size: 0.95em;
+    }
+    
+    .logo-container {
+        padding: 0.3rem;
+        border-radius: 10px;
+    }
+    
+    .app-logo {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
     }
 }
 
@@ -4176,4 +4042,5 @@ body,
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
 
