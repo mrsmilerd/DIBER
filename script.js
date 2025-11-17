@@ -82,18 +82,13 @@ function crearModalCronometro(resultado) {
     modalFondo.id = 'modal-cronometro';
     modalFondo.className = 'modal-cronometro-fondo';
     
-    // ✅ CORREGIDO: DEFINIR CLARAMENTE LOS TIEMPOS
-    // Tu tiempo estimado es el que INGRESASTE en el formulario
+    // ✅ DEFINIR CLARAMENTE LOS TIEMPOS
     const tiempoUsuario = parseFloat(elementos.minutos.value) || resultado.minutos;
-    // El tiempo con tráfico es el ajustado o el mismo si no hay ajuste
     const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
     
     console.log('🎯 DEBUG - Tiempos para cronómetro:', {
         tiempoUsuario: tiempoUsuario,
-        tiempoAjustado: tiempoAjustado,
-        valorFormulario: elementos.minutos.value,
-        resultadoMinutos: resultado.minutos,
-        resultadoTiempoAjustado: resultado.tiempoAjustado
+        tiempoAjustado: tiempoAjustado
     });
     
     const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoAjustado);
@@ -113,17 +108,21 @@ function crearModalCronometro(resultado) {
             
             <!-- ✅ INFO - ORDEN ABSOLUTAMENTE CORRECTO -->
             <div class="cronometro-info">
-                <div class="info-item usuario-item">
-                    <span class="info-label">⏱️ Tu estimación</span>
-                    <span class="info-valor usuario-valor">${tiempoUsuario} min</span>
+                <div class="info-item usuario-estimacion">
+                    <div class="info-content">
+                        <span class="info-label">⏱️ Tu estimación</span>
+                        <span class="info-valor usuario-tiempo">${tiempoUsuario} min</span>
+                    </div>
                 </div>
-                <div class="info-item trafico-item">
-                    <span class="info-label">🚦 Con tráfico</span>
-                    <span class="info-valor trafico-valor">${tiempoAjustado} min</span>
+                <div class="info-item tiempo-trafico">
+                    <div class="info-content">
+                        <span class="info-label">🚦 Con tráfico</span>
+                        <span class="info-valor trafico-tiempo">${tiempoAjustado} min</span>
+                    </div>
                 </div>
             </div>
             
-            <!-- PROGRESO -->
+            <!-- ✅ PROGRESO - ORDEN CORREGIDO -->
             <div class="cronometro-progreso">
                 <div class="barra-progreso-container">
                     <div class="barra-progreso">
@@ -131,7 +130,7 @@ function crearModalCronometro(resultado) {
                     </div>
                     <div class="marcadores-tiempo">
                         <span class="marcador inicio">0</span>
-                        <span class="marcador usuario-marcador" style="left: ${porcentajeUsuario}%">${tiempoUsuario}</span>
+                        <span class="marcador usuario" style="left: ${porcentajeUsuario}%">${tiempoUsuario}</span>
                         <span class="marcador fin">${tiempoAjustado}</span>
                     </div>
                 </div>
@@ -4406,6 +4405,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
