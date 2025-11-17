@@ -3891,6 +3891,222 @@ select:focus-visible {
     }
 }
 
+/* ============================================= */
+/* BLOQUE 3 - COMPONENTES UNIFICADOS Y OPTIMIZADOS */
+/* ============================================= */
+
+/* 1. SISTEMA UNIFICADO DE CARDS/TARJETAS */
+.card-unificada {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    overflow: hidden;
+}
+
+.card-unificada:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    border-color: var(--primary-blue);
+}
+
+.card-unificada::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-blue), var(--secondary-orange));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.card-unificada:hover::before {
+    opacity: 1;
+}
+
+/* 2. SISTEMA UNIFICADO DE BOTONES (complementa .primary-button/.secondary-button existentes) */
+.btn-unificado {
+    padding: 1rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    text-decoration: none;
+    min-height: 50px;
+    -webkit-tap-highlight-color: transparent;
+    width: 100%;
+}
+
+.btn-unificado:hover {
+    transform: translateY(-2px);
+}
+
+.btn-unificado:active {
+    transform: translateY(0);
+}
+
+/* 3. SISTEMA UNIFICADO DE ESTADOS DE RENTABILIDAD */
+.estado-rentabilidad {
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1em;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.estado-rentabilidad:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Estados específicos unificados */
+.estado-rentable {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.estado-oportunidad {
+    background: linear-gradient(135deg, #FF9800, #f57c00);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.estado-no-rentable {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.estado-rechazado {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+    opacity: 0.8;
+}
+
+/* 4. ELIMINAR !important INNECESARIOS - REEMPLAZAR BLOQUES MÓVILES */
+/* Estos reemplazarán gradualmente los bloques 2-11 que tienen muchos !important */
+
+/* 5. SISTEMA UNIFICADO DE INPUTS */
+.input-unificado {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 1rem;
+    color: var(--text-primary);
+    background-color: var(--card-bg);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+.input-unificado:focus {
+    border-color: var(--primary-blue);
+    background-color: var(--card-bg);
+    box-shadow: 
+        0 0 0 3px rgba(26, 115, 232, 0.15),
+        0 4px 12px rgba(0, 0, 0, 0.08);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+/* 6. RESPONSIVE UNIFICADO PARA COMPONENTES */
+@media (max-width: 768px) {
+    .card-unificada {
+        padding: 1.25rem;
+        border-radius: 14px;
+        margin-bottom: 0.875rem;
+    }
+    
+    .btn-unificado {
+        padding: 0.875rem 1.25rem;
+        min-height: 48px;
+        font-size: 0.95em;
+    }
+    
+    .estado-rentabilidad {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.95em;
+    }
+    
+    .input-unificado {
+        padding: 0.875rem;
+        border-radius: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .card-unificada {
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+    }
+    
+    .btn-unificado {
+        padding: 0.75rem 1rem;
+        min-height: 46px;
+        font-size: 0.9em;
+        border-radius: 10px;
+    }
+    
+    .estado-rentabilidad {
+        padding: 0.5rem 1rem;
+        font-size: 0.9em;
+        border-radius: 40px;
+    }
+    
+    .input-unificado {
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 16px; /* Previene zoom en iOS */
+    }
+}
+
+/* 7. COMPATIBILIDAD CON SISTEMA EXISTENTE */
+/* Estas clases aseguran que los componentes existentes usen el sistema unificado */
+.form-section,
+.resultado-rapido,
+.history-item,
+.estadisticas-container,
+.rendimiento-section-mejorada {
+    /* Heredan automáticamente de .card-unificada si se agrega la clase */
+}
+
+/* Los botones existentes siguen funcionando, estos son complementarios */
+.primary-button,
+.secondary-button {
+    /* Mantienen su funcionalidad actual */
+}
+
+/* 8. MIGRACIÓN PROGRESIVA - CLASES DE TRANSICIÓN */
+/* Puedes agregar estas clases a elementos existentes para migrar gradualmente */
+.card-legacy {
+    /* Para elementos que aún no pueden migrar a card-unificada */
+}
+
 /* ========================================================= */
 /* BLOQUE 2 – TABS OPTIMIZADOS PARA MÓVIL (VERTICAL)         */
 /* ========================================================= */
@@ -4344,4 +4560,5 @@ select:focus-visible {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
 
