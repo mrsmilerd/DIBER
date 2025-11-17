@@ -3377,6 +3377,17 @@ async function inicializarSistemaUbicacion() {
     // ✅ INICIALIZAR ANILLO DE ESTADO
     locationStatusRing = new LocationStatusRing();
     
+    // ✅ FORZAR VISIBILIDAD INICIAL
+    setTimeout(() => {
+        const anillo = document.getElementById('logo-status-ring');
+        if (anillo) {
+            anillo.style.display = 'block';
+            anillo.style.visibility = 'visible';
+            anillo.style.opacity = '1';
+            console.log('✅ Visibilidad del anillo forzada');
+        }
+    }, 100);
+    
     // Verificar si ya tenemos permisos de ubicación
     if (navigator.permissions && navigator.permissions.query) {
         try {
@@ -4386,6 +4397,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
