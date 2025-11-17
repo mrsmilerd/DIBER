@@ -5629,26 +5629,65 @@ select:focus-visible {
 }
 
 /* ============================================= */
-/* ANILLO ADAPTATIVO CON VARIABLES CSS */
+/* SISTEMA DE ANILLO ADAPTATIVO CON VARIABLES CSS */
 /* ============================================= */
 
 :root {
-    --logo-size: 70px; /* Define el tamaño base aquí */
-    --logo-border-radius: 16px; /* Define la redondez aquí */
+    /* ======================== */
+    /* CONFIGURACIÓN PRINCIPAL */
+    /* ======================== */
+    --logo-size: 70px;
+    --logo-border-radius: 16px;
+    --logo-padding: 8px;
+    
+    /* ======================== */
+    /* COLORES DEL SISTEMA */
+    /* ======================== */
+    --ring-color-active: #4CAF50;
+    --ring-color-error: #f44336;
+    --ring-color-loading: #FF9800;
+    --ring-color-inactive: #e0e0e0;
+    
+    /* ======================== */
+    /* PROPORCIONES DEL ANILLO */
+    /* ======================== */
+    --ring-width: 1.5px;
+    --ring-scale: 1.08;    /* 8% más grande que el logo */
+    --logo-scale: 0.85;    /* 85% del contenedor */
+    --ring-expansion: 2px; /* Cuánto aumenta el border-radius */
 }
+
+/* ============================================= */
+/* CONTENEDOR PRINCIPAL DEL LOGO */
+/* ============================================= */
 
 .app-header .logo-container {
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
+    
+    /* Dimensiones desde variables */
     width: var(--logo-size);
     height: var(--logo-size);
+    padding: var(--logo-padding);
     border-radius: var(--logo-border-radius);
+    
+    /* Estilos base */
     background: var(--card-bg);
     border: 1.5px solid var(--border-color);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
+
+.app-header .logo-container:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+/* ============================================= */
+/* ANILLO DE ESTADO - BASE */
+/* ============================================= */
 
 .app-header .logo-status-ring {
     position: absolute;
@@ -5656,42 +5695,271 @@ select:focus-visible {
     left: 50%;
     transform: translate(-50%, -50%);
     
-    /* Cálculos automáticos basados en las variables */
-    width: calc(var(--logo-size) * 1.08);
-    height: calc(var(--logo-size) * 1.08);
-    border-radius: calc(var(--logo-border-radius) + 2px);
+    /* Cálculos automáticos basados en variables */
+    width: calc(var(--logo-size) * var(--ring-scale));
+    height: calc(var(--logo-size) * var(--ring-scale));
+    border-radius: calc(var(--logo-border-radius) + var(--ring-expansion));
     
-    border: 1.5px solid #e0e0e0;
+    /* Estilos base del anillo */
+    border: var(--ring-width) solid var(--ring-color-inactive);
     pointer-events: none;
     z-index: 2;
-    transition: all 0.4s ease;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     box-sizing: border-box;
     opacity: 0.6;
 }
 
+/* ============================================= */
+/* ESTADOS DEL ANILLO */
+/* ============================================= */
+
+/* 🟢 ESTADO: ACTIVO - Ubicación funcionando */
+.app-header .logo-status-ring.active {
+    border-color: var(--ring-color-active);
+    opacity: 1;
+    animation: 
+        pulseActive 2s ease-in-out infinite,
+        breatheActive 3s ease-in-out infinite;
+}
+
+/* 🔴 ESTADO: ERROR - Sin permisos/error */
+.app-header .logo-status-ring.error {
+    border-color: var(--ring-color-error);
+    opacity: 1;
+    animation: pulseError 1.5s ease-in-out infinite;
+}
+
+/* 🟡 ESTADO: CARGANDO - Obteniendo ubicación */
+.app-header .logo-status-ring.loading {
+    border-color: var(--ring-color-loading);
+    opacity: 1;
+    animation: spinLoading 1.2s linear infinite;
+}
+
+/* ============================================= */
+/* LOGO DENTRO DEL CONTENEDOR */
+/* ============================================= */
+
 .app-header .app-logo {
-    width: calc(var(--logo-size) * 0.85);
-    height: calc(var(--logo-size) * 0.85);
+    /* Proporciones automáticas */
+    width: calc(var(--logo-size) * var(--logo-scale));
+    height: calc(var(--logo-size) * var(--logo-scale));
     border-radius: calc(var(--logo-border-radius) - 2px);
+    
+    /* Estilos base */
     object-fit: contain;
     z-index: 1;
+    position: relative;
+    transition: all 0.3s ease;
 }
 
-/* Estados (igual que arriba) */
-.app-header .logo-status-ring.active {
-    border-color: #4CAF50;
-    opacity: 1;
-    animation: pulseAdaptiveActive 2s ease-in-out infinite;
+/* ============================================= */
+/* ANIMACIONES PROFESIONALES */
+/* ============================================= */
+
+/* Pulso activo con efecto de glow */
+@keyframes pulseActive {
+    0% {
+        box-shadow: 
+            0 0 0 0 rgba(76, 175, 80, 0.4),
+            inset 0 0 0 1px rgba(76, 175, 80, 0.1);
+    }
+    70% {
+        box-shadow: 
+            0 0 0 8px rgba(76, 175, 80, 0),
+            inset 0 0 0 1px rgba(76, 175, 80, 0.1);
+    }
+    100% {
+        box-shadow: 
+            0 0 0 0 rgba(76, 175, 80, 0),
+            inset 0 0 0 1px rgba(76, 175, 80, 0.1);
+    }
 }
 
-.app-header .logo-status-ring.error {
-    border-color: #f44336;
-    opacity: 1;
-    animation: pulseAdaptiveError 2s ease-in-out infinite;
+/* Efecto de respiración sutil */
+@keyframes breatheActive {
+    0%, 100% {
+        opacity: 0.9;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.02);
+    }
 }
 
-.app-header .logo-status-ring.loading {
-    border-color: #FF9800;
-    opacity: 1;
-    animation: spinAdaptiveLoading 1.5s linear infinite;
+/* Pulso de error más agresivo */
+@keyframes pulseError {
+    0%, 100% {
+        box-shadow: 
+            0 0 0 0 rgba(244, 67, 54, 0.4),
+            inset 0 0 0 1px rgba(244, 67, 54, 0.1);
+    }
+    50% {
+        box-shadow: 
+            0 0 0 6px rgba(244, 67, 54, 0.2),
+            inset 0 0 0 1px rgba(244, 67, 54, 0.1);
+    }
+}
+
+/* Spin suave para loading */
+@keyframes spinLoading {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+        border-color: var(--ring-color-loading);
+    }
+    25% {
+        border-color: #FFB74D; /* Variación de color */
+    }
+    50% {
+        border-color: var(--ring-color-loading);
+    }
+    75% {
+        border-color: #FFB74D; /* Variación de color */
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+        border-color: var(--ring-color-loading);
+    }
+}
+
+/* ============================================= */
+/* RESPONSIVE DESIGN CON VARIABLES */
+/* ============================================= */
+
+/* Tablet */
+@media (max-width: 768px) {
+    :root {
+        --logo-size: 60px;
+        --ring-width: 1.3px;
+        --ring-scale: 1.07;
+    }
+    
+    .app-header .logo-container {
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* Móvil */
+@media (max-width: 480px) {
+    :root {
+        --logo-size: 55px;
+        --ring-width: 1.1px;
+        --ring-scale: 1.06;
+        --logo-scale: 0.87;
+    }
+    
+    .app-header .logo-container {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Animaciones más sutiles en móvil */
+    @keyframes pulseActive {
+        0% {
+            box-shadow: 
+                0 0 0 0 rgba(76, 175, 80, 0.3),
+                inset 0 0 0 1px rgba(76, 175, 80, 0.1);
+        }
+        70% {
+            box-shadow: 
+                0 0 0 4px rgba(76, 175, 80, 0),
+                inset 0 0 0 1px rgba(76, 175, 80, 0.1);
+        }
+        100% {
+            box-shadow: 
+                0 0 0 0 rgba(76, 175, 80, 0),
+                inset 0 0 0 1px rgba(76, 175, 80, 0.1);
+        }
+    }
+}
+
+/* Pantallas muy grandes */
+@media (min-width: 1200px) {
+    :root {
+        --logo-size: 75px;
+        --ring-width: 1.6px;
+    }
+}
+
+/* ============================================= */
+/* MODOS ESPECIALES Y TEMAS */
+/* ============================================= */
+
+/* Modo oscuro */
+[data-theme="dark"] .app-header .logo-status-ring {
+    --ring-color-inactive: #666;
+}
+
+[data-theme="dark"] .app-header .logo-status-ring.active {
+    --ring-color-active: #66BB6A; /* Verde más claro para dark */
+}
+
+/* Alto contraste */
+[data-theme="high-contrast"] .app-header .logo-status-ring {
+    --ring-width: 2px;
+    --ring-color-inactive: #888;
+}
+
+[data-theme="high-contrast"] .app-header .logo-status-ring.active {
+    --ring-color-active: #00FF00; /* Verde neón */
+}
+
+/* Modo reducido de movimiento */
+@media (prefers-reduced-motion: reduce) {
+    .app-header .logo-status-ring {
+        animation: none !important;
+        transition: none !important;
+    }
+    
+    .app-header .logo-status-ring.active {
+        border-color: var(--ring-color-active);
+        opacity: 1;
+        box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+    }
+}
+
+/* ============================================= */
+/* ESTADOS DE INTERACCIÓN */
+/* ============================================= */
+
+/* Focus para accesibilidad */
+.app-header .logo-container:focus-within .logo-status-ring {
+    outline: 2px solid var(--primary-blue);
+    outline-offset: 2px;
+}
+
+/* Estados de carga de la app */
+.app-loading .app-header .logo-status-ring {
+    animation: 
+        spinLoading 1.2s linear infinite,
+        breatheActive 2s ease-in-out infinite;
+}
+
+/* ============================================= */
+/* UTILITARIOS PARA DEBUG (opcional) */
+/* ============================================= */
+
+.debug-logo .app-header .logo-container {
+    outline: 1px dashed red;
+}
+
+.debug-logo .app-header .logo-status-ring {
+    outline: 1px dashed blue;
+}
+
+.debug-logo .app-header .app-logo {
+    outline: 1px dashed green;
+}
+
+/* ============================================= */
+/* COMPATIBILIDAD CON PANTALLA DE PERFILES */
+/* ============================================= */
+
+/* Asegurar que el anillo solo esté en el header principal */
+#perfil-screen .logo-container .logo-status-ring {
+    display: none !important;
+}
+
+#perfil-screen .logo-container::after {
+    display: none !important;
 }
