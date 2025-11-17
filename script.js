@@ -82,14 +82,10 @@ function crearModalCronometro(resultado) {
     modalFondo.id = 'modal-cronometro';
     modalFondo.className = 'modal-cronometro-fondo';
     
-    // ✅ DEFINIR CLARAMENTE LOS TIEMPOS
-    const tiempoUsuario = parseFloat(elementos.minutos.value) || resultado.minutos;
-    const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
-    
-    console.log('🎯 DEBUG - Tiempos para cronómetro:', {
-        tiempoUsuario: tiempoUsuario,
-        tiempoAjustado: tiempoAjustado
-    });
+    // ✅ CORREGIDO: Calcular porcentajes con el orden correcto
+    // Tu tiempo estimado primero, tiempo con tráfico después
+    const tiempoUsuario = resultado.minutos; // ✅ Este es el tiempo que INGRESASTE (4 min)
+    const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos; // ✅ Este es el cálculo automático (6 min)
     
     const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoAjustado);
     
@@ -106,23 +102,19 @@ function crearModalCronometro(resultado) {
                 </div>
             </div>
             
-            <!-- ✅ INFO - ORDEN ABSOLUTAMENTE CORRECTO -->
+            <!-- INFO -->
             <div class="cronometro-info">
-                <div class="info-item usuario-estimacion">
-                    <div class="info-content">
-                        <span class="info-label">⏱️ Tu estimación</span>
-                        <span class="info-valor usuario-tiempo">${tiempoUsuario} min</span>
-                    </div>
+                <div class="info-item">
+                    <span class="info-label">Tu estimación</span>
+                    <span class="info-valor">${tiempoUsuario} min</span>
                 </div>
-                <div class="info-item tiempo-trafico">
-                    <div class="info-content">
-                        <span class="info-label">🚦 Con tráfico</span>
-                        <span class="info-valor trafico-tiempo">${tiempoAjustado} min</span>
-                    </div>
+                <div class="info-item">
+                    <span class="info-label">Con tráfico</span>
+                    <span class="info-valor">${tiempoAjustado} min</span>
                 </div>
             </div>
             
-            <!-- ✅ PROGRESO - ORDEN CORREGIDO -->
+            <!-- PROGRESO - CORREGIDO EL ORDEN -->
             <div class="cronometro-progreso">
                 <div class="barra-progreso-container">
                     <div class="barra-progreso">
@@ -130,7 +122,7 @@ function crearModalCronometro(resultado) {
                     </div>
                     <div class="marcadores-tiempo">
                         <span class="marcador inicio">0</span>
-                        <span class="marcador usuario" style="left: ${porcentajeUsuario}%">${tiempoUsuario}</span>
+                        <span class="marcador verde" style="left: ${porcentajeUsuario}%">${tiempoUsuario}</span>
                         <span class="marcador fin">${tiempoAjustado}</span>
                     </div>
                 </div>
@@ -153,7 +145,7 @@ function crearModalCronometro(resultado) {
         </div>
     `;
     
-    document.body.appendChild(modalFondo);
+     document.body.appendChild(modalFondo);
     
     setTimeout(agregarEfectosVisuales, 100);
 }
@@ -176,8 +168,8 @@ function iniciarCronometroConViaje(resultado) {
     const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
     
     console.log('🎯 Tiempos para cronómetro:', {
-        tiempoUsuario: tiempoUsuario, // ✅ TU tiempo (4 min) - PRIMERO
-        tiempoAjustado: tiempoAjustado, // ✅ Tiempo con tráfico (6 min) - SEGUNDO
+        tiempoUsuario: tiempoUsuario, // ✅ TU tiempo (4 min)
+        tiempoAjustado: tiempoAjustado, // ✅ Tiempo con tráfico (6 min)
         tiempoOriginalResultado: resultado.minutos
     });
 
@@ -200,8 +192,8 @@ function iniciarCronometroConViaje(resultado) {
     // Mostrar banner modal CON ORDEN CORRECTO
     crearModalCronometro({
         ...resultado,
-        minutos: tiempoUsuario, // ✅ Pasar el tiempo del usuario PRIMERO
-        tiempoAjustado: tiempoAjustado // ✅ Pasar el tiempo ajustado SEGUNDO
+        minutos: tiempoUsuario, // ✅ Pasar el tiempo del usuario
+        tiempoAjustado: tiempoAjustado // ✅ Pasar el tiempo ajustado
     });
     
     // Actualizar cada segundo
@@ -4405,8 +4397,6 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
-
-
 
 
 
