@@ -3213,14 +3213,23 @@ function aplicarTemaGuardado() {
 }
 
 // =============================================
-// FUNCIÓN PARA ACTIVAR UBICACIÓN
+// MODIFICACIONES A LA FUNCIÓN activarUbicacion
 // =============================================
 
 function activarUbicacion() {
     console.log('📍 Activando sistema de ubicación...');
     
     const btn = document.getElementById('activar-ubicacion-btn');
-  
+    const status = document.getElementById('location-status');
+    
+    // ✅ INICIALIZAR ANILLO SI NO EXISTE
+    if (!locationStatusRing) {
+        locationStatusRing = new LocationStatusRing();
+    }
+    
+    // 🟡 ESTADO DE CARGA
+    locationStatusRing.setLoading();
+    
     if (btn) {
         btn.innerHTML = '<span class="button-icon">🔄</span> Obteniendo ubicación...';
         btn.disabled = true;
@@ -3230,6 +3239,9 @@ function activarUbicacion() {
         (position) => {
             console.log('✅ Ubicación obtenida correctamente');
 
+            // 🟢 ESTADO ACTIVO
+            locationStatusRing.setActive();
+            
             if (btn) {
                 btn.style.display = 'none';
             }
@@ -3258,6 +3270,9 @@ function activarUbicacion() {
         (error) => {
             console.error('❌ Error obteniendo ubicación:', error);
 
+            // 🔴 ESTADO DE ERROR
+            locationStatusRing.setError();
+            
             if (btn) {
                 btn.innerHTML = '<span class="button-icon">📍</span> Activar Análisis de Tráfico';
                 btn.disabled = false;
@@ -3286,6 +3301,129 @@ function activarUbicacion() {
             maximumAge: 0
         }
     );
+}
+
+// =============================================
+// SISTEMA DE ANILLO DE ESTADO DE UBICACIÓN
+// =============================================
+
+class LocationStatusRing {
+    constructor() {
+        this.ringElement = document.getElementById('logo-status-ring');
+        this.currentState = 'inactive';
+        this.initializeRing();
+    }
+
+    initializeRing() {
+        if (!this.ringElement) {
+            console.warn('⚠️ Elemento logo-status-ring no encontrado');
+            return;
+        }
+        
+        // Estado inicial - siempre visible
+        this.ringElement.style.display = 'block';
+        this.setInactive();
+        
+        console.log('✅ Anillo de estado inicializado');
+    }
+
+    setActive() {
+        if (!this.ringElement) return;
+        
+        this.ringElement.className = 'logo-status-ring active';
+        this.currentState = 'active';
+        console.log('🟢 Anillo de estado: ACTIVO');
+    }
+
+    setError() {
+        if (!this.ringElement) return;
+        
+        this.ringElement.className = 'logo-status-ring error';
+        this.currentState = 'error';
+        console.log('🔴 Anillo de estado: ERROR');
+    }
+
+    setLoading() {
+        if (!this.ringElement) return;
+        
+        this.ringElement.className = 'logo-status-ring loading';
+        this.currentState = 'loading';
+        console.log('🟡 Anillo de estado: CARGANDO');
+    }
+
+    setInactive() {
+        if (!this.ringElement) return;
+        
+        this.ringElement.className = 'logo-status-ring';
+        this.currentState = 'inactive';
+        console.log('⚫ Anillo de estado: INACTIVO');
+    }
+
+    getCurrentState() {
+        return this.currentState;
+    }
+}
+
+// Instancia global del anillo de estado
+let locationStatusRing = null;
+
+// =============================================
+// INICIALIZACIÓN AUTOMÁTICA AL CARGAR LA APP
+// =============================================
+
+async function inicializarSistemaUbicacion() {
+    console.log('📍 Inicializando sistema de ubicación automática...');
+    
+    // ✅ INICIALIZAR ANILLO DE ESTADO
+    locationStatusRing = new LocationStatusRing();
+    
+    // Verificar si ya tenemos permisos de ubicación
+    if (navigator.permissions && navigator.permissions.query) {
+        try {
+            const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+            
+            if (permissionStatus.state === 'granted') {
+                console.log('✅ Permisos de ubicación ya concedidos - Activando automáticamente');
+                locationStatusRing.setActive();
+                
+                // Ocultar botón y mostrar estado
+                const btn = document.getElementById('activar-ubicacion-btn');
+                const status = document.getElementById('location-status');
+                
+                if (btn) btn.style.display = 'none';
+                if (status) status.classList.remove('hidden');
+                
+            } else if (permissionStatus.state === 'prompt') {
+                console.log('📍 Permisos de ubicación pendientes');
+                locationStatusRing.setInactive();
+            } else {
+                console.log('❌ Permisos de ubicación denegados');
+                locationStatusRing.setError();
+            }
+            
+            // Escuchar cambios en los permisos
+            permissionStatus.onchange = function() {
+                console.log('🔄 Estado de permisos cambiado:', this.state);
+                if (this.state === 'granted') {
+                    locationStatusRing.setActive();
+                    const btn = document.getElementById('activar-ubicacion-btn');
+                    const status = document.getElementById('location-status');
+                    if (btn) btn.style.display = 'none';
+                    if (status) status.classList.remove('hidden');
+                } else if (this.state === 'denied') {
+                    locationStatusRing.setError();
+                }
+            };
+            
+        } catch (error) {
+            console.warn('⚠️ No se pudo verificar el estado de permisos:', error);
+            locationStatusRing.setInactive();
+        }
+    } else {
+        // Fallback para navegadores que no soportan permissions API
+        console.log('⚠️ Permissions API no soportada');
+        locationStatusRing.setInactive();
+    }
 }
 
 // =============================================
@@ -4017,6 +4155,10 @@ async function inicializarApp() {
     inicializarElementosDOM();
     
     try {
+        // ✅ NUEVO: Inicializar sistema de anillo de estado de ubicación (PRIMER PASO)
+        console.log('📍 Inicializando sistema de anillo de estado...');
+        await inicializarSistemaUbicacion();
+        
         // ✅ PRIMERO: Inicializar sistema de código de usuario (NO DEPENDE DE GOOGLE MAPS)
         console.log('🔐 Inicializando sistema de código de usuario...');
         const userCodeInitialized = await initializeUserCodeSystem();
@@ -4036,8 +4178,16 @@ async function inicializarApp() {
         
         if (trafficInitialized) {
             console.log('✅ Sistema de tráfico inicializado correctamente');
+            // 🟢 Si el tráfico se inicializa correctamente, marcar ubicación como activa
+            if (locationStatusRing) {
+                locationStatusRing.setActive();
+            }
         } else {
             console.log('⚠️ Google Maps no disponible, usando modo local');
+            // 🟡 Si no hay Google Maps, mantener estado actual o marcar como inactivo
+            if (locationStatusRing) {
+                locationStatusRing.setInactive();
+            }
         }
         
         // ✅ CUARTO: Inicializar Firebase (NO DEPENDE DE GOOGLE MAPS)
@@ -4065,7 +4215,16 @@ async function inicializarApp() {
         configurarEventListeners();
         configurarModalExportacion();
         
-        // ✅ NOVENO: Mostrar pantalla correcta
+        // ✅ NOVENO: Ocultar botón de activar ubicación si ya está activa
+        const btnUbicacion = document.getElementById('activar-ubicacion-btn');
+        const statusUbicacion = document.getElementById('location-status');
+        
+        if (locationStatusRing && locationStatusRing.getCurrentState() === 'active') {
+            if (btnUbicacion) btnUbicacion.style.display = 'none';
+            if (statusUbicacion) statusUbicacion.classList.remove('hidden');
+        }
+        
+        // ✅ DÉCIMO: Mostrar pantalla correcta
         if (perfiles.length === 0) {
             mostrarPantalla('perfil');
             mostrarStatus('👋 ¡Bienvenido! Crea tu primer perfil para comenzar', 'info');
@@ -4080,6 +4239,11 @@ async function inicializarApp() {
         
     } catch (error) {
         console.error('❌ Error crítico en inicialización:', error);
+        
+        // 🔴 Marcar error en el anillo de estado
+        if (locationStatusRing) {
+            locationStatusRing.setError();
+        }
         
         // ✅ MODO FALLBACK: Continuar sin Google Maps
         mostrarStatus('⚠️ Modo local activado - Funcionalidad básica disponible', 'info');
@@ -4222,6 +4386,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
