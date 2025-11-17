@@ -304,7 +304,7 @@
     <!-- Pantalla Principal de Cálculos -->
 <div id="main-screen" class="screen">
     <div class="container">
-      <div class="app-header">
+ <div class="app-header">
     <div class="header-left">
         <button id="user-code-button" class="header-btn" title="Código de sincronización">
             <span class="button-icon">🔑</span>
@@ -315,6 +315,7 @@
     </div>
     
     <div class="logo-container">
+        <div id="logo-status-ring" class="logo-status-ring"></div>
         <img src="logo_b.png" alt="Logo DIBER" class="app-logo">
     </div>
     
@@ -514,15 +515,15 @@
 <!-- Pestaña Historial -->
 <div class="tab-content" id="tab-historial">
     <!-- FILTROS NUEVOS -->
-    <div class="filtros-historial">
-        <h3>📋 Historial de Viajes</h3>
-        <div class="filtros-container">
-            <button class="filtro-btn active" data-filtro="hoy">Hoy</button>
-            <button class="filtro-btn" data-filtro="semana">Esta Semana</button>
-            <button class="filtro-btn" data-filtro="mes">Este Mes</button>
-            <button class="filtro-btn" data-filtro="todos">Todos</button>
-        </div>
+  <div class="filtros-historial">
+    <h3>📋 Historial de Viajes</h3>
+    <div class="filtros-container">
+        <button class="filtro-btn active" data-filtro="hoy">Hoy</button>
+        <button class="filtro-btn" data-filtro="semana">Esta Semana</button>
+        <button class="filtro-btn" data-filtro="mes">Este Mes</button>
+        <button class="filtro-btn" data-filtro="todos">Todos</button>
     </div>
+</div>
 
     <!-- Historial de Cálculos -->
     <div class="history-section">
@@ -757,6 +758,7 @@
     <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
