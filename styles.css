@@ -5963,3 +5963,243 @@ select:focus-visible {
 #perfil-screen .logo-container::after {
     display: none !important;
 }
+
+/* ============================================= */
+/* MEJORAS MÓVIL - COPIAR AL FINAL DEL CSS */
+/* ============================================= */
+
+/* 🔥 FEEDBACK TÁCTIL MEJORADO */
+.primary-button, 
+.secondary-button,
+.header-btn,
+.tab-button,
+.filtro-btn {
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.primary-button:active,
+.secondary-button:active,
+.header-btn:active,
+.tab-button:active,
+.filtro-btn:active {
+    transform: scale(0.96);
+}
+
+/* 🔥 HEADER STICKY PARA MÓVIL */
+.app-header {
+    position: sticky;
+    top: 0;
+    background: var(--card-bg);
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* 🔥 OPTIMIZACIONES ESPECÍFICAS PARA MÓVIL */
+@media (max-width: 768px) {
+    /* Header móvil */
+    .app-header {
+        padding: 12px 0;
+        margin-bottom: 1rem;
+    }
+    
+    /* Inputs móviles más grandes */
+    input[type="number"],
+    input[type="text"],
+    select {
+        min-height: 56px;
+        padding: 16px 14px;
+        font-size: 16px;
+    }
+    
+    .input-group {
+        margin-bottom: 1.8rem;
+    }
+    
+    /* Tabs móviles más táctiles */
+    .tab-button {
+        min-height: 70px;
+        padding: 12px 8px;
+    }
+    
+    .tab-icon {
+        font-size: 1.4em;
+    }
+    
+    .tab-text {
+        font-size: 0.8em;
+        font-weight: 600;
+    }
+    
+    /* Modales desde abajo en móvil */
+    .modal-fondo {
+        padding: 0;
+        align-items: flex-end;
+    }
+    
+    .modal-contenido {
+        max-width: 100%;
+        margin: 0;
+        border-radius: 24px 24px 0 0;
+        max-height: 85vh;
+    }
+    
+    /* Handle de arrastre para modal móvil */
+    .modal-contenido::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 4px;
+        background: var(--border-color);
+        border-radius: 2px;
+    }
+    
+    /* Botones de acción fijos en móvil */
+    .action-buttons {
+        position: sticky;
+        bottom: 0;
+        background: var(--card-bg);
+        padding: 16px;
+        margin: 20px -16px -16px -16px;
+        border-top: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+        z-index: 100;
+    }
+    
+    /* Container más compacto en móvil */
+    .container {
+        padding: 1rem;
+    }
+    
+    .form-section {
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* 🔥 SCROLL OPTIMIZADO PARA TÁCTIL */
+.history-list,
+.tab-content {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+@media (max-width: 768px) {
+    .history-list {
+        padding-bottom: 80px;
+    }
+}
+
+/* 🔥 STATUS INDICATORS MEJORADOS */
+.status-indicator {
+    margin: 12px 0;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    border-left: 4px solid;
+}
+
+.status-indicator.info {
+    background: rgba(33, 150, 243, 0.1);
+    border-left-color: #2196F3;
+    color: #1565C0;
+}
+
+.status-indicator.success {
+    background: rgba(76, 175, 80, 0.1);
+    border-left-color: #4CAF50;
+    color: #2E7D32;
+}
+
+.status-indicator.error {
+    background: rgba(244, 67, 54, 0.1);
+    border-left-color: #f44336;
+    color: #C62828;
+}
+
+/* 🔥 ANILLO MÓVIL OPTIMIZADO */
+@media (max-width: 768px) {
+    .app-header .logo-status-ring.active {
+        border-width: 2px;
+        animation: pulseMobile 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulseMobile {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+        }
+        50% {
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+    }
+}
+
+/* 🔥 SEGURIDAD PARA NOTCHES Y AREAS SEGURAS */
+@supports(padding: max(0px)) {
+    .container {
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    
+    .action-buttons {
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+}
+
+/* 🔥 MEJORAS DE ACCESIBILIDAD MÓVIL */
+@media (max-width: 768px) {
+    body {
+        font-size: 16px;
+        line-height: 1.5;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+    }
+    
+    .primary-button {
+        font-weight: 600;
+    }
+}
+
+/* 🔥 FOCUS VISIBLE PARA NAVEGACIÓN TÁCTIL */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--primary-blue);
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+/* 🔥 LOADING STATES MÓVIL */
+@media (max-width: 768px) {
+    .tab-button.loading .tab-icon {
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+}
+
+/* 🔥 MEJORA DE CONTENEDORES EN MÓVIL MUY PEQUEÑO */
+@media (max-width: 360px) {
+    .container {
+        padding: 0.75rem;
+    }
+    
+    .app-header .logo-container {
+        width: 55px;
+        height: 55px;
+    }
+    
+    .header-btn {
+        width: 40px;
+        height: 40px;
+    }
+}
