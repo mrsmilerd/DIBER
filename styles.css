@@ -4747,6 +4747,610 @@ select:focus-visible {
     transform: translateY(10px);
 }
 
+/* ============================================= */
+/* BLOQUE 6 - SISTEMA RESPONSIVE UNIFICADO */
+/* ============================================= */
+
+/* 1. BREAKPOINTS UNIFICADOS Y CONSISTENTES */
+:root {
+    --breakpoint-mobile: 480px;
+    --breakpoint-tablet: 768px;
+    --breakpoint-desktop: 1024px;
+    --breakpoint-wide: 1200px;
+}
+
+/* 2. SISTEMA DE GRID RESPONSIVO UNIFICADO */
+.grid-responsive {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+}
+
+.grid-responsive-2 {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.grid-responsive-3 {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.grid-responsive-4 {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+/* 3. UTILITARIOS RESPONSIVE - MOSTRAR/OCULTAR */
+.mostrar-mobile { display: block !important; }
+.mostrar-tablet { display: none !important; }
+.mostrar-desktop { display: none !important; }
+
+.ocultar-mobile { display: none !important; }
+.ocultar-tablet { display: block !important; }
+.ocultar-desktop { display: block !important; }
+
+/* 4. MEDIA QUERIES UNIFICADAS */
+/* Móvil - hasta 480px (ya cubierto por estilos base) */
+
+/* Tablet - 481px a 768px */
+@media (min-width: 481px) and (max-width: 768px) {
+    .grid-responsive-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-responsive-3 { grid-template-columns: repeat(2, 1fr); }
+    .grid-responsive-4 { grid-template-columns: repeat(2, 1fr); }
+    
+    .mostrar-mobile { display: none !important; }
+    .mostrar-tablet { display: block !important; }
+    .ocultar-tablet { display: none !important; }
+}
+
+/* Desktop - 769px a 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .grid-responsive-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-responsive-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-responsive-4 { grid-template-columns: repeat(4, 1fr); }
+    
+    .mostrar-mobile { display: none !important; }
+    .mostrar-tablet { display: none !important; }
+    .mostrar-desktop { display: block !important; }
+    .ocultar-desktop { display: none !important; }
+}
+
+/* Wide - más de 1025px */
+@media (min-width: 1025px) {
+    .grid-responsive-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-responsive-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-responsive-4 { grid-template-columns: repeat(4, 1fr); }
+    
+    .mostrar-mobile { display: none !important; }
+    .mostrar-tablet { display: none !important; }
+    .mostrar-desktop { display: block !important; }
+}
+
+/* 5. RESPONSIVE UNIFICADO PARA COMPONENTES EXISTENTES */
+@media (max-width: 480px) {
+    .config-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .resultado-metricas {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-resultados-doble {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .config-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+
+/* ============================================= */
+/* BLOQUE 7 - SISTEMA DE FORMULARIOS UNIFICADO */
+/* ============================================= */
+
+/* 1. SISTEMA UNIFICADO DE FORMULARIOS */
+.formulario-unificado {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.grupo-formulario {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.etiqueta-formulario {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.campo-formulario {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 1rem;
+    color: var(--text-primary);
+    background: var(--card-bg);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    font-family: inherit;
+}
+
+.campo-formulario:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.campo-formulario.error {
+    border-color: var(--error-red);
+    box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.15);
+}
+
+.campo-formulario.exito {
+    border-color: var(--success-green);
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15);
+}
+
+/* 2. ESTADOS DE VALIDACIÓN UNIFICADOS */
+.mensaje-error {
+    color: var(--error-red);
+    font-size: 0.8em;
+    font-weight: 500;
+    margin-top: 0.25rem;
+    display: none;
+}
+
+.mensaje-error.mostrar {
+    display: block;
+    animation: fadeInOptimized 0.3s ease;
+}
+
+.mensaje-exito {
+    color: var(--success-green);
+    font-size: 0.8em;
+    font-weight: 500;
+    margin-top: 0.25rem;
+    display: none;
+}
+
+.mensaje-exito.mostrar {
+    display: block;
+    animation: fadeInOptimized 0.3s ease;
+}
+
+/* 3. INPUT GROUPS UNIFICADOS */
+.grupo-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.grupo-input .campo-formulario {
+    padding-right: 3rem;
+}
+
+.unidad-input {
+    position: absolute;
+    right: 1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    pointer-events: none;
+}
+
+/* 4. SELECT PERSONALIZADO UNIFICADO */
+.select-personalizado {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 16px;
+    padding-right: 3rem;
+}
+
+/* ============================================= */
+/* BLOQUE 8 - SISTEMA DE TABS Y NAVEGACIÓN UNIFICADO */
+/* ============================================= */
+
+/* 1. SISTEMA DE TABS UNIFICADO */
+.contenedor-tabs {
+    width: 100%;
+}
+
+.navegacion-tabs {
+    display: flex;
+    background: var(--light-grey);
+    border-radius: 14px;
+    padding: 6px;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+    position: relative;
+}
+
+.navegacion-tabs::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 6px;
+    width: calc(33.333% - 6px);
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 1;
+}
+
+.boton-tab {
+    flex: 1;
+    padding: 14px 8px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.82em;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    min-height: 64px;
+    position: relative;
+    z-index: 2;
+}
+
+.boton-tab.activo {
+    color: var(--primary-blue);
+}
+
+.contenido-tab {
+    display: none;
+    animation: fadeInOptimized 0.4s ease-out;
+}
+
+.contenido-tab.activo {
+    display: block;
+}
+
+/* 2. INDICADOR DESLIZANTE MEJORADO */
+.navegacion-tabs[data-tab-activo="0"]::before { transform: translateX(0); }
+.navegacion-tabs[data-tab-activo="1"]::before { transform: translateX(100%); }
+.navegacion-tabs[data-tab-activo="2"]::before { transform: translateX(200%); }
+
+/* ============================================= */
+/* BLOQUE 9 - SISTEMA DE HISTORIAL Y LISTAS UNIFICADO */
+/* ============================================= */
+
+/* 1. SISTEMA UNIFICADO DE LISTAS */
+.lista-unificada {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.item-lista {
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 255, 255, 0.9) 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border-left: 6px solid var(--border-color);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1.5px solid transparent;
+}
+
+[data-theme="dark"] .item-lista {
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 255, 255, 0.05) 100%);
+}
+
+.item-lista:hover {
+    transform: translateY(-3px) translateX(4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+    border-color: var(--border-color);
+}
+
+/* 2. ESTADOS DE ITEMS DE LISTA */
+.item-lista.rentable {
+    border-left-color: #4CAF50;
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(76, 175, 80, 0.08) 100%);
+}
+
+.item-lista.oportunidad {
+    border-left-color: #FF9800;
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 152, 0, 0.08) 100%);
+}
+
+.item-lista.no-rentable {
+    border-left-color: #f44336;
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(244, 67, 54, 0.08) 100%);
+}
+
+/* 3. SCROLLBARS UNIFICADOS */
+.contenedor-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-blue) var(--light-grey);
+}
+
+.contenedor-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.contenedor-scroll::-webkit-scrollbar-track {
+    background: var(--light-grey);
+    border-radius: 3px;
+}
+
+.contenedor-scroll::-webkit-scrollbar-thumb {
+    background: var(--primary-blue);
+    border-radius: 3px;
+}
+
+.contenedor-scroll::-webkit-scrollbar-thumb:hover {
+    background: #1565c0;
+}
+
+/* ============================================= */
+/* BLOQUE 10 - SISTEMA DE ICONOS Y EMOJIS UNIFICADO */
+/* ============================================= */
+
+/* 1. SISTEMA UNIFICADO DE TAMAÑOS DE ICONOS */
+.icono-xs { font-size: 0.75em; }
+.icono-sm { font-size: 0.875em; }
+.icono-md { font-size: 1em; }
+.icono-lg { font-size: 1.25em; }
+.icono-xl { font-size: 1.5em; }
+.icono-2xl { font-size: 2em; }
+
+/* 2. COLORES DE ICONOS POR ESTADO */
+.icono-primario { color: var(--primary-blue); }
+.icono-secundario { color: var(--text-secondary); }
+.icono-exito { color: var(--success-green); }
+.icono-advertencia { color: var(--warning-orange); }
+.icono-error { color: var(--error-red); }
+.icono-rentable { color: var(--success-green); }
+.icono-oportunidad { color: var(--warning-orange); }
+.icono-no-rentable { color: var(--error-red); }
+
+/* 3. SPINNERS Y LOADERS UNIFICADOS */
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-top: 2px solid var(--primary-blue);
+    border-radius: 50%;
+    animation: rotateOptimized 1s linear infinite;
+}
+
+.spinner-sm { width: 16px; height: 16px; }
+.spinner-lg { width: 24px; height: 24px; }
+.spinner-xl { width: 32px; height: 32px; }
+
+/* 4. EMOJIS OPTIMIZADOS */
+.emoji-base {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    font-style: normal;
+    line-height: 1;
+}
+
+/* ============================================= */
+/* BLOQUE 11 - SISTEMA DE UTILITARIOS UNIFICADO */
+/* ============================================= */
+
+/* 1. SISTEMA DE ESPACIADO UNIFICADO */
+.m-0 { margin: 0 !important; }
+.m-1 { margin: 0.25rem !important; }
+.m-2 { margin: 0.5rem !important; }
+.m-3 { margin: 1rem !important; }
+.m-4 { margin: 1.5rem !important; }
+.m-5 { margin: 2rem !important; }
+
+.mt-0 { margin-top: 0 !important; }
+.mt-1 { margin-top: 0.25rem !important; }
+.mt-2 { margin-top: 0.5rem !important; }
+.mt-3 { margin-top: 1rem !important; }
+.mt-4 { margin-top: 1.5rem !important; }
+.mt-5 { margin-top: 2rem !important; }
+
+.mb-0 { margin-bottom: 0 !important; }
+.mb-1 { margin-bottom: 0.25rem !important; }
+.mb-2 { margin-bottom: 0.5rem !important; }
+.mb-3 { margin-bottom: 1rem !important; }
+.mb-4 { margin-bottom: 1.5rem !important; }
+.mb-5 { margin-bottom: 2rem !important; }
+
+.p-0 { padding: 0 !important; }
+.p-1 { padding: 0.25rem !important; }
+.p-2 { padding: 0.5rem !important; }
+.p-3 { padding: 1rem !important; }
+.p-4 { padding: 1.5rem !important; }
+.p-5 { padding: 2rem !important; }
+
+/* 2. UTILITARIOS DE FLEXBOX */
+.flex { display: flex !important; }
+.flex-col { flex-direction: column !important; }
+.flex-row { flex-direction: row !important; }
+.items-center { align-items: center !important; }
+.items-start { align-items: flex-start !important; }
+.items-end { align-items: flex-end !important; }
+.justify-center { justify-content: center !important; }
+.justify-between { justify-content: space-between !important; }
+.justify-start { justify-content: flex-start !important; }
+.justify-end { justify-content: flex-end !important; }
+.gap-1 { gap: 0.25rem !important; }
+.gap-2 { gap: 0.5rem !important; }
+.gap-3 { gap: 1rem !important; }
+.gap-4 { gap: 1.5rem !important; }
+
+/* 3. UTILITARIOS DE TEXTO */
+.text-left { text-align: left !important; }
+.text-center { text-align: center !important; }
+.text-right { text-align: right !important; }
+.text-primary { color: var(--text-primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-success { color: var(--success-green) !important; }
+.text-warning { color: var(--warning-orange) !important; }
+.text-error { color: var(--error-red) !important; }
+.font-normal { font-weight: 400 !important; }
+.font-medium { font-weight: 500 !important; }
+.font-semibold { font-weight: 600 !important; }
+.font-bold { font-weight: 700 !important; }
+
+/* 4. UTILITARIOS DE VISIBILIDAD */
+.hidden { display: none !important; }
+.block { display: block !important; }
+.inline { display: inline !important; }
+.inline-block { display: inline-block !important; }
+.inline-flex { display: inline-flex !important; }
+
+/* 5. UTILITARIOS DE ANCHURA Y ALTURA */
+.w-full { width: 100% !important; }
+.w-auto { width: auto !important; }
+.h-full { height: 100% !important; }
+.h-auto { height: auto !important; }
+
+/* ============================================= */
+/* BLOQUE 12 - SISTEMA DE ACCESIBILIDAD MEJORADO */
+/* ============================================= */
+
+/* 1. FOCUS STATES MEJORADOS */
+.focus-visible:focus-visible {
+    outline: 2px solid var(--primary-blue);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.1);
+}
+
+/* 2. CONTRASTE MEJORADO */
+.texto-alto-contraste {
+    color: var(--text-primary) !important;
+}
+
+.fondo-alto-contraste {
+    background: var(--card-bg) !important;
+    border: 2px solid var(--border-color) !important;
+}
+
+/* 3. SEMÁNTICA MEJORADA */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* 4. REDUCED MOTION RESPETADO */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* 5. TAMAÑO DE TEXTO RESPETADO */
+.texto-escable {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+}
+
+/* ============================================= */
+/* BLOQUE 13 - LIMPIEZA FINAL Y OPTIMIZACIÓN */
+/* ============================================= */
+
+/* 1. NORMALIZACIÓN DE ESPECIFICIDAD */
+/* Estas clases tienen baja especificidad para sobrescribir fácilmente */
+
+.componente-base {
+    all: unset;
+    box-sizing: border-box;
+}
+
+/* 2. ELIMINACIÓN DE !important INNECESARIOS */
+/* Revisar y remover !important de estilos que no lo necesitan */
+
+/* 3. OPTIMIZACIÓN DE SELECTORES */
+/* Usar clases específicas en lugar de selectores complejos */
+
+/* 4. COMPRESIÓN DE PROPIEDADES DUPLICADAS */
+/* Unificar propiedades que se repiten */
+
+/* ============================================= */
+/* BLOQUE 14 - DOCUMENTACIÓN Y MANTENIMIENTO */
+/* ============================================= */
+
+/* 
+ * SISTEMA CSS COMPLETO - DIBER APP
+ * 
+ * ESTRUCTURA:
+ * 1. Variables y configuración global
+ * 2. Reset y estilos base
+ * 3. Componentes principales (Header, Tabs, Modales)
+ * 4. Componentes específicos (Formularios, Listas, Cards)
+ * 5. Sistema de utilidades (Espaciado, Flex, Texto)
+ * 6. Sistema responsive unificado
+ * 7. Sistema de estados y animaciones
+ * 8. Sistema de accesibilidad
+ * 
+ * MANTENIMIENTO:
+ * - Usar variables CSS para colores y espaciado
+ * - Seguir la estructura de bloques
+ * - Agregar nuevos componentes al final
+ * - Testear en todos los breakpoints
+ * - Respetar prefers-reduced-motion
+ */
+
+/* VARIABLES PRINCIPALES PARA PERSONALIZACIÓN */
+:root {
+    /* Colores principales - personalizar aquí */
+    --primary-blue: #00AEEF;
+    --secondary-orange: #f5a623;
+    --success-green: #4CAF50;
+    --warning-orange: #FF9800;
+    --error-red: #f44336;
+    
+    /* Espaciado base - personalizar aquí */
+    --espacio-xs: 0.25rem;
+    --espacio-sm: 0.5rem;
+    --espacio-md: 1rem;
+    --espacio-lg: 1.5rem;
+    --espacio-xl: 2rem;
+    
+    /* Breakpoints - personalizar aquí */
+    --mobile: 480px;
+    --tablet: 768px;
+    --desktop: 1024px;
+}
+
+/* CLASES DE CONFIGURACIÓN RÁPIDA */
+.config-tema-claro {
+    --card-bg: #ffffff;
+    --text-primary: #424242;
+    --text-secondary: #757575;
+    --border-color: #e0e0e0;
+}
+
+.config-tema-oscuro {
+    --card-bg: #2d2d2d;
+    --text-primary: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --border-color: #444444;
+}
+
 /* ========================================================= */
 /* BLOQUE 2 – TABS OPTIMIZADOS PARA MÓVIL (VERTICAL)         */
 /* ========================================================= */
@@ -5201,6 +5805,64 @@ select:focus-visible {
     to   { transform: rotate(360deg); }
 }
 
+/* ========================================================= */
+/* ANILLO PREMIUM PARA LOGO CUADRADO CON ANIMACIÓN           */
+/* ========================================================= */
 
+.logo-container {
+    position: relative;
+    display: inline-block;
+    border-radius: 16px;
+}
 
+/* Anillo base: línea muy fina */
+.logo-status-ring {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 16px;
+    border: 1.5px solid transparent;    /* 🔥 Línea mucho más fina */
+    pointer-events: none;
+    z-index: 5;
+    opacity: 1;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
 
+/* ⭐ ESTADOS */
+
+/* 🟡 Cargando */
+.logo-status-ring.loading {
+    border-color: #FFC107;
+    box-shadow: 0 0 6px rgba(255, 193, 7, 0.45);
+}
+
+/* 🟢 Activo */
+.logo-status-ring.active {
+    border-color: #4CAF50;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.55);
+    animation: logoPulse 1.6s ease-in-out infinite; /* 💓 Latido suave */
+}
+
+/* 🔴 Error */
+.logo-status-ring.error {
+    border-color: #F44336;
+    box-shadow: 0 0 8px rgba(244, 67, 54, 0.55);
+}
+
+/* 💓 ANIMACIÓN DE LATIDO (solo para activo) */
+@keyframes logoPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 8px rgba(76, 175, 80, 0.55);
+    }
+    50% {
+        transform: scale(1.03);  /* Latido pequeño, profesional */
+        box-shadow: 0 0 14px rgba(76, 175, 80, 0.75);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 8px rgba(76, 175, 80, 0.55);
+    }
+}
