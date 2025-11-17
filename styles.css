@@ -4390,6 +4390,363 @@ select:focus-visible {
 .borde-oportunidad { border-color: var(--warning-orange) !important; }
 .borde-no-rentable { border-color: var(--error-red) !important; }
 
+/* ============================================= */
+/* BLOQUE 5 - OPTIMIZACIÓN RENDIMIENTO Y ANIMACIONES */
+/* ============================================= */
+
+/* 1. SISTEMA UNIFICADO DE ANIMACIONES - PERFORMANCE FIRST */
+@keyframes fadeInOptimized {
+    0% { 
+        opacity: 0;
+        transform: translateZ(0); /* Force hardware acceleration */
+    }
+    100% { 
+        opacity: 1;
+        transform: translateZ(0);
+    }
+}
+
+@keyframes slideUpOptimized {
+    0% { 
+        opacity: 0;
+        transform: translate3d(0, 20px, 0); /* 3D transform for GPU */
+        will-change: transform, opacity;
+    }
+    100% { 
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes scaleInOptimized {
+    0% { 
+        opacity: 0;
+        transform: scale3d(0.9, 0.9, 1) translateZ(0);
+        will-change: transform, opacity;
+    }
+    100% { 
+        opacity: 1;
+        transform: scale3d(1, 1, 1) translateZ(0);
+    }
+}
+
+@keyframes pulseOptimized {
+    0%, 100% { 
+        opacity: 1;
+        transform: translateZ(0);
+    }
+    50% { 
+        opacity: 0.7;
+        transform: translateZ(0);
+    }
+}
+
+@keyframes rotateOptimized {
+    0% { 
+        transform: rotate(0deg) translateZ(0);
+    }
+    100% { 
+        transform: rotate(360deg) translateZ(0);
+    }
+}
+
+@keyframes shimmerOptimized {
+    0% { 
+        transform: translate3d(-100%, 0, 0);
+    }
+    100% { 
+        transform: translate3d(100%, 0, 0);
+    }
+}
+
+/* 2. CLASES DE ANIMACIÓN OPTIMIZADAS - REUTILIZABLES */
+.animacion-entrada {
+    animation: fadeInOptimized 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+    transform: translateZ(0); /* Hardware acceleration */
+}
+
+.animacion-deslizar-arriba {
+    animation: slideUpOptimized 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+    transform: translateZ(0);
+}
+
+.animacion-escala {
+    animation: scaleInOptimized 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+    transform: translateZ(0);
+}
+
+.animacion-pulso {
+    animation: pulseOptimized 2s ease-in-out infinite both;
+    transform: translateZ(0);
+}
+
+.animacion-rotar {
+    animation: rotateOptimized 1.2s linear infinite both;
+    transform: translateZ(0);
+}
+
+.animacion-brillar {
+    position: relative;
+    overflow: hidden;
+}
+
+.animacion-brillar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: shimmerOptimized 1.5s ease-in-out infinite;
+    transform: translateZ(0);
+}
+
+/* 3. SISTEMA UNIFICADO DE LOADING STATES */
+.estado-cargando {
+    position: relative;
+    opacity: 0.7;
+    pointer-events: none;
+    user-select: none;
+}
+
+.estado-cargando::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--border-color);
+    border-top: 2px solid var(--primary-blue);
+    border-radius: 50%;
+    animation: rotateOptimized 1s linear infinite;
+    transform: translateZ(0);
+}
+
+.estado-cargando-skeleton {
+    background: linear-gradient(90deg, var(--border-color) 25%, var(--light-grey) 50%, var(--border-color) 75%);
+    background-size: 200% 100%;
+    animation: shimmerOptimized 1.5s ease-in-out infinite;
+    border-radius: 8px;
+    color: transparent;
+    user-select: none;
+    transform: translateZ(0);
+}
+
+/* 4. TRANSICIONES OPTIMIZADAS - PERFORMANCE FOCUSED */
+.transicion-rapida {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+}
+
+.transicion-suave {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+}
+
+.transicion-lenta {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+}
+
+/* Transiciones específicas optimizadas */
+.transicion-color {
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.transicion-transform {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+}
+
+.transicion-opacidad {
+    transition: opacity 0.3s ease;
+}
+
+.transicion-sombra {
+    transition: box-shadow 0.3s ease;
+}
+
+/* 5. OPTIMIZACIONES DE RENDIMIENTO ESPECÍFICAS */
+/* Evitar repaints en propiedades costosas */
+.optimizado-rendimiento {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* Containment para mejorar performance */
+.contenedor-optimizado {
+    contain: layout style paint;
+}
+
+/* Will-change solo cuando sea necesario */
+.preparado-animacion {
+    will-change: transform, opacity;
+}
+
+/* 6. SISTEMA UNIFICADO DE ESTADOS DE INTERACCIÓN */
+.estado-hover {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+}
+
+.estado-hover:hover {
+    transform: translateY(-2px) translateZ(0);
+    box-shadow: var(--sombra-media);
+}
+
+.estado-activo {
+    transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+}
+
+.estado-activo:active {
+    transform: scale(0.98) translateZ(0);
+}
+
+.estado-focus {
+    transition: all 0.2s ease;
+}
+
+.estado-focus:focus-visible {
+    outline: 2px solid var(--primary-blue);
+    outline-offset: 2px;
+    box-shadow: var(--sombra-destacado);
+}
+
+/* 7. ANIMACIONES DE FEEDBACK DE USUARIO */
+.feedback-exito {
+    animation: scaleInOptimized 0.3s ease, pulseOptimized 0.6s ease 0.3s;
+}
+
+.feedback-error {
+    animation: shakeOptimized 0.5s ease;
+}
+
+@keyframes shakeOptimized {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    25% { transform: translate3d(-5px, 0, 0); }
+    75% { transform: translate3d(5px, 0, 0); }
+}
+
+.feedback-carga-completa {
+    animation: fadeInOptimized 0.5s ease, slideUpOptimized 0.5s ease;
+}
+
+/* 8. SISTEMA DE STAGGER ANIMATIONS (para listas) */
+.animacion-escalonada > * {
+    opacity: 0;
+    animation: slideUpOptimized 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+    transform: translateZ(0);
+}
+
+.animacion-escalonada > *:nth-child(1) { animation-delay: 0.1s; }
+.animacion-escalonada > *:nth-child(2) { animation-delay: 0.2s; }
+.animacion-escalonada > *:nth-child(3) { animation-delay: 0.3s; }
+.animacion-escalonada > *:nth-child(4) { animation-delay: 0.4s; }
+.animacion-escalonada > *:nth-child(5) { animation-delay: 0.5s; }
+
+/* 9. RESPONSIVE OPTIMIZADO PARA ANIMACIONES */
+@media (prefers-reduced-motion: reduce) {
+    .animacion-entrada,
+    .animacion-deslizar-arriba,
+    .animacion-escala,
+    .animacion-pulso,
+    .animacion-rotar,
+    .animacion-brillar::before,
+    .estado-cargando::after,
+    .estado-cargando-skeleton,
+    .transicion-rapida,
+    .transicion-suave,
+    .transicion-lenta,
+    .transicion-color,
+    .transicion-transform,
+    .transicion-opacidad,
+    .transicion-sombra,
+    .estado-hover,
+    .estado-activo,
+    .feedback-exito,
+    .feedback-error,
+    .feedback-carga-completa,
+    .animacion-escalonada > * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        animation-delay: 0.01ms !important;
+    }
+    
+    .estado-hover:hover {
+        transform: none;
+    }
+    
+    .estado-activo:active {
+        transform: none;
+    }
+}
+
+/* 10. COMPATIBILIDAD Y MIGRACIÓN PROGRESIVA */
+/* Las animaciones existentes seguirán funcionando */
+.fade-in { animation: fadeInOptimized 0.35s ease both; }
+.slide-up { animation: slideUpOptimized 0.35s ease both; }
+
+/* Loading states existentes mejorados */
+.loading {
+    composes: estado-cargando;
+}
+
+.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* 11. UTILITARIOS DE PERFORMANCE */
+.sin-animacion {
+    animation: none !important;
+    transition: none !important;
+}
+
+.animacion-pausada {
+    animation-play-state: paused;
+}
+
+.transicion-desactivada {
+    transition: none !important;
+}
+
+/* 12. OPTIMIZACIONES PARA MÓVIL */
+@media (max-width: 768px) {
+    .animacion-entrada,
+    .animacion-deslizar-arriba,
+    .animacion-escala {
+        animation-duration: 0.3s; /* Más rápido en móvil */
+    }
+    
+    .estado-hover:hover {
+        transform: none; /* Menos transform en hover móvil */
+    }
+}
+
+/* 13. MEJORA DE RENDIMIENTO EN SCROLL */
+.contenedor-scroll-optimizado {
+    transform: translateZ(0);
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 14. CRITICAL CSS OPTIMIZADO */
+/* Estas clases se cargan primero para above-the-fold content */
+.critical-visible {
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+.critical-hidden {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
 /* ========================================================= */
 /* BLOQUE 2 – TABS OPTIMIZADOS PARA MÓVIL (VERTICAL)         */
 /* ========================================================= */
@@ -4843,6 +5200,7 @@ select:focus-visible {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
 
 
 
