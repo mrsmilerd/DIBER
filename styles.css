@@ -7,15 +7,16 @@
 /* ============================================= */
 
 :root {
-    /* Paleta de Colores Principal */
-    --primary-blue: #1a73e8;
+    /* Paleta de Colores Principal UNIFICADA */
+    --primary-blue: #00AEEF;  /* Tu azul brillante consistente */
+    --primary-blue-dark: #0086bd;
     --secondary-orange: #f5a623;
     --success-green: #4CAF50;
     --warning-orange: #FF9800;
     --error-red: #f44336;
     --info-blue: #2196F3;
     
-    /* Escala de Grises */
+    /* Mantener el resto de variables igual */
     --dark-grey: #424242;
     --medium-grey: #757575;
     --light-grey: #f5f5f7;
@@ -31,8 +32,8 @@
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.15);
     
-    /* Gradientes */
-    --gradient-primary: linear-gradient(135deg, #1a73e8, #1565c0);
+    /* Gradientes ACTUALIZADOS con el nuevo azul */
+    --gradient-primary: linear-gradient(135deg, #00AEEF, #0086bd);
     --gradient-success: linear-gradient(135deg, #4CAF50, #45a049);
     --gradient-warning: linear-gradient(135deg, #FF9800, #f57c00);
     --gradient-error: linear-gradient(135deg, #f44336, #d32f2f);
@@ -222,7 +223,7 @@ body {
     top: 6px;
     bottom: 6px;
     left: 6px;
-    width: calc(25% - 6px);
+    width: calc(33.333% - 6px); /* Cambiado de 25% (4 tabs) a 33.333% (3 tabs) */
     background: var(--card-bg);
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -230,11 +231,10 @@ body {
     z-index: 1;
 }
 
-/* Posiciones del indicador */
+/* Posiciones del indicador ACTUALIZADAS para 3 tabs */
 .tabs-header[data-active-tab="0"]::before { transform: translateX(0); }
 .tabs-header[data-active-tab="1"]::before { transform: translateX(100%); }
 .tabs-header[data-active-tab="2"]::before { transform: translateX(200%); }
-.tabs-header[data-active-tab="3"]::before { transform: translateX(300%); }
 
 .tab-button {
     flex: 1;
@@ -4108,31 +4108,6 @@ body,
 }
 
 /* ========================================================= */
-/* BLOQUE 12 – PALETA MEJORADA                               */
-/* ========================================================= */
-
-/* Ajustes sutiles del azul */
-:root {
-    --primary-blue: #00AEEF;  /* tu azul brillante */
-    --primary-blue-dark: #0086bd;
-    --primary-orange: #F7941D; /* tu naranja intenso */
-}
-
-/* Hover del azul */
-.primary-button:hover {
-    background-color: var(--primary-blue-dark) !important;
-}
-
-/* Acentos */
-.text-accent {
-    color: var(--primary-blue) !important;
-}
-
-.bg-accent {
-    background-color: var(--primary-blue) !important;
-}
-
-/* ========================================================= */
 /* BLOQUE 13 – RENDIMIENTO                                   */
 /* ========================================================= */
 
@@ -4201,3 +4176,4 @@ body,
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
