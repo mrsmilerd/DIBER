@@ -3221,6 +3221,12 @@ function activarUbicacion() {
     
     const btn = document.getElementById('activar-ubicacion-btn');
     const status = document.getElementById('location-status');
+
+    const ring = document.getElementById('logo-status-ring');
+if (ring) {
+    ring.classList.remove("active", "error");
+    ring.classList.add("loading"); // 🟡 cargando
+}
     
     if (btn) {
         btn.innerHTML = '<span class="button-icon">🔄</span> Obteniendo ubicación...';
@@ -3230,6 +3236,11 @@ function activarUbicacion() {
     navigator.geolocation.getCurrentPosition(
         (position) => {
             console.log('✅ Ubicación obtenida correctamente');
+
+            if (ring) {
+    ring.classList.remove("loading", "error");
+    ring.classList.add("active"); // 🟢 activo
+}
             
             if (btn) {
                 btn.style.display = 'none';
@@ -3258,6 +3269,11 @@ function activarUbicacion() {
         },
         (error) => {
             console.error('❌ Error obteniendo ubicación:', error);
+
+            if (ring) {
+    ring.classList.remove("loading", "active");
+    ring.classList.add("error"); // 🔴 error
+}
             
             if (btn) {
                 btn.innerHTML = '<span class="button-icon">📍</span> Activar Análisis de Tráfico';
@@ -4223,6 +4239,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
