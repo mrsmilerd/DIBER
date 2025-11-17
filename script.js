@@ -82,8 +82,7 @@ function crearModalCronometro(resultado) {
     modalFondo.id = 'modal-cronometro';
     modalFondo.className = 'modal-cronometro-fondo';
     
-    // ✅ CORREGIDO: Calcular porcentajes con el orden correcto
-    // Tu tiempo estimado primero, tiempo con tráfico después
+    // ✅ CORREGIDO: ORDEN CORRECTO - Tu tiempo primero, luego tráfico
     const tiempoUsuario = resultado.minutos; // ✅ Este es el tiempo que INGRESASTE (4 min)
     const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos; // ✅ Este es el cálculo automático (6 min)
     
@@ -102,7 +101,7 @@ function crearModalCronometro(resultado) {
                 </div>
             </div>
             
-            <!-- INFO -->
+            <!-- INFO - ✅ ORDEN CORREGIDO -->
             <div class="cronometro-info">
                 <div class="info-item">
                     <span class="info-label">Tu estimación</span>
@@ -114,7 +113,7 @@ function crearModalCronometro(resultado) {
                 </div>
             </div>
             
-            <!-- PROGRESO - CORREGIDO EL ORDEN -->
+            <!-- PROGRESO - ✅ ORDEN CORREGIDO -->
             <div class="cronometro-progreso">
                 <div class="barra-progreso-container">
                     <div class="barra-progreso">
@@ -145,7 +144,7 @@ function crearModalCronometro(resultado) {
         </div>
     `;
     
-     document.body.appendChild(modalFondo);
+    document.body.appendChild(modalFondo);
     
     setTimeout(agregarEfectosVisuales, 100);
 }
@@ -168,8 +167,8 @@ function iniciarCronometroConViaje(resultado) {
     const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
     
     console.log('🎯 Tiempos para cronómetro:', {
-        tiempoUsuario: tiempoUsuario, // ✅ TU tiempo (4 min)
-        tiempoAjustado: tiempoAjustado, // ✅ Tiempo con tráfico (6 min)
+        tiempoUsuario: tiempoUsuario, // ✅ TU tiempo (4 min) - PRIMERO
+        tiempoAjustado: tiempoAjustado, // ✅ Tiempo con tráfico (6 min) - SEGUNDO
         tiempoOriginalResultado: resultado.minutos
     });
 
@@ -192,8 +191,8 @@ function iniciarCronometroConViaje(resultado) {
     // Mostrar banner modal CON ORDEN CORRECTO
     crearModalCronometro({
         ...resultado,
-        minutos: tiempoUsuario, // ✅ Pasar el tiempo del usuario
-        tiempoAjustado: tiempoAjustado // ✅ Pasar el tiempo ajustado
+        minutos: tiempoUsuario, // ✅ Pasar el tiempo del usuario PRIMERO
+        tiempoAjustado: tiempoAjustado // ✅ Pasar el tiempo ajustado SEGUNDO
     });
     
     // Actualizar cada segundo
@@ -4397,6 +4396,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
