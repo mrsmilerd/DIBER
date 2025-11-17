@@ -4390,6 +4390,48 @@ select:focus-visible {
 .borde-oportunidad { border-color: var(--warning-orange) !important; }
 .borde-no-rentable { border-color: var(--error-red) !important; }
 
+/* 11. MEJORAS VISUALES PARA ORDEN DE TIEMPOS */
+.cronometro-info .info-item:first-child {
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-left: 3px solid #4CAF50;
+}
+
+.cronometro-info .info-item:last-child {
+    background: rgba(255, 152, 0, 0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    border-left: 3px solid #FF9800;
+}
+
+.cronometro-info .info-label {
+    font-weight: 600;
+    font-size: 0.9em;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.cronometro-info .info-valor {
+    font-weight: 700;
+    font-size: 1.1em;
+    display: block;
+}
+
+/* Mejora visual para los marcadores de tiempo */
+.marcador.verde {
+    background: #4CAF50 !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+}
+
+.marcador.inicio, .marcador.fin {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #2d3436 !important;
+    font-weight: 600;
+}
+
 /* ============================================= */
 /* BLOQUE 5 - OPTIMIZACIÓN RENDIMIENTO Y ANIMACIONES */
 /* ============================================= */
@@ -5963,3 +6005,4 @@ select:focus-visible {
 #perfil-screen .logo-container::after {
     display: none !important;
 }
+
