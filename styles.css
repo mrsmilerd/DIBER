@@ -5627,3 +5627,122 @@ select:focus-visible {
     margin-top: 1.5rem;
     justify-content: center;
 }
+
+/* ============================================= */
+/* SISTEMA DE ANILLO DE ESTADO PARA LOGO - MEJORADO */
+/* ============================================= */
+
+.logo-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+/* Anillo de estado - VERSIÓN MEJORADA */
+.logo-status-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 74px; /* Un poco más grande que el logo */
+    height: 74px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    pointer-events: none;
+    z-index: 2;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+}
+
+/* Estados del anillo */
+.logo-status-ring.active {
+    border-color: #4CAF50; /* Verde - Ubicación activa */
+    box-shadow: 
+        0 0 0 1px rgba(76, 175, 80, 0.3),
+        0 0 12px rgba(76, 175, 80, 0.2);
+    animation: pulseStatus 2s ease-in-out infinite;
+}
+
+.logo-status-ring.error {
+    border-color: #f44336; /* Rojo - Error/sin permisos */
+    box-shadow: 
+        0 0 0 1px rgba(244, 67, 54, 0.3),
+        0 0 12px rgba(244, 67, 54, 0.2);
+}
+
+.logo-status-ring.loading {
+    border-color: #FF9800; /* Amarillo - Obteniendo ubicación */
+    box-shadow: 
+        0 0 0 1px rgba(255, 152, 0, 0.3),
+        0 0 12px rgba(255, 152, 0, 0.2);
+    animation: spinStatus 1.5s linear infinite;
+}
+
+/* Animación de pulso profesional para estado activo */
+@keyframes pulseStatus {
+    0% {
+        box-shadow: 
+            0 0 0 0 rgba(76, 175, 80, 0.4),
+            0 0 0 1px rgba(76, 175, 80, 0.3);
+    }
+    70% {
+        box-shadow: 
+            0 0 0 8px rgba(76, 175, 80, 0),
+            0 0 0 1px rgba(76, 175, 80, 0.3);
+    }
+    100% {
+        box-shadow: 
+            0 0 0 0 rgba(76, 175, 80, 0),
+            0 0 0 1px rgba(76, 175, 80, 0.3);
+    }
+}
+
+/* Animación de spin para estado de carga */
+@keyframes spinStatus {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Efecto de respiración sutil para estado activo */
+@keyframes breathe {
+    0%, 100% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.02);
+    }
+}
+
+.logo-status-ring.active {
+    animation: 
+        pulseStatus 2s ease-in-out infinite,
+        breathe 3s ease-in-out infinite;
+}
+
+/* Responsive para el anillo */
+@media (max-width: 768px) {
+    .logo-status-ring {
+        width: 68px;
+        height: 68px;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo-status-ring {
+        width: 64px;
+        height: 64px;
+    }
+}
