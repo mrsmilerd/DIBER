@@ -525,14 +525,17 @@
         <div id="history-list" class="history-list">
             <!-- Los cálculos aparecerán aquí -->
         </div>
-        <div class="history-actions">
-            <button id="exportar-historial" class="secondary-button small">
-                📤 Exportar Historial
-            </button>
-            <button id="clear-history" class="secondary-button small">
-                🗑️ Limpiar Historial
-            </button>
-        </div>
+<div class="history-actions">
+    <button id="exportar-historial" class="secondary-button small">
+        📤 Exportar Historial
+    </button>
+    <button id="migrar-viajes" class="secondary-button small">
+        🔄 Actualizar Rentabilidad
+    </button>
+    <button id="clear-history" class="secondary-button small">
+        🗑️ Limpiar Historial
+    </button>
+</div>
     </div>
 </div>
 
@@ -577,16 +580,16 @@
 
             <!-- Tiempo ajustado -->
             <div class="tiempo-ajustado-section">
-                <div class="tiempo-original">
-                    <span class="tiempo-label">Tiempo estimado:</span>
-                    <span class="tiempo-valor" id="modal-tiempo-original">-- min</span>
-                </div>
-                <div class="flecha-ajuste">↓</div>
-                <div class="tiempo-real">
-                    <span class="tiempo-label">Con tráfico real:</span>
-                    <span class="tiempo-valor destacado" id="modal-tiempo-real">-- min</span>
-                </div>
-            </div>
+    <div class="tiempo-original">
+        <span class="tiempo-label">Tiempo estimado:</span>
+        <span class="tiempo-valor" id="modal-tiempo-original">-- min</span>
+    </div>
+    <div class="flecha-ajuste">↓</div>
+    <div class="tiempo-real">
+        <span class="tiempo-label">Con tráfico real:</span>
+        <span class="tiempo-valor destacado" id="modal-tiempo-real">-- min</span>
+    </div>
+</div>
 
             <!-- Resultado principal -->
             <div class="resultado-principal" id="modal-resultado-principal">
