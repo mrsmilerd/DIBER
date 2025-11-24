@@ -118,12 +118,16 @@ function crearModalCronometro(resultado) {
     modalFondo.id = 'modal-cronometro';
     modalFondo.className = 'modal-cronometro-fondo';
     
-    // ✅ CORREGIDO: Calcular porcentajes con el orden correcto
-    // Tu tiempo estimado primero, tiempo con tráfico después
-    const tiempoUsuario = resultado.minutos;
-    const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
-    
-    const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoAjustado);
+// Valores provenientes del resultado
+const tiempoUsuario = resultado.minutos;
+const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
+
+// El mayor valor será el tiempo final del gráfico
+const tiempoTotal = Math.max(tiempoUsuario, tiempoAjustado);
+
+// Cálculo de porcentajes para los marcadores
+const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoTotal);
+const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
     
     modalFondo.innerHTML = `
         <div class="modal-cronometro-contenido estado-verde">
@@ -4782,5 +4786,6 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
