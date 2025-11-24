@@ -1,3 +1,17 @@
+// ==================== OPTIMIZACIONES DE RENDIMIENTO ====================
+function debounce(fn, wait = 350) {
+    let t;
+    return function(...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+    };
+}
+
+window._diber = window._diber || {};
+window._diber.rutaEnProgreso = false;
+window._diber.syncTimer = null;
+window._diber.rutaCache = new Map();
+
 // =============================================
 // DIBER - Calculadora Inteligente para Conductores
 // Versión Corregida y Sincronizada con HTML
@@ -4793,9 +4807,3 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
-
-
-
-
-
-
