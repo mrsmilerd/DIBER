@@ -5963,3 +5963,24 @@ select:focus-visible {
 #perfil-screen .logo-container::after {
     display: none !important;
 }
+
+.marcadores-tiempo .marcador {
+    position: absolute;
+    transform: translateX(-50%);
+}
+
+.marcador.inicio {
+    z-index: 1;
+}
+
+.marcador.verde { /* TU ESTIMACIÓN */
+    z-index: 2;
+}
+
+.marcador.amarillo { /* CON TRÁFICO */
+    z-index: 3;
+}
+
+.marcador.fin { /* TIEMPO TOTAL */
+    z-index: 4;
+}
