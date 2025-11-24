@@ -117,20 +117,19 @@ function crearModalCronometro(resultado) {
     const modalFondo = document.createElement('div');
     modalFondo.id = 'modal-cronometro';
     modalFondo.className = 'modal-cronometro-fondo';
-    
-// Valores provenientes del resultado
-const tiempoUsuario = resultado.minutos;
-const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
 
-// El mayor valor será el tiempo final del gráfico
-const tiempoTotal = Math.max(tiempoUsuario, tiempoAjustado);
+    // Valores (vienen de iniciarCronometroConViaje)
+    const tiempoUsuario = resultado.minutos;
+    const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
+    const tiempoTotal = resultado.tiempoTotal || Math.max(tiempoUsuario, tiempoAjustado);
 
-// Cálculo de porcentajes para los marcadores
-const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoTotal);
-const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
-    
+    // Porcentajes relativos (referencia = tiempoTotal)
+    const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoTotal);
+    const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
+
+    // Build HTML con ambos marcadores y el "fin" real
     modalFondo.innerHTML = `
-        <div class="modal-cronometro-contenido estado-verde">
+        <div class="modal-cronometro-contenido estado-verde" id="modal-cronometro-contenido">
             <!-- HEADER -->
             <div class="cronometro-header">
                 <div class="cronometro-titulo">
@@ -154,17 +153,17 @@ const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
                 </div>
             </div>
             
-            <!-- PROGRESO - CORREGIDO EL ORDEN -->
+            <!-- PROGRESO -->
             <div class="cronometro-progreso">
                 <div class="barra-progreso-container">
-                    <div class="barra-progreso">
-                        <div class="progreso-fill" id="progreso-fill"></div>
+                    <div class="barra-progreso" role="progressbar" aria-valuemin="0" aria-valuemax="${tiempoTotal}" aria-valuenow="0">
+                        <div class="progreso-fill" id="progreso-fill" style="width: 0%"></div>
                     </div>
-                    <div class="marcadores-tiempo">
+                    <div class="marcadores-tiempo" aria-hidden="true">
                         <span class="marcador inicio">0</span>
-<span class="marcador verde" style="left: ${porcentajeUsuario}%">${tiempoUsuario}</span>
-<span class="marcador amarillo" style="left: ${porcentajeAjustado}%">${tiempoAjustado}</span>
-<span class="marcador fin">${tiempoTotal}</span>
+                        <span class="marcador verde" style="left: ${porcentajeUsuario}%">${tiempoUsuario}</span>
+                        <span class="marcador amarillo" style="left: ${porcentajeAjustado}%">${tiempoAjustado}</span>
+                        <span class="marcador fin">${tiempoTotal}</span>
                     </div>
                 </div>
             </div>
@@ -178,9 +177,9 @@ const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
             </div>
         </div>
     `;
-    
-     document.body.appendChild(modalFondo);
-    
+
+    document.body.appendChild(modalFondo);
+
     setTimeout(agregarEfectosVisuales, 100);
 }
 
@@ -203,33 +202,42 @@ function iniciarCronometroConViaje(resultado) {
     // Cerrar modal rápido
     cerrarModalRapido();
 
-   const tiempoUsuario = parseFloat(elementos.minutos.value) || resultado.minutos;
-const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
+    // Tomar valores (respeta input si el usuario lo cambió)
+    const tiempoUsuario = parseFloat(elementos.minutos.value) || resultado.minutos;
+    const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
 
-// NORMALIZAR: usar el mayor de los dos como referencia para la barra/progreso
-const tiempoTotal = Math.max(tiempoUsuario, tiempoAjustado);
+    // REFERENCIA: usamos el mayor de los dos para normalizar barras/posiciones
+    const tiempoTotal = Math.max(tiempoUsuario, tiempoAjustado);
 
-cronometro.viajeActual = {
-  ...resultado,
-  timestampInicio: new Date().toISOString(),
-  tiempoEstimado: tiempoUsuario, // Texto/valor del usuario
-  tiempoAjustado: tiempoAjustado, // Valor calculado por tráfico
-  tiempoBase: tiempoUsuario,
-  tiempoMaximo: tiempoTotal // <-- usar el mayor para normalizar barra y colores
-};
+    console.log('🎯 INICIANDO CRONÓMETRO - valores:', {
+        tiempoUsuario,
+        tiempoAjustado,
+        tiempoTotal
+    });
+
+    // Guardar en viajeActual usando tiempoTotal como tiempoMaximo
+    cronometro.viajeActual = {
+        ...resultado,
+        timestampInicio: new Date().toISOString(),
+        tiempoEstimado: tiempoUsuario,
+        tiempoAjustado: tiempoAjustado,
+        tiempoBase: tiempoUsuario,   // referencia para color VERDE
+        tiempoMaximo: tiempoTotal    // referencia para progreso y colores
+    };
 
     // Iniciar cronómetro
     cronometro.activo = true;
     cronometro.inicio = Date.now();
     cronometro.tiempoTranscurridoSegundos = 0;
 
-    // Mostrar modal CON ORDEN GARANTIZADO
+    // Mostrar modal — pasar los valores claros
     crearModalCronometro({
         ...resultado,
         minutos: tiempoUsuario,
-        tiempoAjustado: tiempoAjustado
+        tiempoAjustado: tiempoAjustado,
+        tiempoTotal: tiempoTotal
     });
-    
+
     // Actualizar cada segundo
     cronometro.intervalo = setInterval(actualizarCronometro, 1000);
 
@@ -4786,6 +4794,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
