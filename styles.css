@@ -5964,23 +5964,17 @@ select:focus-visible {
     display: none !important;
 }
 
+/* FORZAR ORDEN VISUAL CORRECTO */
+.marcadores-tiempo {
+    display: flex !important;
+    justify-content: space-between !important;
+    position: relative !important;
+    width: 100% !important;
+    margin-top: 6px;
+}
+
+/* Cada marcador se coloca en orden, no por posición absoluta */
 .marcadores-tiempo .marcador {
-    position: absolute;
-    transform: translateX(-50%);
-}
-
-.marcador.inicio {
-    z-index: 1;
-}
-
-.marcador.verde { /* TU ESTIMACIÓN */
-    z-index: 2;
-}
-
-.marcador.amarillo { /* CON TRÁFICO */
-    z-index: 3;
-}
-
-.marcador.fin { /* TIEMPO TOTAL */
-    z-index: 4;
+    position: static !important;
+    transform: none !important;
 }
