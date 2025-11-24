@@ -108,39 +108,36 @@ function agregarEfectosVisuales() {
 }
 
 function crearModalCronometro(resultado) {
-    // Remover modal existente si hay
+
+    // Si ya existe un modal, eliminarlo
     const modalExistente = document.getElementById('modal-cronometro');
-    if (modalExistente) {
-        modalExistente.remove();
-    }
+    if (modalExistente) modalExistente.remove();
 
     const modalFondo = document.createElement('div');
     modalFondo.id = 'modal-cronometro';
     modalFondo.className = 'modal-cronometro-fondo';
 
-    // Valores (vienen de iniciarCronometroConViaje)
-    const tiempoUsuario = resultado.minutos;
-    const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
-    const tiempoTotal = resultado.tiempoTotal || Math.max(tiempoUsuario, tiempoAjustado);
+    // Valores REALES
+    const tiempoUsuario = resultado.tiempoEstimado;      // tu estimación REAL
+    const tiempoAjustado = resultado.tiempoAjustado;     // cálculo tráfico
+    const tiempoTotal = resultado.tiempoTotal;           // mayor de ambos
 
-    // Porcentajes relativos (referencia = tiempoTotal)
+    // Porcentajes relativos
     const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoTotal);
     const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
 
-    // Build HTML con ambos marcadores y el "fin" real
     modalFondo.innerHTML = `
         <div class="modal-cronometro-contenido estado-verde" id="modal-cronometro-contenido">
+            
             <!-- HEADER -->
             <div class="cronometro-header">
                 <div class="cronometro-titulo">
                     <span class="cronometro-icono">🚗</span>
                     <span>Viaje en Curso</span>
                 </div>
-                <div class="cronometro-tiempo-display" id="cronometro-tiempo-display">
-                    00:00
-                </div>
+                <div class="cronometro-tiempo-display" id="cronometro-tiempo-display">00:00</div>
             </div>
-            
+
             <!-- INFO -->
             <div class="cronometro-info">
                 <div class="info-item">
@@ -152,22 +149,35 @@ function crearModalCronometro(resultado) {
                     <span class="info-valor">${tiempoAjustado} min</span>
                 </div>
             </div>
-            
+
             <!-- PROGRESO -->
             <div class="cronometro-progreso">
                 <div class="barra-progreso-container">
-                    <div class="barra-progreso" role="progressbar" aria-valuemin="0" aria-valuemax="${tiempoTotal}" aria-valuenow="0">
-                        <div class="progreso-fill" id="progreso-fill" style="width: 0%"></div>
+                    <div class="barra-progreso">
+                        <div class="progreso-fill" id="progreso-fill" style="width:0%;"></div>
                     </div>
-                    <div class="marcadores-tiempo" aria-hidden="true">
+
+                    <div class="marcadores-tiempo">
+
+                        <!-- 0 -->
                         <span class="marcador inicio">0</span>
-                        <span class="marcador verde" style="left: ${porcentajeUsuario}%">${tiempoUsuario}</span>
-                        <span class="marcador amarillo" style="left: ${porcentajeAjustado}%">${tiempoAjustado}</span>
+
+                        <!-- TU ESTIMACIÓN -->
+                        <span class="marcador verde" style="left:${porcentajeUsuario}%;">
+                            ${tiempoUsuario}
+                        </span>
+
+                        <!-- TIEMPO CON TRÁFICO -->
+                        <span class="marcador amarillo" style="left:${porcentajeAjustado}%;">
+                            ${tiempoAjustado}
+                        </span>
+
+                        <!-- FIN ABSOLUTO -->
                         <span class="marcador fin">${tiempoTotal}</span>
                     </div>
                 </div>
             </div>
-              
+
             <!-- ACCIONES -->
             <div class="cronometro-acciones">
                 <button class="btn-detener-viaje" onclick="detenerCronometro()">
@@ -175,11 +185,11 @@ function crearModalCronometro(resultado) {
                     <span class="btn-texto">Finalizar Viaje</span>
                 </button>
             </div>
+
         </div>
     `;
 
     document.body.appendChild(modalFondo);
-
     setTimeout(agregarEfectosVisuales, 100);
 }
 
@@ -202,27 +212,29 @@ function iniciarCronometroConViaje(resultado) {
     // Cerrar modal rápido
     cerrarModalRapido();
 
-    // Tomar valores (respeta input si el usuario lo cambió)
-    const tiempoUsuario = parseFloat(elementos.minutos.value) || resultado.minutos;
+    // Tomar valores REALES
+    const tiempoUsuario = parseFloat(elementos.minutos.value) || resultado.minutos; 
     const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
 
-    // REFERENCIA: usamos el mayor de los dos para normalizar barras/posiciones
+    // El mayor de los dos define el progreso final
     const tiempoTotal = Math.max(tiempoUsuario, tiempoAjustado);
 
-    console.log('🎯 INICIANDO CRONÓMETRO - valores:', {
+    console.log('🎯 INICIANDO CRONÓMETRO:', {
         tiempoUsuario,
         tiempoAjustado,
         tiempoTotal
     });
 
-    // Guardar en viajeActual usando tiempoTotal como tiempoMaximo
+    // Guardar en viajeActual para usar en progreso y colores
     cronometro.viajeActual = {
         ...resultado,
         timestampInicio: new Date().toISOString(),
-        tiempoEstimado: tiempoUsuario,
-        tiempoAjustado: tiempoAjustado,
-        tiempoBase: tiempoUsuario,   // referencia para color VERDE
-        tiempoMaximo: tiempoTotal    // referencia para progreso y colores
+
+        // Estos son los valores CLAVES
+        tiempoEstimado: tiempoUsuario,  // tu estimación REAL
+        tiempoAjustado: tiempoAjustado, // tráfico
+        tiempoBase: tiempoUsuario,      // límite verde
+        tiempoMaximo: tiempoTotal       // referencia absoluta
     };
 
     // Iniciar cronómetro
@@ -230,15 +242,15 @@ function iniciarCronometroConViaje(resultado) {
     cronometro.inicio = Date.now();
     cronometro.tiempoTranscurridoSegundos = 0;
 
-    // Mostrar modal — pasar los valores claros
+    // Mostrar modal enviando valores correctos
     crearModalCronometro({
         ...resultado,
-        minutos: tiempoUsuario,
+        tiempoEstimado: tiempoUsuario,
         tiempoAjustado: tiempoAjustado,
         tiempoTotal: tiempoTotal
     });
 
-    // Actualizar cada segundo
+    // Loop
     cronometro.intervalo = setInterval(actualizarCronometro, 1000);
 
     mostrarStatus('⏱️ Viaje iniciado', 'info');
@@ -4794,6 +4806,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
