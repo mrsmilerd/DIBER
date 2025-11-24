@@ -5978,3 +5978,36 @@ select:focus-visible {
     position: static !important;
     transform: none !important;
 }
+
+/* Marcadores estilo Google Maps ETA */
+.marcadores-tiempo {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    width: 100%;
+}
+
+.marcadores-tiempo .marcador {
+    font-size: 15px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: white;
+}
+
+.marcador.verde {
+    background: #2ecc71; /* verde suave */
+}
+
+.marcador.amarillo {
+    background: #f1c40f; /* amarillo */
+    color: #000; 
+}
+
+.marcador.inicio {
+    background: #5555;
+}
+
+.marcador.fin {
+    display: none !important; /* ocultar el duplicado del final */
+}
