@@ -158,22 +158,9 @@ function crearModalCronometro(resultado) {
                     </div>
 
                     <div class="marcadores-tiempo">
-
-                        <!-- 0 -->
-                        <span class="marcador inicio">0</span>
-
-                        <!-- TU ESTIMACIÓN -->
-                        <span class="marcador verde" style="left:${porcentajeUsuario}%;">
-                            ${tiempoUsuario}
-                        </span>
-
-                        <!-- TIEMPO CON TRÁFICO -->
-                        <span class="marcador amarillo" style="left:${porcentajeAjustado}%;">
-                            ${tiempoAjustado}
-                        </span>
-
-                        <!-- FIN ABSOLUTO -->
-                        <span class="marcador fin">${tiempoTotal}</span>
+<span class="marcador inicio">0</span>
+<span class="marcador verde" style="left:${porcentajeUsuario}%;">${tiempoUsuario}</span>
+<span class="marcador amarillo" style="left:${porcentajeAjustado}%;">${tiempoAjustado}</span>
                     </div>
                 </div>
             </div>
@@ -4806,6 +4793,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
