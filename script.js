@@ -158,15 +158,8 @@ const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
                     </div>
                     <div class="marcadores-tiempo">
 <span class="marcador inicio">0</span>
-
-<!-- Tu estimación -->
-<span class="marcador verde" style="left: ${porcentajeUsuario}%">${tiempoUsuario}</span>
-
-<!-- Tiempo con tráfico -->
-<span class="marcador amarillo" style="left: ${porcentajeAjustado}%">${tiempoAjustado}</span>
-
-<!-- Máximo de ambos -->
-<span class="marcador fin">${tiempoTotal}</span>
+<span class="marcador verde" style="left:${porcentajeUsuario}%;">${tiempoUsuario}</span>
+<span class="marcador amarillo" style="left:${porcentajeAjustado}%;">${tiempoAjustado}</span>
                     </div>
                 </div>
             </div>
@@ -4788,4 +4781,5 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
