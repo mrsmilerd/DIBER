@@ -6,7 +6,6 @@
     <title>DIBER - Calculadora Inteligente para Conductores</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="logo_b.png" type="image/png">
-    <link rel="manifest" href="/manifest.json">
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -755,14 +754,5 @@
     </div>
 
     <script src="script.js"></script>
-
-                <script>
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/service-worker.js")
-        .then(() => console.log("Service Worker registrado ✔️"))
-        .catch(err => console.log("Error SW", err));
-}
-</script>
 </body>
 </html>
-
