@@ -6136,3 +6136,86 @@ select:focus-visible {
     border-left-color: #FF9800;
     background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 152, 0, 0.05) 100%);
 }
+
+/* ============================================= */
+/* ESTILOS PARA SISTEMA DE ESPERA - FINALES */
+/* ============================================= */
+
+/* Badge de espera en historial */
+.espera-badge-historial {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid #FFC107;
+    border-radius: 8px;
+    padding: 4px 10px;
+    margin-left: 10px;
+    font-size: 0.8em;
+    vertical-align: middle;
+}
+
+.espera-icono-small {
+    font-size: 0.9em;
+}
+
+.espera-texto-small {
+    color: #FF9800;
+    font-weight: 600;
+}
+
+/* Viajes con tiempo de espera en historial */
+.history-item.con-espera {
+    border-left-color: #FF9800 !important;
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 152, 0, 0.08) 100%);
+}
+
+/* Animación para contador urgente */
+@keyframes pulseUrgent {
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4);
+    }
+    50% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 0 4px rgba(244, 67, 54, 0.2);
+    }
+}
+
+.contador-urgente {
+    animation: pulseUrgent 0.5s infinite;
+}
+
+/* Responsive para el sistema de espera */
+@media (max-width: 768px) {
+    .espera-badge-historial {
+        display: block;
+        margin: 8px 0 0 0;
+        width: fit-content;
+    }
+    
+    .contador-espera-section {
+        padding: 12px;
+        margin: 12px 0;
+    }
+    
+    .espera-tiempo {
+        font-size: 2em;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn-espera-cliente {
+        padding: 12px 16px;
+        font-size: 0.95em;
+    }
+    
+    .espera-tiempo {
+        font-size: 1.8em;
+    }
+    
+    .espera-badge-historial {
+        font-size: 0.75em;
+        padding: 3px 8px;
+    }
+}
