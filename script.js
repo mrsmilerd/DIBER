@@ -5298,14 +5298,3 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
-
-    // =============================================
-// CIERRE FINAL - SOLUCIÓN PARA "Unexpected end of input"
-// =============================================
-
-// Cierra todos los event listeners pendientes
-});
-
-// Mensaje de confirmación
-console.log('🎉 DIBER - Script completamente cargado y listo');
-
