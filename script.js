@@ -130,12 +130,11 @@ function crearModalCronometro(resultado) {
     modalFondo.id = 'modal-cronometro';
     modalFondo.className = 'modal-cronometro-fondo';
     
-const tiempoUsuario = resultado.minutos;
-const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
-const tiempoTotal = Math.max(tiempoUsuario, tiempoAjustado);
-
-const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoTotal);
-const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
+    // ✅ CORREGIDO: Calcular porcentajes con el orden correcto
+    const tiempoUsuario = resultado.minutos;
+    const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
+    
+    const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoAjustado);
     
     modalFondo.innerHTML = `
         <div class="modal-cronometro-contenido estado-verde">
@@ -147,6 +146,20 @@ const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
                 </div>
                 <div class="cronometro-tiempo-display" id="cronometro-tiempo-display">
                     00:00
+                </div>
+            </div>
+            
+            <!-- ✅ NUEVO: CONTADOR DE ESPERA -->
+            <div id="contador-espera-section" class="contador-espera-section hidden">
+                <div class="espera-header">
+                    <span class="espera-icono">⏱️</span>
+                    <span class="espera-texto">Tiempo de Espera</span>
+                </div>
+                <div class="espera-tiempo" id="espera-tiempo-display">
+                    02:00
+                </div>
+                <div class="espera-info">
+                    <span class="espera-subtexto">Cobro extra: RD$2.86/min después de 2min</span>
                 </div>
             </div>
             
@@ -169,24 +182,38 @@ const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
                         <div class="progreso-fill" id="progreso-fill"></div>
                     </div>
                     <div class="marcadores-tiempo">
-<span class="marcador inicio">0</span>
-<span class="marcador verde" style="left:${porcentajeUsuario}%;">${tiempoUsuario}</span>
-<span class="marcador amarillo" style="left:${porcentajeAjustado}%;">${tiempoAjustado}</span>
+                        <span class="marcador inicio">0</span>
+                        <span class="marcador verde" style="left: ${porcentajeUsuario}%">${tiempoUsuario}</span>
+                        <span class="marcador fin">${tiempoAjustado}</span>
                     </div>
                 </div>
             </div>
-              
-            <!-- ACCIONES -->
+            
+            <!-- ESTADO -->
+            <div class="cronometro-estado" id="cronometro-estado">
+                <span class="estado-icono">✅</span>
+                <span class="estado-texto">Dentro de tu tiempo estimado</span>
+            </div>
+            
+            <!-- ✅ ACCIONES MEJORADAS -->
             <div class="cronometro-acciones">
+                <!-- NUEVO BOTÓN DE ESPERA -->
+                <button class="btn-espera-cliente" onclick="activarModoEspera()" id="btn-activar-espera">
+                    <span class="btn-icono">⏸️</span>
+                    <span class="btn-texto">Cliente Bajando (2min)</span>
+                </button>
+                
                 <button class="btn-detener-viaje" onclick="detenerCronometro()">
                     <span class="btn-icono">🛑</span>
                     <span class="btn-texto">Finalizar Viaje</span>
                 </button>
+                
+                <div class="instruccion">Toca cuando llegues a tu destino</div>
             </div>
         </div>
     `;
     
-     document.body.appendChild(modalFondo);
+    document.body.appendChild(modalFondo);
     
     setTimeout(agregarEfectosVisuales, 100);
 }
@@ -412,7 +439,9 @@ function procesarViajeConTiempoReal(tiempoRealMinutos) {
         tiempoReal: tiempoRealMinutos,
         timestampFin: new Date().toISOString(),
         diferenciaTiempo: tiempoRealMinutos - cronometro.viajeActual.tiempoEstimado,
-        tiempoRealCapturado: true
+        tiempoRealCapturado: true,
+        aceptado: true, // Porque el viaje se completó
+        minutos: tiempoRealMinutos // Usar tiempo real
     };
 
     // ✅ AGREGAR DATOS DE ESPERA SI EXISTEN
@@ -428,8 +457,8 @@ function procesarViajeConTiempoReal(tiempoRealMinutos) {
         });
     }
 
-    // Guardar en historial
-    agregarAlHistorialConTiempoReal(viajeConTiempoReal);
+    // ✅ LLAMAR DIRECTAMENTE A agregarAlHistorial
+    agregarAlHistorial(viajeConTiempoReal);
 
     // Mostrar resumen
     mostrarResumenTiempoReal(viajeConTiempoReal);
@@ -1986,7 +2015,7 @@ async function agregarAlHistorial(viaje) {
         texto = viaje.texto;
     } else if (perfilActual) {
         // CALCULAR RENTABILIDAD si no está definida
-        const tarifa = viaje.tarifa || viaje.ganancia || 0;
+        const tarifa = viaje.gananciaTotal || viaje.tarifa || viaje.ganancia || 0; // ← USAR gananciaTotal
         const minutos = viaje.minutos || 0;
         const distancia = viaje.distancia || 0;
         const porMinuto = minutos > 0 ? (tarifa / minutos) : 0;
@@ -2015,17 +2044,17 @@ async function agregarAlHistorial(viaje) {
 
     const nuevoViaje = {
         id: 'viaje_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-        ganancia: viaje.tarifa || viaje.ganancia || 0,
+        ganancia: viaje.gananciaTotal || viaje.tarifa || viaje.ganancia || 0, // ← USAR gananciaTotal
         tarifa: viaje.tarifa || viaje.ganancia || 0,
         minutos: viaje.minutos || 0,
         distancia: viaje.distancia || 0,
         porMinuto: parseFloat((viaje.gananciaPorMinuto || 0).toFixed(2)),
         porKm: parseFloat((viaje.gananciaPorKm || 0).toFixed(2)),
-        rentable: rentabilidad === 'rentable', // ✅ Basado en cálculo correcto
+        rentable: rentabilidad === 'rentable',
         rentabilidad: rentabilidad,
         emoji: emoji,
         texto: texto,
-        aceptado: viaje.aceptado !== undefined ? viaje.aceptado : true, // ✅ Respetar el valor
+        aceptado: viaje.aceptado !== undefined ? viaje.aceptado : true,
         fecha: new Date().toLocaleString('es-DO', {
             year: 'numeric',
             month: '2-digit',
@@ -2039,6 +2068,12 @@ async function agregarAlHistorial(viaje) {
         costoMantenimiento: viaje.costoMantenimiento || 0,
         costoSeguro: viaje.costoSeguro || 0,
         costoTotal: viaje.costoTotal || 0,
+        // ✅ AGREGAR DATOS DE ESPERA
+        tiempoEspera: viaje.tiempoEspera || 0,
+        costoEspera: viaje.costoEspera || 0,
+        tiempoRealCapturado: viaje.tiempoRealCapturado || false,
+        tiempoReal: viaje.tiempoReal || 0,
+        tiempoEstimado: viaje.tiempoEstimado || 0,
         perfilId: perfilActual?.id,
         perfilNombre: perfilActual?.nombre
     };
@@ -2046,7 +2081,9 @@ async function agregarAlHistorial(viaje) {
     console.log('📝 Viaje procesado para historial:', {
         aceptado: nuevoViaje.aceptado,
         rentabilidad: nuevoViaje.rentabilidad,
-        texto: nuevoViaje.texto
+        texto: nuevoViaje.texto,
+        tiempoEspera: nuevoViaje.tiempoEspera,
+        costoEspera: nuevoViaje.costoEspera
     });
 
     historial.unshift(nuevoViaje);
@@ -4986,6 +5023,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
