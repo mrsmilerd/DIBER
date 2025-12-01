@@ -1452,26 +1452,43 @@ class FirebaseSync {
         }
     }
 
-    async saveTrip(trip) {
-        if (!this.initialized) return false;
+   async saveTrip(trip) {
+    if (!this.initialized) return false;
 
-        try {
-            const tripRef = this.db.collection('users').doc(this.userId)
-                .collection('trips').doc(trip.id);
-            
-            await tripRef.set({
-                ...trip,
-                lastSync: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-            
-            console.log('✅ Viaje guardado en Firebase');
-            return true;
-            
-        } catch (error) {
-            console.error('❌ Error guardando viaje en Firebase:', error);
-            return false;
-        }
+    try {
+        // ✅ LIMPIAR DATOS ANTES DE ENVIAR A FIREBASE
+        const tripClean = {};
+        
+        // Copiar solo propiedades definidas
+        Object.keys(trip).forEach(key => {
+            if (trip[key] !== undefined && trip[key] !== null) {
+                tripClean[key] = trip[key];
+            }
+        });
+        
+        // ✅ ASEGURAR CAMPOS CRÍTICOS
+        tripClean.tarifa = tripClean.tarifa || 0;
+        tripClean.ganancia = tripClean.ganancia || 0;
+        tripClean.minutos = tripClean.minutos || 0;
+        tripClean.distancia = tripClean.distancia || 0;
+        tripClean.rentabilidad = tripClean.rentabilidad || 'no-rentable';
+        
+        const tripRef = this.db.collection('users').doc(this.userId)
+            .collection('trips').doc(tripClean.id);
+        
+        await tripRef.set({
+            ...tripClean,
+            lastSync: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        
+        console.log('✅ Viaje guardado en Firebase');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error guardando viaje en Firebase:', error);
+        return false;
     }
+}
 
     // ✅ MÉTODO CORREGIDO - DENTRO DE LA CLASE
     async saveRouteLearning(learningData) {
@@ -5254,6 +5271,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
