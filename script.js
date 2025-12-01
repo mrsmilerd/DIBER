@@ -2379,7 +2379,7 @@ async function agregarAlHistorial(viaje) {
             actualizarEstadisticas();
         }, 100);
         
-  // ✅ MOSTRAR RESUMEN SOLO PARA VIAJES CON TIEMPO REAL
+// ✅ MOSTRAR RESUMEN SOLO PARA VIAJES CON TIEMPO REAL
 if (viajeCompleto.tiempoRealCapturado && viajeCompleto.tiempoReal > 0) {
     setTimeout(() => {
         console.log('📊 Llamando a mostrarResumenTiempoReal...');
@@ -2390,6 +2390,10 @@ if (viajeCompleto.tiempoRealCapturado && viajeCompleto.tiempoReal > 0) {
             console.warn('⚠️ Omitiendo resumen - datos inválidos:', viajeCompleto);
         }
     }, 500);
+}
+
+} catch (error) {
+    console.error('❌ Error crítico en agregarAlHistorial:', error);
 }
 
 function actualizarHistorialConFiltros() {
@@ -5304,3 +5308,4 @@ window.addEventListener('beforeunload', function() {
 
 // Mensaje de confirmación
 console.log('🎉 DIBER - Script completamente cargado y listo');
+
