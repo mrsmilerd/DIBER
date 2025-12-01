@@ -418,7 +418,7 @@ function detenerCronometro() {
         
        // Tiempos
         tiempoReal: tiempoRealMinutos,
-        tarifaOfrecida: tarifaBase,
+        tarifaOfrecida: gananciaTotalFinal.toFixed(2),
         tiempoEstimado: cronometro.viajeActual.tiempoEstimado,
         diferenciaTiempo: tiempoRealMinutos - cronometro.viajeActual.tiempoEstimado,
         gananciaTotal: gananciaTotalFinal.toFixed(2),
@@ -442,6 +442,9 @@ function detenerCronometro() {
 
     console.log('🔄 Procesando viaje con tiempo real...');
     procesarViajeConTiempoReal(viajeConTiempoReal);
+
+    // 💡 DEPURACIÓN CLAVE: Verifique esto en la Consola del navegador
+    console.log('✅ Objeto Final del Viaje a Guardar:', viajeConTiempoReal);
     
     // Limpiar
     const modalCronometro = document.getElementById('modal-cronometro');
@@ -4990,6 +4993,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
