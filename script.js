@@ -602,107 +602,127 @@ function agregarAlHistorialDirecto(viaje) {
 }
 
 // =============================================
-// CORRECCIÓN FINAL DE mostrarResumenTiempoReal
+// VERSIÓN ULTRA-SEGURA DE mostrarResumenTiempoReal
 // =============================================
 
 function mostrarResumenTiempoReal(viaje) {
-    console.log('📊 MOSTRAR RESUMEN PARA VIAJE (CON VALIDACIÓN):', viaje);
-    
-    if (!viaje) {
-        console.error('❌ Viaje es undefined o null');
-        mostrarError('No se pudo generar el resumen. Datos del viaje no encontrados.');
-        return;
-    }
+    try {
+        console.log('📊 MOSTRAR RESUMEN PARA VIAJE:', viaje);
+        
+        // ✅ VERIFICACIÓN MÁXIMA DE SEGURIDAD
+        if (!viaje || typeof viaje !== 'object') {
+            console.error('❌ Viaje es inválido:', viaje);
+            mostrarError('Error: Datos del viaje no válidos');
+            return;
+        }
 
-    // ✅ FUNCIÓN SEGURA PARA OBTENER VALORES NUMÉRICOS
-    function getNumero(valor, defecto = 0) {
-        if (valor === undefined || valor === null) {
+        // ✅ FUNCIÓN DE SEGURIDAD MÁXIMA
+        function getValorSeguro(obj, propiedades, defecto = 0) {
+            if (!obj || typeof obj !== 'object') return defecto;
+            
+            // Buscar el primer valor válido en la lista de propiedades
+            for (const prop of propiedades) {
+                if (prop in obj && obj[prop] !== undefined && obj[prop] !== null) {
+                    const valor = obj[prop];
+                    // Verificar si es número válido
+                    if (typeof valor === 'number' && !isNaN(valor)) {
+                        return valor;
+                    }
+                    // Intentar convertir string a número
+                    if (typeof valor === 'string') {
+                        const num = parseFloat(valor);
+                        if (!isNaN(num)) return num;
+                    }
+                }
+            }
             return defecto;
         }
-        if (typeof valor === 'number' && !isNaN(valor)) {
-            return valor;
-        }
-        if (typeof valor === 'string') {
-            const num = parseFloat(valor);
-            return isNaN(num) ? defecto : num;
-        }
-        return defecto;
-    }
 
-    // ✅ FUNCIÓN SEGURA PARA FORMATEAR
-    function formatearNumero(valor, decimales = 1) {
-        const num = getNumero(valor, 0);
-        return num.toFixed(decimales);
-    }
-
-    // ✅ OBTENER VALORES CON SEGURIDAD
-    const tiempoReal = getNumero(viaje.tiempoReal, getNumero(viaje.minutos, 0));
-    const tiempoEstimado = getNumero(viaje.tiempoEstimado, 0);
-    const diferencia = tiempoReal - tiempoEstimado;
-    
-    console.log('🔍 Valores extraídos:', { tiempoReal, tiempoEstimado, diferencia });
-
-    // ✅ DETERMINAR MENSAJE
-    let mensaje = '';
-    if (diferencia > 5) {
-        mensaje = `📈 Viaje tomó ${formatearNumero(diferencia)} min más de lo estimado`;
-    } else if (diferencia < -5) {
-        mensaje = `📉 Viaje tomó ${formatearNumero(Math.abs(diferencia))} min menos de lo estimado`;
-    } else {
-        mensaje = '🎯 Tiempo muy cercano al estimado';
-    }
-
-    // ✅ INFO DE TIEMPO DE ESPERA
-    let mensajeEspera = '';
-    const tiempoEspera = getNumero(viaje.tiempoEspera, 0);
-    if (tiempoEspera > 0) {
-        const gananciaBase = getNumero(viaje.tarifa, getNumero(viaje.ganancia, getNumero(viaje.gananciaTotal, 0)));
-        const gananciaTotal = getNumero(viaje.gananciaTotal, gananciaBase);
-        const costoEspera = getNumero(viaje.costoEspera, 0);
+        // ✅ OBTENER TODOS LOS VALORES CON MÚLTIPLES FUENTES
+        const tiempoReal = getValorSeguro(viaje, ['tiempoReal', 'minutos', 'tiempo'], 0);
+        const tiempoEstimado = getValorSeguro(viaje, ['tiempoEstimado', 'minutosEstimados'], 0);
         
-        let incrementoPorcentaje = '0.0';
-        if (gananciaBase > 0) {
-            incrementoPorcentaje = ((costoEspera / gananciaBase) * 100).toFixed(1);
+        console.log('🔍 Tiempos obtenidos:', { tiempoReal, tiempoEstimado });
+
+        // ✅ VERIFICAR QUE TENEMOS DATOS VÁLIDOS
+        if (tiempoReal <= 0) {
+            console.warn('⚠️ Tiempo real no válido, omitiendo resumen');
+            return;
         }
+
+        const diferencia = tiempoReal - tiempoEstimado;
         
-        mensajeEspera = `\n\n⏱️ TIEMPO DE ESPERA DEL CLIENTE:\n` +
-                       `• Tiempo extra: ${formatearNumero(tiempoEspera)} minutos\n` +
-                       `• Cobro extra: RD$${formatearNumero(costoEspera, 2)}\n` +
-                       `• Ganancia base: RD$${formatearNumero(gananciaBase, 2)}\n` +
-                       `• Ganancia total: RD$${formatearNumero(gananciaTotal, 2)}\n` +
-                       `💰 Incremento: +${incrementoPorcentaje}%`;
+        // ✅ FUNCIÓN SEGURA PARA FORMATEAR
+        function formatearSeguro(valor, decimales = 1) {
+            if (typeof valor !== 'number' || isNaN(valor)) {
+                return '0'.padEnd(decimales > 0 ? decimales + 2 : 0, '0');
+            }
+            return valor.toFixed(decimales);
+        }
+
+        // ✅ DETERMINAR MENSAJE
+        let mensaje = '';
+        if (diferencia > 5) {
+            mensaje = `📈 Viaje tomó ${formatearSeguro(diferencia)} min más de lo estimado`;
+        } else if (diferencia < -5) {
+            mensaje = `📉 Viaje tomó ${formatearSeguro(Math.abs(diferencia))} min menos de lo estimado`;
+        } else {
+            mensaje = '🎯 Tiempo muy cercano al estimado';
+        }
+
+        // ✅ INFO DE TIEMPO DE ESPERA
+        let mensajeEspera = '';
+        const tiempoEspera = getValorSeguro(viaje, ['tiempoEspera', 'espera'], 0);
+        if (tiempoEspera > 0) {
+            const gananciaBase = getValorSeguro(viaje, ['tarifa', 'ganancia', 'gananciaTotal'], 0);
+            const gananciaTotal = getValorSeguro(viaje, ['gananciaTotal', 'ganancia', 'tarifa'], gananciaBase);
+            const costoEspera = getValorSeguro(viaje, ['costoEspera', 'costoExtra'], 0);
+            
+            let incrementoPorcentaje = '0.0';
+            if (gananciaBase > 0) {
+                incrementoPorcentaje = ((costoEspera / gananciaBase) * 100).toFixed(1);
+            }
+            
+            mensajeEspera = `\n\n⏱️ TIEMPO DE ESPERA DEL CLIENTE:\n` +
+                           `• Tiempo extra: ${formatearSeguro(tiempoEspera)} minutos\n` +
+                           `• Cobro extra: RD$${formatearSeguro(costoEspera, 2)}\n` +
+                           `• Ganancia base: RD$${formatearSeguro(gananciaBase, 2)}\n` +
+                           `• Ganancia total: RD$${formatearSeguro(gananciaTotal, 2)}\n` +
+                           `💰 Incremento: +${incrementoPorcentaje}%`;
+        }
+
+        // ✅ CALCULAR EFICIENCIA
+        const gananciaUsar = getValorSeguro(viaje, ['gananciaTotal', 'tarifa', 'ganancia'], 0);
+        const eficienciaReal = tiempoReal > 0 ? (gananciaUsar / tiempoReal) : 0;
+        const eficienciaEstimada = tiempoEstimado > 0 ? (gananciaUsar / tiempoEstimado) : 0;
+
+        // ✅ CONSTRUIR MENSAJE FINAL
+        let mensajeFinal = `✅ VIAJE COMPLETADO\n\n` +
+                          `⏱️ Tiempos:\n` +
+                          `• Estimado: ${formatearSeguro(tiempoEstimado)} min\n` +
+                          `• Real: ${formatearSeguro(tiempoReal)} min\n` +
+                          `• Diferencia: ${formatearSeguro(diferencia)} min`;
+
+        if (mensajeEspera) {
+            mensajeFinal += mensajeEspera;
+        }
+
+        mensajeFinal += `\n\n💰 Eficiencia:\n` +
+                       `• Estimada: RD$${formatearSeguro(eficienciaEstimada, 2)}/min\n` +
+                       `• Real: RD$${formatearSeguro(eficienciaReal, 2)}/min\n\n` +
+                       `${mensaje}\n\n` +
+                       `🧠 El sistema aprenderá de este tiempo real para mejorar las futuras predicciones!`;
+
+        // ✅ MOSTRAR CON ALERT
+        console.log('📤 Mostrando resumen...');
+        setTimeout(() => {
+            alert(mensajeFinal);
+        }, 300);
+        
+    } catch (error) {
+        console.error('❌ Error crítico en mostrarResumenTiempoReal:', error);
+        // No mostrar nada para no interrumpir el flujo
     }
-
-    // ✅ CALCULAR EFICIENCIA
-    const gananciaUsar = getNumero(viaje.gananciaTotal, 
-        getNumero(viaje.tarifa, 
-            getNumero(viaje.ganancia, 0)));
-    
-    const eficienciaReal = tiempoReal > 0 ? (gananciaUsar / tiempoReal) : 0;
-    const eficienciaEstimada = tiempoEstimado > 0 ? (gananciaUsar / tiempoEstimado) : 0;
-
-    // ✅ CONSTRUIR MENSAJE FINAL
-    let mensajeFinal = `✅ VIAJE COMPLETADO\n\n` +
-                      `⏱️ Tiempos:\n` +
-                      `• Estimado: ${formatearNumero(tiempoEstimado)} min\n` +
-                      `• Real: ${formatearNumero(tiempoReal)} min\n` +
-                      `• Diferencia: ${formatearNumero(diferencia)} min`;
-
-    if (mensajeEspera) {
-        mensajeFinal += mensajeEspera;
-    }
-
-    mensajeFinal += `\n\n💰 Eficiencia:\n` +
-                   `• Estimada: RD$${formatearNumero(eficienciaEstimada, 2)}/min\n` +
-                   `• Real: RD$${formatearNumero(eficienciaReal, 2)}/min\n\n` +
-                   `${mensaje}\n\n` +
-                   `🧠 El sistema aprenderá de este tiempo real para mejorar las futuras predicciones!`;
-
-    // ✅ MOSTRAR CON RETRASO PARA EVITAR CONFLICTOS CON EL CIERRE DEL MODAL
-    setTimeout(() => {
-        console.log('📤 Mostrando resumen del viaje...');
-        alert(mensajeFinal);
-    }, 300);
 }
 
 function debugCronometro() {
@@ -2282,113 +2302,136 @@ async function forzarSincronizacionCompleta() {
 }
 
 // =============================================
-// SISTEMA DE HISTORIAL
+// VERSIÓN MEJORADA DE agregarAlHistorial
 // =============================================
-
-historial = JSON.parse(localStorage.getItem('historialViajes')) || [];
 
 async function agregarAlHistorial(viaje) {
     console.log('➕ agregarAlHistorial() llamado con:', viaje);
     
-    // ✅ FUNCIÓN AUXILIAR PARA LIMPIAR Y ASEGURAR VALORES
-    function asegurarValor(valor, defecto = 0) {
-        if (valor === undefined || valor === null) {
+    try {
+        // ✅ VERIFICACIÓN INICIAL
+        if (!viaje || typeof viaje !== 'object') {
+            console.error('❌ Viaje inválido:', viaje);
+            return;
+        }
+
+        // ✅ FUNCIÓN DE SEGURIDAD MEJORADA
+        function asegurarValor(valor, defecto = 0) {
+            if (valor === undefined || valor === null || valor === '') {
+                return defecto;
+            }
+            if (typeof valor === 'number') {
+                return isNaN(valor) ? defecto : parseFloat(valor.toFixed(2));
+            }
+            if (typeof valor === 'string') {
+                const num = parseFloat(valor);
+                return isNaN(num) ? defecto : parseFloat(num.toFixed(2));
+            }
             return defecto;
         }
-        if (typeof valor === 'number') {
-            return parseFloat(valor.toFixed(2));
-        }
-        if (typeof valor === 'string' && !isNaN(parseFloat(valor))) {
-            return parseFloat(parseFloat(valor).toFixed(2));
-        }
-        return defecto;
-    }
 
-    // ✅ CREAR VIAJE LIMPIO
-    const viajeLimpio = {
-        // Datos esenciales
-        id: viaje.id || 'viaje_' + Date.now(),
-        tarifa: asegurarValor(viaje.tarifa),
-        ganancia: asegurarValor(viaje.ganancia),
-        gananciaTotal: asegurarValor(viaje.gananciaTotal, viaje.ganancia || viaje.tarifa || 0),
-        minutos: asegurarValor(viaje.minutos),
-        distancia: asegurarValor(viaje.distancia),
-        
-        // Métricas calculadas
-        porMinuto: asegurarValor(viaje.gananciaPorMinuto),
-        porKm: asegurarValor(viaje.gananciaPorKm),
-        
-        // Rentabilidad
-        rentable: Boolean(viaje.rentable),
-        rentabilidad: viaje.rentabilidad || 'no-rentable',
-        emoji: viaje.emoji || '❌',
-        texto: viaje.texto || 'NO RENTABLE',
-        
-        // Estado
-        aceptado: viaje.aceptado !== false,
-        
-        // Tiempos reales
-        tiempoRealCapturado: Boolean(viaje.tiempoRealCapturado),
-        tiempoReal: asegurarValor(viaje.tiempoReal, viaje.minutos || 0),
-        tiempoEstimado: asegurarValor(viaje.tiempoEstimado),
-        diferenciaTiempo: asegurarValor(viaje.diferenciaTiempo),
-        
-        // Espera
-        tiempoEspera: asegurarValor(viaje.tiempoEspera),
-        costoEspera: asegurarValor(viaje.costoEspera),
-        
-        // Fechas
-        fecha: viaje.fecha || new Date().toLocaleString('es-DO'),
-        timestamp: viaje.timestamp || new Date().toISOString(),
-        
-        // Perfil
-        perfilId: viaje.perfilId || perfilActual?.id,
-        perfilNombre: viaje.perfilNombre || perfilActual?.nombre
-    };
+        // ✅ CREAR VIAJE COMPLETO Y SEGURO
+        const viajeCompleto = {
+            // Identificación
+            id: viaje.id || 'viaje_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            
+            // 🔹 DATOS DE TIEMPO (CRÍTICO) - asegurar múltiples fuentes
+            tiempoReal: asegurarValor(viaje.tiempoReal, asegurarValor(viaje.minutos, 0)),
+            minutos: asegurarValor(viaje.minutos, asegurarValor(viaje.tiempoReal, 0)),
+            tiempoEstimado: asegurarValor(viaje.tiempoEstimado, 0),
+            
+            // 🔹 DATOS FINANCIEROS
+            tarifa: asegurarValor(viaje.tarifa, 0),
+            ganancia: asegurarValor(viaje.ganancia, asegurarValor(viaje.tarifa, 0)),
+            gananciaTotal: asegurarValor(viaje.gananciaTotal, 
+                asegurarValor(viaje.ganancia, 
+                    asegurarValor(viaje.tarifa, 0))),
+            
+            // 🔹 DISTANCIA Y MÉTRICAS
+            distancia: asegurarValor(viaje.distancia, 0),
+            gananciaPorMinuto: asegurarValor(viaje.gananciaPorMinuto, 0),
+            gananciaPorKm: asegurarValor(viaje.gananciaPorKm, 0),
+            porMinuto: asegurarValor(viaje.porMinuto, asegurarValor(viaje.gananciaPorMinuto, 0)),
+            porKm: asegurarValor(viaje.porKm, asegurarValor(viaje.gananciaPorKm, 0)),
+            
+            // 🔹 RENTABILIDAD
+            rentabilidad: viaje.rentabilidad || 'no-rentable',
+            texto: viaje.texto || 'NO RENTABLE',
+            emoji: viaje.emoji || '❌',
+            rentable: Boolean(viaje.rentable),
+            
+            // 🔹 ESTADO Y METADATOS
+            aceptado: viaje.aceptado !== false,
+            tiempoRealCapturado: Boolean(viaje.tiempoRealCapturado),
+            diferenciaTiempo: asegurarValor(viaje.diferenciaTiempo, 
+                asegurarValor(viaje.tiempoReal, 0) - asegurarValor(viaje.tiempoEstimado, 0)),
+            
+            // 🔹 ESPERA
+            tiempoEspera: asegurarValor(viaje.tiempoEspera, 0),
+            costoEspera: asegurarValor(viaje.costoEspera, 0),
+            
+            // 🔹 FECHAS
+            fecha: viaje.fecha || new Date().toLocaleString('es-DO'),
+            timestamp: viaje.timestamp || new Date().toISOString(),
+            
+            // 🔹 PERFIL
+            perfilId: viaje.perfilId || perfilActual?.id,
+            perfilNombre: viaje.perfilNombre || perfilActual?.nombre
+        };
 
-    console.log('📝 Viaje limpio para historial:', viajeLimpio);
-    
-    // ✅ AGREGAR AL HISTORIAL
-    historial.unshift(viajeLimpio);
-    
-    // ✅ LIMITAR TAMAÑO
-    if (historial.length > 100) {
-        historial = historial.slice(0, 100);
-    }
-    
-    // ✅ GUARDAR EN LOCALSTORAGE
-    localStorage.setItem('historialViajes', JSON.stringify(historial));
-    
-    // ✅ SINCRONIZAR CON FIREBASE
-    if (firebaseSync && firebaseSync.initialized && viajeLimpio.aceptado) {
-        try {
-            console.log('☁️ Sincronizando viaje con Firebase...');
-            await firebaseSync.saveTrip(viajeLimpio);
-            console.log('✅ Viaje sincronizado con Firebase');
-        } catch (error) {
-            console.error('❌ Error sincronizando con Firebase:', error);
+        console.log('✅ Viaje completo para guardar:', viajeCompleto);
+
+        // ✅ AGREGAR AL HISTORIAL
+        historial.unshift(viajeCompleto);
+        
+        // ✅ LIMITAR TAMAÑO
+        if (historial.length > 100) {
+            historial = historial.slice(0, 100);
         }
-    }
+        
+        // ✅ GUARDAR EN LOCALSTORAGE
+        localStorage.setItem('historialViajes', JSON.stringify(historial));
+        
+        // ✅ SINCRONIZAR CON FIREBASE
+        if (firebaseSync && firebaseSync.initialized && viajeCompleto.aceptado) {
+            try {
+                console.log('☁️ Sincronizando con Firebase...');
+                await firebaseSync.saveTrip(viajeCompleto);
+                console.log('✅ Sincronizado con Firebase');
+            } catch (error) {
+                console.error('❌ Error sincronizando con Firebase:', error);
+            }
+        }
 
-    // ✅ APRENDER DE VIAJES ACEPTADOS
-    if (window.routeLearningSystem && viajeLimpio.aceptado) {
-        setTimeout(async () => {
-            console.log('🧠 Aprendiendo de viaje ACEPTADO...');
-            await window.routeLearningSystem.analyzeCompletedTrip(viajeLimpio);
-        }, 1500);
-    }
-    
-    // ✅ ACTUALIZAR INTERFAZ
-    setTimeout(() => {
-        actualizarHistorialConFiltros();
-        actualizarEstadisticas();
-    }, 100);
-    
-    // ✅ MOSTRAR RESUMEN SOLO PARA VIAJES CON TIEMPO REAL CAPTURADO
-    if (viajeLimpio.tiempoRealCapturado) {
+        // ✅ APRENDER DE VIAJES ACEPTADOS
+        if (window.routeLearningSystem && viajeCompleto.aceptado) {
+            setTimeout(async () => {
+                try {
+                    console.log('🧠 Aprendiendo de viaje...');
+                    await window.routeLearningSystem.analyzeCompletedTrip(viajeCompleto);
+                } catch (error) {
+                    console.error('❌ Error en aprendizaje:', error);
+                }
+            }, 1500);
+        }
+        
+        // ✅ ACTUALIZAR INTERFAZ
         setTimeout(() => {
-            mostrarResumenTiempoReal(viajeLimpio);
-        }, 500);
+            actualizarHistorialConFiltros();
+            actualizarEstadisticas();
+        }, 100);
+        
+        // ✅ MOSTRAR RESUMEN SOLO PARA VIAJES CON TIEMPO REAL
+        if (viajeCompleto.tiempoRealCapturado && viajeCompleto.tiempoReal > 0) {
+            setTimeout(() => {
+                console.log('📊 Llamando a mostrarResumenTiempoReal...');
+                mostrarResumenTiempoReal(viajeCompleto);
+            }, 500);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error crítico en agregarAlHistorial:', error);
+        mostrarStatus('❌ Error al guardar el viaje', 'error');
     }
 }
 
@@ -5294,6 +5337,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
