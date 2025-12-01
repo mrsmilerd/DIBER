@@ -6219,3 +6219,47 @@ select:focus-visible {
         padding: 3px 8px;
     }
 }
+
+/* ============================================= */
+/* BOTÓN DE CANCELAR/CONTINUAR ESPERA */
+/* ============================================= */
+
+.btn-cancelar-espera {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.btn-cancelar-espera:hover {
+    background: linear-gradient(135deg, #45a049, #388E3C);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.btn-cancelar-espera:active {
+    transform: translateY(0);
+}
+
+/* Cuando hay tiempo extra, cambiar color del botón */
+.estado-rojo .btn-cancelar-espera {
+    background: linear-gradient(135deg, #F44336, #D32F2F);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+.estado-rojo .btn-cancelar-espera:hover {
+    background: linear-gradient(135deg, #D32F2F, #B71C1C);
+    box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+}
