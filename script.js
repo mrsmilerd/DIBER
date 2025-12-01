@@ -495,9 +495,17 @@ function manejarEspera() {
 function iniciarEspera() {
     if (cronometro.esperaActiva) return;
 
-    // 1. Detener Cronómetro Principal
+    // 1. Detener Cronómetro Principal y guardar el tiempo exacto transcurrido.
     clearInterval(cronometro.intervalo);
     cronometro.activo = false;
+    
+    // 💡 CLAVE: CAPTURAR EL TIEMPO FINAL ANTES DE PAUSAR
+    // Si el cronómetro tiene un punto de inicio, calcula el tiempo transcurrido
+    if (cronometro.inicio) {
+         // cronometro.tiempoTranscurridoSegundos ahora almacena el tiempo real antes de la pausa.
+         cronometro.tiempoTranscurridoSegundos = Math.floor((Date.now() - cronometro.inicio) / 1000);
+         cronometro.inicio = null; // Reiniciamos el punto de inicio para que no interfiera.
+    }
 
     // 2. Inicializar Variables de Espera
     cronometro.esperaActiva = true;
@@ -540,16 +548,20 @@ function actualizarEspera() {
         if (displayModal) displayModal.classList.remove('estado-rojo', 'estado-verde');
         if (displayModal) displayModal.classList.add('estado-amarillo');
 
-    } else {
+} else {
         // FASE 3: Cobro Extra (Contando hacia arriba desde 0)
         cronometro.estadoEspera = 'cobro_extra';
         
-        // Tiempo cobrable: el tiempo transcurrido menos el tiempo de gracia
         const tiempoCobroSegundos = tiempoTranscurridoEspera - TIEMPO_ESPERA_GRATIS_SEGUNDOS;
         
         // El cronometro.tiempoExtraCobradoSegundos mantiene el tiempo cobrable actual
         cronometro.tiempoExtraCobradoSegundos = tiempoCobroSegundos;
 
+        // 💡 CLAVE: Sincronizar el dato más reciente con el viaje actual para persistencia.
+        if (cronometro.viajeActual) {
+            cronometro.viajeActual.tiempoExtraCobradoSegundos = tiempoCobroSegundos;
+        }
+        
         if (displayTiempo) displayTiempo.textContent = formatearTiempo(tiempoCobroSegundos);
         if (displayEstado) displayEstado.textContent = 'Cobro Extra por Minuto';
         if (displayModal) displayModal.classList.remove('estado-amarillo', 'estado-verde');
@@ -577,8 +589,13 @@ function detenerEspera() {
     
     // 3. Reanudar Cronómetro Principal
     cronometro.activo = true;
-    // Reanudar el intervalo principal. Nota: el cronometro.inicio se mantiene.
-    // El tiempo perdido se calcula automáticamente por (Date.now() - cronometro.inicio).
+
+    // 💡 CLAVE: AJUSTAR EL PUNTO DE INICIO para ignorar el tiempo de espera.
+    // El nuevo inicio es la hora actual menos el tiempo que *ya* ha contado.
+    const tiempoContadoMs = cronometro.tiempoTranscurridoSegundos * 1000;
+    cronometro.inicio = Date.now() - tiempoContadoMs; // <-- ¡ESTE ES EL ARREGLO!
+
+    // Reanudar el intervalo principal.
     cronometro.intervalo = setInterval(actualizarCronometro, 1000);
 
     // 4. Actualizar Botón y Display
@@ -593,12 +610,26 @@ function detenerEspera() {
 
 function actualizarDisplayCobroExtra() {
     const displayCobro = document.getElementById('info-extra-cobro');
-    if (displayCobro && cronometro.viajeActual) {
-        const tiempoExtra = cronometro.viajeActual.tiempoExtraCobradoSegundos || 0;
+    if (displayCobro) { // Solo si el elemento existe en el DOM
+        // Usar la variable global que se actualiza cada segundo en actualizarEspera()
+        const tiempoExtra = cronometro.tiempoExtraCobradoSegundos || 0; 
         const minutosExtra = tiempoExtra / 60;
         const montoExtra = minutosExtra * TARIFA_EXTRA_POR_MINUTO;
         
-        displayCobro.textContent = `Cobro Extra acumulado: ${formatearMoneda(montoExtra)} (${minutosExtra.toFixed(1)} min)`;
+        // ¡Asumiendo que tienes definida una función formatearMoneda(valor)!
+        // Si no la tienes, puedes usar toFixed(2)
+        const montoFormateado = (typeof formatearMoneda === 'function') ? formatearMoneda(montoExtra) : `$${montoExtra.toFixed(2)}`;
+
+        displayCobro.textContent = `Cobro Extra acumulado: ${montoFormateado} (${minutosExtra.toFixed(1)} min)`;
+        
+        // UX: Mostrar el display si el cobro es positivo (ocultarlo o resetearlo si no hay cobro)
+        if (tiempoExtra > 0) {
+            displayCobro.style.display = 'block';
+        } else {
+             // Opcional: Ocultarlo cuando solo está en cuenta regresiva
+             // Se puede manejar mejor con una clase CSS.
+             displayCobro.style.display = 'none'; 
+        }
     }
 }
 
@@ -4947,5 +4978,6 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
