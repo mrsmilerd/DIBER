@@ -388,7 +388,7 @@ function detenerCronometro() {
         return;
     }
 
-    // ✅ DESACTIVAR MODO ESPERA SI ESTÁ ACTIVO
+    // ✅ DESACTIVAR MODO ESPERA SI ESTÁ ACTIVO (limpia también botones)
     if (sistemaEspera.activo) {
         desactivarModoEspera();
     }
@@ -578,6 +578,27 @@ function activarModoEspera() {
         seccionEspera.classList.remove('hidden');
     }
 
+    // ✅ AGREGAR BOTÓN DE CANCELAR ESPERA
+    const accionesContainer = document.querySelector('.cronometro-acciones');
+    if (accionesContainer && !document.getElementById('btn-cancelar-espera')) {
+        const btnCancelar = document.createElement('button');
+        btnCancelar.id = 'btn-cancelar-espera';
+        btnCancelar.className = 'btn-cancelar-espera';
+        btnCancelar.innerHTML = `
+            <span class="btn-icono">▶️</span>
+            <span class="btn-texto">Continuar Viaje</span>
+        `;
+        btnCancelar.onclick = desactivarModoEspera;
+        
+        // Insertar antes del botón de finalizar
+        const btnFinalizar = document.querySelector('.btn-detener-viaje');
+        if (btnFinalizar) {
+            accionesContainer.insertBefore(btnCancelar, btnFinalizar);
+        } else {
+            accionesContainer.appendChild(btnCancelar);
+        }
+    }
+
     // Iniciar contador regresivo
     sistemaEspera.intervaloEspera = setInterval(actualizarContadorEspera, 1000);
 
@@ -652,6 +673,7 @@ function desactivarModoEspera() {
     // Detener intervalo
     if (sistemaEspera.intervaloEspera) {
         clearInterval(sistemaEspera.intervaloEspera);
+        sistemaEspera.intervaloEspera = null;
     }
     
     // Reanudar cronómetro principal si estaba pausado
@@ -662,12 +684,44 @@ function desactivarModoEspera() {
         console.log('⏱️ Cronómetro principal reanudado');
     }
     
+    // ✅ RESTAURAR INTERFAZ
+    // Mostrar botón de activar espera
+    const btnEspera = document.getElementById('btn-activar-espera');
+    if (btnEspera) {
+        btnEspera.style.display = 'flex';
+    }
+
+    // Ocultar sección de contador de espera
+    const seccionEspera = document.getElementById('contador-espera-section');
+    if (seccionEspera) {
+        seccionEspera.classList.add('hidden');
+    }
+
+    // Remover botón de cancelar espera
+    const btnCancelar = document.getElementById('btn-cancelar-espera');
+    if (btnCancelar) {
+        btnCancelar.remove();
+    }
+
+    // Restaurar color del modal según progreso actual
+    if (cronometro.activo && cronometro.viajeActual) {
+        const minutosTranscurridos = cronometro.tiempoTranscurridoSegundos / 60;
+        actualizarColoresProgreso(minutosTranscurridos);
+    } else {
+        const modal = document.querySelector('.modal-cronometro-contenido');
+        if (modal) {
+            modal.className = 'modal-cronometro-contenido estado-verde';
+        }
+    }
+    
     sistemaEspera.activo = false;
 
-    // Mostrar resumen del tiempo de espera
+    // Mostrar resumen del tiempo de espera si hay tiempo extra
     if (sistemaEspera.tiempoExtraSegundos > 0) {
         mostrarResumenEspera();
     }
+    
+    mostrarStatus('▶️ Modo espera desactivado - Viaje continuando', 'info');
 }
 
 function mostrarResumenEspera() {
@@ -5039,6 +5093,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
