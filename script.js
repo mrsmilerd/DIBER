@@ -367,6 +367,10 @@ function actualizarBarraProgreso(minutosTranscurridos) {
     progresoFill.style.width = `${porcentaje}%`;
 }
 
+// =============================================
+// FUNCIONES DEL SISTEMA DE CRONÓMETRO - CORREGIDO
+// =============================================
+
 function detenerCronometro() {
     console.log('🛑 DETENIENDO CRONÓMETRO - INICIO');
     
@@ -375,10 +379,10 @@ function detenerCronometro() {
         return;
     }
 
-// Detener cronómetro
+    // Detener cronómetro
     clearInterval(cronometro.intervalo);
     
-    // 1. CÁLCULO DEL TIEMPO AJUSTADO (YA HECHO CORRECTAMENTE)
+    // 1. CÁLCULO DEL TIEMPO EXTRA COBRADO
     const tiempoExtra = cronometro.viajeActual?.tiempoExtraCobradoSegundos || 0;
     const tiempoTotalSegundos = cronometro.tiempoTranscurridoSegundos + tiempoExtra;
     const tiempoRealMinutos = tiempoTotalSegundos / 60; 
@@ -388,9 +392,15 @@ function detenerCronometro() {
     const montoExtraCobrado = minutosExtra * TARIFA_EXTRA_POR_MINUTO; // Usando la constante $2.86/min
 
     // 3. CÁLCULO DE LA GANANCIA TOTAL FINAL
-    // Asumimos que cronometro.viajeActual.tarifaOfrecida contiene los 100 originales.
-    const tarifaBase = parseFloat(cronometro.viajeActual.tarifaOfrecida) || 0;
+    const tarifaBase = parseFloat(cronometro.viajeActual.tarifa) || 0; // Los 100 originales
     const gananciaTotalFinal = tarifaBase + montoExtraCobrado; // <--- ¡LA SUMA CLAVE!
+    
+    console.log('💰 CÁLCULO DE GANANCIA FINAL:', {
+        tarifaBase: tarifaBase,
+        tiempoExtraSegundos: tiempoExtra,
+        montoExtraCobrado: montoExtraCobrado,
+        gananciaTotalFinal: gananciaTotalFinal
+    });
     
     console.log('⏱️ Tiempo real capturado (sin extra):', (cronometro.tiempoTranscurridoSegundos / 60).toFixed(2), 'minutos');
     console.log('➕ Tiempo extra cobrado (segundos):', tiempoExtra);
@@ -409,27 +419,21 @@ function detenerCronometro() {
         rentabilidadOriginal: cronometro.viajeActual.rentabilidad
     });
 
-    // ✅ CREAR NUEVO OBJETO CON DATOS REALES
+    // ✅ CREAR NUEVO OBJETO CON DATOS REALES Y GANANCIA TOTAL
     const viajeConTiempoReal = {
         // Datos básicos del viaje
-        tarifa: cronometro.viajeActual.tarifa,
-        ganancia: cronometro.viajeActual.tarifa,
+        tarifa: gananciaTotalFinal, // <--- ¡IMPORTANTE: Usar la ganancia TOTAL!
+        ganancia: gananciaTotalFinal, // <--- ¡IMPORTANTE: Usar la ganancia TOTAL!
         distancia: cronometro.viajeActual.distancia || 1,
         
-       // Tiempos
+        // Tiempos
         tiempoReal: tiempoRealMinutos,
-        tarifaOfrecida: gananciaTotalFinal.toFixed(2),
         tiempoEstimado: cronometro.viajeActual.tiempoEstimado,
         diferenciaTiempo: tiempoRealMinutos - cronometro.viajeActual.tiempoEstimado,
-        gananciaTotal: gananciaTotalFinal.toFixed(2),
 
         // --- DETALLES DE COBRO EXTRA ---
         tiempoExtraCobradoSegundos: tiempoExtra, 
         montoExtraCobrado: montoExtraCobrado.toFixed(2),
-        
-        // NUEVO: Guardar el extra para el historial
-        tiempoExtraCobradoSegundos: tiempoExtra, 
-        montoExtraCobrado: (tiempoExtra / 60) * TARIFA_EXTRA_POR_MINUTO,
         
         // Rentabilidad original para comparar
         rentabilidadOriginal: cronometro.viajeActual.rentabilidad,
@@ -437,15 +441,24 @@ function detenerCronometro() {
         
         // Metadata
         timestampFin: new Date().toISOString(),
-        tiempoRealCapturado: true
+        tiempoRealCapturado: true,
+        
+        // ✅ NUEVOS CAMPOS PARA EL HISTORIAL
+        tarifaBase: tarifaBase, // Los 100 originales
+        extras: montoExtraCobrado, // El extra cobrado
+        gananciaTotal: gananciaTotalFinal // La suma total
     };
 
+    console.log('✅ VIAJE FINAL CON EXTRAS:', {
+        tarifaBase: viajeConTiempoReal.tarifaBase,
+        extras: viajeConTiempoReal.extras,
+        gananciaTotal: viajeConTiempoReal.gananciaTotal,
+        tiempoExtraCobrado: viajeConTiempoReal.tiempoExtraCobradoSegundos
+    });
+    
     console.log('🔄 Procesando viaje con tiempo real...');
     procesarViajeConTiempoReal(viajeConTiempoReal);
 
-    // 💡 DEPURACIÓN CLAVE: Verifique esto en la Consola del navegador
-    console.log('✅ Objeto Final del Viaje a Guardar:', viajeConTiempoReal);
-    
     // Limpiar
     const modalCronometro = document.getElementById('modal-cronometro');
     if (modalCronometro) {
@@ -460,7 +473,7 @@ function detenerCronometro() {
     cronometro.tiempoTranscurridoSegundos = 0;
     cronometro.viajeActual = null;
     
-    console.log('✅ Cronómetro detenido y procesado');
+    console.log('✅ Cronómetro detenido y procesado CON EXTRAS');
 }
 
 function debugCronometro() {
@@ -667,19 +680,23 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
         umbralKmRentable: perfilActual.umbralKmRentable
     });
 
-    // ✅ CALCULAR RENTABILIDAD CON TIEMPO REAL
-    const gananciaPorMinutoReal = viajeConTiempoReal.tarifa / viajeConTiempoReal.tiempoReal;
+    // ✅ USAR LA GANANCIA TOTAL (BASE + EXTRAS) para el cálculo
+    const gananciaTotal = viajeConTiempoReal.gananciaTotal || viajeConTiempoReal.tarifa;
+    
+    // ✅ CALCULAR RENTABILIDAD CON TIEMPO REAL Y GANANCIA TOTAL
+    const gananciaPorMinutoReal = gananciaTotal / viajeConTiempoReal.tiempoReal;
     const gananciaPorKmReal = viajeConTiempoReal.distancia > 0 ? 
-        viajeConTiempoReal.tarifa / viajeConTiempoReal.distancia : 0;
+        gananciaTotal / viajeConTiempoReal.distancia : 0;
 
-    console.log('📈 CÁLCULOS REALES:', {
+    console.log('📈 CÁLCULOS REALES CON EXTRAS:', {
+        gananciaTotal: gananciaTotal,
         gananciaPorMinutoReal: gananciaPorMinutoReal,
         gananciaPorKmReal: gananciaPorKmReal,
         umbralMinutoRentable: perfilActual.umbralMinutoRentable,
         umbralKmRentable: perfilActual.umbralKmRentable
     });
 
-    // ✅ DETERMINAR RENTABILIDAD REAL
+    // ✅ DETERMINAR RENTABILIDAD REAL CON GANANCIA TOTAL
     let rentabilidadReal, emojiReal, textoReal;
 
     if (gananciaPorMinutoReal >= perfilActual.umbralMinutoRentable && 
@@ -704,19 +721,19 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
         gananciaPorMinutoReal: gananciaPorMinutoReal
     });
 
-    // ✅ CREAR VIAJE FINAL
+    // ✅ CREAR VIAJE FINAL CON GANANCIA TOTAL
     const viajeFinal = {
         id: 'viaje_real_' + Date.now(),
         
-        // Datos básicos
-        tarifa: viajeConTiempoReal.tarifa,
-        ganancia: viajeConTiempoReal.tarifa,
+        // Datos básicos CON EXTRAS INCLUIDOS
+        tarifa: gananciaTotal, // <--- Esto incluye los extras
+        ganancia: gananciaTotal, // <--- Esto incluye los extras
         distancia: viajeConTiempoReal.distancia,
         
         // ✅ USAR TIEMPO REAL
         minutos: viajeConTiempoReal.tiempoReal,
         
-        // ✅ RENTABILIDAD RECALCULADA
+        // ✅ RENTABILIDAD RECALCULADA CON GANANCIA TOTAL
         rentabilidad: rentabilidadReal,
         rentable: rentabilidadReal === 'rentable',
         emoji: emojiReal,
@@ -737,11 +754,21 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
         
         // Para comparación
         rentabilidadOriginal: viajeConTiempoReal.rentabilidadOriginal,
-        textoOriginal: viajeConTiempoReal.textoOriginal
+        textoOriginal: viajeConTiempoReal.textoOriginal,
+        
+        // ✅ DETALLES DEL COBRO EXTRA
+        tiempoExtraCobradoSegundos: viajeConTiempoReal.tiempoExtraCobradoSegundos,
+        montoExtraCobrado: viajeConTiempoReal.montoExtraCobrado,
+        tarifaBase: viajeConTiempoReal.tarifaBase,
+        extras: viajeConTiempoReal.extras,
+        gananciaTotal: gananciaTotal
     };
 
-    console.log('💾 VIAJE FINAL A GUARDAR:', {
+    console.log('💾 VIAJE FINAL A GUARDAR (CON EXTRAS):', {
         minutos: viajeFinal.minutos,
+        tarifaBase: viajeFinal.tarifaBase,
+        extras: viajeFinal.extras,
+        gananciaTotal: viajeFinal.gananciaTotal,
         rentabilidad: viajeFinal.rentabilidad,
         texto: viajeFinal.texto,
         gananciaPorMinuto: viajeFinal.gananciaPorMinuto
@@ -752,7 +779,13 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
 }
 
 function agregarAlHistorialDirecto(viaje) {
-    console.log('💾 GUARDANDO DIRECTAMENTE EN HISTORIAL');
+    console.log('💾 GUARDANDO DIRECTAMENTE EN HISTORIAL CON EXTRAS');
+    
+    // ✅ AGREGAR ALERTA VISUAL PARA EXTRAS
+    if (viaje.extras > 0) {
+        console.log('💰 EXTRAS DETECTADOS:', viaje.extras);
+        mostrarStatus(`💰 ¡Se agregaron $${viaje.extras.toFixed(2)} en extras por tiempo de espera!`, 'success');
+    }
     
     // Agregar al inicio del historial
     historial.unshift(viaje);
@@ -766,6 +799,7 @@ function agregarAlHistorialDirecto(viaje) {
     localStorage.setItem('historialViajes', JSON.stringify(historial));
     
     console.log('✅ Guardado en localStorage. Nuevo total:', historial.length);
+    console.log('✅ Verifica que la ganancia incluye extras:', viaje.ganancia);
     
     // Sincronizar si es necesario
     guardarDatos();
@@ -777,7 +811,7 @@ function agregarAlHistorialDirecto(viaje) {
     // Mostrar resumen
     mostrarResumenTiempoReal(viaje);
     
-    console.log('🎉 VIAJE GUARDADO EXITOSAMENTE con rentabilidad:', viaje.rentabilidad);
+    console.log('🎉 VIAJE GUARDADO EXITOSAMENTE con extras incluidos');
 }
 
 function mostrarResumenTiempoReal(viaje) {
@@ -4993,6 +5027,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
