@@ -6100,3 +6100,39 @@ select:focus-visible {
         transform: translateY(0);
     }
 }
+
+/* ============================================= */
+/* ESTILOS PARA TIEMPO DE ESPERA EN HISTORIAL */
+/* ============================================= */
+
+.espera-badge-historial {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid #FFC107;
+    border-radius: 8px;
+    padding: 4px 8px;
+    margin-top: 8px;
+    font-size: 0.8em;
+}
+
+.espera-icono-small {
+    font-size: 0.9em;
+}
+
+.espera-texto-small {
+    color: #FF9800;
+    font-weight: 600;
+}
+
+/* Ajustar el historial para incluir tiempo de espera */
+.history-details {
+    position: relative;
+}
+
+/* Para viajes con tiempo de espera */
+.history-item.con-espera {
+    border-left-color: #FF9800;
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 152, 0, 0.05) 100%);
+}
