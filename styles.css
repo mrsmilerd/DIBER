@@ -5979,3 +5979,124 @@ select:focus-visible {
     transform: none !important;
 }
 
+/* ============================================= */
+/* ESTILOS PARA SISTEMA DE ESPERA DEL CLIENTE */
+/* ============================================= */
+
+.contador-espera-section {
+    background: rgba(255, 193, 7, 0.1);
+    border: 2px solid #FFC107;
+    border-radius: 12px;
+    padding: 15px;
+    margin: 15px 0;
+    text-align: center;
+    animation: slideDown 0.3s ease;
+}
+
+.contador-espera-section.hidden {
+    display: none;
+}
+
+.espera-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.espera-icono {
+    font-size: 1.2em;
+}
+
+.espera-texto {
+    font-weight: 700;
+    color: #FF9800;
+    font-size: 1.1em;
+}
+
+.espera-tiempo {
+    font-size: 2.5em;
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
+    margin: 10px 0;
+    transition: all 0.3s ease;
+}
+
+.contador-regresivo {
+    color: #FF9800;
+}
+
+.contador-urgente {
+    color: #F44336;
+    animation: pulse 1s infinite;
+}
+
+.contador-extra {
+    color: #F44336;
+    background: rgba(244, 67, 54, 0.1);
+    padding: 5px 15px;
+    border-radius: 8px;
+    border: 2px solid #F44336;
+}
+
+.espera-info {
+    margin-top: 8px;
+}
+
+.espera-subtexto {
+    font-size: 0.85em;
+    color: #757575;
+    font-weight: 500;
+}
+
+/* Botón de activar espera */
+.btn-espera-cliente {
+    background: linear-gradient(135deg, #FF9800, #F57C00);
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.btn-espera-cliente:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+}
+
+.btn-espera-cliente:active {
+    transform: translateY(0);
+}
+
+/* Estados del modal durante espera */
+.estado-amarillo .cronometro-tiempo-display {
+    background: rgba(255, 193, 7, 0.2);
+    border-color: #FFC107;
+}
+
+.estado-rojo .cronometro-tiempo-display {
+    background: rgba(244, 67, 54, 0.2);
+    border-color: #F44336;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
