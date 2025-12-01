@@ -472,19 +472,34 @@ function procesarViajeConTiempoReal(tiempoRealMinutos) {
     // ✅ OBTENER DATOS DEL VIAJE ACTUAL - CORREGIDO
     const viajeBase = cronometro.viajeActual;
     
-    // Asegurar que tenemos tarifa, minutos y distancia
+    // Asegurar que tenemos tarifa, minutos y distancia con valores por defecto
     const tarifa = viajeBase.tarifa || viajeBase.ganancia || 0;
     const minutosEstimados = viajeBase.minutos || viajeBase.tiempoEstimado || 0;
     const distancia = viajeBase.distancia || 0;
     
     console.log('📊 DATOS BASE DEL VIAJE:', { tarifa, minutosEstimados, distancia, tiempoRealMinutos });
 
+    // ✅ VALIDAR DATOS CRÍTICOS
+    if (!tarifa || tarifa <= 0) {
+        console.error('❌ Tarifa inválida:', tarifa);
+        mostrarError('Error: La tarifa del viaje es inválida');
+        return;
+    }
+    
+    if (!tiempoRealMinutos || tiempoRealMinutos <= 0) {
+        console.error('❌ Tiempo real inválido:', tiempoRealMinutos);
+        mostrarError('Error: El tiempo real capturado es inválido');
+        return;
+    }
+
     // ✅ CALCULAR RENTABILIDAD REAL
     let rentabilidadReal, textoReal, emojiReal;
+    let gananciaPorMinutoReal = 0;
+    let gananciaPorKmReal = 0;
     
     if (perfilActual && tiempoRealMinutos > 0 && distancia > 0) {
-        const gananciaPorMinutoReal = tarifa / tiempoRealMinutos;
-        const gananciaPorKmReal = tarifa / distancia;
+        gananciaPorMinutoReal = tarifa / tiempoRealMinutos;
+        gananciaPorKmReal = distancia > 0 ? tarifa / distancia : 0;
         
         console.log('📈 CÁLCULOS REALES:', {
             gananciaPorMinutoReal,
@@ -493,13 +508,19 @@ function procesarViajeConTiempoReal(tiempoRealMinutos) {
             umbralKmRentable: perfilActual.umbralKmRentable
         });
         
-        if (gananciaPorMinutoReal >= perfilActual.umbralMinutoRentable && 
-            gananciaPorKmReal >= perfilActual.umbralKmRentable) {
+        // ✅ VERIFICAR SI LOS UMBRALES EXISTEN
+        const umbralMinutoRentable = perfilActual.umbralMinutoRentable || 6.0;
+        const umbralKmRentable = perfilActual.umbralKmRentable || 25.0;
+        const umbralMinutoOportunidad = perfilActual.umbralMinutoOportunidad || 5.0;
+        const umbralKmOportunidad = perfilActual.umbralKmOportunidad || 23.0;
+        
+        if (gananciaPorMinutoReal >= umbralMinutoRentable && 
+            gananciaPorKmReal >= umbralKmRentable) {
             rentabilidadReal = 'rentable';
             textoReal = 'RENTABLE';
             emojiReal = '✅';
-        } else if (gananciaPorMinutoReal >= perfilActual.umbralMinutoOportunidad && 
-                   gananciaPorKmReal >= perfilActual.umbralKmOportunidad) {
+        } else if (gananciaPorMinutoReal >= umbralMinutoOportunidad && 
+                   gananciaPorKmReal >= umbralKmOportunidad) {
             rentabilidadReal = 'oportunidad';
             textoReal = 'OPORTUNIDAD';
             emojiReal = '⚠️';
@@ -519,25 +540,25 @@ function procesarViajeConTiempoReal(tiempoRealMinutos) {
 
     // ✅ CREAR OBJETO DE VIAJE COMPLETO
     const viajeConTiempoReal = {
-        // Datos base del viaje
-        tarifa: tarifa,
-        ganancia: tarifa,
-        minutos: tiempoRealMinutos, // Usar tiempo real
-        distancia: distancia,
-        tiempoEstimado: minutosEstimados,
-        tiempoReal: tiempoRealMinutos,
+        // Datos base del viaje - ASEGURAR QUE NO HAY UNDEFINED
+        tarifa: tarifa || 0,
+        ganancia: tarifa || 0,
+        minutos: tiempoRealMinutos || 0, // Usar tiempo real
+        distancia: distancia || 0,
+        tiempoEstimado: minutosEstimados || 0,
+        tiempoReal: tiempoRealMinutos || 0,
         
         // Datos de rentabilidad
-        rentabilidad: rentabilidadReal,
-        texto: textoReal,
-        emoji: emojiReal,
-        gananciaPorMinuto: tarifa / tiempoRealMinutos,
-        gananciaPorKm: distancia > 0 ? tarifa / distancia : 0,
+        rentabilidad: rentabilidadReal || 'no-rentable',
+        texto: textoReal || 'NO RENTABLE',
+        emoji: emojiReal || '❌',
+        gananciaPorMinuto: parseFloat(gananciaPorMinutoReal.toFixed(2)) || 0,
+        gananciaPorKm: parseFloat(gananciaPorKmReal.toFixed(2)) || 0,
         
         // Metadatos
         tiempoRealCapturado: true,
         aceptado: true,
-        diferenciaTiempo: tiempoRealMinutos - minutosEstimados,
+        diferenciaTiempo: (tiempoRealMinutos || 0) - (minutosEstimados || 0),
         timestampFin: new Date().toISOString(),
         timestamp: new Date().toISOString(),
         id: 'viaje_real_' + Date.now(),
@@ -583,20 +604,66 @@ function procesarViajeConTiempoReal(tiempoRealMinutos) {
 // ✅ NUEVA FUNCIÓN PARA GUARDAR DIRECTAMENTE
 function agregarAlHistorialDirecto(viaje) {
     console.log('💾 GUARDANDO DIRECTAMENTE EN HISTORIAL');
-    agregarAlHistorial(viaje);
+    
+    // ✅ VERIFICAR Y LIMPIAR DATOS ANTES DE GUARDAR
+    const viajeLimpio = {
+        // Datos esenciales - ASEGURAR VALORES
+        id: viaje.id || 'viaje_real_' + Date.now(),
+        tarifa: viaje.tarifa || viaje.ganancia || 0,
+        ganancia: viaje.ganancia || viaje.tarifa || 0,
+        gananciaTotal: viaje.gananciaTotal || viaje.tarifa || viaje.ganancia || 0,
+        minutos: viaje.minutos || viaje.tiempoReal || 0,
+        distancia: viaje.distancia || 0,
+        
+        // Rentabilidad
+        rentabilidad: viaje.rentabilidad || 'no-rentable',
+        texto: viaje.texto || 'NO RENTABLE',
+        emoji: viaje.emoji || '❌',
+        
+        // Métricas numéricas
+        gananciaPorMinuto: viaje.gananciaPorMinuto || 0,
+        gananciaPorKm: viaje.gananciaPorKm || 0,
+        
+        // Metadatos
+        tiempoRealCapturado: viaje.tiempoRealCapturado || false,
+        tiempoReal: viaje.tiempoReal || viaje.minutos || 0,
+        tiempoEstimado: viaje.tiempoEstimado || 0,
+        diferenciaTiempo: viaje.diferenciaTiempo || 0,
+        tiempoEspera: viaje.tiempoEspera || 0,
+        costoEspera: viaje.costoEspera || 0,
+        aceptado: viaje.aceptado !== false,
+        fecha: new Date().toLocaleString('es-DO'),
+        timestamp: new Date().toISOString(),
+        perfilId: perfilActual?.id,
+        perfilNombre: perfilActual?.nombre
+    };
+    
+    // ✅ Asegurar que todos los campos numéricos sean números
+    Object.keys(viajeLimpio).forEach(key => {
+        if (typeof viajeLimpio[key] === 'number') {
+            viajeLimpio[key] = parseFloat(viajeLimpio[key].toFixed(2));
+        }
+    });
+    
+    console.log('💾 VIAJE LIMPIO PARA GUARDAR:', viajeLimpio);
+    
+    agregarAlHistorial(viajeLimpio);
 }
 
 function mostrarResumenTiempoReal(viaje) {
     console.log('📊 MOSTRAR RESUMEN PARA VIAJE:', viaje);
     
-    // ✅ VERIFICAR DATOS CRÍTICOS
-    if (!viaje || !viaje.tiempoReal) {
-        console.error('❌ Datos incompletos para mostrar resumen:', viaje);
+    // ✅ VERIFICAR DATOS CRÍTICOS CON VALORES POR DEFECTO
+    if (!viaje) {
+        console.error('❌ Datos incompletos para mostrar resumen');
         mostrarError('No se pudo generar el resumen. Datos incompletos.');
         return;
     }
 
-    const diferencia = viaje.diferenciaTiempo || 0;
+    const tiempoReal = viaje.tiempoReal || viaje.minutos || 0;
+    const tiempoEstimado = viaje.tiempoEstimado || 0;
+    const diferencia = tiempoReal - tiempoEstimado;
+    
     let mensaje = '';
     
     if (diferencia > 5) {
@@ -623,13 +690,13 @@ function mostrarResumenTiempoReal(viaje) {
 
     // ✅ CALCULAR EFICIENCIA CON VERIFICACIÓN
     const gananciaUsar = viaje.gananciaTotal || viaje.tarifa || viaje.ganancia || 0;
-    const eficienciaReal = viaje.tiempoReal > 0 ? (gananciaUsar / viaje.tiempoReal) : 0;
-    const eficienciaEstimada = viaje.tiempoEstimado > 0 ? (gananciaUsar / viaje.tiempoEstimado) : 0;
+    const eficienciaReal = tiempoReal > 0 ? (gananciaUsar / tiempoReal) : 0;
+    const eficienciaEstimada = tiempoEstimado > 0 ? (gananciaUsar / tiempoEstimado) : 0;
 
     let mensajeFinal = `✅ VIAJE COMPLETADO\n\n` +
                       `⏱️ Tiempos:\n` +
-                      `• Estimado: ${viaje.tiempoEstimado || 0} min\n` +
-                      `• Real: ${viaje.tiempoReal.toFixed(1)} min\n` +
+                      `• Estimado: ${tiempoEstimado} min\n` +
+                      `• Real: ${tiempoReal.toFixed(1)} min\n` +
                       `• Diferencia: ${diferencia.toFixed(1)} min`;
 
     if (mensajeEspera) {
@@ -2179,73 +2246,39 @@ historial = JSON.parse(localStorage.getItem('historialViajes')) || [];
 async function agregarAlHistorial(viaje) {
     console.log('➕ agregarAlHistorial() llamado con:', viaje);
     
-    // ✅ VERIFICAR DATOS MÍNIMOS
-    if (!viaje || (!viaje.tarifa && !viaje.ganancia && !viaje.gananciaTotal)) {
-        console.error('❌ Error: Viaje sin datos esenciales', viaje);
-        mostrarError('Error al guardar el viaje: Datos incompletos');
-        return;
-    }
-
-    // ✅ ASEGURAR QUE TENEMOS TARIFA
-    const tarifa = viaje.gananciaTotal || viaje.tarifa || viaje.ganancia || 0;
-    const minutos = viaje.minutos || viaje.tiempoReal || 0;
-    const distancia = viaje.distancia || 0;
-
-    // ✅ SI EL VIAJE FUE RECHAZADO, MARCAR COMO NO RENTABLE
-    let rentabilidad, emoji, texto;
-    
-    if (viaje.aceptado === false) {
-        // VIAJE RECHAZADO - siempre es "no rentable"
-        rentabilidad = 'rechazado';
-        emoji = '🚫';
-        texto = 'RECHAZADO';
-    } else if (viaje.rentabilidad) {
-        // VIAJE ACEPTADO - usar la rentabilidad calculada
-        rentabilidad = viaje.rentabilidad;
-        emoji = viaje.emoji;
-        texto = viaje.texto;
-    } else if (perfilActual) {
-        // CALCULAR RENTABILIDAD si no está definida
-        const tarifa = viaje.gananciaTotal || viaje.tarifa || viaje.ganancia || 0; // ← USAR gananciaTotal
-        const minutos = viaje.minutos || 0;
-        const distancia = viaje.distancia || 0;
-        const porMinuto = minutos > 0 ? (tarifa / minutos) : 0;
-        const porKm = distancia > 0 ? (tarifa / distancia) : 0;
-        
-        if (porMinuto >= perfilActual.umbralMinutoRentable && 
-            porKm >= perfilActual.umbralKmRentable) {
-            rentabilidad = 'rentable';
-            emoji = '✅';
-            texto = 'RENTABLE';
-        } else if (porMinuto >= perfilActual.umbralMinutoOportunidad && 
-                   porKm >= perfilActual.umbralKmOportunidad) {
-            rentabilidad = 'oportunidad';
-            emoji = '⚠️';
-            texto = 'OPORTUNIDAD';
-        } else {
-            rentabilidad = 'no-rentable';
-            emoji = '❌';
-            texto = 'NO RENTABLE';
+    // ✅ FUNCIÓN AUXILIAR PARA LIMPIAR DATOS
+    function limpiarValor(valor) {
+        if (valor === undefined || valor === null) {
+            return 0;
         }
-    } else {
-        rentabilidad = 'no-rentable';
-        emoji = '❌';
-        texto = 'NO RENTABLE';
+        if (typeof valor === 'number') {
+            return parseFloat(valor.toFixed(2));
+        }
+        return parseFloat(valor) || 0;
     }
 
-    const nuevoViaje = {
-        id: 'viaje_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-        ganancia: viaje.gananciaTotal || viaje.tarifa || viaje.ganancia || 0, // ← USAR gananciaTotal
-        tarifa: viaje.tarifa || viaje.ganancia || 0,
-        minutos: viaje.minutos || 0,
-        distancia: viaje.distancia || 0,
-        porMinuto: parseFloat((viaje.gananciaPorMinuto || 0).toFixed(2)),
-        porKm: parseFloat((viaje.gananciaPorKm || 0).toFixed(2)),
-        rentable: rentabilidad === 'rentable',
-        rentabilidad: rentabilidad,
-        emoji: emoji,
-        texto: texto,
-        aceptado: viaje.aceptado !== undefined ? viaje.aceptado : true,
+    // ✅ LIMPIAR TODOS LOS DATOS DEL VIAJE
+    const viajeLimpio = {
+        id: viaje.id || 'viaje_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        
+        // Datos numéricos - limpiar
+        ganancia: limpiarValor(viaje.gananciaTotal || viaje.ganancia || viaje.tarifa),
+        tarifa: limpiarValor(viaje.tarifa || viaje.ganancia),
+        minutos: limpiarValor(viaje.minutos || viaje.tiempoReal),
+        distancia: limpiarValor(viaje.distancia),
+        porMinuto: limpiarValor(viaje.gananciaPorMinuto || viaje.porMinuto),
+        porKm: limpiarValor(viaje.gananciaPorKm || viaje.porKm),
+        
+        // Rentabilidad
+        rentable: viaje.rentabilidad === 'rentable',
+        rentabilidad: viaje.rentabilidad || 'no-rentable',
+        emoji: viaje.emoji || '❌',
+        texto: viaje.texto || 'NO RENTABLE',
+        
+        // Estado
+        aceptado: viaje.aceptado !== false,
+        
+        // Fechas
         fecha: new Date().toLocaleString('es-DO', {
             year: 'numeric',
             month: '2-digit',
@@ -2254,30 +2287,29 @@ async function agregarAlHistorial(viaje) {
             minute: '2-digit'
         }),
         timestamp: new Date().toISOString(),
-        gananciaNeta: viaje.gananciaNeta || 0,
-        costoCombustible: viaje.costoCombustible || 0,
-        costoMantenimiento: viaje.costoMantenimiento || 0,
-        costoSeguro: viaje.costoSeguro || 0,
-        costoTotal: viaje.costoTotal || 0,
-        // ✅ AGREGAR DATOS DE ESPERA
-        tiempoEspera: viaje.tiempoEspera || 0,
-        costoEspera: viaje.costoEspera || 0,
-        tiempoRealCapturado: viaje.tiempoRealCapturado || false,
-        tiempoReal: viaje.tiempoReal || 0,
-        tiempoEstimado: viaje.tiempoEstimado || 0,
+        
+        // Costos (asegurar valores)
+        gananciaNeta: limpiarValor(viaje.gananciaNeta),
+        costoCombustible: limpiarValor(viaje.costoCombustible),
+        costoMantenimiento: limpiarValor(viaje.costoMantenimiento),
+        costoSeguro: limpiarValor(viaje.costoSeguro),
+        costoTotal: limpiarValor(viaje.costoTotal),
+        
+        // Tiempos reales
+        tiempoEspera: limpiarValor(viaje.tiempoEspera),
+        costoEspera: limpiarValor(viaje.costoEspera),
+        tiempoRealCapturado: Boolean(viaje.tiempoRealCapturado),
+        tiempoReal: limpiarValor(viaje.tiempoReal || viaje.minutos),
+        tiempoEstimado: limpiarValor(viaje.tiempoEstimado),
+        
+        // Perfil
         perfilId: perfilActual?.id,
         perfilNombre: perfilActual?.nombre
     };
     
-    console.log('📝 Viaje procesado para historial:', {
-        aceptado: nuevoViaje.aceptado,
-        rentabilidad: nuevoViaje.rentabilidad,
-        texto: nuevoViaje.texto,
-        tiempoEspera: nuevoViaje.tiempoEspera,
-        costoEspera: nuevoViaje.costoEspera
-    });
-
-    historial.unshift(nuevoViaje);
+    console.log('📝 Viaje procesado para historial:', viajeLimpio);
+    
+    historial.unshift(viajeLimpio);
     
     if (historial.length > 100) {
         historial = historial.slice(0, 100);
@@ -2285,38 +2317,38 @@ async function agregarAlHistorial(viaje) {
     
     localStorage.setItem('historialViajes', JSON.stringify(historial));
     
-    // ✅ SOLO SINCRONIZAR Y APRENDER DE VIAJES ACEPTADOS
-    if (nuevoViaje.aceptado !== false) {
-        guardarDatos();
-        
-        if (firebaseSync && firebaseSync.initialized && nuevoViaje.aceptado) {
-            try {
-                console.log('☁️ Sincronizando viaje ACEPTADO con Firebase...');
-                await firebaseSync.saveTrip(nuevoViaje);
-                console.log('✅ Viaje aceptado sincronizado con Firebase');
-            } catch (error) {
-                console.error('❌ Error sincronizando con Firebase:', error);
-            }
+    // ✅ SINCRONIZAR CON FIREBASE (SOLO SI ESTÁ INICIALIZADO)
+    if (firebaseSync && firebaseSync.initialized && viajeLimpio.aceptado) {
+        try {
+            console.log('☁️ Sincronizando viaje con Firebase...');
+            // ✅ ENVIAR VIAJE LIMPIO (sin undefined)
+            await firebaseSync.saveTrip(viajeLimpio);
+            console.log('✅ Viaje sincronizado con Firebase');
+        } catch (error) {
+            console.error('❌ Error sincronizando con Firebase:', error);
         }
+    }
 
-        // ✅ SOLO APRENDER DE VIAJES ACEPTADOS
-        if (window.routeLearningSystem && window.routeLearningSystem.learningEnabled) {
-            setTimeout(async () => {
-                console.log('🧠 Aprendiendo de viaje ACEPTADO...');
-                await window.routeLearningSystem.analyzeCompletedTrip(nuevoViaje);
-            }, 1500);
-        }
-    } else {
-        console.log('🚫 Viaje rechazado - no se sincroniza ni aprende');
+    // ✅ APRENDER DE VIAJES ACEPTADOS
+    if (window.routeLearningSystem && window.routeLearningSystem.learningEnabled && viajeLimpio.aceptado) {
+        setTimeout(async () => {
+            console.log('🧠 Aprendiendo de viaje ACEPTADO...');
+            await window.routeLearningSystem.analyzeCompletedTrip(viajeLimpio);
+        }, 1500);
     }
     
-    if (nuevoViaje.aceptado) {
-        actualizarEstadisticasDia(nuevoViaje);
+    if (viajeLimpio.aceptado) {
+        actualizarEstadisticasDia(viajeLimpio);
     }
     
     setTimeout(() => {
         actualizarHistorialConFiltros();
         actualizarEstadisticas();
+        
+        // ✅ MOSTRAR RESUMEN SOLO SI ES VIAJE CON TIEMPO REAL
+        if (viajeLimpio.tiempoRealCapturado) {
+            mostrarResumenTiempoReal(viajeLimpio);
+        }
     }, 100);
 }
 
@@ -5222,6 +5254,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
