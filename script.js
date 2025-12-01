@@ -487,29 +487,37 @@ function mostrarResumenTiempoReal(viaje) {
     // Agregar info de tiempo de espera si existe
     let mensajeEspera = '';
     if (viaje.tiempoEspera && viaje.tiempoEspera > 0) {
-        mensajeEspera = `\n\n⏱️ TIEMPO DE ESPERA: ${viaje.tiempoEspera.toFixed(1)} min` +
-                       `\n💰 COBRO EXTRA: RD$${viaje.costoEspera.toFixed(2)}` +
-                       `\n💵 GANANCIA TOTAL: RD$${viaje.gananciaTotal.toFixed(2)}`;
+        const gananciaBase = viaje.tarifa || viaje.ganancia || 0;
+        const gananciaTotal = viaje.gananciaTotal || gananciaBase;
+        
+        mensajeEspera = `\n\n⏱️ TIEMPO DE ESPERA DEL CLIENTE:\n` +
+                       `• Tiempo extra: ${viaje.tiempoEspera.toFixed(1)} minutos\n` +
+                       `• Cobro extra: RD$${viaje.costoEspera.toFixed(2)} (RD$2.86/min)\n` +
+                       `• Ganancia base: RD$${gananciaBase.toFixed(2)}\n` +
+                       `• Ganancia total: RD$${gananciaTotal.toFixed(2)}\n` +
+                       `💰 Incremento: +${((viaje.costoEspera / gananciaBase) * 100).toFixed(1)}%`;
     }
 
-    const eficienciaReal = viaje.tarifa / viaje.tiempoReal;
+    const eficienciaReal = viaje.gananciaTotal ? (viaje.gananciaTotal / viaje.tiempoReal) : (viaje.tarifa / viaje.tiempoReal);
     const eficienciaEstimada = viaje.tarifa / viaje.tiempoEstimado;
 
-    alert(`✅ VIAJE COMPLETADO
+    let mensajeFinal = `✅ VIAJE COMPLETADO\n\n` +
+                      `⏱️ Tiempos:\n` +
+                      `• Estimado: ${viaje.tiempoEstimado} min\n` +
+                      `• Real: ${viaje.tiempoReal.toFixed(1)} min\n` +
+                      `• Diferencia: ${diferencia.toFixed(1)} min`;
 
-⏱️ Tiempos:
-• Estimado: ${viaje.tiempoEstimado} min
-• Real: ${viaje.tiempoReal.toFixed(1)} min
-• Diferencia: ${diferencia.toFixed(1)} min
-${mensajeEspera}
+    if (mensajeEspera) {
+        mensajeFinal += mensajeEspera;
+    }
 
-💰 Eficiencia:
-• Estimada: RD$${eficienciaEstimada.toFixed(2)}/min
-• Real: RD$${eficienciaReal.toFixed(2)}/min
+    mensajeFinal += `\n\n💰 Eficiencia:\n` +
+                   `• Estimada: RD$${eficienciaEstimada.toFixed(2)}/min\n` +
+                   `• Real: RD$${eficienciaReal.toFixed(2)}/min\n\n` +
+                   `${mensaje}\n\n` +
+                   `🧠 El sistema aprenderá de este tiempo real para mejorar las futuras predicciones!`;
 
-${mensaje}
-
-🧠 El sistema aprenderá de este tiempo real para mejorar las futuras predicciones!`);
+    alert(mensajeFinal);
 }
 
 function debugCronometro() {
@@ -2158,13 +2166,17 @@ function actualizarHistorialConFiltros() {
         const porMinuto = viaje.porMinuto || viaje.gananciaPorMinuto || 0;
         const porKm = viaje.porKm || viaje.gananciaPorKm || 0;
         const esAceptado = viaje.aceptado !== false;
-const esRentable = esAceptado ? (viaje.rentable !== undefined ? 
-         Boolean(viaje.rentable) : 
-         (viaje.rentabilidad === 'rentable')) : false;
+        const esRentable = esAceptado ? (viaje.rentable !== undefined ? 
+                Boolean(viaje.rentable) : 
+                (viaje.rentabilidad === 'rentable')) : false;
         const fecha = viaje.fecha || 'Fecha desconocida';
         
+        // ✅ VERIFICAR SI TIENE TIEMPO DE ESPERA
+        const tieneEspera = viaje.tiempoEspera && viaje.tiempoEspera > 0;
+        const claseEspera = tieneEspera ? 'con-espera' : '';
+        
         return `
-<div class="history-item ${esAceptado ? (esRentable ? 'rentable' : 'no-rentable') : 'rechazado'}">
+<div class="history-item ${esAceptado ? (esRentable ? 'rentable' : 'no-rentable') : 'rechazado'} ${claseEspera}">
     <div class="history-header">
         <span class="history-badge ${esAceptado ? (esRentable ? 'badge-rentable' : 'badge-no-rentable') : 'badge-rechazado'}">
             ${viaje.emoji} ${viaje.texto}
@@ -2175,6 +2187,10 @@ const esRentable = esAceptado ? (viaje.rentable !== undefined ?
     <div class="history-details">
         <div class="history-route">
             <strong>Ganancia:</strong> ${formatearMoneda(ganancia)}
+            ${tieneEspera ? `<span class="espera-badge-historial">
+                <span class="espera-icono-small">⏱️</span>
+                <span class="espera-texto-small">+${viaje.tiempoEspera.toFixed(1)}min (RD$${viaje.costoEspera.toFixed(2)})</span>
+            </span>` : ''}
         </div>
         <div class="history-metrics">
             <span class="metric">⏱️ ${minutos}min</span>
@@ -5023,6 +5039,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
