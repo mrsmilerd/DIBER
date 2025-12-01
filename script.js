@@ -103,17 +103,6 @@ function debugCronometroCompleto() {
 setInterval(debugCronometroCompleto, 5000);
 
 // =============================================
-// SISTEMA DE CRONÓMETRO PARA TIEMPOS REALES
-// =============================================
-let cronometro = {
-    activo: false,
-    inicio: null,
-    tiempoTranscurridoSegundos: 0,
-    intervalo: null,
-    viajeActual: null
-};
-
-// =============================================
 // FUNCIONES DEL SISTEMA DE CRONÓMETRO
 // =============================================
 
@@ -4958,4 +4947,5 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
