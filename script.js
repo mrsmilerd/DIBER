@@ -375,15 +375,22 @@ function detenerCronometro() {
         return;
     }
 
-    // Detener cronómetro
+// Detener cronómetro
     clearInterval(cronometro.intervalo);
-    // ✅ PASO CLAVE: SUMAR TIEMPO EXTRA COBRADO ANTES DE CALCULAR LOS MINUTOS FINALES
+    
+    // 1. CÁLCULO DEL TIEMPO AJUSTADO (YA HECHO CORRECTAMENTE)
     const tiempoExtra = cronometro.viajeActual?.tiempoExtraCobradoSegundos || 0;
-    
-    // Tiempo base transcurrido + tiempo extra que se cobra
     const tiempoTotalSegundos = cronometro.tiempoTranscurridoSegundos + tiempoExtra;
-    
-    const tiempoRealMinutos = tiempoTotalSegundos / 60; // ¡Usamos el tiempo total ajustado!
+    const tiempoRealMinutos = tiempoTotalSegundos / 60; 
+
+    // 2. CÁLCULO DE LA GANANCIA EXTRA COBRADA
+    const minutosExtra = tiempoExtra / 60;
+    const montoExtraCobrado = minutosExtra * TARIFA_EXTRA_POR_MINUTO; // Usando la constante $2.86/min
+
+    // 3. CÁLCULO DE LA GANANCIA TOTAL FINAL
+    // Asumimos que cronometro.viajeActual.tarifaOfrecida contiene los 100 originales.
+    const tarifaBase = parseFloat(cronometro.viajeActual.tarifaOfrecida) || 0;
+    const gananciaTotalFinal = tarifaBase + montoExtraCobrado; // <--- ¡LA SUMA CLAVE!
     
     console.log('⏱️ Tiempo real capturado (sin extra):', (cronometro.tiempoTranscurridoSegundos / 60).toFixed(2), 'minutos');
     console.log('➕ Tiempo extra cobrado (segundos):', tiempoExtra);
@@ -410,9 +417,16 @@ function detenerCronometro() {
         distancia: cronometro.viajeActual.distancia || 1,
         
        // Tiempos
-        tiempoReal: tiempoRealMinutos, // ESTO AHORA INCLUYE EL TIEMPO EXTRA COBRADO
+        tiempoReal: tiempoRealMinutos,
+        tarifaOfrecida: tarifaBase,
         tiempoEstimado: cronometro.viajeActual.tiempoEstimado,
         diferenciaTiempo: tiempoRealMinutos - cronometro.viajeActual.tiempoEstimado,
+        gananciaTotal: gananciaTotalFinal.toFixed(2),
+
+        // --- DETALLES DE COBRO EXTRA ---
+        tiempoExtraCobradoSegundos: tiempoExtra, 
+        montoExtraCobrado: montoExtraCobrado.toFixed(2),
+        
         // NUEVO: Guardar el extra para el historial
         tiempoExtraCobradoSegundos: tiempoExtra, 
         montoExtraCobrado: (tiempoExtra / 60) * TARIFA_EXTRA_POR_MINUTO,
@@ -610,14 +624,12 @@ function detenerEspera() {
 
 function actualizarDisplayCobroExtra() {
     const displayCobro = document.getElementById('info-extra-cobro');
-    if (displayCobro) { // Solo si el elemento existe en el DOM
-        // Usar la variable global que se actualiza cada segundo en actualizarEspera()
+    if (displayCobro) { 
         const tiempoExtra = cronometro.tiempoExtraCobradoSegundos || 0; 
         const minutosExtra = tiempoExtra / 60;
         const montoExtra = minutosExtra * TARIFA_EXTRA_POR_MINUTO;
         
-        // ¡Asumiendo que tienes definida una función formatearMoneda(valor)!
-        // Si no la tienes, puedes usar toFixed(2)
+        // Aseguramos el formato de moneda incluso si formatearMoneda no está definida
         const montoFormateado = (typeof formatearMoneda === 'function') ? formatearMoneda(montoExtra) : `$${montoExtra.toFixed(2)}`;
 
         displayCobro.textContent = `Cobro Extra acumulado: ${montoFormateado} (${minutosExtra.toFixed(1)} min)`;
@@ -4978,6 +4990,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
