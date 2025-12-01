@@ -607,7 +607,7 @@ function agregarAlHistorialDirecto(viaje) {
 
 function mostrarResumenTiempoReal(viaje) {
     try {
-        console.log('📊 MOSTRAR RESUMEN PARA VIAJE:', viaje);
+        console.log('📊 MOSTRAR RESUMEN PARA VIAJE (CON VALIDACIÓN):', viaje);
         
         // ✅ VERIFICACIÓN MÁXIMA DE SEGURIDAD
         if (!viaje || typeof viaje !== 'object') {
@@ -1101,48 +1101,6 @@ function agregarAlHistorialDirecto(viaje) {
     
     // ✅ PASAR A LA FUNCIÓN PRINCIPAL
     agregarAlHistorial(viajeCompleto);
-}
-
-function mostrarResumenTiempoReal(viaje) {
-    const diferencia = viaje.diferenciaConEstimado;
-    
-    // ✅ DETECTAR SI CAMBIÓ LA RENTABILIDAD
-    const rentabilidadCambio = viaje.rentabilidadOriginal && 
-                              viaje.rentabilidad !== viaje.rentabilidadOriginal;
-    
-    let mensaje = '';
-    
-    if (rentabilidadCambio) {
-        mensaje = `🎉 ¡RENTABILIDAD MEJORÓ! De "${viaje.rentabilidadOriginal}" a "${viaje.rentabilidad}"`;
-    } else if (diferencia > 5) {
-        mensaje = `📈 Viaje tomó ${diferencia.toFixed(1)} min más de lo estimado`;
-    } else if (diferencia < -5) {
-        mensaje = `📉 Viaje tomó ${Math.abs(diferencia).toFixed(1)} min menos - ¡Más eficiente!`;
-    } else {
-        mensaje = '🎯 Tiempo muy cercano al estimado';
-    }
-
-    const eficienciaReal = viaje.gananciaPorMinuto;
-    const eficienciaEstimada = viaje.tarifa / viaje.tiempoEstimado;
-
-    alert(`✅ VIAJE COMPLETADO
-
-⏱️ Tiempos:
-• Estimado: ${viaje.tiempoEstimado} min
-• Real: ${viaje.tiempoReal} min  
-• Diferencia: ${diferencia.toFixed(1)} min
-
-💰 Rentabilidad:
-• Estimada: ${viaje.rentabilidadOriginal || 'N/A'}
-• Real: ${viaje.rentabilidad} ${viaje.emoji}
-
-📊 Eficiencia por minuto:
-• Estimada: ${formatearMoneda(eficienciaEstimada)}
-• Real: ${formatearMoneda(eficienciaReal)}
-
-${mensaje}
-
-${rentabilidadCambio ? '💡 El historial mostrará la rentabilidad REAL basada en tu tiempo' : ''}`);
 }
 
 function limpiarFormularioCompleto() {
@@ -2421,18 +2379,17 @@ async function agregarAlHistorial(viaje) {
             actualizarEstadisticas();
         }, 100);
         
-        // ✅ MOSTRAR RESUMEN SOLO PARA VIAJES CON TIEMPO REAL
-        if (viajeCompleto.tiempoRealCapturado && viajeCompleto.tiempoReal > 0) {
-            setTimeout(() => {
-                console.log('📊 Llamando a mostrarResumenTiempoReal...');
-                mostrarResumenTiempoReal(viajeCompleto);
-            }, 500);
+  // ✅ MOSTRAR RESUMEN SOLO PARA VIAJES CON TIEMPO REAL
+if (viajeCompleto.tiempoRealCapturado && viajeCompleto.tiempoReal > 0) {
+    setTimeout(() => {
+        console.log('📊 Llamando a mostrarResumenTiempoReal...');
+        // ✅ VERIFICAR ANTES DE LLAMAR
+        if (viajeCompleto && viajeCompleto.tiempoReal && typeof viajeCompleto.tiempoReal === 'number') {
+            mostrarResumenTiempoReal(viajeCompleto);
+        } else {
+            console.warn('⚠️ Omitiendo resumen - datos inválidos:', viajeCompleto);
         }
-        
-    } catch (error) {
-        console.error('❌ Error crítico en agregarAlHistorial:', error);
-        mostrarStatus('❌ Error al guardar el viaje', 'error');
-    }
+    }, 500);
 }
 
 function actualizarHistorialConFiltros() {
@@ -5337,6 +5294,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
