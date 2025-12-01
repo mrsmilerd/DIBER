@@ -43,6 +43,30 @@ const firebaseConfig = {
 const elementos = {};
 
 // =============================================
+// CONSTANTE DE NEGOCIO
+// =============================================
+const TIEMPO_ESPERA_GRATIS_SEGUNDOS = 120; // 2 minutos (120 segundos)
+const TARIFA_EXTRA_POR_MINUTO = 2.86; // $2.86 por minuto extra (Asumo esta tarifa, ajústala si es necesario)
+
+// =============================================
+// SISTEMA DE CRONÓMETRO PARA TIEMPOS REALES (ACTUALIZADO)
+// =============================================
+let cronometro = {
+    activo: false,
+    inicio: null,
+    tiempoTranscurridoSegundos: 0,
+    intervalo: null,
+    viajeActual: null,
+    
+    // --- NUEVAS VARIABLES PARA EL SISTEMA DE ESPERA ---
+    esperaActiva: false,
+    intervaloEspera: null,
+    estadoEspera: 'detenido', // 'detenido', 'countdown', 'cobro_extra'
+    tiempoExtraCobradoSegundos: 0, // Tiempo acumulado DENTRO de la fase de 'cobro_extra'
+    inicioEspera: null
+};
+
+// =============================================
 // DEBUGGING TEMPORAL - ELIMINAR DESPUÉS
 // =============================================
 
@@ -90,18 +114,6 @@ let cronometro = {
 };
 
 // =============================================
-// SISTEMA DE TIEMPO DE ESPERA DEL CLIENTE
-// =============================================
-let sistemaEspera = {
-    activo: false,
-    tiempoEsperaSegundos: 120, // 2 minutos en segundos
-    tiempoExtraSegundos: 0,
-    intervaloEspera: null,
-    cronometroPausado: false,
-    tiempoPausaInicio: null
-};
-
-// =============================================
 // FUNCIONES DEL SISTEMA DE CRONÓMETRO
 // =============================================
 
@@ -130,15 +142,15 @@ function crearModalCronometro(resultado) {
     modalFondo.id = 'modal-cronometro';
     modalFondo.className = 'modal-cronometro-fondo';
     
-    // ✅ CORREGIDO: Calcular porcentajes con el orden correcto
-    const tiempoUsuario = resultado.minutos;
-    const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
+const tiempoUsuario = resultado.minutos;
+const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
+const tiempoTotal = Math.max(tiempoUsuario, tiempoAjustado);
+
+const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoTotal);
+const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
     
-    const porcentajeUsuario = calcularPorcentaje(tiempoUsuario, tiempoAjustado);
-    
-    modalFondo.innerHTML = `
+   modalFondo.innerHTML = `
         <div class="modal-cronometro-contenido estado-verde">
-            <!-- HEADER -->
             <div class="cronometro-header">
                 <div class="cronometro-titulo">
                     <span class="cronometro-icono">🚗</span>
@@ -147,19 +159,10 @@ function crearModalCronometro(resultado) {
                 <div class="cronometro-tiempo-display" id="cronometro-tiempo-display">
                     00:00
                 </div>
-            </div>
-            
-            <!-- ✅ NUEVO: CONTADOR DE ESPERA -->
-            <div id="contador-espera-section" class="contador-espera-section hidden">
-                <div class="espera-header">
-                    <span class="espera-icono">⏱️</span>
-                    <span class="espera-texto">Tiempo de Espera</span>
-                </div>
-                <div class="espera-tiempo" id="espera-tiempo-display">
-                    02:00
-                </div>
-                <div class="espera-info">
-                    <span class="espera-subtexto">Cobro extra: RD$2.86/min después de 2min</span>
+                
+                <div class="espera-display" id="espera-display">
+                    <span class="espera-estado" id="espera-estado">Esperando al usuario</span>
+                    <span class="espera-tiempo" id="espera-tiempo">02:00</span>
                 </div>
             </div>
             
@@ -182,38 +185,33 @@ function crearModalCronometro(resultado) {
                         <div class="progreso-fill" id="progreso-fill"></div>
                     </div>
                     <div class="marcadores-tiempo">
-                        <span class="marcador inicio">0</span>
-                        <span class="marcador verde" style="left: ${porcentajeUsuario}%">${tiempoUsuario}</span>
-                        <span class="marcador fin">${tiempoAjustado}</span>
+<span class="marcador inicio">0</span>
+<span class="marcador verde" style="left:${porcentajeUsuario}%;">${tiempoUsuario}</span>
+<span class="marcador amarillo" style="left:${porcentajeAjustado}%;">${tiempoAjustado}</span>
                     </div>
                 </div>
             </div>
-            
-            <!-- ESTADO -->
-            <div class="cronometro-estado" id="cronometro-estado">
-                <span class="estado-icono">✅</span>
-                <span class="estado-texto">Dentro de tu tiempo estimado</span>
-            </div>
-            
-            <!-- ✅ ACCIONES MEJORADAS -->
+              
+            <!-- ACCIONES -->
             <div class="cronometro-acciones">
-                <!-- NUEVO BOTÓN DE ESPERA -->
-                <button class="btn-espera-cliente" onclick="activarModoEspera()" id="btn-activar-espera">
+                <button class="btn-espera" id="btn-espera" onclick="manejarEspera()">
                     <span class="btn-icono">⏸️</span>
-                    <span class="btn-texto">Cliente Bajando (2min)</span>
+                    <span class="btn-texto">Iniciar Espera (2 min)</span>
                 </button>
-                
+
                 <button class="btn-detener-viaje" onclick="detenerCronometro()">
                     <span class="btn-icono">🛑</span>
                     <span class="btn-texto">Finalizar Viaje</span>
                 </button>
                 
-                <div class="instruccion">Toca cuando llegues a tu destino</div>
+                <div class="info-extra-cobro" id="info-extra-cobro">
+                    Extra acumulado: $0.00
+                </div>
             </div>
         </div>
     `;
     
-    document.body.appendChild(modalFondo);
+     document.body.appendChild(modalFondo);
     
     setTimeout(agregarEfectosVisuales, 100);
 }
@@ -237,54 +235,27 @@ function iniciarCronometroConViaje(resultado) {
     // Cerrar modal rápido
     cerrarModalRapido();
 
-    // ✅ OBTENER Y VERIFICAR DATOS DEL VIAJE
-    const tiempoUsuario = parseFloat(elementos.minutos.value) || resultado.minutos;
-    const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
-    const tarifa = parseFloat(elementos.tarifa.value) || resultado.tarifa || 0;
-    const distancia = parseFloat(elementos.distancia.value) || resultado.distancia || 0;
-    
-    console.log('🎯 DATOS PARA CRONÓMETRO:', {
-        tarifa,
-        tiempoUsuario,
-        tiempoAjustado,
-        distancia,
-        tiempoOriginalResultado: resultado.minutos
-    });
+const tiempoUsuario = parseFloat(elementos.minutos.value) || resultado.minutos;
+const tiempoAjustado = resultado.tiempoAjustado || resultado.minutos;
 
-    // ✅ VERIFICAR DATOS MÍNIMOS
-    if (!tarifa || !tiempoUsuario || !distancia) {
-        mostrarError('Error: Faltan datos para iniciar el cronómetro. Por favor, ingresa tarifa, tiempo y distancia.');
-        return;
-    }
+// Tomamos el mayor para usarlo como referencia de la barra
+const tiempoTotal = Math.max(tiempoUsuario, tiempoAjustado);
 
-    // ✅ GUARDAR DATOS COMPLETOS EN CRONÓMETRO
-    cronometro.viajeActual = {
-        // Datos esenciales
-        tarifa: tarifa,
-        ganancia: tarifa,
-        minutos: tiempoUsuario,
-        tiempoEstimado: tiempoUsuario,
-        distancia: distancia,
-        
-        // Datos para cálculos
-        tiempoAjustado: tiempoAjustado,
-        tiempoBase: tiempoUsuario,
-        tiempoMaximo: tiempoAjustado,
-        
-        // Datos del resultado original
-        ...resultado,
-        
-        // Metadatos
-        timestampInicio: new Date().toISOString(),
-        id: 'cronometro_' + Date.now()
-    };
+cronometro.viajeActual = {
+    ...resultado,
+    timestampInicio: new Date().toISOString(),
+    tiempoEstimado: tiempoUsuario, // Tu estimación
+    tiempoAjustado: tiempoAjustado, // Con tráfico
+    tiempoBase: tiempoUsuario,
+    tiempoMaximo: tiempoTotal // <-- CORREGIDO
+};
 
     // Iniciar cronómetro
     cronometro.activo = true;
     cronometro.inicio = Date.now();
     cronometro.tiempoTranscurridoSegundos = 0;
 
-    // Mostrar banner modal
+    // Mostrar modal CON ORDEN GARANTIZADO
     crearModalCronometro({
         ...resultado,
         minutos: tiempoUsuario,
@@ -294,14 +265,11 @@ function iniciarCronometroConViaje(resultado) {
     // Actualizar cada segundo
     cronometro.intervalo = setInterval(actualizarCronometro, 1000);
 
-    console.log('🎯 Cronómetro iniciado para viaje:', cronometro.viajeActual);
     mostrarStatus('⏱️ Viaje iniciado', 'info');
 }
 
 function actualizarCronometro() {
-    if (!cronometro.activo || sistemaEspera.cronometroPausado) {
-        return; // No actualizar si el cronómetro está pausado por espera
-    }
+    if (!cronometro.activo) return;
 
     cronometro.tiempoTranscurridoSegundos = Math.floor((Date.now() - cronometro.inicio) / 1000);
     const minutosTranscurridos = cronometro.tiempoTranscurridoSegundos / 60;
@@ -411,318 +379,82 @@ function actualizarBarraProgreso(minutosTranscurridos) {
 }
 
 function detenerCronometro() {
+    console.log('🛑 DETENIENDO CRONÓMETRO - INICIO');
+    
     if (!cronometro.activo) {
         console.log('❌ No hay cronómetro activo');
         return;
     }
 
-    // ✅ DETENER MODO ESPERA SI ESTÁ ACTIVO
-    if (sistemaEspera.activo) {
-        desactivarModoEspera();
+    // Detener cronómetro
+    clearInterval(cronometro.intervalo);
+    // ✅ PASO CLAVE: SUMAR TIEMPO EXTRA COBRADO ANTES DE CALCULAR LOS MINUTOS FINALES
+    const tiempoExtra = cronometro.viajeActual?.tiempoExtraCobradoSegundos || 0;
+    
+    // Tiempo base transcurrido + tiempo extra que se cobra
+    const tiempoTotalSegundos = cronometro.tiempoTranscurridoSegundos + tiempoExtra;
+    
+    const tiempoRealMinutos = tiempoTotalSegundos / 60; // ¡Usamos el tiempo total ajustado!
+    
+    console.log('⏱️ Tiempo real capturado (sin extra):', (cronometro.tiempoTranscurridoSegundos / 60).toFixed(2), 'minutos');
+    console.log('➕ Tiempo extra cobrado (segundos):', tiempoExtra);
+    console.log('⏱️ Tiempo real final para métrica:', tiempoRealMinutos.toFixed(2), 'minutos');
+
+    // ✅ VERIFICAR QUE TENEMOS DATOS
+    if (!cronometro.viajeActual) {
+        console.error('❌ NO hay viajeActual en cronómetro');
+        return;
     }
 
-    // ✅ DETENER CRONÓMETRO
-    clearInterval(cronometro.intervalo);
-    const tiempoRealMinutos = cronometro.tiempoTranscurridoSegundos / 60;
-    
-    console.log('🛑 Cronómetro detenido. Tiempo real:', tiempoRealMinutos.toFixed(2), 'minutos');
+    console.log('📦 Datos del viaje original:', {
+        tarifa: cronometro.viajeActual.tarifa,
+        tiempoEstimado: cronometro.viajeActual.tiempoEstimado,
+        distancia: cronometro.viajeActual.distancia,
+        rentabilidadOriginal: cronometro.viajeActual.rentabilidad
+    });
 
-    // ✅ CERRAR MODAL PRIMERO (IMPORTANTE)
+    // ✅ CREAR NUEVO OBJETO CON DATOS REALES
+    const viajeConTiempoReal = {
+        // Datos básicos del viaje
+        tarifa: cronometro.viajeActual.tarifa,
+        ganancia: cronometro.viajeActual.tarifa,
+        distancia: cronometro.viajeActual.distancia || 1,
+        
+       // Tiempos
+        tiempoReal: tiempoRealMinutos, // ESTO AHORA INCLUYE EL TIEMPO EXTRA COBRADO
+        tiempoEstimado: cronometro.viajeActual.tiempoEstimado,
+        diferenciaTiempo: tiempoRealMinutos - cronometro.viajeActual.tiempoEstimado,
+        // NUEVO: Guardar el extra para el historial
+        tiempoExtraCobradoSegundos: tiempoExtra, 
+        montoExtraCobrado: (tiempoExtra / 60) * TARIFA_EXTRA_POR_MINUTO,
+        
+        // Rentabilidad original para comparar
+        rentabilidadOriginal: cronometro.viajeActual.rentabilidad,
+        textoOriginal: cronometro.viajeActual.texto,
+        
+        // Metadata
+        timestampFin: new Date().toISOString(),
+        tiempoRealCapturado: true
+    };
+
+    console.log('🔄 Procesando viaje con tiempo real...');
+    procesarViajeConTiempoReal(viajeConTiempoReal);
+    
+    // Limpiar
     const modalCronometro = document.getElementById('modal-cronometro');
     if (modalCronometro) {
         modalCronometro.remove();
-        console.log('✅ Modal de cronómetro cerrado');
     }
 
-    // ✅ PROCESAR VIAJE SOLO SI TENEMOS DATOS VÁLIDOS
-    if (tiempoRealMinutos > 0 && cronometro.viajeActual) {
-        procesarViajeConTiempoReal(tiempoRealMinutos);
-    } else {
-        console.warn('⚠️ No se procesó viaje - datos inválidos');
-    }
-
-    // ✅ LIMPIAR FORMULARIO
     limpiarFormularioCompleto();
     
-    // ✅ RESETEAR CRONÓMETRO
+    // Resetear cronómetro
     cronometro.activo = false;
     cronometro.inicio = null;
     cronometro.tiempoTranscurridoSegundos = 0;
     cronometro.viajeActual = null;
     
-    console.log('✅ Cronómetro reseteado completamente');
-}
-
-// =============================================
-// FUNCIÓN NUEVA - PROCESAR VIAJE CON TIEMPO REAL Y ESPERA
-// =============================================
-function procesarViajeConTiempoReal(tiempoRealMinutos) {
-    console.log('🔄 PROCESAR VIAJE CON TIEMPO REAL - INICIO', tiempoRealMinutos);
-    
-    // ✅ VERIFICAR DATOS BÁSICOS
-    if (!cronometro.viajeActual) {
-        console.error('❌ No hay datos del viaje actual en cronometro.viajeActual');
-        return;
-    }
-    
-    if (!tiempoRealMinutos || tiempoRealMinutos <= 0) {
-        console.error('❌ Tiempo real inválido:', tiempoRealMinutos);
-        return;
-    }
-
-    const viajeBase = cronometro.viajeActual;
-    
-    // ✅ EXTRAER DATOS CON VALORES POR DEFECTO
-    const tarifa = viajeBase.tarifa || viajeBase.ganancia || 0;
-    const minutosEstimados = viajeBase.minutos || viajeBase.tiempoEstimado || 0;
-    const distancia = viajeBase.distancia || 0;
-    
-    console.log('📊 DATOS PARA VIAJE:', { tarifa, minutosEstimados, distancia, tiempoRealMinutos });
-
-    // ✅ CREAR OBJETO DE VIAJE
-    const viajeConTiempoReal = {
-        // Datos base
-        tarifa: tarifa,
-        ganancia: tarifa,
-        minutos: tiempoRealMinutos,
-        tiempoReal: tiempoRealMinutos,
-        tiempoEstimado: minutosEstimados,
-        distancia: distancia,
-        diferenciaTiempo: tiempoRealMinutos - minutosEstimados,
-        
-        // Metadatos
-        id: 'viaje_real_' + Date.now(),
-        tiempoRealCapturado: true,
-        aceptado: true,
-        timestamp: new Date().toISOString(),
-        fecha: new Date().toLocaleString('es-DO'),
-        
-        // Datos de espera
-        tiempoEspera: sistemaEspera.tiempoExtraSegundos > 0 ? sistemaEspera.tiempoExtraSegundos / 60 : 0,
-        costoEspera: sistemaEspera.tiempoExtraSegundos > 0 ? (sistemaEspera.tiempoExtraSegundos / 60) * 2.86 : 0,
-        
-        // Perfil
-        perfilId: perfilActual?.id,
-        perfilNombre: perfilActual?.nombre
-    };
-
-    // ✅ CALCULAR GANANCIA TOTAL
-    viajeConTiempoReal.gananciaTotal = viajeConTiempoReal.tarifa + (viajeConTiempoReal.costoEspera || 0);
-
-    // ✅ CALCULAR RENTABILIDAD (solo si hay perfil)
-    if (perfilActual) {
-        const gananciaPorMinuto = tiempoRealMinutos > 0 ? tarifa / tiempoRealMinutos : 0;
-        const gananciaPorKm = distancia > 0 ? tarifa / distancia : 0;
-        
-        viajeConTiempoReal.gananciaPorMinuto = parseFloat(gananciaPorMinuto.toFixed(2));
-        viajeConTiempoReal.gananciaPorKm = parseFloat(gananciaPorKm.toFixed(2));
-        
-        const umbralMinutoRentable = perfilActual.umbralMinutoRentable || 6.0;
-        const umbralKmRentable = perfilActual.umbralKmRentable || 25.0;
-        const umbralMinutoOportunidad = perfilActual.umbralMinutoOportunidad || 5.0;
-        const umbralKmOportunidad = perfilActual.umbralKmOportunidad || 23.0;
-        
-        if (gananciaPorMinuto >= umbralMinutoRentable && gananciaPorKm >= umbralKmRentable) {
-            viajeConTiempoReal.rentabilidad = 'rentable';
-            viajeConTiempoReal.texto = 'RENTABLE';
-            viajeConTiempoReal.emoji = '✅';
-            viajeConTiempoReal.rentable = true;
-        } else if (gananciaPorMinuto >= umbralMinutoOportunidad && gananciaPorKm >= umbralKmOportunidad) {
-            viajeConTiempoReal.rentabilidad = 'oportunidad';
-            viajeConTiempoReal.texto = 'OPORTUNIDAD';
-            viajeConTiempoReal.emoji = '⚠️';
-            viajeConTiempoReal.rentable = false;
-        } else {
-            viajeConTiempoReal.rentabilidad = 'no-rentable';
-            viajeConTiempoReal.texto = 'NO RENTABLE';
-            viajeConTiempoReal.emoji = '❌';
-            viajeConTiempoReal.rentable = false;
-        }
-    } else {
-        viajeConTiempoReal.rentabilidad = 'no-rentable';
-        viajeConTiempoReal.texto = 'NO RENTABLE';
-        viajeConTiempoReal.emoji = '❌';
-        viajeConTiempoReal.rentable = false;
-        viajeConTiempoReal.gananciaPorMinuto = 0;
-        viajeConTiempoReal.gananciaPorKm = 0;
-    }
-
-    console.log('💾 VIAJE FINAL A GUARDAR:', viajeConTiempoReal);
-
-    // ✅ GUARDAR EN HISTORIAL
-    agregarAlHistorialDirecto(viajeConTiempoReal);
-
-    // ✅ LIMPIAR SISTEMA DE ESPERA
-    sistemaEspera.activo = false;
-    sistemaEspera.tiempoExtraSegundos = 0;
-    sistemaEspera.cronometroPausado = false;
-    sistemaEspera.tiempoEsperaSegundos = 120;
-    
-    console.log('✅ Viaje procesado correctamente');
-}
-
-// =============================================
-// CORRECCIÓN DE agregarAlHistorialDirecto
-// =============================================
-
-function agregarAlHistorialDirecto(viaje) {
-    console.log('💾 GUARDANDO DIRECTAMENTE EN HISTORIAL', viaje);
-    
-    // ✅ ASEGURAR QUE TODOS LOS CAMPOS NUMÉRICOS EXISTAN
-    const viajeSeguro = {
-        id: viaje.id || 'viaje_' + Date.now(),
-        tarifa: viaje.tarifa || viaje.ganancia || viaje.gananciaTotal || 0,
-        ganancia: viaje.ganancia || viaje.tarifa || viaje.gananciaTotal || 0,
-        gananciaTotal: viaje.gananciaTotal || viaje.ganancia || viaje.tarifa || 0,
-        minutos: viaje.minutos || viaje.tiempoReal || 0,
-        tiempoReal: viaje.tiempoReal || viaje.minutos || 0,
-        tiempoEstimado: viaje.tiempoEstimado || 0,
-        distancia: viaje.distancia || 0,
-        diferenciaTiempo: viaje.diferenciaTiempo || 0,
-        gananciaPorMinuto: viaje.gananciaPorMinuto || 0,
-        gananciaPorKm: viaje.gananciaPorKm || 0,
-        rentabilidad: viaje.rentabilidad || 'no-rentable',
-        texto: viaje.texto || 'NO RENTABLE',
-        emoji: viaje.emoji || '❌',
-        rentable: Boolean(viaje.rentable),
-        aceptado: viaje.aceptado !== false,
-        tiempoRealCapturado: Boolean(viaje.tiempoRealCapturado),
-        tiempoEspera: viaje.tiempoEspera || 0,
-        costoEspera: viaje.costoEspera || 0,
-        fecha: viaje.fecha || new Date().toLocaleString('es-DO'),
-        timestamp: viaje.timestamp || new Date().toISOString(),
-        perfilId: viaje.perfilId || perfilActual?.id,
-        perfilNombre: viaje.perfilNombre || perfilActual?.nombre
-    };
-
-    console.log('📝 Viaje seguro para historial:', viajeSeguro);
-    
-    // ✅ AGREGAR AL HISTORIAL USANDO LA FUNCIÓN PRINCIPAL
-    agregarAlHistorial(viajeSeguro);
-}
-
-// =============================================
-// VERSIÓN ULTRA-SEGURA DE mostrarResumenTiempoReal
-// =============================================
-
-function mostrarResumenTiempoReal(viaje) {
-    try {
-        console.log('📊 MOSTRAR RESUMEN PARA VIAJE (CON VALIDACIÓN):', viaje);
-        
-        // ✅ VERIFICACIÓN MÁXIMA DE SEGURIDAD
-        if (!viaje || typeof viaje !== 'object') {
-            console.error('❌ Viaje es inválido:', viaje);
-            mostrarError('Error: Datos del viaje no válidos');
-            return;
-        }
-
-        // ✅ FUNCIÓN DE SEGURIDAD MÁXIMA
-        function getValorSeguro(obj, propiedades, defecto = 0) {
-            if (!obj || typeof obj !== 'object') return defecto;
-            
-            // Buscar el primer valor válido en la lista de propiedades
-            for (const prop of propiedades) {
-                if (prop in obj && obj[prop] !== undefined && obj[prop] !== null) {
-                    const valor = obj[prop];
-                    // Verificar si es número válido
-                    if (typeof valor === 'number' && !isNaN(valor)) {
-                        return valor;
-                    }
-                    // Intentar convertir string a número
-                    if (typeof valor === 'string') {
-                        const num = parseFloat(valor);
-                        if (!isNaN(num)) return num;
-                    }
-                }
-            }
-            return defecto;
-        }
-
-        // ✅ OBTENER TODOS LOS VALORES CON MÚLTIPLES FUENTES
-        const tiempoReal = getValorSeguro(viaje, ['tiempoReal', 'minutos', 'tiempo'], 0);
-        const tiempoEstimado = getValorSeguro(viaje, ['tiempoEstimado', 'minutosEstimados'], 0);
-        
-        console.log('🔍 Tiempos obtenidos:', { tiempoReal, tiempoEstimado });
-
-        // ✅ VERIFICAR QUE TENEMOS DATOS VÁLIDOS
-        if (tiempoReal <= 0) {
-            console.warn('⚠️ Tiempo real no válido, omitiendo resumen');
-            return;
-        }
-
-        const diferencia = tiempoReal - tiempoEstimado;
-        
-        // ✅ FUNCIÓN SEGURA PARA FORMATEAR
-        function formatearSeguro(valor, decimales = 1) {
-            if (typeof valor !== 'number' || isNaN(valor)) {
-                return '0'.padEnd(decimales > 0 ? decimales + 2 : 0, '0');
-            }
-            return valor.toFixed(decimales);
-        }
-
-        // ✅ DETERMINAR MENSAJE
-        let mensaje = '';
-        if (diferencia > 5) {
-            mensaje = `📈 Viaje tomó ${formatearSeguro(diferencia)} min más de lo estimado`;
-        } else if (diferencia < -5) {
-            mensaje = `📉 Viaje tomó ${formatearSeguro(Math.abs(diferencia))} min menos de lo estimado`;
-        } else {
-            mensaje = '🎯 Tiempo muy cercano al estimado';
-        }
-
-        // ✅ INFO DE TIEMPO DE ESPERA
-        let mensajeEspera = '';
-        const tiempoEspera = getValorSeguro(viaje, ['tiempoEspera', 'espera'], 0);
-        if (tiempoEspera > 0) {
-            const gananciaBase = getValorSeguro(viaje, ['tarifa', 'ganancia', 'gananciaTotal'], 0);
-            const gananciaTotal = getValorSeguro(viaje, ['gananciaTotal', 'ganancia', 'tarifa'], gananciaBase);
-            const costoEspera = getValorSeguro(viaje, ['costoEspera', 'costoExtra'], 0);
-            
-            let incrementoPorcentaje = '0.0';
-            if (gananciaBase > 0) {
-                incrementoPorcentaje = ((costoEspera / gananciaBase) * 100).toFixed(1);
-            }
-            
-            mensajeEspera = `\n\n⏱️ TIEMPO DE ESPERA DEL CLIENTE:\n` +
-                           `• Tiempo extra: ${formatearSeguro(tiempoEspera)} minutos\n` +
-                           `• Cobro extra: RD$${formatearSeguro(costoEspera, 2)}\n` +
-                           `• Ganancia base: RD$${formatearSeguro(gananciaBase, 2)}\n` +
-                           `• Ganancia total: RD$${formatearSeguro(gananciaTotal, 2)}\n` +
-                           `💰 Incremento: +${incrementoPorcentaje}%`;
-        }
-
-        // ✅ CALCULAR EFICIENCIA
-        const gananciaUsar = getValorSeguro(viaje, ['gananciaTotal', 'tarifa', 'ganancia'], 0);
-        const eficienciaReal = tiempoReal > 0 ? (gananciaUsar / tiempoReal) : 0;
-        const eficienciaEstimada = tiempoEstimado > 0 ? (gananciaUsar / tiempoEstimado) : 0;
-
-        // ✅ CONSTRUIR MENSAJE FINAL
-        let mensajeFinal = `✅ VIAJE COMPLETADO\n\n` +
-                          `⏱️ Tiempos:\n` +
-                          `• Estimado: ${formatearSeguro(tiempoEstimado)} min\n` +
-                          `• Real: ${formatearSeguro(tiempoReal)} min\n` +
-                          `• Diferencia: ${formatearSeguro(diferencia)} min`;
-
-        if (mensajeEspera) {
-            mensajeFinal += mensajeEspera;
-        }
-
-        mensajeFinal += `\n\n💰 Eficiencia:\n` +
-                       `• Estimada: RD$${formatearSeguro(eficienciaEstimada, 2)}/min\n` +
-                       `• Real: RD$${formatearSeguro(eficienciaReal, 2)}/min\n\n` +
-                       `${mensaje}\n\n` +
-                       `🧠 El sistema aprenderá de este tiempo real para mejorar las futuras predicciones!`;
-
-        // ✅ MOSTRAR CON ALERT
-        console.log('📤 Mostrando resumen...');
-        setTimeout(() => {
-            alert(mensajeFinal);
-        }, 300);
-        
-    } catch (error) {
-        console.error('❌ Error crítico en mostrarResumenTiempoReal:', error);
-        // No mostrar nada para no interrumpir el flujo
-    }
+    console.log('✅ Cronómetro detenido y procesado');
 }
 
 function debugCronometro() {
@@ -753,188 +485,132 @@ setInterval(() => {
 }, 10000);
 
 // =============================================
-// FUNCIONES DEL SISTEMA DE ESPERA DEL CLIENTE
+// LÓGICA DE ESPERA (2 MINUTOS DE GRACIA + COBRO EXTRA)
 // =============================================
 
-function activarModoEspera() {
-    if (sistemaEspera.activo) {
-        console.log('⏸️ Modo espera ya activo');
-        return;
-    }
-
-    console.log('🎯 Activando modo espera del cliente...');
-    
-    // Pausar cronómetro principal
-    sistemaEspera.cronometroPausado = true;
-    sistemaEspera.tiempoPausaInicio = Date.now();
-    sistemaEspera.activo = true;
-    sistemaEspera.tiempoEsperaSegundos = 120; // Reset a 2 minutos
-    sistemaEspera.tiempoExtraSegundos = 0;
-
-    // Ocultar botón de activar espera
-    const btnEspera = document.getElementById('btn-activar-espera');
-    if (btnEspera) {
-        btnEspera.style.display = 'none';
-    }
-
-    // Mostrar sección de contador de espera
-    const seccionEspera = document.getElementById('contador-espera-section');
-    if (seccionEspera) {
-        seccionEspera.classList.remove('hidden');
-    }
-
-    // ✅ AGREGAR BOTÓN DE CANCELAR ESPERA
-    const accionesContainer = document.querySelector('.cronometro-acciones');
-    if (accionesContainer && !document.getElementById('btn-cancelar-espera')) {
-        const btnCancelar = document.createElement('button');
-        btnCancelar.id = 'btn-cancelar-espera';
-        btnCancelar.className = 'btn-cancelar-espera';
-        btnCancelar.innerHTML = `
-            <span class="btn-icono">▶️</span>
-            <span class="btn-texto">Continuar Viaje</span>
-        `;
-        btnCancelar.onclick = desactivarModoEspera;
-        
-        // Insertar antes del botón de finalizar
-        const btnFinalizar = document.querySelector('.btn-detener-viaje');
-        if (btnFinalizar) {
-            accionesContainer.insertBefore(btnCancelar, btnFinalizar);
-        } else {
-            accionesContainer.appendChild(btnCancelar);
-        }
-    }
-
-    // Iniciar contador regresivo
-    sistemaEspera.intervaloEspera = setInterval(actualizarContadorEspera, 1000);
-
-    // Cambiar color del modal a amarillo (advertencia)
-    const modal = document.querySelector('.modal-cronometro-contenido');
-    if (modal) {
-        modal.className = 'modal-cronometro-contenido estado-amarillo';
-    }
-
-    mostrarStatus('⏱️ Modo espera activado - Cliente bajando', 'info');
+function formatearTiempo(segundos) {
+    const min = Math.floor(Math.abs(segundos) / 60);
+    const sec = Math.abs(segundos) % 60;
+    const signo = segundos < 0 ? '-' : '';
+    return `${signo}${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
 }
 
-function actualizarContadorEspera() {
-    if (!sistemaEspera.activo) return;
-
-    if (sistemaEspera.tiempoEsperaSegundos > 0) {
-        // Fase de cuenta regresiva (2 minutos)
-        sistemaEspera.tiempoEsperaSegundos--;
-        
-        const minutos = Math.floor(sistemaEspera.tiempoEsperaSegundos / 60);
-        const segundos = sistemaEspera.tiempoEsperaSegundos % 60;
-        const tiempoFormateado = `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
-        
-        // Actualizar display
-        const displayEspera = document.getElementById('espera-tiempo-display');
-        if (displayEspera) {
-            displayEspera.textContent = tiempoFormateado;
-            displayEspera.className = 'espera-tiempo contador-regresivo';
-        }
-
-        // Efecto visual cuando quedan menos de 30 segundos
-        if (sistemaEspera.tiempoEsperaSegundos <= 30) {
-            if (displayEspera) {
-                displayEspera.classList.add('contador-urgente');
-            }
-        }
+function manejarEspera() {
+    if (!cronometro.esperaActiva) {
+        iniciarEspera();
     } else {
-        // Fase de tiempo extra (cobro adicional)
-        sistemaEspera.tiempoExtraSegundos++;
-        
-        const minutosExtra = Math.floor(sistemaEspera.tiempoExtraSegundos / 60);
-        const segundosExtra = sistemaEspera.tiempoExtraSegundos % 60;
-        const tiempoExtraFormateado = `+${minutosExtra.toString().padStart(2, '0')}:${segundosExtra.toString().padStart(2, '0')}`;
-        
-        // Actualizar display
-        const displayEspera = document.getElementById('espera-tiempo-display');
-        if (displayEspera) {
-            displayEspera.textContent = tiempoExtraFormateado;
-            displayEspera.className = 'espera-tiempo contador-extra';
-        }
-
-        // Cambiar a color rojo cuando hay tiempo extra
-        const modal = document.querySelector('.modal-cronometro-contenido');
-        if (modal) {
-            modal.className = 'modal-cronometro-contenido estado-rojo';
-        }
-
-        // Actualizar info de cobro extra
-        const infoEspera = document.querySelector('.espera-subtexto');
-        if (infoEspera) {
-            const costoExtra = (sistemaEspera.tiempoExtraSegundos / 60) * 2.86;
-            infoEspera.textContent = `Cobro extra: RD$${costoExtra.toFixed(2)} (RD$2.86/min)`;
-        }
+        detenerEspera();
     }
 }
 
-function desactivarModoEspera() {
-    if (!sistemaEspera.activo) return;
+function iniciarEspera() {
+    if (cronometro.esperaActiva) return;
 
-    console.log('✅ Desactivando modo espera...');
+    // 1. Detener Cronómetro Principal
+    clearInterval(cronometro.intervalo);
+    cronometro.activo = false;
+
+    // 2. Inicializar Variables de Espera
+    cronometro.esperaActiva = true;
+    cronometro.estadoEspera = 'countdown';
+    cronometro.inicioEspera = Date.now();
+    cronometro.tiempoExtraCobradoSegundos = cronometro.viajeActual?.tiempoExtraCobradoSegundos || 0;
     
-    // Detener intervalo
-    if (sistemaEspera.intervaloEspera) {
-        clearInterval(sistemaEspera.intervaloEspera);
-        sistemaEspera.intervaloEspera = null;
+    // 3. Iniciar Intervalo de Espera
+    cronometro.intervaloEspera = setInterval(actualizarEspera, 1000);
+
+    // 4. Actualizar Botón y Modal
+    const btn = document.getElementById('btn-espera');
+    if (btn) {
+        btn.innerHTML = '<span class="btn-icono">▶️</span> <span class="btn-texto">Detener Espera</span>';
+        btn.classList.add('btn-espera-active'); // Para estilo rojo en CSS
     }
+
+    // Asegurar que la tarifa extra se inicialice en el objeto viajeActual
+    if (cronometro.viajeActual) {
+        cronometro.viajeActual.tiempoExtraCobradoSegundos = cronometro.tiempoExtraCobradoSegundos;
+        mostrarStatus('⏸️ Cronómetro pausado. Cuenta Regresiva de 2 min iniciada.', 'warning');
+    }
+}
+
+function actualizarEspera() {
+    if (!cronometro.esperaActiva) return;
+
+    const tiempoTranscurridoEspera = Math.floor((Date.now() - cronometro.inicioEspera) / 1000);
+    const tiempoRestante = TIEMPO_ESPERA_GRATIS_SEGUNDOS - tiempoTranscurridoEspera;
     
-    // Reanudar cronómetro principal si estaba pausado
-    if (sistemaEspera.cronometroPausado && cronometro.activo) {
-        const tiempoPausado = Date.now() - sistemaEspera.tiempoPausaInicio;
-        cronometro.inicio += tiempoPausado; // Ajustar inicio del cronómetro
-        sistemaEspera.cronometroPausado = false;
-        console.log('⏱️ Cronómetro principal reanudado');
-    }
-    
-    // ✅ RESTAURAR INTERFAZ
-    // Mostrar botón de activar espera
-    const btnEspera = document.getElementById('btn-activar-espera');
-    if (btnEspera) {
-        btnEspera.style.display = 'flex';
-    }
+    const displayTiempo = document.getElementById('espera-tiempo');
+    const displayEstado = document.getElementById('espera-estado');
+    const displayModal = document.querySelector('.modal-cronometro-contenido');
 
-    // Ocultar sección de contador de espera
-    const seccionEspera = document.getElementById('contador-espera-section');
-    if (seccionEspera) {
-        seccionEspera.classList.add('hidden');
-    }
+    if (tiempoRestante > 0) {
+        // FASE 2: Cuenta Regresiva (Tiempo de Gracia)
+        cronometro.estadoEspera = 'countdown';
+        if (displayTiempo) displayTiempo.textContent = formatearTiempo(tiempoRestante);
+        if (displayEstado) displayEstado.textContent = 'Tiempo de Gracia (2 min)';
+        if (displayModal) displayModal.classList.remove('estado-rojo', 'estado-verde');
+        if (displayModal) displayModal.classList.add('estado-amarillo');
 
-    // Remover botón de cancelar espera
-    const btnCancelar = document.getElementById('btn-cancelar-espera');
-    if (btnCancelar) {
-        btnCancelar.remove();
-    }
-
-    // Restaurar color del modal según progreso actual
-    if (cronometro.activo && cronometro.viajeActual) {
-        const minutosTranscurridos = cronometro.tiempoTranscurridoSegundos / 60;
-        actualizarColoresProgreso(minutosTranscurridos);
     } else {
-        const modal = document.querySelector('.modal-cronometro-contenido');
-        if (modal) {
-            modal.className = 'modal-cronometro-contenido estado-verde';
-        }
-    }
-    
-    sistemaEspera.activo = false;
+        // FASE 3: Cobro Extra (Contando hacia arriba desde 0)
+        cronometro.estadoEspera = 'cobro_extra';
+        
+        // Tiempo cobrable: el tiempo transcurrido menos el tiempo de gracia
+        const tiempoCobroSegundos = tiempoTranscurridoEspera - TIEMPO_ESPERA_GRATIS_SEGUNDOS;
+        
+        // El cronometro.tiempoExtraCobradoSegundos mantiene el tiempo cobrable actual
+        cronometro.tiempoExtraCobradoSegundos = tiempoCobroSegundos;
 
-    // Mostrar resumen del tiempo de espera si hay tiempo extra
-    if (sistemaEspera.tiempoExtraSegundos > 0) {
-        mostrarResumenEspera();
+        if (displayTiempo) displayTiempo.textContent = formatearTiempo(tiempoCobroSegundos);
+        if (displayEstado) displayEstado.textContent = 'Cobro Extra por Minuto';
+        if (displayModal) displayModal.classList.remove('estado-amarillo', 'estado-verde');
+        if (displayModal) displayModal.classList.add('estado-rojo');
+        
+        // Actualizar la vista del extra acumulado
+        actualizarDisplayCobroExtra();
     }
-    
-    mostrarStatus('▶️ Modo espera desactivado - Viaje continuando', 'info');
 }
 
-function mostrarResumenEspera() {
-    const tiempoEsperaMinutos = sistemaEspera.tiempoExtraSegundos / 60;
-    const costoExtra = tiempoEsperaMinutos * 2.86;
+function detenerEspera() {
+    if (!cronometro.esperaActiva) return;
+
+    // 1. Detener el Intervalo de Espera
+    clearInterval(cronometro.intervaloEspera);
+    cronometro.esperaActiva = false;
+    cronometro.estadoEspera = 'detenido';
+
+    // 2. Guardar el tiempo extra COBRADO
+    if (cronometro.viajeActual) {
+        // Acumular el tiempo extra cobrado en el objeto del viaje
+        // (Se usa la variable global actualizada en actualizarEspera)
+        cronometro.viajeActual.tiempoExtraCobradoSegundos = cronometro.tiempoExtraCobradoSegundos;
+    }
     
-    console.log(`⏱️ Tiempo de espera acumulado: ${tiempoEsperaMinutos.toFixed(1)} min`);
-    console.log(`💰 Costo extra calculado: RD$${costoExtra.toFixed(2)}`);
+    // 3. Reanudar Cronómetro Principal
+    cronometro.activo = true;
+    // Reanudar el intervalo principal. Nota: el cronometro.inicio se mantiene.
+    // El tiempo perdido se calcula automáticamente por (Date.now() - cronometro.inicio).
+    cronometro.intervalo = setInterval(actualizarCronometro, 1000);
+
+    // 4. Actualizar Botón y Display
+    const btn = document.getElementById('btn-espera');
+    if (btn) {
+        btn.innerHTML = '<span class="btn-icono">⏸️</span> <span class="btn-texto">Reanudar Espera</span>';
+        btn.classList.remove('btn-espera-active');
+    }
+    
+    mostrarStatus(`✅ Espera finalizada. ${formatearTiempo(cronometro.tiempoExtraCobradoSegundos)}s extra cobrados.`, 'info');
+}
+
+function actualizarDisplayCobroExtra() {
+    const displayCobro = document.getElementById('info-extra-cobro');
+    if (displayCobro && cronometro.viajeActual) {
+        const tiempoExtra = cronometro.viajeActual.tiempoExtraCobradoSegundos || 0;
+        const minutosExtra = tiempoExtra / 60;
+        const montoExtra = minutosExtra * TARIFA_EXTRA_POR_MINUTO;
+        
+        displayCobro.textContent = `Cobro Extra acumulado: ${formatearMoneda(montoExtra)} (${minutosExtra.toFixed(1)} min)`;
+    }
 }
 
 // =============================================
@@ -1041,66 +717,74 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
 }
 
 function agregarAlHistorialDirecto(viaje) {
-    console.log('💾 GUARDANDO DIRECTAMENTE EN HISTORIAL', viaje);
+    console.log('💾 GUARDANDO DIRECTAMENTE EN HISTORIAL');
     
-    // ✅ VERIFICACIÓN EXHAUSTIVA DE DATOS
-    if (!viaje) {
-        console.error('❌ Viaje es undefined en agregarAlHistorialDirecto');
-        return;
+    // Agregar al inicio del historial
+    historial.unshift(viaje);
+    
+    // Limitar tamaño
+    if (historial.length > 100) {
+        historial = historial.slice(0, 100);
+    }
+    
+    // Guardar en localStorage
+    localStorage.setItem('historialViajes', JSON.stringify(historial));
+    
+    console.log('✅ Guardado en localStorage. Nuevo total:', historial.length);
+    
+    // Sincronizar si es necesario
+    guardarDatos();
+    
+    // Actualizar interfaz
+    actualizarEstadisticas();
+    actualizarHistorialConFiltros();
+    
+    // Mostrar resumen
+    mostrarResumenTiempoReal(viaje);
+    
+    console.log('🎉 VIAJE GUARDADO EXITOSAMENTE con rentabilidad:', viaje.rentabilidad);
+}
+
+function mostrarResumenTiempoReal(viaje) {
+    const diferencia = viaje.diferenciaConEstimado;
+    
+    // ✅ DETECTAR SI CAMBIÓ LA RENTABILIDAD
+    const rentabilidadCambio = viaje.rentabilidadOriginal && 
+                              viaje.rentabilidad !== viaje.rentabilidadOriginal;
+    
+    let mensaje = '';
+    
+    if (rentabilidadCambio) {
+        mensaje = `🎉 ¡RENTABILIDAD MEJORÓ! De "${viaje.rentabilidadOriginal}" a "${viaje.rentabilidad}"`;
+    } else if (diferencia > 5) {
+        mensaje = `📈 Viaje tomó ${diferencia.toFixed(1)} min más de lo estimado`;
+    } else if (diferencia < -5) {
+        mensaje = `📉 Viaje tomó ${Math.abs(diferencia).toFixed(1)} min menos - ¡Más eficiente!`;
+    } else {
+        mensaje = '🎯 Tiempo muy cercano al estimado';
     }
 
-    // ✅ ASEGURAR TODOS LOS CAMPOS CRÍTICOS
-    const viajeCompleto = {
-        // Identificación
-        id: viaje.id || 'viaje_' + Date.now(),
-        
-        // Datos financieros (asegurar valores)
-        tarifa: viaje.tarifa || viaje.ganancia || viaje.gananciaTotal || 0,
-        ganancia: viaje.ganancia || viaje.tarifa || viaje.gananciaTotal || 0,
-        gananciaTotal: viaje.gananciaTotal || viaje.ganancia || viaje.tarifa || 0,
-        
-        // Tiempos (asegurar valores)
-        minutos: viaje.minutos || viaje.tiempoReal || 0,
-        tiempoReal: viaje.tiempoReal || viaje.minutos || 0,
-        tiempoEstimado: viaje.tiempoEstimado || 0,
-        
-        // Distancia
-        distancia: viaje.distancia || 0,
-        
-        // Métricas
-        gananciaPorMinuto: viaje.gananciaPorMinuto || 0,
-        gananciaPorKm: viaje.gananciaPorKm || 0,
-        
-        // Rentabilidad
-        rentabilidad: viaje.rentabilidad || 'no-rentable',
-        texto: viaje.texto || 'NO RENTABLE',
-        emoji: viaje.emoji || '❌',
-        rentable: Boolean(viaje.rentable),
-        
-        // Estado
-        aceptado: viaje.aceptado !== false,
-        tiempoRealCapturado: Boolean(viaje.tiempoRealCapturado),
-        
-        // Diferencia de tiempo
-        diferenciaTiempo: viaje.diferenciaTiempo || 0,
-        
-        // Espera
-        tiempoEspera: viaje.tiempoEspera || 0,
-        costoEspera: viaje.costoEspera || 0,
-        
-        // Fechas
-        fecha: viaje.fecha || new Date().toLocaleString('es-DO'),
-        timestamp: viaje.timestamp || new Date().toISOString(),
-        
-        // Perfil
-        perfilId: viaje.perfilId || perfilActual?.id,
-        perfilNombre: viaje.perfilNombre || perfilActual?.nombre
-    };
-    
-    console.log('✅ Viaje completo para historial:', viajeCompleto);
-    
-    // ✅ PASAR A LA FUNCIÓN PRINCIPAL
-    agregarAlHistorial(viajeCompleto);
+    const eficienciaReal = viaje.gananciaPorMinuto;
+    const eficienciaEstimada = viaje.tarifa / viaje.tiempoEstimado;
+
+    alert(`✅ VIAJE COMPLETADO
+
+⏱️ Tiempos:
+• Estimado: ${viaje.tiempoEstimado} min
+• Real: ${viaje.tiempoReal} min  
+• Diferencia: ${diferencia.toFixed(1)} min
+
+💰 Rentabilidad:
+• Estimada: ${viaje.rentabilidadOriginal || 'N/A'}
+• Real: ${viaje.rentabilidad} ${viaje.emoji}
+
+📊 Eficiencia por minuto:
+• Estimada: ${formatearMoneda(eficienciaEstimada)}
+• Real: ${formatearMoneda(eficienciaReal)}
+
+${mensaje}
+
+${rentabilidadCambio ? '💡 El historial mostrará la rentabilidad REAL basada en tu tiempo' : ''}`);
 }
 
 function limpiarFormularioCompleto() {
@@ -1457,43 +1141,26 @@ class FirebaseSync {
         }
     }
 
-   async saveTrip(trip) {
-    if (!this.initialized) return false;
+    async saveTrip(trip) {
+        if (!this.initialized) return false;
 
-    try {
-        // ✅ LIMPIAR DATOS ANTES DE ENVIAR A FIREBASE
-        const tripClean = {};
-        
-        // Copiar solo propiedades definidas
-        Object.keys(trip).forEach(key => {
-            if (trip[key] !== undefined && trip[key] !== null) {
-                tripClean[key] = trip[key];
-            }
-        });
-        
-        // ✅ ASEGURAR CAMPOS CRÍTICOS
-        tripClean.tarifa = tripClean.tarifa || 0;
-        tripClean.ganancia = tripClean.ganancia || 0;
-        tripClean.minutos = tripClean.minutos || 0;
-        tripClean.distancia = tripClean.distancia || 0;
-        tripClean.rentabilidad = tripClean.rentabilidad || 'no-rentable';
-        
-        const tripRef = this.db.collection('users').doc(this.userId)
-            .collection('trips').doc(tripClean.id);
-        
-        await tripRef.set({
-            ...tripClean,
-            lastSync: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        
-        console.log('✅ Viaje guardado en Firebase');
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Error guardando viaje en Firebase:', error);
-        return false;
+        try {
+            const tripRef = this.db.collection('users').doc(this.userId)
+                .collection('trips').doc(trip.id);
+            
+            await tripRef.set({
+                ...trip,
+                lastSync: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            console.log('✅ Viaje guardado en Firebase');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error guardando viaje en Firebase:', error);
+            return false;
+        }
     }
-}
 
     // ✅ MÉTODO CORREGIDO - DENTRO DE LA CLASE
     async saveRouteLearning(learningData) {
@@ -2260,140 +1927,141 @@ async function forzarSincronizacionCompleta() {
 }
 
 // =============================================
-// VERSIÓN MEJORADA DE agregarAlHistorial
+// SISTEMA DE HISTORIAL
 // =============================================
 
+historial = JSON.parse(localStorage.getItem('historialViajes')) || [];
+
 async function agregarAlHistorial(viaje) {
-    console.log('➕ agregarAlHistorial() llamado con:', viaje);
+    console.log('➕ agregarAlHistorial() llamado con:', { 
+        aceptado: viaje.aceptado, 
+        rentabilidad: viaje.rentabilidad 
+    });
     
-    try {
-        // ✅ VERIFICACIÓN INICIAL
-        if (!viaje || typeof viaje !== 'object') {
-            console.error('❌ Viaje inválido:', viaje);
-            return;
-        }
+    if (!viaje || (!viaje.tarifa && !viaje.ganancia)) {
+        console.error('❌ Error: Viaje sin datos esenciales');
+        return;
+    }
 
-        // ✅ FUNCIÓN DE SEGURIDAD MEJORADA
-        function asegurarValor(valor, defecto = 0) {
-            if (valor === undefined || valor === null || valor === '') {
-                return defecto;
-            }
-            if (typeof valor === 'number') {
-                return isNaN(valor) ? defecto : parseFloat(valor.toFixed(2));
-            }
-            if (typeof valor === 'string') {
-                const num = parseFloat(valor);
-                return isNaN(num) ? defecto : parseFloat(num.toFixed(2));
-            }
-            return defecto;
-        }
-
-        // ✅ CREAR VIAJE COMPLETO Y SEGURO
-        const viajeCompleto = {
-            // Identificación
-            id: viaje.id || 'viaje_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-            
-            // 🔹 DATOS DE TIEMPO (CRÍTICO) - asegurar múltiples fuentes
-            tiempoReal: asegurarValor(viaje.tiempoReal, asegurarValor(viaje.minutos, 0)),
-            minutos: asegurarValor(viaje.minutos, asegurarValor(viaje.tiempoReal, 0)),
-            tiempoEstimado: asegurarValor(viaje.tiempoEstimado, 0),
-            
-            // 🔹 DATOS FINANCIEROS
-            tarifa: asegurarValor(viaje.tarifa, 0),
-            ganancia: asegurarValor(viaje.ganancia, asegurarValor(viaje.tarifa, 0)),
-            gananciaTotal: asegurarValor(viaje.gananciaTotal, 
-                asegurarValor(viaje.ganancia, 
-                    asegurarValor(viaje.tarifa, 0))),
-            
-            // 🔹 DISTANCIA Y MÉTRICAS
-            distancia: asegurarValor(viaje.distancia, 0),
-            gananciaPorMinuto: asegurarValor(viaje.gananciaPorMinuto, 0),
-            gananciaPorKm: asegurarValor(viaje.gananciaPorKm, 0),
-            porMinuto: asegurarValor(viaje.porMinuto, asegurarValor(viaje.gananciaPorMinuto, 0)),
-            porKm: asegurarValor(viaje.porKm, asegurarValor(viaje.gananciaPorKm, 0)),
-            
-            // 🔹 RENTABILIDAD
-            rentabilidad: viaje.rentabilidad || 'no-rentable',
-            texto: viaje.texto || 'NO RENTABLE',
-            emoji: viaje.emoji || '❌',
-            rentable: Boolean(viaje.rentable),
-            
-            // 🔹 ESTADO Y METADATOS
-            aceptado: viaje.aceptado !== false,
-            tiempoRealCapturado: Boolean(viaje.tiempoRealCapturado),
-            diferenciaTiempo: asegurarValor(viaje.diferenciaTiempo, 
-                asegurarValor(viaje.tiempoReal, 0) - asegurarValor(viaje.tiempoEstimado, 0)),
-            
-            // 🔹 ESPERA
-            tiempoEspera: asegurarValor(viaje.tiempoEspera, 0),
-            costoEspera: asegurarValor(viaje.costoEspera, 0),
-            
-            // 🔹 FECHAS
-            fecha: viaje.fecha || new Date().toLocaleString('es-DO'),
-            timestamp: viaje.timestamp || new Date().toISOString(),
-            
-            // 🔹 PERFIL
-            perfilId: viaje.perfilId || perfilActual?.id,
-            perfilNombre: viaje.perfilNombre || perfilActual?.nombre
-        };
-
-        console.log('✅ Viaje completo para guardar:', viajeCompleto);
-
-        // ✅ AGREGAR AL HISTORIAL
-        historial.unshift(viajeCompleto);
+    // ✅ SI EL VIAJE FUE RECHAZADO, MARCAR COMO NO RENTABLE
+    let rentabilidad, emoji, texto;
+    
+    if (viaje.aceptado === false) {
+        // VIAJE RECHAZADO - siempre es "no rentable"
+        rentabilidad = 'rechazado';
+        emoji = '🚫';
+        texto = 'RECHAZADO';
+    } else if (viaje.rentabilidad) {
+        // VIAJE ACEPTADO - usar la rentabilidad calculada
+        rentabilidad = viaje.rentabilidad;
+        emoji = viaje.emoji;
+        texto = viaje.texto;
+    } else if (perfilActual) {
+        // CALCULAR RENTABILIDAD si no está definida
+        const tarifa = viaje.tarifa || viaje.ganancia || 0;
+        const minutos = viaje.minutos || 0;
+        const distancia = viaje.distancia || 0;
+        const porMinuto = minutos > 0 ? (tarifa / minutos) : 0;
+        const porKm = distancia > 0 ? (tarifa / distancia) : 0;
         
-        // ✅ LIMITAR TAMAÑO
-        if (historial.length > 100) {
-            historial = historial.slice(0, 100);
+        if (porMinuto >= perfilActual.umbralMinutoRentable && 
+            porKm >= perfilActual.umbralKmRentable) {
+            rentabilidad = 'rentable';
+            emoji = '✅';
+            texto = 'RENTABLE';
+        } else if (porMinuto >= perfilActual.umbralMinutoOportunidad && 
+                   porKm >= perfilActual.umbralKmOportunidad) {
+            rentabilidad = 'oportunidad';
+            emoji = '⚠️';
+            texto = 'OPORTUNIDAD';
+        } else {
+            rentabilidad = 'no-rentable';
+            emoji = '❌';
+            texto = 'NO RENTABLE';
         }
+    } else {
+        rentabilidad = 'no-rentable';
+        emoji = '❌';
+        texto = 'NO RENTABLE';
+    }
+
+    const nuevoViaje = {
+        id: 'viaje_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        ganancia: viaje.tarifa || viaje.ganancia || 0,
+        tarifa: viaje.tarifa || viaje.ganancia || 0,
+        minutos: viaje.minutos || 0,
+        distancia: viaje.distancia || 0,
+        porMinuto: parseFloat((viaje.gananciaPorMinuto || 0).toFixed(2)),
+        porKm: parseFloat((viaje.gananciaPorKm || 0).toFixed(2)),
+        rentable: rentabilidad === 'rentable', // ✅ Basado en cálculo correcto
+        rentabilidad: rentabilidad,
+        emoji: emoji,
+        texto: texto,
+        aceptado: viaje.aceptado !== undefined ? viaje.aceptado : true, // ✅ Respetar el valor
+        fecha: new Date().toLocaleString('es-DO', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        }),
+        timestamp: new Date().toISOString(),
+        gananciaNeta: viaje.gananciaNeta || 0,
+        costoCombustible: viaje.costoCombustible || 0,
+        costoMantenimiento: viaje.costoMantenimiento || 0,
+        costoSeguro: viaje.costoSeguro || 0,
+        costoTotal: viaje.costoTotal || 0,
+        perfilId: perfilActual?.id,
+        perfilNombre: perfilActual?.nombre
+    };
+    
+    console.log('📝 Viaje procesado para historial:', {
+        aceptado: nuevoViaje.aceptado,
+        rentabilidad: nuevoViaje.rentabilidad,
+        texto: nuevoViaje.texto
+    });
+
+    historial.unshift(nuevoViaje);
+    
+    if (historial.length > 100) {
+        historial = historial.slice(0, 100);
+    }
+    
+    localStorage.setItem('historialViajes', JSON.stringify(historial));
+    
+    // ✅ SOLO SINCRONIZAR Y APRENDER DE VIAJES ACEPTADOS
+    if (nuevoViaje.aceptado !== false) {
+        guardarDatos();
         
-        // ✅ GUARDAR EN LOCALSTORAGE
-        localStorage.setItem('historialViajes', JSON.stringify(historial));
-        
-        // ✅ SINCRONIZAR CON FIREBASE
-        if (firebaseSync && firebaseSync.initialized && viajeCompleto.aceptado) {
+        if (firebaseSync && firebaseSync.initialized && nuevoViaje.aceptado) {
             try {
-                console.log('☁️ Sincronizando con Firebase...');
-                await firebaseSync.saveTrip(viajeCompleto);
-                console.log('✅ Sincronizado con Firebase');
+                console.log('☁️ Sincronizando viaje ACEPTADO con Firebase...');
+                await firebaseSync.saveTrip(nuevoViaje);
+                console.log('✅ Viaje aceptado sincronizado con Firebase');
             } catch (error) {
                 console.error('❌ Error sincronizando con Firebase:', error);
             }
         }
 
-        // ✅ APRENDER DE VIAJES ACEPTADOS
-        if (window.routeLearningSystem && viajeCompleto.aceptado) {
+        // ✅ SOLO APRENDER DE VIAJES ACEPTADOS
+        if (window.routeLearningSystem && window.routeLearningSystem.learningEnabled) {
             setTimeout(async () => {
-                try {
-                    console.log('🧠 Aprendiendo de viaje...');
-                    await window.routeLearningSystem.analyzeCompletedTrip(viajeCompleto);
-                } catch (error) {
-                    console.error('❌ Error en aprendizaje:', error);
-                }
+                console.log('🧠 Aprendiendo de viaje ACEPTADO...');
+                await window.routeLearningSystem.analyzeCompletedTrip(nuevoViaje);
             }, 1500);
         }
-        
-        // ✅ ACTUALIZAR INTERFAZ
-        setTimeout(() => {
-            actualizarHistorialConFiltros();
-            actualizarEstadisticas();
-        }, 100);
-        
-// ✅ MOSTRAR RESUMEN SOLO PARA VIAJES CON TIEMPO REAL
-if (viajeCompleto.tiempoRealCapturado && viajeCompleto.tiempoReal > 0) {
+    } else {
+        console.log('🚫 Viaje rechazado - no se sincroniza ni aprende');
+    }
+    
+    if (nuevoViaje.aceptado) {
+        actualizarEstadisticasDia(nuevoViaje);
+    }
+    
     setTimeout(() => {
-        console.log('📊 Llamando a mostrarResumenTiempoReal...');
-        // ✅ VERIFICAR ANTES DE LLAMAR
-        if (viajeCompleto && viajeCompleto.tiempoReal && typeof viajeCompleto.tiempoReal === 'number') {
-            mostrarResumenTiempoReal(viajeCompleto);
-        } else {
-            console.warn('⚠️ Omitiendo resumen - datos inválidos:', viajeCompleto);
-        }
-    }, 500);
-}
-
-} catch (error) {
-    console.error('❌ Error crítico en agregarAlHistorial:', error);
+        actualizarHistorialConFiltros();
+        actualizarEstadisticas();
+    }, 100);
 }
 
 function actualizarHistorialConFiltros() {
@@ -2425,17 +2093,13 @@ function actualizarHistorialConFiltros() {
         const porMinuto = viaje.porMinuto || viaje.gananciaPorMinuto || 0;
         const porKm = viaje.porKm || viaje.gananciaPorKm || 0;
         const esAceptado = viaje.aceptado !== false;
-        const esRentable = esAceptado ? (viaje.rentable !== undefined ? 
-                Boolean(viaje.rentable) : 
-                (viaje.rentabilidad === 'rentable')) : false;
+const esRentable = esAceptado ? (viaje.rentable !== undefined ? 
+         Boolean(viaje.rentable) : 
+         (viaje.rentabilidad === 'rentable')) : false;
         const fecha = viaje.fecha || 'Fecha desconocida';
         
-        // ✅ VERIFICAR SI TIENE TIEMPO DE ESPERA
-        const tieneEspera = viaje.tiempoEspera && viaje.tiempoEspera > 0;
-        const claseEspera = tieneEspera ? 'con-espera' : '';
-        
         return `
-<div class="history-item ${esAceptado ? (esRentable ? 'rentable' : 'no-rentable') : 'rechazado'} ${claseEspera}">
+<div class="history-item ${esAceptado ? (esRentable ? 'rentable' : 'no-rentable') : 'rechazado'}">
     <div class="history-header">
         <span class="history-badge ${esAceptado ? (esRentable ? 'badge-rentable' : 'badge-no-rentable') : 'badge-rechazado'}">
             ${viaje.emoji} ${viaje.texto}
@@ -2446,10 +2110,6 @@ function actualizarHistorialConFiltros() {
     <div class="history-details">
         <div class="history-route">
             <strong>Ganancia:</strong> ${formatearMoneda(ganancia)}
-            ${tieneEspera ? `<span class="espera-badge-historial">
-                <span class="espera-icono-small">⏱️</span>
-                <span class="espera-texto-small">+${viaje.tiempoEspera.toFixed(1)}min (RD$${viaje.costoEspera.toFixed(2)})</span>
-            </span>` : ''}
         </div>
         <div class="history-metrics">
             <span class="metric">⏱️ ${minutos}min</span>
@@ -5298,3 +4958,4 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
