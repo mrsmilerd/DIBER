@@ -148,12 +148,6 @@ const porcentajeAjustado = calcularPorcentaje(tiempoAjustado, tiempoTotal);
                 <div class="cronometro-tiempo-display" id="cronometro-tiempo-display">
                     00:00
                 </div>
-                
-                <div class="espera-display" id="espera-display">
-                    <span class="espera-estado" id="espera-estado">Esperando al usuario</span>
-                    <span class="espera-tiempo" id="espera-tiempo">02:00</span>
-                </div>
-            </div>
             
             <!-- INFO -->
             <div class="cronometro-info">
@@ -5027,6 +5021,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
