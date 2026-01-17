@@ -2557,6 +2557,20 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
     }
 }
 
+function analizarViajeConDatos(datos) {
+    console.log('🧩 Creando viaje desde OCR...', datos);
+
+    viajeActual = {
+        tarifa: datos.tarifa,
+        tiempo: datos.tiempoTotal,
+        distancia: datos.distanciaTotal,
+        origen: 'OCR',
+        timestamp: Date.now()
+    };
+
+    calcularRentabilidad();
+}
+
 // =============================================
 // FUNCIÓN MEJORADA DE CÁLCULO CON PERFIL
 // =============================================
@@ -4917,6 +4931,14 @@ async function inicializarApp() {
             mostrarStatus('❌ Error crítico. Recarga la página.', 'error');
         }
     }
+
+ // Inicializar scanner rápido después de 3 segundos
+    setTimeout(() => {
+        inicializarScannerRapido();
+    }, 3000);
+    
+    window.appInitialized = true;
+    console.log('🎉 DIBER inicializado correctamente');
 }
 
 // ✅ FUNCIÓN SIMPLIFICADA: Solo verifica si Google Maps está disponible
@@ -5127,6 +5149,350 @@ window.onclick = function(event) {
         }
     }
 };
+
+// =============================================
+// SISTEMA DE ESCANEO RÁPIDO - COPIAR DESDE AQUÍ
+// =============================================
+
+let scannerInitialized = false;
+
+function inicializarScannerRapido() {
+    if (scannerInitialized) return;
+    
+    console.log('🖼️ Inicializando sistema de escaneo rápido...');
+    
+    // Verificar si ya existe el botón
+    if (document.getElementById('quick-scan-btn')) {
+        console.log('✅ Botón de escaneo ya existe');
+        scannerInitialized = true;
+        return;
+    }
+    
+    // Crear botón flotante
+    const scanBtn = document.createElement('button');
+    scanBtn.id = 'quick-scan-btn';
+    scanBtn.className = 'scanner-floating-btn';
+    scanBtn.innerHTML = `
+        <span class="scanner-icon">📸</span>
+        <span class="scanner-text">ESCANEAR</span>
+    `;
+    
+    // Estilos CSS para el botón
+    scanBtn.style.cssText = `
+        position: fixed !important;
+        bottom: 100px !important;
+        right: 20px !important;
+        z-index: 9999 !important;
+        background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 50px !important;
+        padding: 15px 25px !important;
+        font-size: 16px !important;
+        font-weight: bold !important;
+        box-shadow: 0 6px 25px rgba(255, 65, 108, 0.5) !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 10px !important;
+        transition: all 0.3s ease !important;
+    `;
+    
+    // Efecto hover
+    scanBtn.onmouseenter = () => {
+        scanBtn.style.transform = 'scale(1.05)';
+        scanBtn.style.boxShadow = '0 8px 30px rgba(255, 65, 108, 0.7)';
+    };
+    
+    scanBtn.onmouseleave = () => {
+        scanBtn.style.transform = 'scale(1)';
+        scanBtn.style.boxShadow = '0 6px 25px rgba(255, 65, 108, 0.5)';
+    };
+    
+    // Evento click
+    scanBtn.onclick = abrirSelectorImagen;
+    
+    // Agregar al DOM
+    document.body.appendChild(scanBtn);
+    
+    // Agregar estilos CSS adicionales
+    const style = document.createElement('style');
+    style.textContent = `
+        .scanner-floating-btn:hover {
+            transform: scale(1.05) !important;
+        }
+        
+        .scanner-icon {
+            font-size: 20px;
+        }
+        
+        .scanner-text {
+            letter-spacing: 0.5px;
+        }
+        
+        /* Efecto de pulso para llamar atención */
+        @keyframes pulse {
+            0% { box-shadow: 0 6px 25px rgba(255, 65, 108, 0.5); }
+            50% { box-shadow: 0 6px 25px rgba(255, 65, 108, 0.8); }
+            100% { box-shadow: 0 6px 25px rgba(255, 65, 108, 0.5); }
+        }
+        
+        .scanner-floating-btn {
+            animation: pulse 2s infinite;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    scannerInitialized = true;
+    console.log('✅ Botón de escaneo creado en la esquina inferior derecha');
+}
+
+function abrirSelectorImagen() {
+    console.log('📸 Abriendo selector de imagen...');
+    
+    // Crear input de archivo
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.capture = 'environment'; // Para móviles, usar cámara trasera
+    
+    fileInput.style.cssText = `
+        display: none !important;
+    `;
+    
+    fileInput.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) {
+            console.log('❌ No se seleccionó archivo');
+            return;
+        }
+        
+        console.log('🖼️ Archivo seleccionado:', file.name);
+        await procesarImagenConOCR(file);
+        
+        // Limpiar input
+        document.body.removeChild(fileInput);
+    };
+    
+    // Agregar al DOM y hacer click
+    document.body.appendChild(fileInput);
+    fileInput.click();
+}
+
+async function procesarImagenConOCR(file) {
+    mostrarStatus('🔍 Analizando captura de pantalla...', 'info');
+    
+    try {
+        // Mostrar loading
+        const loadingMsg = document.createElement('div');
+        loadingMsg.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.9);
+                color: white;
+                padding: 25px;
+                border-radius: 15px;
+                z-index: 10000;
+                text-align: center;
+                min-width: 250px;
+                backdrop-filter: blur(10px);
+                border: 2px solid #FF416C;
+            ">
+                <div style="font-size: 40px; margin-bottom: 15px; animation: spin 2s linear infinite">🔍</div>
+                <div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">Analizando Imagen</div>
+                <div style="font-size: 14px; opacity: 0.8; margin-bottom: 15px;">Buscando datos del viaje...</div>
+                <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden;">
+                    <div id="progress-bar" style="height: 100%; width: 0%; background: #FF416C; transition: width 0.3s;"></div>
+                </div>
+            </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+        document.body.appendChild(loadingMsg);
+        
+        console.log('🤖 Iniciando OCR...');
+        
+        try {
+            // ✅ SOLUCIÓN: Usar Tesseract sin parámetros problemáticos
+            const worker = await Tesseract.createWorker('eng');
+            
+            // ✅ Método alternativo: Usar recognize con opciones directamente
+            const result = await worker.recognize(file, null, {
+                // Opciones que funcionan en v4
+                rectangle: null,
+                pdfTitle: null,
+                rotateAuto: true,
+                pdfTextOnly: false
+            });
+            
+            await worker.terminate();
+            
+            // Remover loading
+            if (document.body.contains(loadingMsg)) {
+                document.body.removeChild(loadingMsg);
+            }
+            
+            console.log('✅ OCR completado');
+            console.log('📝 Texto reconocido:', result.data.text);
+            
+            extraerDatosDeUber(result.data.text);
+            
+        } catch (ocrError) {
+            console.error('❌ Error en OCR:', ocrError);
+            if (document.body.contains(loadingMsg)) {
+                document.body.removeChild(loadingMsg);
+            }
+            
+            // ✅ FALLBACK: Intentar método alternativo
+            mostrarStatus('⚠️ Intentando método alternativo...', 'warning');
+            await procesarImagenConOCRAlternativo(file);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error general:', error);
+        mostrarError('Error al procesar la imagen: ' + error.message);
+    }
+}
+
+// ✅ MÉTODO ALTERNATIVO si falla el primero
+async function procesarImagenConOCRAlternativo(file) {
+    try {
+        // Método directo sin worker
+        console.log('🔄 Usando método alternativo...');
+        
+        const result = await Tesseract.recognize(file, 'eng', {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    console.log(`Progreso: ${Math.round(m.progress * 100)}%`);
+                }
+            }
+        });
+        
+        console.log('✅ Texto reconocido (alternativo):', result.data.text);
+        extraerDatosDeUber(result.data.text);
+        
+    } catch (error) {
+        console.error('❌ Error en método alternativo:', error);
+        mostrarError('No se pudo leer la imagen. Intenta con otra captura más clara.');
+    }
+}
+
+function extraerDatosDeUber(textoOCR) {
+    console.log('🔥 FUNCIÓN NUEVA EJECUTÁNDOSE 🔥');
+    
+    // 1️⃣ Normalizar texto
+    const texto = textoOCR
+        .replace(/,/g, '.')
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
+    
+    // 2️⃣ Tarifa
+    const tarifaMatch = texto.match(/rd\$\s?(\d+(\.\d{1,2})?)/);
+    const tarifa = tarifaMatch ? parseFloat(tarifaMatch[1]) : null;
+    
+    console.log('💰 Tarifa encontrada:', tarifa);
+    
+    // 3️⃣ LLEGADA → "A5min (1.1 km)"
+    const llegadaMatch = texto.match(/a\s*(\d+)\s*min.*?\(?(\d+(\.\d+)?)\s*km\)?/);
+    
+    const llegadaMin = llegadaMatch ? parseInt(llegadaMatch[1]) : 0;
+    const llegadaKm  = llegadaMatch ? parseFloat(llegadaMatch[2]) : 0;
+    
+    console.log(`🚶 Llegada: ${llegadaMin} min, ${llegadaKm} km`);
+    
+    // 4️⃣ VIAJE → "Viaje: 11 min (4.2 km)"
+    const viajeMatch = texto.match(/viaje[:\s]*(\d+)\s*min.*?\(?(\d+(\.\d+)?)\s*km\)?/);
+    
+    const viajeMin = viajeMatch ? parseInt(viajeMatch[1]) : 0;
+    const viajeKm  = viajeMatch ? parseFloat(viajeMatch[2]) : 0;
+    
+    console.log(`🚗 Viaje: ${viajeMin} min, ${viajeKm} km`);
+    
+    // 5️⃣ SUMAS (AQUÍ ESTABA EL PROBLEMA)
+    const tiempoTotal = llegadaMin + viajeMin;
+    const distanciaTotal = +(llegadaKm + viajeKm).toFixed(2);
+    
+    console.log(`⏱️ Tiempo total: ${tiempoTotal} min`);
+    console.log(`🛣️ Distancia total: ${distanciaTotal} km`);
+    
+    // 6️⃣ Validación
+    if (!tarifa || tiempoTotal === 0 || distanciaTotal === 0) {
+        mostrarError('❌ No se pudieron extraer todos los datos del viaje.');
+        return;
+    }
+    
+    // 7️⃣ ✅✅✅ AUTORELLENAR FORMULARIO ✅✅✅
+    console.log('📝 Autorellenando formulario...');
+    
+    if (elementos && elementos.tarifa) {
+        elementos.tarifa.value = tarifa;
+        console.log('✅ Tarifa asignada:', elementos.tarifa.value);
+    }
+    
+    if (elementos && elementos.minutos) {
+        elementos.minutos.value = tiempoTotal;
+        console.log('✅ Tiempo asignado:', elementos.minutos.value);
+    }
+    
+    if (elementos && elementos.distancia) {
+        elementos.distancia.value = distanciaTotal;
+        console.log('✅ Distancia asignada:', elementos.distancia.value);
+    }
+    
+    // 8️⃣ ✅✅✅ EJECUTAR CÁLCULO AUTOMÁTICO ✅✅✅
+    console.log('🚀 Ejecutando cálculo automático...');
+    
+    // Esperar un momento para que se actualicen los campos
+    setTimeout(() => {
+        // Llamar a la función que hace el cálculo automático
+        if (typeof manejarCalculoAutomatico === 'function') {
+            console.log('✅ Llamando a manejarCalculoAutomatico()');
+            manejarCalculoAutomatico();
+        } else if (typeof calcularAutomaticoConTraficoReal === 'function') {
+            console.log('✅ Llamando a calcularAutomaticoConTraficoReal()');
+            calcularAutomaticoConTraficoReal();
+        } else {
+            // Si no hay funciones automáticas, hacer cálculo manual
+            console.log('⚠️ Usando cálculo manual');
+            
+            if (perfilActual) {
+                const resultado = calcularRentabilidad(tarifa, tiempoTotal, distanciaTotal);
+                if (resultado) {
+                    Actual = resultado;
+                    mostrarResultadoRapido(resultado);
+                    mostrarStatus('✅ ¡Viaje listo para análisis!', 'success');
+                }
+            }
+        }
+        
+        // Mostrar mensaje de éxito
+        mostrarStatus(`✅ Extraído: RD$${tarifa} | ${tiempoTotal}min | ${distanciaTotal}km`, 'success');
+        
+    }, 500); // Pequeño delay para asegurar que los campos se actualizaron
+    
+    // 9️⃣ Mostrar resumen en consola
+    console.log('🎯 RESUMEN EXTRACCIÓN:');
+    console.log('- Tarifa:', tarifa);
+    console.log('- Tiempo total:', tiempoTotal, 'min');
+    console.log('- Distancia total:', distanciaTotal, 'km');
+    console.log('- Formulario actualizado:', {
+        tarifa: elementos?.tarifa?.value,
+        minutos: elementos?.minutos?.value,
+        distancia: elementos?.distancia?.value
+    });
+}
+
+// =============================================
+// HASTA AQUÍ COPIAR - SISTEMA DE ESCANEO RÁPIDO
+// =============================================
 
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
