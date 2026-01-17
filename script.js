@@ -5280,10 +5280,57 @@ function abrirSelectorImagen() {
     fileInput.click();
 }
 
+async function preprocesarImagenParaOCR(file) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        img.onload = function() {
+            // 1. Redimensionar (más grande para mejor OCR)
+            canvas.width = img.width * 2;
+            canvas.height = img.height * 2;
+            
+            // 2. Dibujar imagen escalada
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // 3. Mejorar contraste (para pantallas con brillo)
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // Aumentar contraste
+            for (let i = 0; i < data.length; i += 4) {
+                // RGB a escala de grises
+                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                
+                // Umbral: si es claro, hacer más claro; si es oscuro, más oscuro
+                const threshold = 128;
+                if (avg > threshold) {
+                    data[i] = data[i + 1] = data[i + 2] = 255; // Blanco puro
+                } else {
+                    data[i] = data[i + 1] = data[i + 2] = 0; // Negro puro
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            
+            // 4. Convertir a Blob
+            canvas.toBlob(function(blob) {
+                resolve(blob);
+            }, 'image/jpeg', 0.9);
+        };
+        
+        img.src = URL.createObjectURL(file);
+    });
+}
+
 async function procesarImagenConOCR(file) {
-    mostrarStatus('🔍 Analizando captura de pantalla...', 'info');
+    mostrarStatus('🔍 Mejorando imagen para escaneo...', 'info');
     
     try {
+        // ✅ PRIMERO PREPROCESAR LA IMAGEN
+        const imagenProcesada = await preprocesarImagenParaOCR(file);
+        
         // Mostrar loading
         const loadingMsg = document.createElement('div');
         loadingMsg.innerHTML = `
@@ -5298,67 +5345,49 @@ async function procesarImagenConOCR(file) {
                 border-radius: 15px;
                 z-index: 10000;
                 text-align: center;
-                min-width: 250px;
+                min-width: 280px;
                 backdrop-filter: blur(10px);
-                border: 2px solid #FF416C;
+                border: 2px solid #4CAF50;
             ">
-                <div style="font-size: 40px; margin-bottom: 15px; animation: spin 2s linear infinite">🔍</div>
-                <div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">Analizando Imagen</div>
-                <div style="font-size: 14px; opacity: 0.8; margin-bottom: 15px;">Buscando datos del viaje...</div>
-                <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden;">
-                    <div id="progress-bar" style="height: 100%; width: 0%; background: #FF416C; transition: width 0.3s;"></div>
-                </div>
+                <div style="font-size: 40px; margin-bottom: 15px;">📱</div>
+                <div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">Escaneando desde móvil</div>
+                <div style="font-size: 14px; opacity: 0.8; margin-bottom: 15px;">Mejorando calidad de imagen...</div>
+                <div style="font-size: 12px; opacity: 0.6; margin-top: 10px;">Tomar foto directamente es mejor</div>
             </div>
-            <style>
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            </style>
         `;
         document.body.appendChild(loadingMsg);
         
-        console.log('🤖 Iniciando OCR...');
+        console.log('🖼️ Imagen preprocesada, iniciando OCR...');
         
-        try {
-            // ✅ SOLUCIÓN: Usar Tesseract sin parámetros problemáticos
-            const worker = await Tesseract.createWorker('eng');
-            
-            // ✅ Método alternativo: Usar recognize con opciones directamente
-            const result = await worker.recognize(file, null, {
-                // Opciones que funcionan en v4
-                rectangle: null,
-                pdfTitle: null,
-                rotateAuto: true,
-                pdfTextOnly: false
-            });
-            
-            await worker.terminate();
-            
-            // Remover loading
-            if (document.body.contains(loadingMsg)) {
-                document.body.removeChild(loadingMsg);
-            }
-            
-            console.log('✅ OCR completado');
-            console.log('📝 Texto reconocido:', result.data.text);
-            
-            extraerDatosDeUber(result.data.text);
-            
-        } catch (ocrError) {
-            console.error('❌ Error en OCR:', ocrError);
-            if (document.body.contains(loadingMsg)) {
-                document.body.removeChild(loadingMsg);
-            }
-            
-            // ✅ FALLBACK: Intentar método alternativo
-            mostrarStatus('⚠️ Intentando método alternativo...', 'warning');
-            await procesarImagenConOCRAlternativo(file);
+        // Usar Tesseract directamente SIN worker (más confiable para móviles)
+        const result = await Tesseract.recognize(imagenProcesada, 'eng', {
+            logger: m => {
+                console.log('OCR Progress:', m.status);
+                if (m.status === 'recognizing text') {
+                    const progress = Math.round(m.progress * 100);
+                    if (loadingMsg.querySelector('#progress-text')) {
+                        loadingMsg.querySelector('#progress-text').textContent = `${progress}%`;
+                    }
+                }
+            },
+            // Configuración optimizada para móviles
+            tessedit_pageseg_mode: '6', // PSM_SPARSE_TEXT
+            tessedit_char_whitelist: '0123456789.$RDUSDkmmin()Aavije:'
+        });
+        
+        // Remover loading
+        if (document.body.contains(loadingMsg)) {
+            document.body.removeChild(loadingMsg);
         }
         
+        console.log('✅ OCR completado desde móvil');
+        console.log('📝 Texto reconocido:', result.data.text);
+        
+        extraerDatosDeUber(result.data.text);
+        
     } catch (error) {
-        console.error('❌ Error general:', error);
-        mostrarError('Error al procesar la imagen: ' + error.message);
+        console.error('❌ Error en OCR desde móvil:', error);
+        mostrarError('Error escaneando desde móvil. Toma la foto más cerca y sin reflejos.');
     }
 }
 
