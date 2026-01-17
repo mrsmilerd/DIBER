@@ -2440,16 +2440,21 @@ async function calcularAutomaticoConTraficoReal() {
         
         let trafficInsights = null;
         
-        // OBTENER ANÁLISIS DE TRÁFICO EN TIEMPO REAL
-        if (realTimeTraffic && realTimeTraffic.initialized) {
-            try {
-                trafficInsights = await realTimeTraffic.analyzeTrafficInRadius();
-                console.log('📊 Insights de tráfico real:', trafficInsights);
-            } catch (error) {
-                console.log('🔄 Usando estimación conservadora de tráfico');
-                trafficInsights = realTimeTraffic.getConservativeEstimate();
-            }
-        }
+// OBTENER ANÁLISIS DE TRÁFICO EN TIEMPO REAL
+if (realTimeTraffic && realTimeTraffic.initialized) {
+    try {
+        // ✅ MODIFICADO: Pasar la distancia del viaje al análisis
+        trafficInsights = await realTimeTraffic.analyzeTrafficInRadius(distancia);
+        console.log('📊 Insights de tráfico real:', {
+            ...trafficInsights,
+            radioUsado: trafficInsights.radius + 'km'
+        });
+    } catch (error) {
+        console.log('🔄 Usando estimación conservadora de tráfico');
+        // ✅ MODIFICADO: Pasar distancia también al fallback
+        trafficInsights = realTimeTraffic.getConservativeEstimate(distancia);
+    }
+}
         
         // OBTENER PREDICCIONES INTELIGENTES (tu sistema existente)
         let learningInsights = null;
@@ -2487,6 +2492,12 @@ async function calcularAutomaticoConTraficoReal() {
             resultado.tiempoOriginal = minutos;
             resultado.fuenteDatos = fuenteDatos;
             
+        // ✅ NUEVO: Agregar info de radio usado para debugging
+if (trafficInsights) {
+    resultado.radioAnalizado = trafficInsights.radius;
+    resultado.distanciaViaje = distancia;
+}
+
             Actual = resultado;
             mostrarResultadoRapido(resultado);
         }
@@ -3277,6 +3288,17 @@ function mostrarResultadoRapido(resultado) {
                 ` : ''}
             </div>
 
+${resultado.trafficInsights ? `
+<div style="background: rgba(74, 144, 226, 0.1); padding: 15px; border-radius: 12px; border-left: 4px solid #4a90e2; margin-top: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-weight: 600;">🚗 Análisis de Tráfico</span>
+<span style="font-size: 0.8em; background: rgba(74, 144, 226, 0.2); padding: 4px 8px; border-radius: 10px;">
+            Radio: ${resultado.radioAnalizado || resultado.trafficInsights.radius}km
+          </span>
+    </div>
+</div>
+` : ''}
+
             <!-- BOTONES DE ACCIÓN (sin cambios) -->
             <div class="modal-actions-centrado">
                 <button class="btn-accion-grande btn-rechazar-grande" onclick="procesarViajeRapido(false)">
@@ -3355,7 +3377,7 @@ function obtenerMensajeImpacto(trafficAnalysis) {
 }
 
 // =============================================
-// SISTEMA DE TRÁFICO EN TIEMPO REAL CON GOOGLE MAPS
+// SISTEMA DE TRÁFICO EN TIEMPO REAL CON GOOGLE MAPS - CON RADIO ESCALABLE
 // =============================================
 
 class RealTimeTrafficSystem {
@@ -3363,7 +3385,7 @@ class RealTimeTrafficSystem {
         this.map = null;
         this.trafficLayer = null;
         this.currentLocation = null;
-        this.radiusKm = 10;
+        this.radiusKm = 5; // Valor por defecto (más pequeño)
         this.initialized = false;
     }
 
@@ -3446,8 +3468,26 @@ class RealTimeTrafficSystem {
         });
     }
 
-   // Analizar tráfico en el radio especificado
-    async analyzeTrafficInRadius() {
+    // ✅ NUEVO: Calcular radio óptimo basado en distancia del viaje
+    calculateOptimalRadius(tripDistanceKm = 0) {
+        if (tripDistanceKm <= 0) return 5; // Radio mínimo por defecto
+        
+        // Lógica escalable inteligente:
+        if (tripDistanceKm < 2) {
+            return 2; // Radio muy pequeño para viajes ultra cortos
+        } else if (tripDistanceKm < 5) {
+            return 4; // Radio pequeño para viajes cortos
+        } else if (tripDistanceKm < 10) {
+            return 6; // Radio mediano para viajes promedio
+        } else if (tripDistanceKm < 20) {
+            return 8; // Radio grande para viajes largos
+        } else {
+            return 10; // Radio máximo para viajes muy largos
+        }
+    }
+
+    // ✅ MODIFICADO: Analizar tráfico con radio personalizado
+    async analyzeTrafficInRadius(tripDistanceKm = 0) {
         if (!this.initialized) {
             throw new Error('Sistema de tráfico no inicializado');
         }
@@ -3457,26 +3497,31 @@ class RealTimeTrafficSystem {
         }
 
         try {
-            const trafficData = await this.getTrafficData();
-            return this.calculateTrafficImpact(trafficData);
+            // ✅ AJUSTAR RADIO SEGÚN DISTANCIA DEL VIAJE
+            this.radiusKm = this.calculateOptimalRadius(tripDistanceKm);
+            console.log(`📏 Radio ajustado: ${this.radiusKm}km (viaje: ${tripDistanceKm}km)`);
+            
+            const trafficData = await this.getTrafficData(tripDistanceKm);
+            return this.calculateTrafficImpact(trafficData, tripDistanceKm);
             
         } catch (error) {
             console.error('❌ Error analizando tráfico:', error);
-            return this.getConservativeEstimate();
+            return this.getConservativeEstimate(tripDistanceKm);
         }
     }
 
-    async getTrafficData() {
+    async getTrafficData(tripDistanceKm = 0) {
         return new Promise((resolve) => {
-            // Simulación de análisis de tráfico basado en hora y ubicación
+            // Simulación de análisis de tráfico considerando distancia
             setTimeout(() => {
-                const trafficCondition = this.estimateTrafficFromConditions();
+                const trafficCondition = this.estimateTrafficFromConditions(tripDistanceKm);
                 resolve(trafficCondition);
             }, 1500);
         });
     }
 
-    estimateTrafficFromConditions() {
+    // ✅ MEJORADO: Estimación que considera distancia
+    estimateTrafficFromConditions(tripDistanceKm = 0) {
         const now = new Date();
         const hour = now.getHours();
         const day = now.getDay();
@@ -3484,31 +3529,67 @@ class RealTimeTrafficSystem {
         
         let condition, factor, confidence;
 
-        // Lógica mejorada de tráfico para República Dominicana
-        if (isWeekend) {
-            if (hour >= 11 && hour <= 20) {
+        // Lógica mejorada que considera distancia del viaje
+        if (tripDistanceKm < 3) {
+            // Viajes muy cortos: menos afectados por tráfico general
+            if (isWeekend) {
+                condition = 'light';
+                factor = 1.05; // Mínimo impacto
+                confidence = 0.9;
+            } else if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
                 condition = 'moderate';
-                factor = 1.4;
+                factor = 1.2; // Impacto reducido para distancias cortas
                 confidence = 0.8;
             } else {
                 condition = 'light';
-                factor = 1.1;
+                factor = 1.05;
                 confidence = 0.9;
             }
-        } else {
-            // Hora pico en RD: 7-9 AM y 5-7 PM
-            if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
+        } else if (tripDistanceKm < 8) {
+            // Viajes cortos-medianos
+            if (isWeekend) {
+                condition = 'light';
+                factor = 1.1;
+                confidence = 0.85;
+            } else if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
                 condition = 'heavy';
-                factor = 1.8;
+                factor = 1.5;
                 confidence = 0.9;
             } else if (hour >= 12 && hour <= 14) {
                 condition = 'moderate';
-                factor = 1.3;
+                factor = 1.25;
                 confidence = 0.7;
             } else {
                 condition = 'light';
                 factor = 1.1;
                 confidence = 0.8;
+            }
+        } else {
+            // Viajes largos: usar lógica original
+            if (isWeekend) {
+                if (hour >= 11 && hour <= 20) {
+                    condition = 'moderate';
+                    factor = 1.4;
+                    confidence = 0.8;
+                } else {
+                    condition = 'light';
+                    factor = 1.1;
+                    confidence = 0.9;
+                }
+            } else {
+                if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
+                    condition = 'heavy';
+                    factor = 1.8;
+                    confidence = 0.9;
+                } else if (hour >= 12 && hour <= 14) {
+                    condition = 'moderate';
+                    factor = 1.3;
+                    confidence = 0.7;
+                } else {
+                    condition = 'light';
+                    factor = 1.1;
+                    confidence = 0.8;
+                }
             }
         }
 
@@ -3517,13 +3598,38 @@ class RealTimeTrafficSystem {
             trafficFactor: factor,
             confidence,
             radius: this.radiusKm,
+            distanceConsidered: tripDistanceKm,
             location: this.currentLocation,
             timestamp: now.toISOString(),
-            message: this.getTrafficMessage(condition)
+            message: this.getTrafficMessage(condition, tripDistanceKm)
         };
     }
 
-    calculateTrafficImpact(trafficData) {
+    // ✅ MEJORADO: Mensaje personalizado según distancia
+    getTrafficMessage(condition, tripDistanceKm = 0) {
+        const baseMessages = {
+            light: '✅ Tráfico fluido',
+            moderate: '⚠️ Tráfico moderado',
+            heavy: '🚗 Tráfico pesado',
+            severe: '🚨 Congestión severa'
+        };
+        
+        let baseMessage = baseMessages[condition] || `Condiciones: ${condition}`;
+        
+        // Personalizar según distancia
+        if (tripDistanceKm < 3) {
+            baseMessage += ' - Viaje corto, impacto mínimo';
+        } else if (tripDistanceKm < 8) {
+            baseMessage += ' - Considerar posibles demoras';
+        } else {
+            baseMessage += ' - Puede afectar significativamente';
+        }
+        
+        return baseMessage;
+    }
+
+    // ✅ MEJORADO: Impacto de tráfico considerando distancia
+    calculateTrafficImpact(trafficData, tripDistanceKm = 0) {
         const baseTime = parseFloat(elementos.minutos?.value) || 0;
         
         if (baseTime <= 0) {
@@ -3536,38 +3642,49 @@ class RealTimeTrafficSystem {
             };
         }
 
-        const adjustedTime = Math.ceil(baseTime * trafficData.trafficFactor);
+        // ✅ AJUSTE MÁS PRECISO PARA VIAJES CORTOS
+        let adjustedFactor = trafficData.trafficFactor;
+        
+        // Reducir impacto para viajes muy cortos
+        if (tripDistanceKm < 2) {
+            adjustedFactor = Math.min(adjustedFactor, 1.3); // Límite máximo para cortos
+        } else if (tripDistanceKm < 5) {
+            adjustedFactor = Math.min(adjustedFactor, 1.5); // Límite moderado
+        }
+        
+        const adjustedTime = Math.ceil(baseTime * adjustedFactor);
 
         return {
             originalTime: baseTime,
             adjustedTime: adjustedTime,
             trafficCondition: trafficData.condition,
-            trafficFactor: trafficData.trafficFactor,
-            adjustment: Math.round((trafficData.trafficFactor - 1) * 100),
+            trafficFactor: adjustedFactor,
+            adjustment: Math.round((adjustedFactor - 1) * 100),
             confidence: trafficData.confidence,
             radius: trafficData.radius,
+            distanceConsidered: tripDistanceKm,
             message: trafficData.message,
             location: trafficData.location,
-            isSignificant: adjustedTime > baseTime * 1.2
+            isSignificant: adjustedTime > baseTime * 1.2,
+            isShortTrip: tripDistanceKm < 3
         };
     }
 
-    getTrafficMessage(condition) {
-        const messages = {
-            light: '✅ Tráfico fluido - Condiciones normales',
-            moderate: '⚠️ Tráfico moderado - Pequeñas demoras',
-            heavy: '🚗 Tráfico pesado - Demoras considerables',
-            severe: '🚨 Congestión severa - Demoras extensas'
-        };
-        
-        return messages[condition] || `Condiciones de tráfico: ${condition}`;
-    }
-
-    getConservativeEstimate() {
+    // ✅ MEJORADO: Estimación conservadora con distancia
+    getConservativeEstimate(tripDistanceKm = 0) {
         const baseTime = parseFloat(elementos.minutos?.value) || 0;
         const hour = new Date().getHours();
         const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
-        const factor = isPeak ? 1.6 : 1.2;
+        
+        // Factor base ajustado por distancia
+        let factor = isPeak ? 1.6 : 1.2;
+        
+        // Reducir para viajes cortos
+        if (tripDistanceKm < 3) factor = Math.min(factor, 1.3);
+        else if (tripDistanceKm < 5) factor = Math.min(factor, 1.4);
+
+        // Calcular radio apropiado
+        const optimalRadius = this.calculateOptimalRadius(tripDistanceKm);
 
         return {
             originalTime: baseTime,
@@ -3576,8 +3693,9 @@ class RealTimeTrafficSystem {
             trafficFactor: factor,
             adjustment: Math.round((factor - 1) * 100),
             confidence: 0.6,
-            radius: this.radiusKm,
-            message: `Estimación base: ${isPeak ? 'Hora pico' : 'Tráfico regular'}`,
+            radius: optimalRadius,
+            distanceConsidered: tripDistanceKm,
+            message: `Estimación base para viaje de ${tripDistanceKm}km: ${isPeak ? 'Hora pico' : 'Tráfico regular'}`,
             location: this.currentLocation,
             isSignificant: true
         };
@@ -5015,11 +5133,3 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
-
-
-
-
-
-
-
-
