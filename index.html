@@ -67,6 +67,14 @@
 </head>
 <body>
     
+<!-- ⚡ INDICADOR DE ESTADO OCR -->
+    <div style="position: fixed; top: 10px; right: 10px; z-index: 9998; 
+                background: rgba(0,0,0,0.8); color: #ffaa00; 
+                padding: 8px 15px; border-radius: 20px; font-size: 12px;
+                font-family: monospace; border: 1px solid #ffaa00;">
+        <span id="ocr-status">⏳ Cargando OCR...</span>
+    </div>
+
     <!-- ✅ MODALES (fuera de las pantallas) -->
     <!-- Modal de Código de Usuario -->
     <div id="user-code-modal" class="modal-fondo">
@@ -753,9 +761,39 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-                
+<!-- ✅ PREINICIALIZAR TESSERACT -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+    // ⚡ PRE-CARGAR WORKER AL INICIO (CRÍTICO PARA VELOCIDAD)
+    let ocrWorker = null;
+    let workerReady = false;
+    
+    async function precargarOCR() {
+        console.log('🚀 Pre-cargando OCR Worker...');
+        try {
+            ocrWorker = await Tesseract.createWorker('eng', 1, {
+                logger: () => {}, // Sin logs = más rápido
+                corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v5/tesseract-core.wasm.js',
+            });
+            workerReady = true;
+            console.log('✅ OCR Worker listo - escaneos serán INSTANTÁNEOS');
+            
+            // Indicador visual
+            const indicator = document.getElementById('ocr-status');
+            if (indicator) {
+                indicator.textContent = '✅ OCR Listo';
+                indicator.style.color = '#00ff88';
+            }
+        } catch (error) {
+            console.error('❌ Error pre-cargando OCR:', error);
+            workerReady = false;
+        }
+    }
+    
+    // Cargar en cuanto cargue la página
+    window.addEventListener('DOMContentLoaded', precargarOCR);
+</script>
+
 <script src="script.js"></script>
 </body>
 </html>
-
