@@ -5548,12 +5548,14 @@ function mostrarStatus(mensaje, tipo = 'info') {
     }
 }
 
-// EXPORTAR FUNCIONES
+} // Cierre de la función principal
+} // Cierre del bloque de control si existe
+
+// EXPORTAR FUNCIONES PARA QUE NO DEN ERROR
 window.escaneoUltraRapidoV2 = escaneoUltraRapidoV2;
 window.inicializarScannerUltraRapido = inicializarScannerUltraRapido;
 
-console.log('✅ Módulo de escaneo ultra-rápido V2 CORREGIDO cargado');
-
+console.log('✅ Archivo cargado correctamente');
 // ============================================
 // ✅ FIN DEL CÓDIGO OPTIMIZADO
 // ============================================
@@ -5563,5 +5565,6 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
