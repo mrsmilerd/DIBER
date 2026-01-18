@@ -42,6 +42,29 @@ const firebaseConfig = {
 // --- Elementos DOM ---
 const elementos = {};
 
+function obtenerElementos() {
+    if (window._elementosCache && Object.keys(window._elementosCache).length > 0) {
+        return window._elementosCache;
+    }
+    
+    const elementos = {};
+    const ids = [
+        'tarifa', 'minutos', 'distancia', 
+        'resultado-rapido', 'history-list',
+        'perfil-screen', 'config-perfil-screen', 'main-screen'
+    ];
+    
+    ids.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            elementos[id] = elemento;
+        }
+    });
+    
+    window._elementosCache = elementos;
+    return elementos;
+}
+
 // =============================================
 // CONSTANTE DE NEGOCIO
 // =============================================
@@ -5521,6 +5544,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
