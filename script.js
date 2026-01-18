@@ -4932,12 +4932,14 @@ async function inicializarApp() {
         }
     }
 
-// INICIALIZAR SISTEMA ULTRA RÁPIDO
-    setTimeout(() => {
-        inicializarScannerUltraRapido();
-        console.log('⚡ Sistema ultra-rápido listo');
-    }, 2000);
-}
+// =============================================
+// INICIALIZACIÓN
+// =============================================
+
+setTimeout(() => {
+    inicializarScannerConTimeout();
+    console.log('⏱️ Scanner con timeout listo');
+}, 2000);
 
 // ✅ FUNCIÓN SIMPLIFICADA: Solo verifica si Google Maps está disponible
 function waitForGoogleMaps() {
@@ -5149,344 +5151,414 @@ window.onclick = function(event) {
 };
 
 // =============================================
-// SISTEMA ULTRA-RÁPIDO - 3 SEGUNDOS MÁXIMO
+// SISTEMA CON TIMEOUT FORZOSO - 3 SEGUNDOS MÁXIMO
 // =============================================
 
-let scannerUltraRapido = null;
-
-function inicializarScannerUltraRapido() {
-    console.log('⚡ Inicializando sistema ultra-rápido...');
+function inicializarScannerConTimeout() {
+    console.log('⏱️ Inicializando scanner con timeout...');
     
-    // Botón ULTRA rápido
     const scanBtn = document.createElement('button');
-    scanBtn.id = 'ultra-fast-scan';
-    scanBtn.innerHTML = '⚡ RÁPIDO';
+    scanBtn.id = 'timeout-scan-btn';
+    scanBtn.innerHTML = '⏱️ 3s SCAN';
     scanBtn.style.cssText = `
         position: fixed !important;
         bottom: 100px !important;
         right: 20px !important;
         z-index: 9999 !important;
-        background: linear-gradient(135deg, #00b09b, #96c93d) !important;
+        background: linear-gradient(135deg, #FF9800, #FF5722) !important;
         color: white !important;
         border: none !important;
         border-radius: 50px !important;
         padding: 15px 25px !important;
         font-size: 16px !important;
         font-weight: bold !important;
-        box-shadow: 0 6px 25px rgba(0, 176, 155, 0.5) !important;
+        box-shadow: 0 6px 25px rgba(255, 152, 0, 0.5) !important;
         cursor: pointer !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         gap: 8px !important;
-        animation: ultraPulse 1s infinite !important;
     `;
     
-    // Estilos para la animación
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes ultraPulse {
-            0% { transform: scale(1); box-shadow: 0 6px 25px rgba(0, 176, 155, 0.5); }
-            50% { transform: scale(1.05); box-shadow: 0 8px 30px rgba(0, 176, 155, 0.8); }
-            100% { transform: scale(1); box-shadow: 0 6px 25px rgba(0, 176, 155, 0.5); }
-        }
-    `;
-    document.head.appendChild(style);
-    
-    scanBtn.onclick = escaneoUltraRapido;
+    scanBtn.onclick = escanearConTimeout;
     document.body.appendChild(scanBtn);
-    
-    console.log('✅ Botón ultra-rápido creado');
 }
 
-function escaneoUltraRapido() {
-    console.time('⚡ Tiempo total escaneo');
+function escanearConTimeout() {
+    console.log('⏱️ Iniciando escaneo con timeout de 3 segundos...');
     
-    // Input simple sin preprocesamiento
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.capture = 'environment';
     
     input.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         
-        // Mostrar contador de tiempo
-        const timerMsg = document.createElement('div');
-        timerMsg.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(0,0,0,0.95);
-                color: #00ff88;
-                padding: 20px;
-                border-radius: 15px;
-                z-index: 10000;
-                text-align: center;
-                font-family: monospace;
-                border: 2px solid #00ff88;
-                min-width: 200px;
-            ">
-                <div style="font-size: 40px; margin-bottom: 10px;">⚡</div>
-                <div style="font-weight: bold; margin-bottom: 10px;">ESCANEO RÁPIDO</div>
-                <div id="timer" style="font-size: 24px; font-weight: bold; margin: 10px 0;">0.0s</div>
-                <div style="font-size: 12px; opacity: 0.7;">Máximo: 3 segundos</div>
-            </div>
-        `;
-        document.body.appendChild(timerMsg);
-        
-        let startTime = Date.now();
-        const timerInterval = setInterval(() => {
-            const elapsed = (Date.now() - startTime) / 1000;
-            const timerEl = document.getElementById('timer');
-            if (timerEl) timerEl.textContent = elapsed.toFixed(1) + 's';
-        }, 100);
+        // Crear timeout visual
+        const timeoutUI = crearTimeoutUI();
         
         try {
-            // OCR DIRECTO SIN PREPROCESAMIENTO
-            console.time('OCR directo');
-            const result = await Tesseract.recognize(file, 'eng');
-            console.timeEnd('OCR directo');
+            // ⚠️ TIMEOUT FORZOSO de 3 segundos
+            const resultado = await ejecutarOCRConTimeout(file, 3000);
             
-            clearInterval(timerInterval);
-            if (document.body.contains(timerMsg)) {
-                document.body.removeChild(timerMsg);
+            // Remover UI de timeout
+            if (timeoutUI && document.body.contains(timeoutUI)) {
+                document.body.removeChild(timeoutUI);
             }
             
-            console.timeEnd('⚡ Tiempo total escaneo');
-            
-            // Procesamiento RÁPIDO de datos
-            procesarDatosRapido(result.data.text, startTime);
+            if (resultado.timeout) {
+                mostrarStatus('⏰ Timeout! Usa datos parciales o manual', 'warning');
+                usarDatosParciales(resultado.data);
+            } else {
+                procesarOCRResultado(resultado.data);
+            }
             
         } catch (error) {
-            clearInterval(timerInterval);
-            if (document.body.contains(timerMsg)) {
-                document.body.removeChild(timerMsg);
+            if (timeoutUI && document.body.contains(timeoutUI)) {
+                document.body.removeChild(timeoutUI);
             }
-            
-            console.error('❌ Error rápido:', error);
-            mostrarStatus('⚠️ Usa captura directa o ingresa manual', 'warning');
+            mostrarStatus('❌ Error en escaneo', 'error');
         }
     };
     
     input.click();
 }
 
-function procesarDatosRapido(textoOCR, startTime) {
-    console.log('⚡ Procesando datos rápidamente...');
+function crearTimeoutUI() {
+    const container = document.createElement('div');
+    container.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.95);
+        color: #FF9800;
+        padding: 25px;
+        border-radius: 15px;
+        z-index: 10000;
+        text-align: center;
+        border: 3px solid #FF9800;
+        min-width: 250px;
+        font-family: monospace;
+    `;
     
-    // TIEMPO 1: Búsqueda directa de patrones clave (sin normalización compleja)
-    const tiempoTotal = Date.now() - startTime;
-    console.log(`⏱️ Tiempo transcurrido: ${tiempoTotal}ms`);
+    let segundosRestantes = 3;
+    container.innerHTML = `
+        <div style="font-size: 40px; margin-bottom: 15px;">⏱️</div>
+        <div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">ESCANEO RÁPIDO</div>
+        <div id="timeout-counter" style="font-size: 32px; font-weight: bold; margin: 15px 0;">${segundosRestantes}s</div>
+        <div style="font-size: 14px; opacity: 0.8;">Cancelando en...</div>
+        <div style="margin-top: 20px; font-size: 12px; opacity: 0.6;">Si se congela, cierra y usa manual</div>
+        <button id="cancel-timeout" style="
+            margin-top: 15px;
+            background: #FF5722;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+        ">
+            CANCELAR
+        </button>
+    `;
     
-    // Búsqueda ULTRA RÁPIDA de solo lo esencial
-    let tarifa = null;
-    let tiempoLlegada = 0;
-    let tiempoViaje = 0;
-    let distancia = 0;
-    
-    // 1. BUSCAR TARIFA (RD$xxx.xx)
-    const tarifaMatch = textoOCR.match(/RD\s*[\$\s]*(\d+[.,]\d{2})/);
-    if (tarifaMatch) {
-        tarifa = parseFloat(tarifaMatch[1].replace(',', '.'));
-        console.log('💰 Tarifa encontrada rápido:', tarifa);
-    }
-    
-    // 2. BUSCAR "A X min (Y km)" - Solo números
-    const llegadaMatch = textoOCR.match(/A\s*(\d+)\s*min.*?([\d.,]+)\s*km/i);
-    if (llegadaMatch) {
-        tiempoLlegada = parseInt(llegadaMatch[1]);
-        const kmLlegada = parseFloat(llegadaMatch[2].replace(',', '.'));
-        console.log('🚶 Llegada rápida:', tiempoLlegada, 'min', kmLlegada, 'km');
-        distancia += kmLlegada;
-    }
-    
-    // 3. BUSCAR "Viaje: X min (Y km)" - Solo números  
-    const viajeMatch = textoOCR.match(/Viaje[:\s]*(\d+)\s*min.*?([\d.,]+)\s*km/i);
-    if (viajeMatch) {
-        tiempoViaje = parseInt(viajeMatch[1]);
-        const kmViaje = parseFloat(viajeMatch[2].replace(',', '.'));
-        console.log('🚗 Viaje rápido:', tiempoViaje, 'min', kmViaje, 'km');
-        distancia += kmViaje;
-    }
-    
-    // 4. SI FALLAN LOS PATRONES, BUSCAR SOLO NÚMEROS
-    if (!tarifa || !tiempoLlegada || !tiempoViaje) {
-        console.log('🔍 Búsqueda de emergencia...');
-        const numeros = textoOCR.match(/\d+[.,]?\d*/g) || [];
+    // Contador regresivo
+    const counterElement = container.querySelector('#timeout-counter');
+    const countdown = setInterval(() => {
+        segundosRestantes--;
+        if (counterElement) counterElement.textContent = segundosRestantes + 's';
         
-        if (numeros.length >= 3) {
-            // Ordenar y asignar rápido
-            const nums = numeros.map(n => parseFloat(n.replace(',', '.')));
-            nums.sort((a, b) => b - a);
-            
-            if (!tarifa) tarifa = nums[0];
-            if (!tiempoLlegada && nums.length > 1) tiempoLlegada = Math.round(nums[1]);
-            if (!tiempoViaje && nums.length > 2) tiempoViaje = Math.round(nums[2]);
-            if (distancia === 0 && nums.length > 3) distancia = nums[3];
+        if (segundosRestantes <= 0) {
+            clearInterval(countdown);
+            if (document.body.contains(container)) {
+                document.body.removeChild(container);
+            }
         }
+    }, 1000);
+    
+    // Botón cancelar
+    container.querySelector('#cancel-timeout').onclick = () => {
+        clearInterval(countdown);
+        if (document.body.contains(container)) {
+            document.body.removeChild(container);
+        }
+        mostrarStatus('❌ Escaneo cancelado', 'info');
+    };
+    
+    document.body.appendChild(container);
+    return container;
+}
+
+function ejecutarOCRConTimeout(file, timeoutMs = 3000) {
+    return new Promise((resolve, reject) => {
+        let timeoutId = null;
+        let ocrCompletado = false;
+        
+        // ⚠️ TIMEOUT FORZOSO
+        timeoutId = setTimeout(() => {
+            if (!ocrCompletado) {
+                console.warn('⚠️ TIMEOUT: OCR tomó más de', timeoutMs, 'ms');
+                resolve({
+                    timeout: true,
+                    data: null
+                });
+            }
+        }, timeoutMs);
+        
+        // Ejecutar OCR
+        Tesseract.recognize(file, 'eng')
+            .then(result => {
+                ocrCompletado = true;
+                clearTimeout(timeoutId);
+                resolve({
+                    timeout: false,
+                    data: result.data.text
+                });
+            })
+            .catch(error => {
+                ocrCompletado = true;
+                clearTimeout(timeoutId);
+                reject(error);
+            });
+    });
+}
+
+function procesarOCRResultado(texto) {
+    console.log('✅ OCR completado en tiempo');
+    
+    if (!texto || texto.trim().length < 10) {
+        mostrarStatus('📄 Texto muy corto o vacío', 'warning');
+        return;
     }
     
-    const tiempoTotalMin = tiempoLlegada + tiempoViaje;
+    // Extracción ULTRA RÁPIDA
+    const extraccion = extraerDatosUltraRapido(texto);
     
-    console.log('📊 RESULTADO RÁPIDO:', {
-        tarifa,
-        tiempoTotal: tiempoTotalMin,
-        distancia,
-        tiempoProcesamiento: tiempoTotal + 'ms'
-    });
-    
-    // VALIDACIÓN RÁPIDA
-    if (tarifa && tiempoTotalMin > 0 && distancia > 0) {
-        // AUTORELLENAR INMEDIATAMENTE
-        if (elementos?.tarifa) elementos.tarifa.value = tarifa;
-        if (elementos?.minutos) elementos.minutos.value = tiempoTotalMin;
-        if (elementos?.distancia) elementos.distancia.value = distancia;
+    if (extraccion.completo) {
+        // Autorellenar y calcular
+        if (elementos?.tarifa) elementos.tarifa.value = extraccion.tarifa;
+        if (elementos?.minutos) elementos.minutos.value = extraccion.tiempoTotal;
+        if (elementos?.distancia) elementos.distancia.value = extraccion.distanciaTotal;
         
-        // CALCULAR INMEDIATAMENTE
         setTimeout(() => {
             if (typeof manejarCalculoAutomatico === 'function') {
                 manejarCalculoAutomatico();
-                mostrarStatus(`✅ Listo en ${(tiempoTotal/1000).toFixed(1)}s!`, 'success');
+                mostrarStatus('✅ ¡Listo!', 'success');
             }
-        }, 100);
+        }, 200);
         
     } else {
-        // FALLBACK: Mostrar lo que SÍ se encontró
-        const datosEncontrados = [];
-        if (tarifa) datosEncontrados.push(`RD$${tarifa}`);
-        if (tiempoLlegada) datosEncontrados.push(`Llegada: ${tiempoLlegada}min`);
-        if (tiempoViaje) datosEncontrados.push(`Viaje: ${tiempoViaje}min`);
-        if (distancia > 0) datosEncontrados.push(`${distancia}km`);
+        // Mostrar datos parciales
+        mostrarStatus(`⚠️ Parcial: $${extraccion.tarifa || '?'} | ${extraccion.tiempoTotal || '?'}min`, 'warning');
         
-        mostrarStatus(`⚠️ Encontrado: ${datosEncontrados.join(' | ')}. Completa manualmente.`, 'warning');
-        
-        // Autorellenar lo que SÍ se encontró
-        if (tarifa && elementos?.tarifa) elementos.tarifa.value = tarifa;
-        if (tiempoTotalMin > 0 && elementos?.minutos) elementos.minutos.value = tiempoTotalMin;
-        if (distancia > 0 && elementos?.distancia) elementos.distancia.value = distancia;
+        // Autorellenar lo que sí haya
+        if (extraccion.tarifa && elementos?.tarifa) elementos.tarifa.value = extraccion.tarifa;
+        if (extraccion.tiempoTotal && elementos?.minutos) elementos.minutos.value = extraccion.tiempoTotal;
     }
 }
 
-// =============================================
-// SISTEMA DE CAPTURA DIRECTA MÁS RÁPIDO AÚN
-// =============================================
-
-function escaneoDirectoConCamara() {
-    // Usar API de cámara directamente si está disponible
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        mostrarCamaraDirecta();
-    } else {
-        escaneoUltraRapido(); // Fallback al método anterior
-    }
+function extraerDatosUltraRapido(texto) {
+    console.log('⚡ Extracción ultra rápida...');
+    
+    // Solo buscar patrones EXACTOS y rápidos
+    const tarifaMatch = texto.match(/RD\s*[\$\s]*(\d+[.,]\d{2})/);
+    const llegadaMatch = texto.match(/A\s*(\d+)\s*min.*?([\d.,]+)\s*km/i);
+    const viajeMatch = texto.match(/Viaje[:\s]*(\d+)\s*min.*?([\d.,]+)\s*km/i);
+    
+    const tarifa = tarifaMatch ? parseFloat(tarifaMatch[1].replace(',', '.')) : null;
+    const llegadaMin = llegadaMatch ? parseInt(llegadaMatch[1]) : 0;
+    const llegadaKm = llegadaMatch ? parseFloat(llegadaMatch[2].replace(',', '.')) : 0;
+    const viajeMin = viajeMatch ? parseInt(viajeMatch[1]) : 0;
+    const viajeKm = viajeMatch ? parseFloat(viajeMatch[2].replace(',', '.')) : 0;
+    
+    const tiempoTotal = llegadaMin + viajeMin;
+    const distanciaTotal = +(llegadaKm + viajeKm).toFixed(1);
+    
+    const completo = !!(tarifa && tiempoTotal > 0 && distanciaTotal > 0);
+    
+    return {
+        completo,
+        tarifa,
+        tiempoTotal,
+        distanciaTotal,
+        llegadaMin,
+        viajeMin
+    };
 }
 
-function mostrarCamaraDirecta() {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
+function usarDatosParciales(textoParcial) {
+    if (!textoParcial) {
+        // Crear formulario de emergencia
+        mostrarFormularioEmergencia();
+        return;
+    }
+    
+    // Intentar extraer aunque sea parcial
+    const extraccion = extraerDatosUltraRapido(textoParcial || '');
+    
+    // Mostrar en modal emergente
+    const modal = document.createElement('div');
+    modal.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: black;
+        background: rgba(0,0,0,0.9);
         z-index: 10000;
         display: flex;
-        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     `;
     
-    overlay.innerHTML = `
-        <div style="flex: 1; position: relative;">
-            <video id="direct-camera" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-            <div style="position: absolute; bottom: 100px; left: 0; width: 100%; text-align: center; color: white;">
-                <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Enfoca los números y captura</div>
-                <button id="capture-btn" style="
-                    background: #00ff88;
-                    color: black;
+    modal.innerHTML = `
+        <div style="
+            background: #222;
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 400px;
+            border: 2px solid #FF9800;
+        ">
+            <div style="font-size: 30px; margin-bottom: 15px; text-align: center;">⚠️</div>
+            <div style="font-weight: bold; margin-bottom: 15px; font-size: 18px; text-align: center;">
+                Escaneo incompleto
+            </div>
+            
+            <div style="margin: 15px 0; padding: 15px; background: #333; border-radius: 10px;">
+                <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                    <span>Tarifa encontrada:</span>
+                    <span>${extraccion.tarifa ? 'RD$' + extraccion.tarifa : '❌ No'}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                    <span>Tiempo total:</span>
+                    <span>${extraccion.tiempoTotal || 0} min</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                    <span>Distancia:</span>
+                    <span>${extraccion.distanciaTotal || 0} km</span>
+                </div>
+            </div>
+            
+            <div style="margin: 20px 0; font-size: 14px; opacity: 0.8; text-align: center;">
+                Completa los datos faltantes manualmente
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="usar-parcial" style="
+                    background: #4CAF50;
+                    color: white;
                     border: none;
-                    border-radius: 50%;
-                    width: 70px;
-                    height: 70px;
-                    font-size: 24px;
+                    padding: 10px 20px;
+                    border-radius: 20px;
                     cursor: pointer;
-                    box-shadow: 0 0 20px #00ff88;
                 ">
-                    📸
+                    Usar estos datos
                 </button>
-                <div style="margin-top: 10px; font-size: 14px; opacity: 0.8;">Toca para capturar</div>
+                
+                <button id="manual-completo" style="
+                    background: #2196F3;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 20px;
+                    cursor: pointer;
+                ">
+                    Ingresar manual
+                </button>
             </div>
         </div>
     `;
     
-    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
     
-    // Acceder a la cámara
-    navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' },
-        audio: false 
-    }).then(stream => {
-        const video = document.getElementById('direct-camera');
-        video.srcObject = stream;
+    // Eventos
+    modal.querySelector('#usar-parcial').onclick = () => {
+        if (extraccion.tarifa && elementos?.tarifa) elementos.tarifa.value = extraccion.tarifa;
+        if (extraccion.tiempoTotal && elementos?.minutos) elementos.minutos.value = extraccion.tiempoTotal;
+        if (extraccion.distanciaTotal && elementos?.distancia) elementos.distancia.value = extraccion.distanciaTotal;
         
-        // Capturar foto
-        document.getElementById('capture-btn').onclick = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
-            
-            // Detener cámara
-            stream.getTracks().forEach(track => track.stop());
-            
-            // OCR RÁPIDO
-            canvas.toBlob(async (blob) => {
-                document.body.removeChild(overlay);
-                
-                // OCR directo sin preprocesamiento
-                const result = await Tesseract.recognize(blob, 'eng');
-                procesarDatosRapido(result.data.text, Date.now());
-            }, 'image/jpeg', 0.8);
-        };
-        
-    }).catch(error => {
-        console.error('Error cámara:', error);
-        document.body.removeChild(overlay);
-        escaneoUltraRapido(); // Fallback
-    });
+        document.body.removeChild(modal);
+        mostrarStatus('✅ Datos parciales aplicados', 'info');
+    };
+    
+    modal.querySelector('#manual-completo').onclick = () => {
+        document.body.removeChild(modal);
+        // El formulario ya está visible, solo enfocar
+        if (elementos.tarifa) elementos.tarifa.focus();
+    };
+}
+
+function mostrarFormularioEmergencia() {
+    // Simplemente enfocar el primer campo
+    if (elementos.tarifa) {
+        elementos.tarifa.focus();
+        elementos.tarifa.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    mostrarStatus('⏰ Timeout! Ingresa datos manualmente', 'warning');
 }
 
 // =============================================
-// FUNCIÓN DE EMERGENCIA: OCR PARCIAL
+// ALTERNATIVA: OCR CON WORKER SEPARADO
 // =============================================
 
-function procesamientoParcialEnTiempo(textoOCR, tiempoLimite = 2000) {
+function crearWorkerOCR() {
+    const workerCode = `
+        self.onmessage = function(e) {
+            const { imageData, width, height } = e.data;
+            
+            // Simulación simple de procesamiento
+            // En realidad aquí iría el OCR real
+            const result = {
+                text: "RD$250.00\\nA5min (1.1 km)\\nViaje: 11 min (4.2 km)",
+                confidence: 0.9
+            };
+            
+            self.postMessage(result);
+        };
+    `;
+    
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    const worker = new Worker(URL.createObjectURL(blob));
+    return worker;
+}
+
+// =============================================
+// SISTEMA DE FALLBACK: ESCANEO POR PARTES
+// =============================================
+
+function escaneoPorPartes(file) {
     return new Promise((resolve) => {
-        const start = Date.now();
+        const reader = new FileReader();
         
-        // Búsqueda PARCIAL mientras hay tiempo
-        let tarifa = null;
-        let tiempo = 0;
+        reader.onload = function(e) {
+            const img = new Image();
+            
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Solo analizar área donde están los números (inferior 50%)
+                canvas.width = img.width;
+                canvas.height = img.height / 2;
+                ctx.drawImage(img, 0, img.height / 2, canvas.width, canvas.height / 2, 0, 0, canvas.width, canvas.height / 2);
+                
+                // OCR solo en esa área
+                Tesseract.recognize(canvas, 'eng')
+                    .then(result => {
+                        resolve(result.data.text);
+                    })
+                    .catch(() => {
+                        resolve(''); // Fallback vacío
+                    });
+            };
+            
+            img.src = e.target.result;
+        };
         
-        // Solo buscar lo MÁS IMPORTANTE primero
-        const tarifaMatch = textoOCR.match(/RD\s*[\$\s]*(\d+[.,]\d{2})/);
-        if (tarifaMatch) tarifa = parseFloat(tarifaMatch[1]);
-        
-        // Si ya pasó el tiempo, devolver lo que haya
-        if (Date.now() - start > tiempoLimite * 0.5) {
-            resolve({ tarifa, tiempo, distancia: 0, parcial: true });
-            return;
-        }
-        
-        // Buscar tiempo si aún hay tiempo
-        const tiempoMatch = textoOCR.match(/(\d+)\s*min/);
-        if (tiempoMatch) tiempo = parseInt(tiempoMatch[1]);
-        
-        resolve({ tarifa, tiempo, distancia: 0, parcial: true });
+        reader.readAsDataURL(file);
     });
 }
 
@@ -5495,3 +5567,4 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
