@@ -5255,7 +5255,7 @@ async function optimizarParaOCR(blob) {
             
             const ctx = canvas.getContext('2d', { alpha: false });
 // El navegador aplica esto usando la tarjeta de video (más rápido)
-ctx.filter = 'contrast(1.5) grayscale(1) brightness(1.1)'; 
+ctx.filter = 'grayscale(1) contrast(2) brightness(0.8)'; 
 ctx.drawImage(img, 0, 0, width, height);
             
             // Aplicar contraste para que el OCR lea más rápido
@@ -5291,38 +5291,43 @@ function aplicarContrasteRapido(imageData) {
 }
 
 function procesarDatosUltraRapido(textoOCR, tiempoTotal) {
-    console.log('📄 Analizando Texto Original:', textoOCR);
+    console.log('📄 Texto Sucio Recibido:', textoOCR);
 
-    // 1. LIMPIEZA INICIAL: El A12 a veces lee "nn" en vez de "n"
-    const texto = textoOCR.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+    // 1. LIMPIEZA AGRESIVA
+    // Convertimos todo a minúsculas y quitamos caracteres que confunden al OCR
+    const texto = textoOCR.toLowerCase().replace(/[|i!lji]/g, 'i'); 
 
-    // 2. EXTRACCIÓN DE TARIFA (El monto más grande es la tarifa real)
+    // 2. EXTRAER TARIFA (El número más grande que tenga RD$ o esté solo)
     let tarifa = 0;
-    const montos = texto.match(/(?:RD\$|DOP|RD)\s*(\d+[.,]\d+|\d+)/gi);
-    if (montos) {
-        const valores = montos.map(m => parseFloat(m.replace(/[^\d.,]/g, '').replace(',', '.')));
-        tarifa = Math.max(...valores); // Ignora el incentivo pequeño y se queda con el monto grande
+    const montosEncontrados = texto.match(/\d+[.,]\d{2}/g); // Busca formatos como 120.52
+    if (montosEncontrados) {
+        const valores = montosEncontrados.map(m => parseFloat(m.replace(',', '.')));
+        tarifa = Math.max(...valores); 
+        // Filtro: Si el más grande es muy pequeño (como el bono de 16.74), buscamos mejor
+        console.log('💰 Tarifa detectada:', tarifa);
     }
 
-    // 3. EXTRACCIÓN DE TIEMPOS (Busca específicamente los dos tramos)
-    let minRecogida = 0;
-    let minViaje = 0;
-
-    // Buscamos lo que sigue a "A" (Recogida) y a "Viaje" (Destino)
-    const matchRecogida = texto.match(/A\s*(\d+)\s*min/i);
-    const matchDestino = texto.match(/(?:Viaje|Destino)\s*(\d+)\s*min/i);
-
-    if (matchRecogida) minRecogida = parseInt(matchRecogida[1]);
-    if (matchDestino) minViaje = parseInt(matchDestino[1]);
+    // 3. EXTRAER TIEMPOS (Sumar todos los números que tengan "min" cerca)
+    // En tu ejemplo: "5min" y "11 min"
+    let minutosTotal = 0;
+    const regexMinutos = /(\d+)\s*(?:min|mi|m\b|n)/g;
+    const matchesMin = [...texto.matchAll(regexMinutos)];
     
-    const minutosTotal = minRecogida + minViaje;
+    if (matchesMin.length > 0) {
+        // Sumamos todos los números encontrados
+        minutosTotal = matchesMin.reduce((sum, m) => sum + parseInt(m[1]), 0);
+        console.log('⏱️ Suma de minutos:', minutosTotal);
+    }
 
-    // 4. EXTRACCIÓN DE DISTANCIA (Busca lo que está entre paréntesis)
+    // 4. EXTRAER DISTANCIAS (Sumar todos los números que tengan "km" cerca)
+    // En tu ejemplo: "1.1km" y "4.2km"
     let distanciaTotal = 0;
-    const matchesKM = [...texto.matchAll(/\(?(\d+[.,]\d+|\d+)\s*km\)?/gi)];
-    
+    const regexKM = /(\d+[.,]\d+)\s*(?:km|kn|k)/g;
+    const matchesKM = [...texto.matchAll(regexKM)];
+
     if (matchesKM.length > 0) {
         distanciaTotal = matchesKM.reduce((sum, m) => sum + parseFloat(m[1].replace(',', '.')), 0);
+        console.log('🛣️ Suma de KM:', distanciaTotal);
     }
 
     // --- CARGAR EN LA INTERFAZ ---
@@ -5332,14 +5337,14 @@ function procesarDatosUltraRapido(textoOCR, tiempoTotal) {
         if (distanciaTotal > 0) elementos.distancia.value = distanciaTotal.toFixed(1);
     }
 
-    // --- LANZAR CÁLCULO SI HAY DATOS ---
+    // --- LANZAR CÁLCULO ---
     if (tarifa > 0 && minutosTotal > 0) {
         setTimeout(() => {
-            if (typeof manejarCalculoAutomatico === 'function') manejarCalculoAutomatico();
-            mostrarStatus(`✅ ${minutosTotal} min (${minRecogida}+${minViaje}) | ${distanciaTotal.toFixed(1)} km`, 'success');
-        }, 200);
-    } else {
-        mostrarStatus('⚠️ Datos incompletos. Revisa la iluminación.', 'warning');
+            if (typeof manejarCalculoAutomatico === 'function') {
+                manejarCalculoAutomatico();
+                mostrarStatus(`✅ Detectado: RD$${tarifa} | ${minutosTotal}min | ${distanciaTotal}km`, 'success');
+            }
+        }, 300);
     }
 }
 
@@ -5555,6 +5560,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
