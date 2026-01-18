@@ -4933,25 +4933,27 @@ async function inicializarApp() {
     }
 
 // =============================================
-// INICIALIZACIÓN
+// INICIALIZACIÓN GARANTIZADA
 // =============================================
 
-setTimeout(() => {
-    inicializarScannerConTimeout();
-    console.log('⏱️ Scanner con timeout listo');
-}, 2000);
-
-// ✅ FUNCIÓN SIMPLIFICADA: Solo verifica si Google Maps está disponible
-function waitForGoogleMaps() {
-    return new Promise((resolve, reject) => {
-        if (window.google && window.google.maps) {
-            resolve();
-            return;
+// En tu función inicializarApp, AGREGA ESTO:
+function inicializarApp() {
+    // ... tu código existente ...
+    
+    // INICIALIZAR SISTEMA GARANTIZADO
+    setTimeout(() => {
+        try {
+            inicializarScannerGarantizado();
+            console.log('🎯 Sistema OCR garantizado inicializado');
+        } catch (error) {
+            console.error('❌ Error inicializando scanner:', error);
         }
-        
-        // Si no está disponible, rechazar inmediatamente
-        reject(new Error('Google Maps no está disponible'));
-    });
+    }, 3000);
+}
+
+// EJECUTAR MANUALMENTE SI ES NECESARIO
+if (typeof inicializarScannerGarantizado === 'function') {
+    setTimeout(inicializarScannerGarantizado, 1000);
 }
 
 // AGREGAR estas funciones utilitarias:
@@ -5151,253 +5153,304 @@ window.onclick = function(event) {
 };
 
 // =============================================
-// SISTEMA CON TIMEOUT FORZOSO - 3 SEGUNDOS MÁXIMO
+// SISTEMA OCR FUNCIONAL GARANTIZADO
 // =============================================
 
-function inicializarScannerConTimeout() {
-    console.log('⏱️ Inicializando scanner con timeout...');
+let ocrActivo = false;
+
+function inicializarScannerGarantizado() {
+    console.log('🚀 Inicializando scanner garantizado...');
     
+    // Eliminar botones anteriores para evitar duplicados
+    const botonesAnteriores = ['quick-scan-btn', 'ultra-fast-scan', 'timeout-scan-btn'];
+    botonesAnteriores.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.remove();
+    });
+    
+    // Crear botón NUEVO y simple
     const scanBtn = document.createElement('button');
-    scanBtn.id = 'timeout-scan-btn';
-    scanBtn.innerHTML = '⏱️ 3s SCAN';
+    scanBtn.id = 'ocr-garantizado-btn';
+    scanBtn.innerHTML = '🔍 ESCANEAR';
     scanBtn.style.cssText = `
         position: fixed !important;
         bottom: 100px !important;
         right: 20px !important;
         z-index: 9999 !important;
-        background: linear-gradient(135deg, #FF9800, #FF5722) !important;
+        background: #2196F3 !important;
         color: white !important;
         border: none !important;
         border-radius: 50px !important;
         padding: 15px 25px !important;
         font-size: 16px !important;
         font-weight: bold !important;
-        box-shadow: 0 6px 25px rgba(255, 152, 0, 0.5) !important;
         cursor: pointer !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 8px !important;
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4) !important;
     `;
     
-    scanBtn.onclick = escanearConTimeout;
+    scanBtn.onclick = iniciarEscaneoGarantizado;
     document.body.appendChild(scanBtn);
+    
+    console.log('✅ Botón garantizado creado');
 }
 
-function escanearConTimeout() {
-    console.log('⏱️ Iniciando escaneo con timeout de 3 segundos...');
+async function iniciarEscaneoGarantizado() {
+    if (ocrActivo) {
+        console.log('⏳ OCR ya en progreso...');
+        return;
+    }
     
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
+    ocrActivo = true;
     
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    try {
+        console.log('🎬 Iniciando escaneo garantizado...');
         
-        // Crear timeout visual
-        const timeoutUI = crearTimeoutUI();
-        
-        try {
-            // ⚠️ TIMEOUT FORZOSO de 3 segundos
-            const resultado = await ejecutarOCRConTimeout(file, 3000);
-            
-            // Remover UI de timeout
-            if (timeoutUI && document.body.contains(timeoutUI)) {
-                document.body.removeChild(timeoutUI);
-            }
-            
-            if (resultado.timeout) {
-                mostrarStatus('⏰ Timeout! Usa datos parciales o manual', 'warning');
-                usarDatosParciales(resultado.data);
-            } else {
-                procesarOCRResultado(resultado.data);
-            }
-            
-        } catch (error) {
-            if (timeoutUI && document.body.contains(timeoutUI)) {
-                document.body.removeChild(timeoutUI);
-            }
-            mostrarStatus('❌ Error en escaneo', 'error');
+        // 1. Seleccionar archivo
+        const file = await seleccionarArchivo();
+        if (!file) {
+            ocrActivo = false;
+            return;
         }
-    };
-    
-    input.click();
+        
+        // 2. Mostrar indicador
+        const indicador = mostrarIndicadorProgreso();
+        
+        // 3. Procesar con timeout estricto
+        const textoOCR = await procesarOCRConTimeout(file, 5000); // 5 segundos máximo
+        
+        // 4. Remover indicador
+        if (indicador && document.body.contains(indicador)) {
+            document.body.removeChild(indicador);
+        }
+        
+        // 5. Extraer y aplicar datos
+        if (textoOCR && textoOCR.trim().length > 10) {
+            aplicarDatosExtraidos(textoOCR);
+        } else {
+            mostrarMensajeFallback();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error en escaneo:', error);
+        mostrarErrorSimple('Error en escaneo. Usa entrada manual.');
+    } finally {
+        ocrActivo = false;
+    }
 }
 
-function crearTimeoutUI() {
-    const container = document.createElement('div');
-    container.style.cssText = `
+function seleccionarArchivo() {
+    return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        
+        input.onchange = (e) => {
+            resolve(e.target.files[0]);
+            setTimeout(() => document.body.removeChild(input), 1000);
+        };
+        
+        input.oncancel = () => {
+            resolve(null);
+            setTimeout(() => document.body.removeChild(input), 1000);
+        };
+        
+        input.style.cssText = `
+            position: fixed;
+            top: -100px;
+            left: -100px;
+            opacity: 0;
+            pointer-events: none;
+        `;
+        
+        document.body.appendChild(input);
+        input.click();
+    });
+}
+
+function mostrarIndicadorProgreso() {
+    const indicador = document.createElement('div');
+    indicador.id = 'ocr-indicador';
+    indicador.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: rgba(0,0,0,0.95);
-        color: #FF9800;
-        padding: 25px;
-        border-radius: 15px;
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
         z-index: 10000;
         text-align: center;
-        border: 3px solid #FF9800;
-        min-width: 250px;
-        font-family: monospace;
+        min-width: 200px;
+        border: 2px solid #2196F3;
     `;
     
-    let segundosRestantes = 3;
-    container.innerHTML = `
-        <div style="font-size: 40px; margin-bottom: 15px;">⏱️</div>
-        <div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">ESCANEO RÁPIDO</div>
-        <div id="timeout-counter" style="font-size: 32px; font-weight: bold; margin: 15px 0;">${segundosRestantes}s</div>
-        <div style="font-size: 14px; opacity: 0.8;">Cancelando en...</div>
-        <div style="margin-top: 20px; font-size: 12px; opacity: 0.6;">Si se congela, cierra y usa manual</div>
-        <button id="cancel-timeout" style="
-            margin-top: 15px;
-            background: #FF5722;
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-        ">
-            CANCELAR
-        </button>
+    indicador.innerHTML = `
+        <div style="font-size: 30px; margin-bottom: 10px;">⏳</div>
+        <div style="font-weight: bold; margin-bottom: 5px;">Analizando imagen</div>
+        <div style="font-size: 12px; opacity: 0.7;">Por favor espera...</div>
+        <div id="ocr-tiempo" style="font-size: 11px; margin-top: 10px; font-family: monospace;">0.0s</div>
     `;
     
-    // Contador regresivo
-    const counterElement = container.querySelector('#timeout-counter');
-    const countdown = setInterval(() => {
-        segundosRestantes--;
-        if (counterElement) counterElement.textContent = segundosRestantes + 's';
-        
-        if (segundosRestantes <= 0) {
-            clearInterval(countdown);
-            if (document.body.contains(container)) {
-                document.body.removeChild(container);
-            }
-        }
-    }, 1000);
+    document.body.appendChild(indicador);
     
-    // Botón cancelar
-    container.querySelector('#cancel-timeout').onclick = () => {
-        clearInterval(countdown);
-        if (document.body.contains(container)) {
-            document.body.removeChild(container);
-        }
-        mostrarStatus('❌ Escaneo cancelado', 'info');
-    };
+    // Actualizar tiempo
+    const start = Date.now();
+    const intervalo = setInterval(() => {
+        const tiempo = (Date.now() - start) / 1000;
+        const tiempoEl = document.getElementById('ocr-tiempo');
+        if (tiempoEl) tiempoEl.textContent = tiempo.toFixed(1) + 's';
+    }, 100);
     
-    document.body.appendChild(container);
-    return container;
+    // Guardar referencia para limpiar
+    indicador._intervalo = intervalo;
+    
+    return indicador;
 }
 
-function ejecutarOCRConTimeout(file, timeoutMs = 3000) {
+function procesarOCRConTimeout(file, timeoutMs = 5000) {
     return new Promise((resolve, reject) => {
-        let timeoutId = null;
-        let ocrCompletado = false;
-        
-        // ⚠️ TIMEOUT FORZOSO
-        timeoutId = setTimeout(() => {
-            if (!ocrCompletado) {
-                console.warn('⚠️ TIMEOUT: OCR tomó más de', timeoutMs, 'ms');
-                resolve({
-                    timeout: true,
-                    data: null
-                });
-            }
+        let timeoutId = setTimeout(() => {
+            reject(new Error('Timeout de ' + timeoutMs + 'ms excedido'));
         }, timeoutMs);
         
-        // Ejecutar OCR
+        console.log('🤖 Iniciando Tesseract...');
+        
+        // Configuración MÍNIMA
         Tesseract.recognize(file, 'eng')
             .then(result => {
-                ocrCompletado = true;
                 clearTimeout(timeoutId);
-                resolve({
-                    timeout: false,
-                    data: result.data.text
-                });
+                console.log('✅ Tesseract completado');
+                resolve(result.data.text);
             })
             .catch(error => {
-                ocrCompletado = true;
                 clearTimeout(timeoutId);
+                console.error('❌ Tesseract error:', error);
                 reject(error);
             });
     });
 }
 
-function procesarOCRResultado(texto) {
-    console.log('✅ OCR completado en tiempo');
+function aplicarDatosExtraidos(textoOCR) {
+    console.log('📝 Texto para extraer:', textoOCR.substring(0, 200));
     
-    if (!texto || texto.trim().length < 10) {
-        mostrarStatus('📄 Texto muy corto o vacío', 'warning');
-        return;
+    // Extracción SIMPLE pero efectiva
+    const extraccion = {
+        tarifa: null,
+        tiempoLlegada: 0,
+        tiempoViaje: 0,
+        distanciaLlegada: 0,
+        distanciaViaje: 0
+    };
+    
+    // 1. Buscar tarifa
+    const tarifaMatch = textoOCR.match(/RD\s*[\$\s]*(\d+[.,]\d{2})/);
+    if (tarifaMatch) {
+        extraccion.tarifa = parseFloat(tarifaMatch[1].replace(',', '.'));
+        console.log('💰 Tarifa encontrada:', extraccion.tarifa);
     }
     
-    // Extracción ULTRA RÁPIDA
-    const extraccion = extraerDatosUltraRapido(texto);
+    // 2. Buscar "A X min (Y km)"
+    const llegadaMatch = textoOCR.match(/A\s*(\d+)\s*min.*?([\d.,]+)\s*km/i);
+    if (llegadaMatch) {
+        extraccion.tiempoLlegada = parseInt(llegadaMatch[1]);
+        extraccion.distanciaLlegada = parseFloat(llegadaMatch[2].replace(',', '.'));
+        console.log('🚶 Llegada:', extraccion.tiempoLlegada, 'min', extraccion.distanciaLlegada, 'km');
+    }
     
-    if (extraccion.completo) {
-        // Autorellenar y calcular
-        if (elementos?.tarifa) elementos.tarifa.value = extraccion.tarifa;
-        if (elementos?.minutos) elementos.minutos.value = extraccion.tiempoTotal;
-        if (elementos?.distancia) elementos.distancia.value = extraccion.distanciaTotal;
+    // 3. Buscar "Viaje: X min (Y km)"  
+    const viajeMatch = textoOCR.match(/Viaje[:\s]*(\d+)\s*min.*?([\d.,]+)\s*km/i);
+    if (viajeMatch) {
+        extraccion.tiempoViaje = parseInt(viajeMatch[1]);
+        extraccion.distanciaViaje = parseFloat(viajeMatch[2].replace(',', '.'));
+        console.log('🚗 Viaje:', extraccion.tiempoViaje, 'min', extraccion.distanciaViaje, 'km');
+    }
+    
+    // Calcular totales
+    const tiempoTotal = extraccion.tiempoLlegada + extraccion.tiempoViaje;
+    const distanciaTotal = extraccion.distanciaLlegada + extraccion.distanciaViaje;
+    
+    console.log('📊 Totales:', {
+        tiempoTotal,
+        distanciaTotal: distanciaTotal.toFixed(2)
+    });
+    
+    // Verificar si tenemos datos suficientes
+    if (extraccion.tarifa && tiempoTotal > 0 && distanciaTotal > 0) {
+        // AUTORELLENAR FORMULARIO
+        if (elementos && elementos.tarifa) {
+            elementos.tarifa.value = extraccion.tarifa;
+            console.log('✅ Tarifa asignada:', elementos.tarifa.value);
+        }
         
+        if (elementos && elementos.minutos) {
+            elementos.minutos.value = tiempoTotal;
+            console.log('✅ Minutos asignados:', elementos.minutos.value);
+        }
+        
+        if (elementos && elementos.distancia) {
+            elementos.distancia.value = distanciaTotal.toFixed(2);
+            console.log('✅ Distancia asignada:', elementos.distancia.value);
+        }
+        
+        // EJECUTAR CÁLCULO
         setTimeout(() => {
             if (typeof manejarCalculoAutomatico === 'function') {
+                console.log('🚀 Ejecutando cálculo automático...');
                 manejarCalculoAutomatico();
-                mostrarStatus('✅ ¡Listo!', 'success');
+                mostrarMensajeExito(`✅ Extraído: RD$${extraccion.tarifa} | ${tiempoTotal}min | ${distanciaTotal.toFixed(2)}km`);
+            } else {
+                console.warn('⚠️ manejarCalculoAutomatico no disponible');
+                mostrarMensajeExito('✅ Datos extraídos. Calcula manualmente.');
             }
-        }, 200);
+        }, 300);
         
     } else {
-        // Mostrar datos parciales
-        mostrarStatus(`⚠️ Parcial: $${extraccion.tarifa || '?'} | ${extraccion.tiempoTotal || '?'}min`, 'warning');
-        
-        // Autorellenar lo que sí haya
-        if (extraccion.tarifa && elementos?.tarifa) elementos.tarifa.value = extraccion.tarifa;
-        if (extraccion.tiempoTotal && elementos?.minutos) elementos.minutos.value = extraccion.tiempoTotal;
+        // Datos incompletos
+        mostrarDatosParciales(extraccion);
     }
 }
 
-function extraerDatosUltraRapido(texto) {
-    console.log('⚡ Extracción ultra rápida...');
-    
-    // Solo buscar patrones EXACTOS y rápidos
-    const tarifaMatch = texto.match(/RD\s*[\$\s]*(\d+[.,]\d{2})/);
-    const llegadaMatch = texto.match(/A\s*(\d+)\s*min.*?([\d.,]+)\s*km/i);
-    const viajeMatch = texto.match(/Viaje[:\s]*(\d+)\s*min.*?([\d.,]+)\s*km/i);
-    
-    const tarifa = tarifaMatch ? parseFloat(tarifaMatch[1].replace(',', '.')) : null;
-    const llegadaMin = llegadaMatch ? parseInt(llegadaMatch[1]) : 0;
-    const llegadaKm = llegadaMatch ? parseFloat(llegadaMatch[2].replace(',', '.')) : 0;
-    const viajeMin = viajeMatch ? parseInt(viajeMatch[1]) : 0;
-    const viajeKm = viajeMatch ? parseFloat(viajeMatch[2].replace(',', '.')) : 0;
-    
-    const tiempoTotal = llegadaMin + viajeMin;
-    const distanciaTotal = +(llegadaKm + viajeKm).toFixed(1);
-    
-    const completo = !!(tarifa && tiempoTotal > 0 && distanciaTotal > 0);
-    
-    return {
-        completo,
-        tarifa,
-        tiempoTotal,
-        distanciaTotal,
-        llegadaMin,
-        viajeMin
-    };
+function mostrarMensajeExito(mensaje) {
+    if (typeof mostrarStatus === 'function') {
+        mostrarStatus(mensaje, 'success');
+    } else {
+        alert(mensaje);
+    }
 }
 
-function usarDatosParciales(textoParcial) {
-    if (!textoParcial) {
-        // Crear formulario de emergencia
-        mostrarFormularioEmergencia();
-        return;
+function mostrarErrorSimple(mensaje) {
+    if (typeof mostrarStatus === 'function') {
+        mostrarStatus(mensaje, 'error');
+    } else {
+        alert('❌ ' + mensaje);
+    }
+}
+
+function mostrarDatosParciales(extraccion) {
+    const datos = [];
+    if (extraccion.tarifa) datos.push(`RD$${extraccion.tarifa}`);
+    if (extraccion.tiempoLlegada) datos.push(`Llegada: ${extraccion.tiempoLlegada}min`);
+    if (extraccion.tiempoViaje) datos.push(`Viaje: ${extraccion.tiempoViaje}min`);
+    
+    const mensaje = `⚠️ Datos parciales: ${datos.join(' | ')}`;
+    
+    if (typeof mostrarStatus === 'function') {
+        mostrarStatus(mensaje, 'warning');
     }
     
-    // Intentar extraer aunque sea parcial
-    const extraccion = extraerDatosUltraRapido(textoParcial || '');
+    // Autorellenar lo que sí haya
+    if (extraccion.tarifa && elementos?.tarifa) {
+        elementos.tarifa.value = extraccion.tarifa;
+    }
     
-    // Mostrar en modal emergente
+    if (extraccion.tiempoLlegada && elementos?.minutos) {
+        elementos.minutos.value = extraccion.tiempoLlegada + (extraccion.tiempoViaje || 0);
+    }
+}
+
+function mostrarMensajeFallback() {
     const modal = document.createElement('div');
     modal.style.cssText = `
         position: fixed;
@@ -5414,58 +5467,39 @@ function usarDatosParciales(textoParcial) {
     
     modal.innerHTML = `
         <div style="
-            background: #222;
+            background: #333;
             color: white;
             padding: 25px;
             border-radius: 15px;
             max-width: 400px;
+            text-align: center;
             border: 2px solid #FF9800;
         ">
-            <div style="font-size: 30px; margin-bottom: 15px; text-align: center;">⚠️</div>
-            <div style="font-weight: bold; margin-bottom: 15px; font-size: 18px; text-align: center;">
-                Escaneo incompleto
+            <div style="font-size: 40px; margin-bottom: 15px;">🔍</div>
+            <div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">
+                No se pudieron extraer datos
             </div>
-            
-            <div style="margin: 15px 0; padding: 15px; background: #333; border-radius: 10px;">
-                <div style="display: flex; justify-content: space-between; margin: 8px 0;">
-                    <span>Tarifa encontrada:</span>
-                    <span>${extraccion.tarifa ? 'RD$' + extraccion.tarifa : '❌ No'}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin: 8px 0;">
-                    <span>Tiempo total:</span>
-                    <span>${extraccion.tiempoTotal || 0} min</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin: 8px 0;">
-                    <span>Distancia:</span>
-                    <span>${extraccion.distanciaTotal || 0} km</span>
-                </div>
+            <div style="margin: 15px 0; opacity: 0.8;">
+                El OCR no pudo leer la imagen correctamente.
             </div>
-            
-            <div style="margin: 20px 0; font-size: 14px; opacity: 0.8; text-align: center;">
-                Completa los datos faltantes manualmente
+            <div style="margin: 20px 0; font-size: 14px; background: #444; padding: 10px; border-radius: 8px;">
+                <strong>Consejos:</strong><br>
+                1. Toma foto más cerca<br>
+                2. Mejor iluminación<br>
+                3. Sin reflejos<br>
+                4. Texto nítido
             </div>
-            
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="usar-parcial" style="
-                    background: #4CAF50;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 20px;
-                    cursor: pointer;
-                ">
-                    Usar estos datos
-                </button>
-                
-                <button id="manual-completo" style="
+            <div>
+                <button id="ok-fallback" style="
                     background: #2196F3;
                     color: white;
                     border: none;
-                    padding: 10px 20px;
-                    border-radius: 20px;
+                    padding: 12px 30px;
+                    border-radius: 25px;
+                    font-size: 16px;
                     cursor: pointer;
                 ">
-                    Ingresar manual
+                    Entendido
                 </button>
             </div>
         </div>
@@ -5473,116 +5507,20 @@ function usarDatosParciales(textoParcial) {
     
     document.body.appendChild(modal);
     
-    // Eventos
-    modal.querySelector('#usar-parcial').onclick = () => {
-        if (extraccion.tarifa && elementos?.tarifa) elementos.tarifa.value = extraccion.tarifa;
-        if (extraccion.tiempoTotal && elementos?.minutos) elementos.minutos.value = extraccion.tiempoTotal;
-        if (extraccion.distanciaTotal && elementos?.distancia) elementos.distancia.value = extraccion.distanciaTotal;
-        
+    modal.querySelector('#ok-fallback').onclick = () => {
         document.body.removeChild(modal);
-        mostrarStatus('✅ Datos parciales aplicados', 'info');
-    };
-    
-    modal.querySelector('#manual-completo').onclick = () => {
-        document.body.removeChild(modal);
-        // El formulario ya está visible, solo enfocar
-        if (elementos.tarifa) elementos.tarifa.focus();
+        // Enfocar campo de tarifa para entrada manual
+        if (elementos && elementos.tarifa) {
+            elementos.tarifa.focus();
+        }
     };
 }
-
-function mostrarFormularioEmergencia() {
-    // Simplemente enfocar el primer campo
-    if (elementos.tarifa) {
-        elementos.tarifa.focus();
-        elementos.tarifa.scrollIntoView({ behavior: 'smooth' });
-    }
     
-    mostrarStatus('⏰ Timeout! Ingresa datos manualmente', 'warning');
-}
-
-// =============================================
-// ALTERNATIVA: OCR CON WORKER SEPARADO
-// =============================================
-
-function crearWorkerOCR() {
-    const workerCode = `
-        self.onmessage = function(e) {
-            const { imageData, width, height } = e.data;
-            
-            // Simulación simple de procesamiento
-            // En realidad aquí iría el OCR real
-            const result = {
-                text: "RD$250.00\\nA5min (1.1 km)\\nViaje: 11 min (4.2 km)",
-                confidence: 0.9
-            };
-            
-            self.postMessage(result);
-        };
-    `;
-    
-    const blob = new Blob([workerCode], { type: 'application/javascript' });
-    const worker = new Worker(URL.createObjectURL(blob));
-    return worker;
-}
-
-// =============================================
-// SISTEMA DE FALLBACK: ESCANEO POR PARTES - CORREGIDO
-// =============================================
-
-function escaneoPorPartes(file) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            const img = new Image();
-            
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Solo analizar área donde están los números (últimos 40% de la imagen)
-                const areaInicioY = img.height * 0.6; // Comenzar al 60% de la altura
-                const areaAlto = img.height * 0.4;   // Tomar el 40% final
-                
-                canvas.width = img.width;
-                canvas.height = areaAlto;
-                
-                // CORREGIDO: drawImage con parámetros correctos
-                // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight)
-                ctx.drawImage(
-                    img,                    // imagen fuente
-                    0,                      // sx (inicio X en fuente)
-                    areaInicioY,            // sy (inicio Y en fuente - CORREGIDO)
-                    img.width,              // sWidth (ancho a copiar)
-                    areaAlto,               // sHeight (alto a copiar)
-                    0,                      // dx (destino X)
-                    0,                      // dy (destino Y)
-                    canvas.width,           // dWidth (ancho destino)
-                    canvas.height           // dHeight (alto destino)
-                );
-                
-                // OCR solo en esa área
-                Tesseract.recognize(canvas, 'eng')
-                    .then(result => {
-                        resolve(result.data.text);
-                    })
-                    .catch((error) => {
-                        console.error('Error en escaneo por partes:', error);
-                        resolve(''); // Fallback vacío
-                    });
-            };
-            
-            img.src = e.target.result;
-        };
-        
-        reader.readAsDataURL(file);
-    });
-}
-
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
