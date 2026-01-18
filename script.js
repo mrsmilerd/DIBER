@@ -4955,28 +4955,18 @@ async function inicializarApp() {
         }
     }
 
-// =============================================
-// INICIALIZACIÓN GARANTIZADA
-// =============================================
-
-// En tu función inicializarApp, AGREGA ESTO:
-function inicializarApp() {
-    // ... tu código existente ...
-    
-    // INICIALIZAR SISTEMA GARANTIZADO
+// 3. INICIALIZACIÓN
+document.addEventListener('DOMContentLoaded', function() {
+    // Esperar a que la app cargue
     setTimeout(() => {
-        try {
-            inicializarScannerGarantizado();
-            console.log('🎯 Sistema OCR garantizado inicializado');
-        } catch (error) {
-            console.error('❌ Error inicializando scanner:', error);
-        }
+        inicializarScannerFuncional();
+        console.log('🎯 Scanner OCR funcional inicializado');
     }, 3000);
-}
+});
 
-// EJECUTAR MANUALMENTE SI ES NECESARIO
-if (typeof inicializarScannerGarantizado === 'function') {
-    setTimeout(inicializarScannerGarantizado, 1000);
+// También puedes inicializar manualmente
+if (typeof inicializarScannerFuncional === 'function') {
+    setTimeout(inicializarScannerFuncional, 1000);
 }
 
 // AGREGAR estas funciones utilitarias:
@@ -5176,367 +5166,260 @@ window.onclick = function(event) {
 };
 
 // =============================================
-// SISTEMA OCR FUNCIONAL GARANTIZADO
+// SISTEMA OCR FUNCIONAL - VERSIÓN DEFINITIVA
 // =============================================
 
-let ocrActivo = false;
-
-function inicializarScannerGarantizado() {
-    console.log('🚀 Inicializando scanner garantizado...');
-    
-    // Eliminar botones anteriores para evitar duplicados
-    const botonesAnteriores = ['quick-scan-btn', 'ultra-fast-scan', 'timeout-scan-btn'];
-    botonesAnteriores.forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) btn.remove();
-    });
-    
-    // Crear botón NUEVO y simple
-    const scanBtn = document.createElement('button');
-    scanBtn.id = 'ocr-garantizado-btn';
-    scanBtn.innerHTML = '🔍 ESCANEAR';
-    scanBtn.style.cssText = `
-        position: fixed !important;
-        bottom: 100px !important;
-        right: 20px !important;
-        z-index: 9999 !important;
-        background: #2196F3 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 50px !important;
-        padding: 15px 25px !important;
-        font-size: 16px !important;
-        font-weight: bold !important;
-        cursor: pointer !important;
-        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4) !important;
-    `;
-    
-    scanBtn.onclick = iniciarEscaneoGarantizado;
-    document.body.appendChild(scanBtn);
-    
-    console.log('✅ Botón garantizado creado');
+// 1. FUNCIÓN PARA OBTENER ELEMENTOS (reusable)
+function obtenerElemento(id) {
+    return document.getElementById(id);
 }
 
-async function iniciarEscaneoGarantizado() {
-    if (ocrActivo) {
-        console.log('⏳ OCR ya en progreso...');
+function obtenerElementosFormulario() {
+    return {
+        tarifa: obtenerElemento('tarifa'),
+        minutos: obtenerElemento('minutos'),
+        distancia: obtenerElemento('distancia')
+    };
+}
+
+// 2. SCANNER SIMPLE Y FUNCIONAL
+let escaneoEnProgreso = false;
+
+function inicializarScannerFuncional() {
+    console.log('🔄 Inicializando scanner funcional...');
+    
+    // Crear botón
+    const btn = document.createElement('button');
+    btn.id = 'scanner-funcional';
+    btn.innerHTML = '📸 OCR';
+    btn.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        right: 20px;
+        z-index: 9999;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+    `;
+    
+    btn.onclick = iniciarEscaneoSimple;
+    document.body.appendChild(btn);
+    
+    console.log('✅ Scanner funcional listo');
+}
+
+async function iniciarEscaneoSimple() {
+    if (escaneoEnProgreso) {
+        console.log('⏳ Escaneo ya en progreso');
         return;
     }
     
-    ocrActivo = true;
+    escaneoEnProgreso = true;
     
     try {
-        console.log('🎬 Iniciando escaneo garantizado...');
-        
-        // 1. Seleccionar archivo
-        const file = await seleccionarArchivo();
+        // Seleccionar archivo
+        const file = await seleccionarImagen();
         if (!file) {
-            ocrActivo = false;
+            escaneoEnProgreso = false;
             return;
         }
         
-        // 2. Mostrar indicador
-        const indicador = mostrarIndicadorProgreso();
+        // Mostrar estado
+        const estado = mostrarEstadoEscaneo();
         
-        // 3. Procesar con timeout estricto
-        const textoOCR = await procesarOCRConTimeout(file, 5000); // 5 segundos máximo
+        // OCR con timeout
+        const texto = await ejecutarOCR(file);
         
-        // 4. Remover indicador
-        if (indicador && document.body.contains(indicador)) {
-            document.body.removeChild(indicador);
+        // Limpiar estado
+        if (estado && document.body.contains(estado)) {
+            document.body.removeChild(estado);
         }
         
-        // 5. Extraer y aplicar datos
-        if (textoOCR && textoOCR.trim().length > 10) {
-            aplicarDatosExtraidos(textoOCR);
+        // Procesar resultado
+        if (texto && texto.length > 10) {
+            procesarResultadoOCR(texto);
         } else {
-            mostrarMensajeFallback();
+            mostrarErrorOCR('Texto muy corto o vacío');
         }
         
     } catch (error) {
-        console.error('❌ Error en escaneo:', error);
-        mostrarErrorSimple('Error en escaneo. Usa entrada manual.');
+        console.error('❌ Error:', error);
+        mostrarErrorOCR('Error: ' + error.message);
     } finally {
-        ocrActivo = false;
+        escaneoEnProgreso = false;
     }
 }
 
-function seleccionarArchivo() {
+function seleccionarImagen() {
     return new Promise((resolve) => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        input.capture = 'environment';
         
         input.onchange = (e) => {
             resolve(e.target.files[0]);
-            setTimeout(() => document.body.removeChild(input), 1000);
+            setTimeout(() => {
+                if (document.body.contains(input)) {
+                    document.body.removeChild(input);
+                }
+            }, 100);
         };
         
         input.oncancel = () => {
             resolve(null);
-            setTimeout(() => document.body.removeChild(input), 1000);
+            setTimeout(() => {
+                if (document.body.contains(input)) {
+                    document.body.removeChild(input);
+                }
+            }, 100);
         };
         
-        input.style.cssText = `
-            position: fixed;
-            top: -100px;
-            left: -100px;
-            opacity: 0;
-            pointer-events: none;
-        `;
-        
+        input.style.cssText = 'display: none;';
         document.body.appendChild(input);
         input.click();
     });
 }
 
-function mostrarIndicadorProgreso() {
-    const indicador = document.createElement('div');
-    indicador.id = 'ocr-indicador';
-    indicador.style.cssText = `
+function mostrarEstadoEscaneo() {
+    const div = document.createElement('div');
+    div.style.cssText = `
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.85);
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
+        top: 20px;
+        right: 20px;
+        background: rgba(0,0,0,0.9);
+        color: #4CAF50;
+        padding: 10px 15px;
+        border-radius: 8px;
         z-index: 10000;
-        text-align: center;
-        min-width: 200px;
-        border: 2px solid #2196F3;
+        font-family: monospace;
+        font-size: 12px;
+        border: 1px solid #4CAF50;
     `;
-    
-    indicador.innerHTML = `
-        <div style="font-size: 30px; margin-bottom: 10px;">⏳</div>
-        <div style="font-weight: bold; margin-bottom: 5px;">Analizando imagen</div>
-        <div style="font-size: 12px; opacity: 0.7;">Por favor espera...</div>
-        <div id="ocr-tiempo" style="font-size: 11px; margin-top: 10px; font-family: monospace;">0.0s</div>
-    `;
-    
-    document.body.appendChild(indicador);
-    
-    // Actualizar tiempo
-    const start = Date.now();
-    const intervalo = setInterval(() => {
-        const tiempo = (Date.now() - start) / 1000;
-        const tiempoEl = document.getElementById('ocr-tiempo');
-        if (tiempoEl) tiempoEl.textContent = tiempo.toFixed(1) + 's';
-    }, 100);
-    
-    // Guardar referencia para limpiar
-    indicador._intervalo = intervalo;
-    
-    return indicador;
+    div.textContent = '🔄 Escaneando...';
+    document.body.appendChild(div);
+    return div;
 }
 
-function procesarOCRConTimeout(file, timeoutMs = 5000) {
+async function ejecutarOCR(file) {
     return new Promise((resolve, reject) => {
-        let timeoutId = setTimeout(() => {
-            reject(new Error('Timeout de ' + timeoutMs + 'ms excedido'));
-        }, timeoutMs);
+        const timeout = setTimeout(() => {
+            reject(new Error('Timeout de 5 segundos'));
+        }, 5000);
         
-        console.log('🤖 Iniciando Tesseract...');
-        
-        // Configuración MÍNIMA
         Tesseract.recognize(file, 'eng')
             .then(result => {
-                clearTimeout(timeoutId);
-                console.log('✅ Tesseract completado');
+                clearTimeout(timeout);
                 resolve(result.data.text);
             })
             .catch(error => {
-                clearTimeout(timeoutId);
-                console.error('❌ Tesseract error:', error);
+                clearTimeout(timeout);
                 reject(error);
             });
     });
 }
 
-function aplicarDatosExtraidos(textoOCR) {
-    console.log('📝 Texto para extraer:', textoOCR.substring(0, 200));
+function procesarResultadoOCR(texto) {
+    console.log('📝 Procesando OCR:', texto.substring(0, 200));
     
-    // Extracción SIMPLE pero efectiva
-    const extraccion = {
+    // Extraer datos
+    const datos = extraerDatos(texto);
+    
+    // Obtener elementos del formulario
+    const elementos = obtenerElementosFormulario();
+    
+    // Autocompletar si tenemos datos
+    if (datos.tarifa && elementos.tarifa) {
+        elementos.tarifa.value = datos.tarifa;
+    }
+    
+    if (datos.tiempoTotal > 0 && elementos.minutos) {
+        elementos.minutos.value = datos.tiempoTotal;
+    }
+    
+    if (datos.distanciaTotal > 0 && elementos.distancia) {
+        elementos.distancia.value = datos.distanciaTotal;
+    }
+    
+    // Mostrar resultado
+    mostrarResultadoExtraccion(datos);
+    
+    // Si tenemos todos los datos, ejecutar cálculo
+    if (datos.tarifa && datos.tiempoTotal > 0 && datos.distanciaTotal > 0) {
+        setTimeout(() => {
+            if (typeof manejarCalculoAutomatico === 'function') {
+                manejarCalculoAutomatico();
+            }
+        }, 300);
+    }
+}
+
+function extraerDatos(texto) {
+    const resultado = {
         tarifa: null,
         tiempoLlegada: 0,
         tiempoViaje: 0,
         distanciaLlegada: 0,
-        distanciaViaje: 0
+        distanciaViaje: 0,
+        tiempoTotal: 0,
+        distanciaTotal: 0
     };
     
-    // 1. Buscar tarifa
-    const tarifaMatch = textoOCR.match(/RD\s*[\$\s]*(\d+[.,]\d{2})/);
+    // 1. Tarifa
+    const tarifaMatch = texto.match(/RD\s*[\$\s]*(\d+[.,]\d{2})/);
     if (tarifaMatch) {
-        extraccion.tarifa = parseFloat(tarifaMatch[1].replace(',', '.'));
-        console.log('💰 Tarifa encontrada:', extraccion.tarifa);
+        resultado.tarifa = parseFloat(tarifaMatch[1].replace(',', '.'));
     }
     
-    // 2. Buscar "A X min (Y km)"
-    const llegadaMatch = textoOCR.match(/A\s*(\d+)\s*min.*?([\d.,]+)\s*km/i);
+    // 2. Llegada
+    const llegadaMatch = texto.match(/A\s*(\d+)\s*min.*?([\d.,]+)\s*km/i);
     if (llegadaMatch) {
-        extraccion.tiempoLlegada = parseInt(llegadaMatch[1]);
-        extraccion.distanciaLlegada = parseFloat(llegadaMatch[2].replace(',', '.'));
-        console.log('🚶 Llegada:', extraccion.tiempoLlegada, 'min', extraccion.distanciaLlegada, 'km');
+        resultado.tiempoLlegada = parseInt(llegadaMatch[1]);
+        resultado.distanciaLlegada = parseFloat(llegadaMatch[2].replace(',', '.'));
     }
     
-    // 3. Buscar "Viaje: X min (Y km)"  
-    const viajeMatch = textoOCR.match(/Viaje[:\s]*(\d+)\s*min.*?([\d.,]+)\s*km/i);
+    // 3. Viaje
+    const viajeMatch = texto.match(/Viaje[:\s]*(\d+)\s*min.*?([\d.,]+)\s*km/i);
     if (viajeMatch) {
-        extraccion.tiempoViaje = parseInt(viajeMatch[1]);
-        extraccion.distanciaViaje = parseFloat(viajeMatch[2].replace(',', '.'));
-        console.log('🚗 Viaje:', extraccion.tiempoViaje, 'min', extraccion.distanciaViaje, 'km');
+        resultado.tiempoViaje = parseInt(viajeMatch[1]);
+        resultado.distanciaViaje = parseFloat(viajeMatch[2].replace(',', '.'));
     }
     
     // Calcular totales
-    const tiempoTotal = extraccion.tiempoLlegada + extraccion.tiempoViaje;
-    const distanciaTotal = extraccion.distanciaLlegada + extraccion.distanciaViaje;
+    resultado.tiempoTotal = resultado.tiempoLlegada + resultado.tiempoViaje;
+    resultado.distanciaTotal = parseFloat((resultado.distanciaLlegada + resultado.distanciaViaje).toFixed(2));
     
-    console.log('📊 Totales:', {
-        tiempoTotal,
-        distanciaTotal: distanciaTotal.toFixed(2)
-    });
+    return resultado;
+}
+
+function mostrarResultadoExtraccion(datos) {
+    const mensaje = [
+        datos.tarifa ? `💰 RD$${datos.tarifa}` : null,
+        datos.tiempoTotal > 0 ? `⏱️ ${datos.tiempoTotal}min` : null,
+        datos.distanciaTotal > 0 ? `🛣️ ${datos.distanciaTotal}km` : null
+    ].filter(Boolean).join(' | ');
     
-    // Verificar si tenemos datos suficientes
-    if (extraccion.tarifa && tiempoTotal > 0 && distanciaTotal > 0) {
-        // AUTORELLENAR FORMULARIO
-        if (elementos && elementos.tarifa) {
-            elementos.tarifa.value = extraccion.tarifa;
-            console.log('✅ Tarifa asignada:', elementos.tarifa.value);
+    if (mensaje) {
+        // Usar mostrarStatus si existe, si no usar alert
+        if (typeof mostrarStatus === 'function') {
+            mostrarStatus(mensaje, 'success');
+        } else {
+            alert('✅ ' + mensaje);
         }
-        
-        if (elementos && elementos.minutos) {
-            elementos.minutos.value = tiempoTotal;
-            console.log('✅ Minutos asignados:', elementos.minutos.value);
-        }
-        
-        if (elementos && elementos.distancia) {
-            elementos.distancia.value = distanciaTotal.toFixed(2);
-            console.log('✅ Distancia asignada:', elementos.distancia.value);
-        }
-        
-        // EJECUTAR CÁLCULO
-        setTimeout(() => {
-            if (typeof manejarCalculoAutomatico === 'function') {
-                console.log('🚀 Ejecutando cálculo automático...');
-                manejarCalculoAutomatico();
-                mostrarMensajeExito(`✅ Extraído: RD$${extraccion.tarifa} | ${tiempoTotal}min | ${distanciaTotal.toFixed(2)}km`);
-            } else {
-                console.warn('⚠️ manejarCalculoAutomatico no disponible');
-                mostrarMensajeExito('✅ Datos extraídos. Calcula manualmente.');
-            }
-        }, 300);
-        
-    } else {
-        // Datos incompletos
-        mostrarDatosParciales(extraccion);
     }
 }
 
-function mostrarMensajeExito(mensaje) {
+function mostrarErrorOCR(mensaje) {
     if (typeof mostrarStatus === 'function') {
-        mostrarStatus(mensaje, 'success');
-    } else {
-        alert(mensaje);
-    }
-}
-
-function mostrarErrorSimple(mensaje) {
-    if (typeof mostrarStatus === 'function') {
-        mostrarStatus(mensaje, 'error');
+        mostrarStatus('❌ ' + mensaje, 'error');
     } else {
         alert('❌ ' + mensaje);
     }
-}
-
-function mostrarDatosParciales(extraccion) {
-    const datos = [];
-    if (extraccion.tarifa) datos.push(`RD$${extraccion.tarifa}`);
-    if (extraccion.tiempoLlegada) datos.push(`Llegada: ${extraccion.tiempoLlegada}min`);
-    if (extraccion.tiempoViaje) datos.push(`Viaje: ${extraccion.tiempoViaje}min`);
-    
-    const mensaje = `⚠️ Datos parciales: ${datos.join(' | ')}`;
-    
-    if (typeof mostrarStatus === 'function') {
-        mostrarStatus(mensaje, 'warning');
-    }
-    
-    // Autorellenar lo que sí haya
-    if (extraccion.tarifa && elementos?.tarifa) {
-        elementos.tarifa.value = extraccion.tarifa;
-    }
-    
-    if (extraccion.tiempoLlegada && elementos?.minutos) {
-        elementos.minutos.value = extraccion.tiempoLlegada + (extraccion.tiempoViaje || 0);
-    }
-}
-
-function mostrarMensajeFallback() {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.9);
-        z-index: 10000;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    `;
-    
-    modal.innerHTML = `
-        <div style="
-            background: #333;
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            max-width: 400px;
-            text-align: center;
-            border: 2px solid #FF9800;
-        ">
-            <div style="font-size: 40px; margin-bottom: 15px;">🔍</div>
-            <div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">
-                No se pudieron extraer datos
-            </div>
-            <div style="margin: 15px 0; opacity: 0.8;">
-                El OCR no pudo leer la imagen correctamente.
-            </div>
-            <div style="margin: 20px 0; font-size: 14px; background: #444; padding: 10px; border-radius: 8px;">
-                <strong>Consejos:</strong><br>
-                1. Toma foto más cerca<br>
-                2. Mejor iluminación<br>
-                3. Sin reflejos<br>
-                4. Texto nítido
-            </div>
-            <div>
-                <button id="ok-fallback" style="
-                    background: #2196F3;
-                    color: white;
-                    border: none;
-                    padding: 12px 30px;
-                    border-radius: 25px;
-                    font-size: 16px;
-                    cursor: pointer;
-                ">
-                    Entendido
-                </button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    modal.querySelector('#ok-fallback').onclick = () => {
-        document.body.removeChild(modal);
-        // Enfocar campo de tarifa para entrada manual
-        if (elementos && elementos.tarifa) {
-            elementos.tarifa.focus();
-        }
-    };
 }
     
 window.addEventListener('beforeunload', function() {
@@ -5544,6 +5427,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
