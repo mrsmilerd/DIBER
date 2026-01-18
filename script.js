@@ -5526,7 +5526,7 @@ function crearWorkerOCR() {
 }
 
 // =============================================
-// SISTEMA DE FALLBACK: ESCANEO POR PARTES
+// SISTEMA DE FALLBACK: ESCANEO POR PARTES - CORREGIDO
 // =============================================
 
 function escaneoPorPartes(file) {
@@ -5540,17 +5540,34 @@ function escaneoPorPartes(file) {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Solo analizar área donde están los números (inferior 50%)
+                // Solo analizar área donde están los números (últimos 40% de la imagen)
+                const areaInicioY = img.height * 0.6; // Comenzar al 60% de la altura
+                const areaAlto = img.height * 0.4;   // Tomar el 40% final
+                
                 canvas.width = img.width;
-                canvas.height = img.height / 2;
-                ctx.drawImage(img, 0, img.height / 2, canvas.width, canvas.height / 2, 0, 0, canvas.width, canvas.height / 2);
+                canvas.height = areaAlto;
+                
+                // CORREGIDO: drawImage con parámetros correctos
+                // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight)
+                ctx.drawImage(
+                    img,                    // imagen fuente
+                    0,                      // sx (inicio X en fuente)
+                    areaInicioY,            // sy (inicio Y en fuente - CORREGIDO)
+                    img.width,              // sWidth (ancho a copiar)
+                    areaAlto,               // sHeight (alto a copiar)
+                    0,                      // dx (destino X)
+                    0,                      // dy (destino Y)
+                    canvas.width,           // dWidth (ancho destino)
+                    canvas.height           // dHeight (alto destino)
+                );
                 
                 // OCR solo en esa área
                 Tesseract.recognize(canvas, 'eng')
                     .then(result => {
                         resolve(result.data.text);
                     })
-                    .catch(() => {
+                    .catch((error) => {
+                        console.error('Error en escaneo por partes:', error);
                         resolve(''); // Fallback vacío
                     });
             };
@@ -5567,4 +5584,5 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
