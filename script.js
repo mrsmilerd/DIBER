@@ -5255,7 +5255,7 @@ async function optimizarParaOCR(blob) {
             
             const ctx = canvas.getContext('2d', { alpha: false });
 // El navegador aplica esto usando la tarjeta de video (más rápido)
-ctx.filter = 'contrast(1.2) grayscale(1)'; 
+ctx.filter = 'contrast(1.5) grayscale(1) brightness(1.1)'; 
 ctx.drawImage(img, 0, 0, width, height);
             
             // Aplicar contraste para que el OCR lea más rápido
@@ -5291,60 +5291,55 @@ function aplicarContrasteRapido(imageData) {
 }
 
 function procesarDatosUltraRapido(textoOCR, tiempoTotal) {
-    console.log('📄 Analizando Captura:', textoOCR);
+    console.log('📄 Analizando Texto Original:', textoOCR);
 
-    // 1. EXTRAER TARIFA (Ignorar montos pequeños con "+" o decimales irrelevantes)
-    // Buscamos el monto más grande que aparezca con RD o DOP
+    // 1. LIMPIEZA INICIAL: El A12 a veces lee "nn" en vez de "n"
+    const texto = textoOCR.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+
+    // 2. EXTRACCIÓN DE TARIFA (El monto más grande es la tarifa real)
     let tarifa = 0;
-    const coincidenciasTarifa = textoOCR.match(/(?:RD\$|DOP|RD)\s*(\d+[\d.,]*)/gi);
+    const montos = texto.match(/(?:RD\$|DOP|RD)\s*(\d+[.,]\d+|\d+)/gi);
+    if (montos) {
+        const valores = montos.map(m => parseFloat(m.replace(/[^\d.,]/g, '').replace(',', '.')));
+        tarifa = Math.max(...valores); // Ignora el incentivo pequeño y se queda con el monto grande
+    }
+
+    // 3. EXTRACCIÓN DE TIEMPOS (Busca específicamente los dos tramos)
+    let minRecogida = 0;
+    let minViaje = 0;
+
+    // Buscamos lo que sigue a "A" (Recogida) y a "Viaje" (Destino)
+    const matchRecogida = texto.match(/A\s*(\d+)\s*min/i);
+    const matchDestino = texto.match(/(?:Viaje|Destino)\s*(\d+)\s*min/i);
+
+    if (matchRecogida) minRecogida = parseInt(matchRecogida[1]);
+    if (matchDestino) minViaje = parseInt(matchDestino[1]);
     
-    if (coincidenciasTarifa) {
-        // Convertimos a números y nos quedamos con el más alto (la tarifa principal)
-        const montos = coincidenciasTarifa.map(m => {
-            const num = m.replace(/[^\d.,]/g, '').replace(',', '.');
-            return parseFloat(num);
-        });
-        tarifa = Math.max(...montos);
-        console.log('💰 Tarifa Principal Detectada:', tarifa);
-    }
+    const minutosTotal = minRecogida + minViaje;
 
-    // 2. EXTRAER TIEMPOS (Sumar "A X min" + "Viaje X min")
-    let minutosTotal = 0;
-    // Buscamos números que estén cerca de "A" o de "Viaje"
-    const regexA = /(?:A|Llegada)\s*(\d+)\s*min/i;
-    const regexViaje = /(?:Viaje|Destino)\s*(\d+)\s*min/i;
-
-    const matchA = textoOCR.match(regexA);
-    const matchViaje = textoOCR.match(regexViaje);
-
-    if (matchA) minutosTotal += parseInt(matchA[1]);
-    if (matchViaje) minutosTotal += parseInt(matchViaje[1]);
-
-    // 3. EXTRAER DISTANCIAS (Sumar lo que está dentro de paréntesis o cerca de KM)
+    // 4. EXTRACCIÓN DE DISTANCIA (Busca lo que está entre paréntesis)
     let distanciaTotal = 0;
-    const regexKM = /\(?([\d+[.,]\d+)\s*km\)?/gi;
-    const matchesKM = [...textoOCR.matchAll(regexKM)];
-
+    const matchesKM = [...texto.matchAll(/\(?(\d+[.,]\d+|\d+)\s*km\)?/gi)];
+    
     if (matchesKM.length > 0) {
-        distanciaTotal = matchesKM.reduce((sum, m) => {
-            const valor = parseFloat(m[1].replace(',', '.'));
-            return sum + valor;
-        }, 0);
+        distanciaTotal = matchesKM.reduce((sum, m) => sum + parseFloat(m[1].replace(',', '.')), 0);
     }
 
-    // --- APLICAR RESULTADOS ---
+    // --- CARGAR EN LA INTERFAZ ---
     if (elementos) {
         if (tarifa > 0) elementos.tarifa.value = tarifa;
         if (minutosTotal > 0) elementos.minutos.value = minutosTotal;
         if (distanciaTotal > 0) elementos.distancia.value = distanciaTotal.toFixed(1);
     }
 
-    // --- EJECUTAR CÁLCULO ---
+    // --- LANZAR CÁLCULO SI HAY DATOS ---
     if (tarifa > 0 && minutosTotal > 0) {
         setTimeout(() => {
             if (typeof manejarCalculoAutomatico === 'function') manejarCalculoAutomatico();
-            mostrarStatus(`✅ ${minutosTotal} min | ${distanciaTotal.toFixed(1)} km`, 'success');
+            mostrarStatus(`✅ ${minutosTotal} min (${minRecogida}+${minViaje}) | ${distanciaTotal.toFixed(1)} km`, 'success');
         }, 200);
+    } else {
+        mostrarStatus('⚠️ Datos incompletos. Revisa la iluminación.', 'warning');
     }
 }
 
@@ -5560,6 +5555,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
