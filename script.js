@@ -5297,63 +5297,69 @@ function procesarDatosUltraRapido(textoOCR, tiempoTotal) {
     console.log('⚡ Procesando datos OCR...');
     console.log('📄 Texto detectado:', textoOCR);
     
-    // Simplificamos los patrones para que sean más "agresivos" buscando números
+    // Limpiamos un poco el texto para evitar errores comunes de lectura
+    const textoLimpio = textoOCR.replace(/nn/g, 'n').replace(/mm/g, 'm');
+
+    // PATRONES MEJORADOS
     const patrones = {
-        tarifa: /RD\$?\s*(\d+)/i,
-        // Este patrón busca CUALQUIER número que tenga "min" o "mint" después
-        todosLosMinutos: /(\d+)\s*min/gi, 
-        // Este patrón busca CUALQUIER número que tenga "km" después
-        todasLasDistancias: /([\d.]+)\s*km/gi
+        // Busca RD$ seguido de números, o números seguidos de RD
+        tarifa: /(?:RD\$?\s*|(?:\$?\s*))(\d{2,})/i,
+        // Busca TODOS los números seguidos de min, mins, o mint
+        minutos: /(\d+)\s*(?:min|mit|mín|m\b)/gi,
+        // Busca TODOS los números seguidos de km
+        distancia: /(\d+[.,]\d+|\d+)\s*(?:km|kn|km\b)/gi
     };
     
     let tarifa = 0;
     let minutosTotal = 0;
     let distanciaTotal = 0;
     
-    // 1. BUSCAR TARIFA
-    let matchTarifa = textoOCR.match(patrones.tarifa);
-    if (matchTarifa) {
-        tarifa = parseFloat(matchTarifa[1]);
-        console.log('💰 Tarifa detectada:', tarifa);
+    // 1. EXTRAER TARIFA (Tomamos el número más grande que parezca dinero)
+    const matchesTarifa = textoLimpio.match(patrones.tarifa);
+    if (matchesTarifa) {
+        tarifa = parseFloat(matchesTarifa[1]);
     }
     
-    // 2. BUSCAR Y SUMAR TODOS LOS TIEMPOS (Ida + Entrega)
-    const matchesMinutos = [...textoOCR.matchAll(patrones.todosLosMinutos)];
-    if (matchesMinutos.length > 0) {
-        // Suma cada número encontrado: ej. 5 + 11 = 16
-        minutosTotal = matchesMinutos.reduce((sum, m) => sum + parseInt(m[1]), 0);
-        console.log(`⏱️ Tiempos detectados: ${matchesMinutos.map(m => m[1]).join(' + ')} = ${minutosTotal} min`);
+    // 2. SUMAR TODOS LOS MINUTOS (Ida + Viaje)
+    const matchesMin = [...textoLimpio.matchAll(patrones.minutos)];
+    if (matchesMin.length > 0) {
+        // Usamos un Set para evitar sumar el mismo número si el OCR lo leyó dos veces en la misma línea
+        const valoresUnicos = matchesMin.map(m => parseInt(m[1]));
+        minutosTotal = valoresUnicos.reduce((a, b) => a + b, 0);
+        console.log(`⏱️ Tiempos encontrados: ${valoresUnicos.join(' + ')} = ${minutosTotal}`);
     }
     
-    // 3. BUSCAR Y SUMAR TODAS LAS DISTANCIAS
-    const matchesDistancia = [...textoOCR.matchAll(patrones.todasLasDistancias)];
-    if (matchesDistancia.length > 0) {
-        distanciaTotal = matchesDistancia.reduce((sum, m) => sum + parseFloat(m[1]), 0);
-        console.log(`🛣️ Distancia total: ${distanciaTotal.toFixed(1)} km`);
+    // 3. SUMAR TODAS LAS DISTANCIAS
+    const matchesDist = [...textoLimpio.matchAll(patrones.distancia)];
+    if (matchesDist.length > 0) {
+        const valoresDist = matchesDist.map(m => parseFloat(m[1].replace(',', '.')));
+        distanciaTotal = valoresDist.reduce((a, b) => a + b, 0);
+        console.log(`🛣️ Distancias encontradas: ${valoresDist.join(' + ')} = ${distanciaTotal}`);
+    }
+
+    // --- AUTOCOMPLETAR CAMPOS ---
+    if (tarifa > 0 && elementos?.tarifa) elementos.tarifa.value = tarifa;
+    
+    // Solo sumamos si encontramos más de un tiempo, o si el tiempo es razonable
+    if (minutosTotal > 0 && elementos?.minutos) {
+        elementos.minutos.value = minutosTotal;
     }
     
-    // VALIDACIÓN Y AUTOCOMPLETADO
-    const datosCompletos = tarifa > 0 && minutosTotal > 0 && distanciaTotal > 0;
+    if (distanciaTotal > 0 && elementos?.distancia) {
+        elementos.distancia.value = distanciaTotal.toFixed(1);
+    }
     
-    if (datosCompletos) {
-        if (elementos?.tarifa) elementos.tarifa.value = tarifa;
-        if (elementos?.minutos) elementos.minutos.value = minutosTotal;
-        if (elementos?.distancia) elementos.distancia.value = distanciaTotal.toFixed(1);
-        
+    // --- LANZAR CÁLCULO ---
+    if (tarifa > 0 || minutosTotal > 0) {
         setTimeout(() => {
             if (typeof manejarCalculoAutomatico === 'function') {
                 manejarCalculoAutomatico();
-                if (navigator.vibrate) navigator.vibrate([50, 100, 50]);
-                mostrarStatus(`✅ ¡Sumado con éxito! (${minutosTotal} min totales)`, 'success');
+                if (navigator.vibrate) navigator.vibrate([50, 80]);
+                mostrarStatus(`✅ Sumado: ${minutosTotal} min y ${distanciaTotal.toFixed(1)} km`, 'success');
             }
-        }, 100);
+        }, 200);
     } else {
-        // Lógica de datos parciales (si falta algo)
-        if (tarifa > 0 && elementos?.tarifa) elementos.tarifa.value = tarifa;
-        if (minutosTotal > 0 && elementos?.minutos) elementos.minutos.value = minutosTotal;
-        if (distanciaTotal > 0 && elementos?.distancia) elementos.distancia.value = distanciaTotal.toFixed(1);
-        
-        mostrarStatus(`⚠️ Se detectaron ${minutosTotal} min y ${distanciaTotal} km. Revisa si son correctos.`, 'warning');
+        mostrarStatus('⚠️ No se detectaron datos claros', 'warning');
     }
 }
 
@@ -5564,6 +5570,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
