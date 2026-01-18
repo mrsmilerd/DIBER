@@ -5149,39 +5149,45 @@ window.onclick = function(event) {
 };
 
 /* ============================================================
-   🚀 SISTEMA DE ESCANEO ULTRA-RÁPIDO V2.5 - VERSIÓN BLINDADA
-   Optimizado para Samsung A12 y Apps de Uber/Indriver
+   🚀 SISTEMA DE ESCANEO ULTRA-RÁPIDO V2.6 - FINAL UNIFICADO
    ============================================================ */
 
-// Inicializar el motor apenas cargue la página
-let ocrWorker = null;
-let workerReady = false;
+// Solo declaramos si no existe previamente en el ámbito global
+if (typeof window.ocrWorker === 'undefined') {
+    window.ocrWorker = null;
+    window.workerReady = false;
+}
 
 async function inicializarScannerUltraRapido() {
-    if (typeof Tesseract === 'undefined') return;
+    // Si ya está listo, no lo vuelvas a inicializar
+    if (window.workerReady) return;
+    
+    if (typeof Tesseract === 'undefined') {
+        console.warn('⏳ Esperando a que Tesseract se cargue...');
+        return;
+    }
     
     try {
-        console.log('🤖 Configurando Motor OCR de alta velocidad...');
-        ocrWorker = await Tesseract.createWorker('eng');
+        console.log('🤖 Configurando Motor OCR...');
+        window.ocrWorker = await Tesseract.createWorker('eng');
         
-        await ocrWorker.setParameters({
-            tessedit_char_whitelist: '0123456789.,$RDminakm ', // Solo lo vital
-            tessedit_pageseg_mode: '6', // Modo rápido: bloque de texto uniforme
+        await window.ocrWorker.setParameters({
+            tessedit_char_whitelist: '0123456789.,$RDminakm ', 
+            tessedit_pageseg_mode: '6', 
             tessjs_create_hocr: '0',
             tessjs_create_tsv: '0'
         });
         
-        workerReady = true;
-        console.log('✅ Motor OCR listo y optimizado');
+        window.workerReady = true;
+        console.log('✅ Motor OCR cargado sin duplicados');
     } catch (e) {
-        console.error('❌ Error al cargar OCR:', e);
+        console.error('❌ Error OCR:', e);
     }
 
-    // Crear/Actualizar botón SCAN
-    const btnId = 'ultra-fast-scan';
-    if (!document.getElementById(btnId)) {
+    // Crear botón solo si no existe
+    if (!document.getElementById('ultra-fast-scan')) {
         const scanBtn = document.createElement('button');
-        scanBtn.id = btnId;
+        scanBtn.id = 'ultra-fast-scan';
         scanBtn.innerHTML = '⚡ SCAN';
         scanBtn.style.cssText = `
             position: fixed !important; bottom: 100px !important; right: 20px !important;
@@ -5190,40 +5196,9 @@ async function inicializarScannerUltraRapido() {
             font-size: 18px !important; font-weight: 900 !important; cursor: pointer !important;
             box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
         `;
-        scanBtn.onclick = escaneoUltraRapidoV2;
+        scanBtn.onclick = () => window.escaneoUltraRapidoV2();
         document.body.appendChild(scanBtn);
     }
-}
-
-async function escaneoUltraRapidoV2() {
-    if (!workerReady) {
-        alert('⏳ Cargando motor... espera 2 segundos.');
-        return;
-    }
-
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
-
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        console.time('⏱️ Tiempo Proceso');
-        mostrarStatus('⌛ Analizando captura...', 'warning');
-
-        try {
-            const imagenLimpia = await optimizarParaOCR(file);
-            const { data: { text } } = await ocrWorker.recognize(imagenLimpia);
-            procesarDatosUltraRapido(text);
-        } catch (err) {
-            console.error(err);
-            mostrarStatus('❌ Error al leer imagen', 'error');
-        }
-        console.timeEnd('⏱️ Tiempo Proceso');
-    };
-    input.click();
 }
 
 async function optimizarParaOCR(blob) {
@@ -5231,51 +5206,67 @@ async function optimizarParaOCR(blob) {
         const img = new Image();
         img.onload = () => {
             const canvas = document.createElement('canvas');
-            const maxDim = 600; // Resolución ideal para rapidez en el A12
+            const maxDim = 600; 
             let w = img.width, h = img.height;
             const scale = maxDim / Math.max(w, h);
-            
             canvas.width = w * scale;
             canvas.height = h * scale;
-            
             const ctx = canvas.getContext('2d');
-            // Filtro agresivo para eliminar el mapa de fondo y resaltar letras
             ctx.filter = 'grayscale(1) contrast(3) brightness(0.7)';
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
             canvas.toBlob(resolve, 'image/jpeg', 0.8);
         };
         img.src = URL.createObjectURL(blob);
     });
 }
 
+async function escaneoUltraRapidoV2() {
+    if (!window.workerReady) {
+        alert('Cargando motor...');
+        return;
+    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        mostrarStatus('⌛ Analizando...', 'warning');
+        try {
+            const imgLimpia = await optimizarParaOCR(file);
+            const { data: { text } } = await window.ocrWorker.recognize(imgLimpia);
+            procesarDatosUltraRapido(text);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+    input.click();
+}
+
 function procesarDatosUltraRapido(textoOCR) {
-    console.log('📄 Texto Detectado:', textoOCR);
+    // 1. Unir decimales separados
+    const texto = textoOCR.replace(/(\d+)\.\s+(\d+)/g, '$1.$2').toLowerCase();
 
-    // 1. LIMPIEZA: Unir decimales (120. 52 -> 120.52) y corregir ruido
-    const texto = textoOCR.replace(/(\d+)\.\s+(\d+)/g, '$1.$2')
-                        .toLowerCase();
-
-    // 2. TARIFA: Tomar la PRIMERA tarifa lógica (evita incentivos que vienen después)
+    // 2. Tarifa (Priorizar la primera > 70)
     let tarifa = 0;
     const matchesTarifa = texto.match(/(?:rd\$|dop|rd)\s*(\d+[.,]\d+|\d+)/gi);
     if (matchesTarifa) {
         const valores = matchesTarifa.map(m => parseFloat(m.replace(/[^\d.]/g, '')));
-        // Buscamos la primera que sea mayor a 70 (tarifa base mínima probable)
         tarifa = valores.find(v => v > 70) || valores[0];
     }
 
-    // 3. TIEMPOS: Sumar todos los tramos lógicos (Ida + Viaje)
+    // 3. Minutos (Suma tramos < 60)
     let minutosTotal = 0;
     const matchesMin = [...texto.matchAll(/(\d{1,2})\s*(?:min|mi|m\b|n)/g)];
     if (matchesMin.length > 0) {
         minutosTotal = matchesMin.reduce((sum, m) => {
             const v = parseInt(m[1]);
-            return (v > 0 && v < 60) ? sum + v : sum; // Ignorar números absurdos como 854
+            return (v > 0 && v < 60) ? sum + v : sum;
         }, 0);
     }
 
-    // 4. DISTANCIA: Sumar todos los KM detectados
+    // 4. KM (Suma tramos < 50)
     let distanciaTotal = 0;
     const matchesKM = [...texto.matchAll(/(\d+[.,]\d+|\d+)\s*(?:km|k\b|kn)/g)];
     if (matchesKM.length > 0) {
@@ -5285,30 +5276,29 @@ function procesarDatosUltraRapido(textoOCR) {
         }, 0);
     }
 
-    // --- APLICAR A LA CALCULADORA ---
-    if (tarifa > 0) document.getElementById('tarifa').value = tarifa;
-    if (minutosTotal > 0) document.getElementById('minutos').value = minutosTotal;
-    if (distanciaTotal > 0) document.getElementById('distancia').value = distanciaTotal.toFixed(1);
+    // Aplicar valores a tus IDs de HTML
+    if (tarifa > 0 && document.getElementById('tarifa')) document.getElementById('tarifa').value = tarifa;
+    if (minutosTotal > 0 && document.getElementById('minutos')) document.getElementById('minutos').value = minutosTotal;
+    if (distanciaTotal > 0 && document.getElementById('distancia')) document.getElementById('distancia').value = distanciaTotal.toFixed(1);
 
-    if (tarifa > 0 && minutosTotal > 0) {
-        if (typeof manejarCalculoAutomatico === 'function') {
-            manejarCalculoAutomatico();
-            if (navigator.vibrate) navigator.vibrate([50, 80]);
-            mostrarStatus(`✅ RD$${tarifa} | ${minutosTotal}min | ${distanciaTotal.toFixed(1)}km`, 'success');
-        }
-    } else {
-        mostrarStatus('⚠️ Revisa los datos, algunos no fueron claros', 'warning');
+    if (tarifa > 0 || minutosTotal > 0) {
+        if (typeof manejarCalculoAutomatico === 'function') manejarCalculoAutomatico();
+        mostrarStatus(`✅ RD$${tarifa} | ${minutosTotal}min`, 'success');
     }
 }
 
-// Inicializar al cargar
+// Iniciar al cargar el DOM
 document.addEventListener('DOMContentLoaded', inicializarScannerUltraRapido);
+
+// Exportar para acceso global
+window.escaneoUltraRapidoV2 = escaneoUltraRapidoV2;
 
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
