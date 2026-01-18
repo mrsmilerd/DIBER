@@ -5370,14 +5370,22 @@ async function procesarImagenRapida(file) {
                         texto = result.data.text;
                     }
                     
-                    // ✅ PROCESAR TEXTO RÁPIDAMENTE
-                    const datos = extraerDatosUberRapido(texto);
+                    // ✅ PROCESAR TEXTO RÁPIDAMENTE CON LAS REGLAS ESPECÍFICAS
+                    const datos = extraerDatosUberPriority(texto);
                     resolve(datos);
                     
                 } catch (ocrError) {
                     console.error('❌ Error OCR:', ocrError);
                     // Devolver datos vacíos pero no fallar
-                    resolve({ tarifa: null, minutos: null, km: null });
+                    resolve({ 
+                        tarifa: null, 
+                        minutosBusqueda: null, 
+                        distanciaBusqueda: null,
+                        minutosViaje: null, 
+                        distanciaViaje: null,
+                        minutosTotal: null,
+                        distanciaTotal: null
+                    });
                 }
                 
             }, 'image/jpeg', 0.6); // Calidad baja = más rápido
@@ -5386,87 +5394,164 @@ async function procesarImagenRapida(file) {
         
         img.onerror = function() {
             URL.revokeObjectURL(url);
-            resolve({ tarifa: null, minutos: null, km: null });
+            resolve({ 
+                tarifa: null, 
+                minutosBusqueda: null, 
+                distanciaBusqueda: null,
+                minutosViaje: null, 
+                distanciaViaje: null,
+                minutosTotal: null,
+                distanciaTotal: null
+            });
         };
         
         img.src = url;
     });
 }
 
-// ✅ 5. EXTRACCIÓN DE DATOS UBER (RÁPIDO)
-function extraerDatosUberRapido(texto) {
-    const textoMinusculas = texto.toLowerCase();
+// ✅ 5. EXTRACCIÓN DE DATOS UBER PRIORITY (NUEVO - REGLAS ESPECÍFICAS)
+function extraerDatosUberPriority(texto) {
+    console.log('📝 Texto extraído:', texto);
     
-    // ✅ PATRONES ESPECÍFICOS UBER RD
-    let tarifa = 0;
-    let minutos = 0;
-    let km = 0;
+    const textoLineas = texto.split('\n').map(line => line.trim());
+    let tarifa = null;
+    let minutosBusqueda = null;
+    let distanciaBusqueda = null;
+    let minutosViaje = null;
+    let distanciaViaje = null;
     
-    // 1. BUSCAR TARIFA (RD$xxx.xx)
-    const patronTarifa = /(?:rd\$|dop|rd|pesos?)\s*(\d{2,3}(?:[.,]\d{2})?)/gi;
-    const matchTarifa = [...textoMinusculas.matchAll(patronTarifa)];
+    // 1. BUSCAR TARIFA PRINCIPAL (RD$xxx.xx) - DEBE ESTAR EN LAS PRIMERAS LÍNEAS
+    const patronTarifaPrincipal = /RD\$?[\s]*(\d{1,3}[.,]\d{2})/;
+    const patronTarifaAlternativa = /(\d{1,3}[.,]\d{2})[\s]*RD\$?/;
     
-    if (matchTarifa.length > 0) {
-        // Tomar la primera tarifa que sea > 50
-        for (const match of matchTarifa) {
+    for (let i = 0; i < Math.min(5, textoLineas.length); i++) {
+        const linea = textoLineas[i];
+        let match = linea.match(patronTarifaPrincipal);
+        
+        if (!match) {
+            match = linea.match(patronTarifaAlternativa);
+        }
+        
+        if (match) {
             const valor = parseFloat(match[1].replace(',', '.'));
+            // Verificar que sea una tarifa razonable (> 50 y < 1000)
             if (valor > 50 && valor < 1000) {
                 tarifa = valor;
+                console.log('✅ Tarifa encontrada:', tarifa, 'en línea:', i);
                 break;
             }
         }
     }
     
-    // 2. BUSCAR MINUTOS (sumar todos los que encuentre)
-    const patronMinutos = /(\d{1,2})\s*(?:min|mi|m\b|n|minutos?)/g;
-    const matchesMinutos = [...textoMinusculas.matchAll(patronMinutos)];
-    
-    if (matchesMinutos.length > 0) {
-        minutos = matchesMinutos.reduce((total, match) => {
-            const valor = parseInt(match[1]);
-            return (valor > 0 && valor < 60) ? total + valor : total;
-        }, 0);
+    // 2. BUSCAR "A X min (X.X km)" - TIEMPO Y DISTANCIA DE BÚSQUEDA
+    for (let i = 0; i < textoLineas.length; i++) {
+        const linea = textoLineas[i];
+        
+        // Patrón para "A 5 min (1.1 km)" o similar
+        const patronBusqueda = /A[\s]*(\d+)[\s]*(?:min|mi)[\s]*\([\s]*(\d+(?:[.,]\d+)?)[\s]*(?:km|k)/i;
+        const matchBusqueda = linea.match(patronBusqueda);
+        
+        if (matchBusqueda) {
+            minutosBusqueda = parseInt(matchBusqueda[1]);
+            distanciaBusqueda = parseFloat(matchBusqueda[2].replace(',', '.'));
+            console.log('✅ Tiempo búsqueda:', minutosBusqueda, 'min');
+            console.log('✅ Distancia búsqueda:', distanciaBusqueda, 'km');
+            break;
+        }
     }
     
-    // 3. BUSCAR KILÓMETROS (sumar todos)
-    const patronKm = /(\d{1,2}(?:[.,]\d)?)\s*(?:km|k\b|kilometros?)/g;
-    const matchesKm = [...textoMinusculas.matchAll(patronKm)];
-    
-    if (matchesKm.length > 0) {
-        km = matchesKm.reduce((total, match) => {
-            const valor = parseFloat(match[1].replace(',', '.'));
-            return (valor > 0 && valor < 50) ? total + valor : total;
-        }, 0);
-    }
-    
-    // 4. FALLBACK: Si no encontró con patrones, buscar números grandes
-    if (!tarifa || !minutos) {
-        const todosNumeros = texto.match(/\d+[.,]?\d*/g) || [];
-        const numeros = todosNumeros.map(n => parseFloat(n.replace(',', '.')));
+    // 3. BUSCAR "Viaje: X min (X.X km)" - TIEMPO Y DISTANCIA DE VIAJE
+    for (let i = 0; i < textoLineas.length; i++) {
+        const linea = textoLineas[i].toLowerCase();
         
-        // Ordenar de mayor a menor
-        numeros.sort((a, b) => b - a);
-        
-        if (numeros.length > 0) {
-            // El número más grande (>50) es probablemente la tarifa
-            if (!tarifa) {
-                const posibleTarifa = numeros.find(n => n >= 50 && n < 1000);
-                if (posibleTarifa) tarifa = posibleTarifa;
-            }
+        if (linea.includes('viaje') || linea.includes('viaje:')) {
+            // Buscar patrones como "Viaje: 11 min (4.2 km)" o "11 min (4.2 km)"
+            const patronViaje = /(?:viaje:?[\s]*)?(\d+)[\s]*(?:min|mi)[\s]*\([\s]*(\d+(?:[.,]\d+)?)[\s]*(?:km|k)/;
+            const matchViaje = linea.match(patronViaje);
             
-            // Números entre 5 y 45 son probablemente minutos
-            if (!minutos && numeros.length > 1) {
-                const posibleMinutos = numeros.find(n => n >= 5 && n <= 45);
-                if (posibleMinutos) minutos = Math.round(posibleMinutos);
+            if (matchViaje) {
+                minutosViaje = parseInt(matchViaje[1]);
+                distanciaViaje = parseFloat(matchViaje[2].replace(',', '.'));
+                console.log('✅ Tiempo viaje:', minutosViaje, 'min');
+                console.log('✅ Distancia viaje:', distanciaViaje, 'km');
+                break;
             }
         }
     }
     
+    // 4. FALLBACK: Si no encontró con patrones específicos, buscar números en contexto
+    if (!tarifa) {
+        // Buscar cualquier número que parezca una tarifa (con decimales)
+        const todosNumeros = texto.match(/\d+[.,]\d{2}/g) || [];
+        for (const numStr of todosNumeros) {
+            const valor = parseFloat(numStr.replace(',', '.'));
+            if (valor > 50 && valor < 1000) {
+                tarifa = valor;
+                console.log('✅ Tarifa (fallback):', tarifa);
+                break;
+            }
+        }
+    }
+    
+    if (!minutosBusqueda) {
+        // Buscar patron "X min" después de "A" o similar
+        const patronMinBusqueda = /A[\s\S]*?(\d+)[\s]*min/i;
+        const match = texto.match(patronMinBusqueda);
+        if (match) {
+            minutosBusqueda = parseInt(match[1]);
+            console.log('✅ Tiempo búsqueda (fallback):', minutosBusqueda);
+        }
+    }
+    
+    if (!distanciaBusqueda) {
+        // Buscar primer número con decimal que sea pequeño (< 10) después de "A"
+        const patronKmBusqueda = /A[\s\S]*?\([\s]*(\d+[.,]\d+)[\s]*k/i;
+        const match = texto.match(patronKmBusqueda);
+        if (match) {
+            distanciaBusqueda = parseFloat(match[1].replace(',', '.'));
+            console.log('✅ Distancia búsqueda (fallback):', distanciaBusqueda);
+        }
+    }
+    
+    if (!minutosViaje) {
+        // Buscar "X min" que no sea de búsqueda (mayor que 5 min típicamente)
+        const patronMinViaje = /(?:viaje|viaje:)[\s\S]*?(\d+)[\s]*min/i;
+        const match = texto.match(patronMinViaje);
+        if (match) {
+            const valor = parseInt(match[1]);
+            if (valor > 5) { // Los viajes suelen ser > 5 min
+                minutosViaje = valor;
+                console.log('✅ Tiempo viaje (fallback):', minutosViaje);
+            }
+        }
+    }
+    
+    if (!distanciaViaje) {
+        // Buscar número con decimal mayor (> 2 km típicamente) después de "viaje"
+        const patronKmViaje = /(?:viaje|viaje:)[\s\S]*?\([\s]*(\d+[.,]\d+)[\s]*k/i;
+        const match = texto.match(patronKmViaje);
+        if (match) {
+            const valor = parseFloat(match[1].replace(',', '.'));
+            if (valor > 2) { // Los viajes suelen ser > 2 km
+                distanciaViaje = valor;
+                console.log('✅ Distancia viaje (fallback):', distanciaViaje);
+            }
+        }
+    }
+    
+    // 5. CALCULAR TOTALES
+    const minutosTotal = (minutosBusqueda || 0) + (minutosViaje || 0);
+    const distanciaTotal = (distanciaBusqueda || 0) + (distanciaViaje || 0);
+    
     return {
-        tarifa: Math.round(tarifa * 100) / 100, // Redondear a 2 decimales
-        minutos: minutos,
-        km: Math.round(km * 10) / 10, // Redondear a 1 decimal
-        textoOriginal: texto.substring(0, 150) // Solo para debug
+        tarifa: tarifa ? Math.round(tarifa * 100) / 100 : null,
+        minutosBusqueda: minutosBusqueda,
+        distanciaBusqueda: distanciaBusqueda ? Math.round(distanciaBusqueda * 10) / 10 : null,
+        minutosViaje: minutosViaje,
+        distanciaViaje: distanciaViaje ? Math.round(distanciaViaje * 10) / 10 : null,
+        minutosTotal: minutosTotal > 0 ? minutosTotal : null,
+        distanciaTotal: distanciaTotal > 0 ? Math.round(distanciaTotal * 10) / 10 : null,
+        textoOriginal: texto.substring(0, 200)
     };
 }
 
@@ -5569,40 +5654,45 @@ function mostrarFeedbackInmediato() {
     return feedback;
 }
 
-// ✅ 7. MOSTRAR RESULTADOS
+// ✅ 7. MOSTRAR RESULTADOS (ACTUALIZADO)
 function mostrarResultadosUber(datos) {
-    console.log('📊 Resultados Uber:', datos);
+    console.log('📊 Resultados Uber Priority:', datos);
     
     // AUTORRELLENAR CAMPOS
     if (datos.tarifa && document.getElementById('tarifa')) {
         document.getElementById('tarifa').value = datos.tarifa;
     }
     
-    if (datos.minutos && document.getElementById('minutos')) {
-        document.getElementById('minutos').value = datos.minutos;
+    // Usar el tiempo total (búsqueda + viaje) o solo viaje si no hay total
+    const minutosARellenar = datos.minutosTotal || datos.minutosViaje;
+    if (minutosARellenar && document.getElementById('minutos')) {
+        document.getElementById('minutos').value = minutosARellenar;
     }
     
-    if (datos.km && document.getElementById('distancia')) {
-        document.getElementById('distancia').value = datos.km;
+    // Usar la distancia total (búsqueda + viaje) o solo viaje si no hay total
+    const distanciaARellenar = datos.distanciaTotal || datos.distanciaViaje;
+    if (distanciaARellenar && document.getElementById('distancia')) {
+        document.getElementById('distancia').value = distanciaARellenar;
     }
     
     // Si tenemos datos suficientes, calcular automáticamente
-    if ((datos.tarifa && datos.minutos) || (datos.tarifa && datos.km)) {
+    if ((datos.tarifa && (minutosARellenar || datos.minutosViaje)) || 
+        (datos.tarifa && (distanciaARellenar || datos.distanciaViaje))) {
         // Forzar cálculo automático
         setTimeout(() => {
             if (typeof manejarCalculoAutomatico === 'function') {
                 manejarCalculoAutomatico();
                 
-                // Mostrar notificación de éxito
-                mostrarNotificacionUber(datos);
+                // Mostrar notificación de éxito con más detalles
+                mostrarNotificacionUberPriority(datos);
             }
         }, 100);
     } else {
         // Mostrar lo que sí se encontró
         const mensaje = [];
         if (datos.tarifa) mensaje.push(`RD$${datos.tarifa}`);
-        if (datos.minutos) mensaje.push(`${datos.minutos}min`);
-        if (datos.km) mensaje.push(`${datos.km}km`);
+        if (datos.minutosTotal) mensaje.push(`${datos.minutosTotal}min total`);
+        if (datos.distanciaTotal) mensaje.push(`${datos.distanciaTotal}km total`);
         
         if (mensaje.length > 0) {
             mostrarStatus(`✅ ${mensaje.join(' | ')}`, 'success');
@@ -5612,8 +5702,8 @@ function mostrarResultadosUber(datos) {
     }
 }
 
-// ✅ 8. NOTIFICACIÓN DE ÉXITO
-function mostrarNotificacionUber(datos) {
+// ✅ 8. NOTIFICACIÓN DE ÉXITO PARA UBER PRIORITY (ACTUALIZADA)
+function mostrarNotificacionUberPriority(datos) {
     const notificacion = document.createElement('div');
     notificacion.innerHTML = `
         <div style="
@@ -5625,7 +5715,7 @@ function mostrarNotificacionUber(datos) {
             padding: 15px 20px;
             border-radius: 12px;
             z-index: 99998;
-            min-width: 220px;
+            min-width: 240px;
             box-shadow: 0 8px 30px rgba(0, 176, 155, 0.4);
             border-left: 5px solid #ffffff;
             animation: slideInUber 0.4s ease-out;
@@ -5633,26 +5723,39 @@ function mostrarNotificacionUber(datos) {
         ">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                 <div style="font-size: 28px;">🎯</div>
-                <div style="font-weight: 700; font-size: 16px;">UBER ANALIZADO</div>
+                <div style="font-weight: 700; font-size: 16px;">UBER PRIORITY</div>
             </div>
             
             <div style="background: rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px; margin: 8px 0;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span>Tarifa:</span>
                     <span style="font-weight: 800;">RD$${datos.tarifa || '?'}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span>Tiempo:</span>
-                    <span style="font-weight: 800;">${datos.minutos || '?'} min</span>
+                
+                ${datos.minutosBusqueda ? `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 12px;">
+                    <span>Búsqueda:</span>
+                    <span>${datos.minutosBusqueda} min (${datos.distanciaBusqueda || '?'} km)</span>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span>Distancia:</span>
-                    <span style="font-weight: 800;">${datos.km || '?'} km</span>
+                ` : ''}
+                
+                ${datos.minutosViaje ? `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 12px;">
+                    <span>Viaje:</span>
+                    <span>${datos.minutosViaje} min (${datos.distanciaViaje || '?'} km)</span>
+                </div>
+                ` : ''}
+                
+                <div style="border-top: 1px solid rgba(255, 255, 255, 0.3); margin: 6px 0; padding-top: 4px;">
+                    <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                        <span>TOTAL:</span>
+                        <span>${datos.minutosTotal || datos.minutosViaje || '?'} min / ${datos.distanciaTotal || datos.distanciaViaje || '?'} km</span>
+                    </div>
                 </div>
             </div>
             
             <div style="font-size: 11px; text-align: center; opacity: 0.9; margin-top: 8px;">
-                Revisa el cálculo arriba
+                Datos calculados correctamente
             </div>
         </div>
     `;
@@ -5702,19 +5805,45 @@ async function procesamientoEmergencia(file) {
                     const result = await Tesseract.recognize(blob, 'eng');
                     const texto = result.data.text.toLowerCase();
                     
-                    // Búsqueda MUY básica
-                    let tarifa = 0;
+                    // Búsqueda básica con las nuevas reglas
+                    let tarifa = null;
                     const matchTarifa = texto.match(/rd\s*[\$\s]*(\d{2,3}(?:[.,]\d{2})?)/);
-                    if (matchTarifa) tarifa = parseFloat(matchTarifa[1]);
+                    if (matchTarifa) {
+                        const valor = parseFloat(matchTarifa[1].replace(',', '.'));
+                        if (valor > 50 && valor < 1000) tarifa = valor;
+                    }
                     
-                    let minutos = 0;
-                    const matchMin = texto.match(/(\d{1,2})\s*min/);
-                    if (matchMin) minutos = parseInt(matchMin[1]);
+                    // Buscar tiempos y distancias simples
+                    let minutosTotal = 0;
+                    const matchesMin = texto.match(/(\d+)\s*min/g);
+                    if (matchesMin) {
+                        minutosTotal = matchesMin.reduce((sum, match) => {
+                            const num = match.match(/\d+/);
+                            return sum + (num ? parseInt(num[0]) : 0);
+                        }, 0);
+                    }
                     
-                    resolve({ tarifa, minutos, km: 0 });
+                    let kmTotal = 0;
+                    const matchesKm = texto.match(/(\d+(?:[.,]\d+)?)\s*km/g);
+                    if (matchesKm) {
+                        kmTotal = matchesKm.reduce((sum, match) => {
+                            const num = match.match(/\d+(?:[.,]\d+)?/);
+                            return sum + (num ? parseFloat(num[0].replace(',', '.')) : 0);
+                        }, 0);
+                    }
+                    
+                    resolve({ 
+                        tarifa, 
+                        minutosTotal: minutosTotal > 0 ? minutosTotal : null,
+                        distanciaTotal: kmTotal > 0 ? kmTotal : null 
+                    });
                     
                 } catch (e) {
-                    resolve({ tarifa: null, minutos: null, km: null });
+                    resolve({ 
+                        tarifa: null, 
+                        minutosTotal: null, 
+                        distanciaTotal: null 
+                    });
                 }
                 
             }, 'image/jpeg', 0.5);
@@ -5755,6 +5884,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
