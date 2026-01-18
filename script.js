@@ -5234,7 +5234,7 @@ async function optimizarParaOCR(blob) {
             const canvas = document.createElement('canvas');
             
             // CONFIGURACIÓN CRÍTICA PARA VELOCIDAD (800px es suficiente para Uber)
-            const maxDim = 800; 
+            const maxDim = 600; 
             
             let width = img.width;
             let height = img.height;
@@ -5253,13 +5253,10 @@ async function optimizarParaOCR(blob) {
             canvas.width = width;
             canvas.height = height;
             
-            const ctx = canvas.getContext('2d', { 
-                alpha: false,
-                willReadFrequently: true 
-            });
-            
-            // Dibujamos la imagen ya con el tamaño reducido
-            ctx.drawImage(img, 0, 0, width, height);
+            const ctx = canvas.getContext('2d', { alpha: false });
+// El navegador aplica esto usando la tarjeta de video (más rápido)
+ctx.filter = 'contrast(1.2) grayscale(1)'; 
+ctx.drawImage(img, 0, 0, width, height);
             
             // Aplicar contraste para que el OCR lea más rápido
             const imageData = ctx.getImageData(0, 0, width, height);
@@ -5363,6 +5360,9 @@ function procesarDatosUltraRapido(textoOCR, tiempoTotal) {
     }
 }
 
+// Opcional: Ayuda a que el A12 no se agote tras varios usos
+if (window.gc) window.gc();
+
 function crearContadorTiempo() {
     const overlay = document.createElement('div');
     overlay.id = 'ocr-contador-overlay';
@@ -5433,9 +5433,11 @@ async function inicializarScannerUltraRapido() {
     if (typeof Tesseract !== 'undefined') {
         ocrWorker = await Tesseract.createWorker('eng');
         await ocrWorker.setParameters({
-    // Eliminamos letras innecesarias, solo dejamos lo vital para Uber
     tessedit_char_whitelist: '0123456789.,$RDminakm ', 
-    tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT, // Ideal para capturas de pantalla de apps
+    // PSM 6: Asume un solo bloque de texto uniforme. Es el más rápido.
+    tessedit_pageseg_mode: '6', 
+    tessjs_create_hocr: '0',
+    tessjs_create_tsv: '0',
 });
     
     console.log('⚡ Inicializando sistema ultra-rápido V2...');
@@ -5570,6 +5572,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
