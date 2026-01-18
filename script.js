@@ -5148,102 +5148,80 @@ window.onclick = function(event) {
     }
 };
 
-// =============================================
-// 🚀 SISTEMA DE ESCANEO ULTRA-RÁPIDO V2
-// =============================================
+/* ============================================
+   🔧 VERSIÓN CORREGIDA - SIEMPRE ABRE CÁMARA
+   ============================================
+   
+   REEMPLAZA el código anterior con este.
+   Esta versión usa el selector de archivos del celular
+   que SIEMPRE funciona.
+   
+   ============================================ */
 
-let ocrCacheStream = null;
-
-async function prepararCamara() {
-    if (!ocrCacheStream) {
-        try {
-            ocrCacheStream = await navigator.mediaDevices.getUserMedia({
-                video: { 
-                    facingMode: 'environment',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                }
-            });
-            console.log('📷 Cámara pre-cargada');
-        } catch (e) {
-            console.warn('⚠️ No se pudo pre-cargar cámara:', e);
-        }
-    }
-}
+// =============================================
+// 🚀 SISTEMA DE ESCANEO ULTRA-RÁPIDO V2 - CORREGIDO
+// =============================================
 
 async function escaneoUltraRapidoV2() {
     console.log('⚡ INICIO ESCANEO ULTRA-RÁPIDO V2');
     console.time('⏱️ TIEMPO TOTAL');
     
+    // VERIFICAR QUE EL WORKER ESTÁ LISTO
     if (!workerReady || !ocrWorker) {
-        mostrarStatus('⏳ Inicializando OCR... espera 2 segundos', 'warning');
-        await new Promise(r => setTimeout(r, 2000));
-        if (!workerReady) {
-            mostrarStatus('❌ OCR no disponible. Ingresa manual', 'error');
+        alert('⏳ El OCR aún se está cargando. Espera 2 segundos y vuelve a intentar.');
+        return;
+    }
+    
+    // CREAR INPUT DE ARCHIVO (SIEMPRE FUNCIONA)
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment'; // Esto abre la cámara en móviles
+    
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+            console.log('❌ No se seleccionó archivo');
             return;
         }
-    }
-    
-    const startTime = Date.now();
-    const timerOverlay = crearContadorTiempo();
-    
-    try {
-        const foto = await capturarFotoRapida();
-        console.log(`📸 Foto capturada en ${Date.now() - startTime}ms`);
         
-        const imagenOptimizada = await optimizarParaOCR(foto);
-        console.log(`🔧 Imagen optimizada en ${Date.now() - startTime}ms`);
+        console.log('📸 Archivo seleccionado:', file.name, file.size);
         
-        console.time('🔍 OCR Worker');
-        const resultado = await ocrWorker.recognize(imagenOptimizada);
-        console.timeEnd('🔍 OCR Worker');
+        const startTime = Date.now();
+        const timerOverlay = crearContadorTiempo();
         
-        const tiempoTotal = Date.now() - startTime;
-        procesarDatosUltraRapido(resultado.data.text, tiempoTotal);
-        console.timeEnd('⏱️ TIEMPO TOTAL');
-        
-    } catch (error) {
-        console.error('❌ Error en escaneo:', error);
-        mostrarStatus('⚠️ Error. Intenta de nuevo o ingresa manual', 'error');
-    } finally {
-        if (timerOverlay && timerOverlay.parentNode) {
-            timerOverlay.parentNode.removeChild(timerOverlay);
+        try {
+            // OPTIMIZAR IMAGEN
+            console.log('🔧 Optimizando imagen...');
+            const imagenOptimizada = await optimizarParaOCR(file);
+            console.log(`✅ Imagen optimizada en ${Date.now() - startTime}ms`);
+            
+            // OCR CON WORKER
+            console.log('🔍 Iniciando OCR...');
+            console.time('🔍 OCR Worker');
+            const resultado = await ocrWorker.recognize(imagenOptimizada);
+            console.timeEnd('🔍 OCR Worker');
+            
+            const tiempoTotal = Date.now() - startTime;
+            console.log(`✅ OCR completado en ${tiempoTotal}ms`);
+            
+            // PROCESAR DATOS
+            procesarDatosUltraRapido(resultado.data.text, tiempoTotal);
+            console.timeEnd('⏱️ TIEMPO TOTAL');
+            
+        } catch (error) {
+            console.error('❌ Error en escaneo:', error);
+            alert('⚠️ Error al procesar la imagen. Intenta de nuevo.');
+        } finally {
+            if (timerOverlay && timerOverlay.parentNode) {
+                timerOverlay.parentNode.removeChild(timerOverlay);
+            }
         }
-    }
-}
-
-function capturarFotoRapida() {
-    return new Promise((resolve, reject) => {
-        if (ocrCacheStream) {
-            const video = document.createElement('video');
-            video.srcObject = ocrCacheStream;
-            video.play();
-            
-            video.onloadedmetadata = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 1280;
-                canvas.height = 720;
-                
-                const ctx = canvas.getContext('2d', { alpha: false });
-                ctx.drawImage(video, 0, 0, 1280, 720);
-                
-                canvas.toBlob(resolve, 'image/jpeg', 0.85);
-            };
-        } else {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.capture = 'environment';
-            
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) resolve(file);
-                else reject('No se seleccionó archivo');
-            };
-            
-            input.click();
-        }
-    });
+    };
+    
+    // IMPORTANTE: Click para abrir cámara/selector
+    console.log('📱 Abriendo selector de cámara...');
+    input.click();
 }
 
 async function optimizarParaOCR(blob) {
@@ -5254,6 +5232,7 @@ async function optimizarParaOCR(blob) {
         img.onload = () => {
             const canvas = document.createElement('canvas');
             
+            // Reducir resolución si es muy grande
             let width = img.width;
             let height = img.height;
             const maxDim = 1920;
@@ -5276,14 +5255,24 @@ async function optimizarParaOCR(blob) {
                 willReadFrequently: true 
             });
             
+            // Dibujar imagen
             ctx.drawImage(img, 0, 0, width, height);
             
+            // Aumentar contraste
             const imageData = ctx.getImageData(0, 0, width, height);
             aplicarContrasteRapido(imageData);
             ctx.putImageData(imageData, 0, 0);
             
             URL.revokeObjectURL(url);
+            
+            // Devolver blob optimizado
             canvas.toBlob(resolve, 'image/jpeg', 0.8);
+        };
+        
+        img.onerror = () => {
+            console.error('❌ Error cargando imagen');
+            URL.revokeObjectURL(url);
+            resolve(blob); // Devolver original si falla
         };
         
         img.src = url;
@@ -5302,7 +5291,8 @@ function aplicarContrasteRapido(imageData) {
 }
 
 function procesarDatosUltraRapido(textoOCR, tiempoTotal) {
-    console.log('⚡ Procesando datos...', textoOCR.substring(0, 100));
+    console.log('⚡ Procesando datos OCR...');
+    console.log('📄 Texto detectado:', textoOCR);
     
     const patrones = {
         tarifa: /RD\$?\s*(\d+\.?\d{0,2})/i,
@@ -5316,45 +5306,76 @@ function procesarDatosUltraRapido(textoOCR, tiempoTotal) {
     let minutos = 0;
     let distancia = 0;
     
+    // BUSCAR TARIFA
     let match = textoOCR.match(patrones.tarifa);
     if (!match) match = textoOCR.match(patrones.tarifaAlt);
     if (match) {
         tarifa = parseFloat(match[1]);
-        console.log('💰 Tarifa:', tarifa);
+        console.log('💰 Tarifa detectada:', tarifa);
     }
     
+    // BUSCAR TIEMPOS
     const mLlegada = textoOCR.match(patrones.llegada);
     const mViaje = textoOCR.match(patrones.viaje);
     
-    if (mLlegada) minutos += parseInt(mLlegada[1]);
-    if (mViaje) minutos += parseInt(mViaje[1]);
+    if (mLlegada) {
+        minutos += parseInt(mLlegada[1]);
+        console.log('🚶 Tiempo llegada:', mLlegada[1], 'min');
+    }
+    if (mViaje) {
+        minutos += parseInt(mViaje[1]);
+        console.log('🚗 Tiempo viaje:', mViaje[1], 'min');
+    }
     
     console.log('⏱️ Minutos totales:', minutos);
     
+    // BUSCAR DISTANCIA
     const distancias = [...textoOCR.matchAll(patrones.distanciaTotal)];
     if (distancias.length > 0) {
         distancia = distancias.reduce((sum, m) => sum + parseFloat(m[1]), 0);
         console.log('🛣️ Distancia total:', distancia, 'km');
     }
     
+    // VALIDACIÓN Y AUTOCOMPLETADO
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0;
     
     if (datosCompletos) {
-        if (elementos?.tarifa) elementos.tarifa.value = tarifa;
-        if (elementos?.minutos) elementos.minutos.value = minutos;
-        if (elementos?.distancia) elementos.distancia.value = distancia.toFixed(1);
+        console.log('✅ DATOS COMPLETOS - Autocompletando...');
         
+        // AUTOCOMPLETAR CAMPOS
+        if (elementos?.tarifa) {
+            elementos.tarifa.value = tarifa;
+            console.log('✓ Campo tarifa completado:', tarifa);
+        }
+        if (elementos?.minutos) {
+            elementos.minutos.value = minutos;
+            console.log('✓ Campo minutos completado:', minutos);
+        }
+        if (elementos?.distancia) {
+            elementos.distancia.value = distancia.toFixed(1);
+            console.log('✓ Campo distancia completado:', distancia);
+        }
+        
+        // CALCULAR AUTOMÁTICAMENTE
         setTimeout(() => {
             if (typeof manejarCalculoAutomatico === 'function') {
+                console.log('🎯 Ejecutando cálculo automático...');
                 manejarCalculoAutomatico();
                 
+                // Vibración de éxito
                 if (navigator.vibrate) navigator.vibrate([50, 100, 50]);
                 
-                mostrarStatus(`✅ Listo en ${(tiempoTotal/1000).toFixed(1)}s!`, 'success');
+                mostrarStatus(`✅ ¡Listo en ${(tiempoTotal/1000).toFixed(1)}s!`, 'success');
+            } else {
+                console.warn('⚠️ Función manejarCalculoAutomatico no encontrada');
+                mostrarStatus(`✅ Datos completados en ${(tiempoTotal/1000).toFixed(1)}s`, 'success');
             }
-        }, 50);
+        }, 100);
         
     } else {
+        console.log('⚠️ DATOS INCOMPLETOS - Mostrando lo que se encontró...');
+        
+        // MOSTRAR DATOS PARCIALES
         const encontrados = [];
         if (tarifa > 0) {
             encontrados.push(`RD$${tarifa}`);
@@ -5370,17 +5391,24 @@ function procesarDatosUltraRapido(textoOCR, tiempoTotal) {
         }
         
         if (encontrados.length > 0) {
-            mostrarStatus(`⚠️ Encontrado: ${encontrados.join(' | ')}. Completa el resto`, 'warning');
+            mostrarStatus(`⚠️ Detectado: ${encontrados.join(' | ')}. Completa lo que falta`, 'warning');
         } else {
-            mostrarStatus('❌ No se detectaron datos. Ingresa manualmente', 'error');
+            mostrarStatus('❌ No se detectaron datos claros. Ingresa manualmente', 'error');
         }
     }
     
-    console.log('📊 RESULTADO:', { tarifa, minutos, distancia, tiempoTotal: `${tiempoTotal}ms` });
+    console.log('📊 RESUMEN:', { 
+        tarifa, 
+        minutos, 
+        distancia, 
+        tiempoTotal: `${tiempoTotal}ms`,
+        completo: datosCompletos 
+    });
 }
 
 function crearContadorTiempo() {
     const overlay = document.createElement('div');
+    overlay.id = 'ocr-contador-overlay';
     overlay.style.cssText = `
         position: fixed;
         top: 50%;
@@ -5401,7 +5429,7 @@ function crearContadorTiempo() {
     overlay.innerHTML = `
         <div style="font-size: 50px; margin-bottom: 15px; animation: pulse 1s infinite;">⚡</div>
         <div style="font-weight: bold; font-size: 18px; margin-bottom: 10px;">ANALIZANDO</div>
-        <div id="timer-contador" style="font-size: 32px; font-weight: bold; color: #00ff88; margin: 15px 0;"></div>
+        <div id="timer-contador" style="font-size: 32px; font-weight: bold; color: #00ff88; margin: 15px 0;">0.0s</div>
         <div style="font-size: 12px; opacity: 0.7;">Objetivo: 3 segundos</div>
         <style>
             @keyframes pulse {
@@ -5413,6 +5441,7 @@ function crearContadorTiempo() {
     
     document.body.appendChild(overlay);
     
+    // Actualizar contador
     const start = Date.now();
     const interval = setInterval(() => {
         const elapsed = (Date.now() - start) / 1000;
@@ -5420,18 +5449,20 @@ function crearContadorTiempo() {
         if (timerEl) {
             timerEl.textContent = elapsed.toFixed(1) + 's';
             
+            // Cambiar color según tiempo
             if (elapsed < 3) {
-                timerEl.style.color = '#00ff88';
+                timerEl.style.color = '#00ff88'; // Verde
             } else if (elapsed < 5) {
-                timerEl.style.color = '#ffaa00';
+                timerEl.style.color = '#ffaa00'; // Amarillo
             } else {
-                timerEl.style.color = '#ff4444';
+                timerEl.style.color = '#ff4444'; // Rojo
             }
         } else {
             clearInterval(interval);
         }
     }, 100);
     
+    // Auto-limpiar después de 10 segundos
     setTimeout(() => {
         clearInterval(interval);
         if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
@@ -5443,9 +5474,14 @@ function crearContadorTiempo() {
 function inicializarScannerUltraRapido() {
     console.log('⚡ Inicializando sistema ultra-rápido V2...');
     
+    // Remover botón anterior si existe
     const btnAnterior = document.getElementById('ultra-fast-scan');
-    if (btnAnterior) btnAnterior.remove();
+    if (btnAnterior) {
+        console.log('🗑️ Removiendo botón anterior');
+        btnAnterior.remove();
+    }
     
+    // Crear botón nuevo
     const scanBtn = document.createElement('button');
     scanBtn.id = 'ultra-fast-scan';
     scanBtn.innerHTML = '⚡ SCAN';
@@ -5471,6 +5507,7 @@ function inicializarScannerUltraRapido() {
         transition: transform 0.2s !important;
     `;
     
+    // Animación
     const style = document.createElement('style');
     style.textContent = `
         @keyframes ultraPulse {
@@ -5485,17 +5522,21 @@ function inicializarScannerUltraRapido() {
     document.head.appendChild(style);
     
     scanBtn.onclick = () => {
+        console.log('🖱️ Botón SCAN presionado');
+        
+        // Vibración al tocar
         if (navigator.vibrate) navigator.vibrate(50);
+        
+        // Ejecutar escaneo
         escaneoUltraRapidoV2();
     };
     
     document.body.appendChild(scanBtn);
-    setTimeout(prepararCamara, 2000);
-    
-    console.log('✅ Botón ultra-rápido V2 creado');
+    console.log('✅ Botón ultra-rápido V2 creado y añadido al DOM');
 }
 
 function mostrarStatus(mensaje, tipo = 'info') {
+    // Remover status anterior
     const anterior = document.getElementById('status-message');
     if (anterior) anterior.remove();
     
@@ -5527,13 +5568,15 @@ function mostrarStatus(mensaje, tipo = 'info') {
     status.textContent = mensaje;
     document.body.appendChild(status);
     
+    // Auto-remover después de 5 segundos
     setTimeout(() => {
         if (status.parentNode) {
             status.style.animation = 'slideOut 0.3s ease-in';
             setTimeout(() => status.remove(), 300);
         }
-    }, 4000);
+    }, 5000);
     
+    // Animaciones
     if (!document.getElementById('status-animations')) {
         const animations = document.createElement('style');
         animations.id = 'status-animations';
@@ -5551,11 +5594,11 @@ function mostrarStatus(mensaje, tipo = 'info') {
     }
 }
 
+// EXPORTAR FUNCIONES
 window.escaneoUltraRapidoV2 = escaneoUltraRapidoV2;
 window.inicializarScannerUltraRapido = inicializarScannerUltraRapido;
-window.prepararCamara = prepararCamara;
 
-console.log('✅ Módulo de escaneo ultra-rápido V2 cargado');
+console.log('✅ Módulo de escaneo ultra-rápido V2 CORREGIDO cargado');
 
 // ============================================
 // ✅ FIN DEL CÓDIGO OPTIMIZADO
