@@ -5164,6 +5164,8 @@ window.onclick = function(event) {
         }
     }
 };
+    } 
+} 
 
 // =============================================
 // SISTEMA OCR FUNCIONAL - VERSIÓN DEFINITIVA
@@ -5427,8 +5429,3 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
-
-
-
-
-
