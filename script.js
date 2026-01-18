@@ -5149,756 +5149,209 @@ window.onclick = function(event) {
 };
 
 /* ============================================================
-   ⚡ SISTEMA UBER-RÁPIDO - FUNCIONA EN 2 SEGUNDOS MÁXIMO
+   ⚡ UBER OCR + RENTABILIDAD — VERSIÓN ESTABLE Y CORREGIDA
    ============================================================ */
 
-// Variables globales optimizadas
 window.ocrWorker = null;
 window.workerReady = false;
-window.ultraFastMode = true;
 
-// ✅ 1. INICIALIZACIÓN ULTRA-RÁPIDA (al cargar la página)
-async function inicializarOCRSuperRapido() {
-    console.log('🚀 Iniciando OCR super-rápido...');
-    
-    // NO esperar a Tesseract si no está cargado aún
+/* =======================
+   1️⃣ INICIALIZAR OCR
+   ======================= */
+async function inicializarOCR() {
     if (typeof Tesseract === 'undefined') {
-        console.warn('⚠️ Tesseract no cargado, usando modo emergencia');
-        crearBotonScanner();
+        console.warn('⚠️ Tesseract no cargado');
         return;
     }
-    
+
     try {
-        // ✅ INICIALIZACIÓN RÁPIDA SIN CONFIGURACIÓN COMPLEJA
         window.ocrWorker = await Tesseract.createWorker('eng');
         window.workerReady = true;
-        console.log('✅ OCR listo en modo rápido');
-        
-    } catch (error) {
-        console.error('❌ Error OCR rápido:', error);
-        window.workerReady = false;
+        console.log('✅ OCR listo');
+    } catch (e) {
+        console.error('❌ Error iniciando OCR', e);
     }
-    
-    crearBotonScanner();
 }
 
-// ✅ 2. BOTÓN GRANDE Y VISIBLE
-function crearBotonScanner() {
-    // Eliminar botón anterior si existe
-    const botonAnterior = document.getElementById('uber-fast-scan');
-    if (botonAnterior) botonAnterior.remove();
-    
-    // Crear botón NUEVO más visible
-    const scanBtn = document.createElement('button');
-    scanBtn.id = 'uber-fast-scan';
-    scanBtn.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <span style="font-size: 24px;">⚡</span>
-            <span style="font-weight: 900; font-size: 16px;">UBER RÁPIDO</span>
-        </div>
-    `;
-    
-    // ESTILOS MEJORADOS (más visible)
-    Object.assign(scanBtn.style, {
+/* =======================
+   2️⃣ BOTÓN ESCANEAR
+   ======================= */
+function crearBotonUber() {
+    if (document.getElementById('btn-uber-scan')) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'btn-uber-scan';
+    btn.innerText = '⚡ ESCANEAR UBER';
+    Object.assign(btn.style, {
         position: 'fixed',
         bottom: '120px',
-        right: '25px',
-        zIndex: '99999',
-        background: 'linear-gradient(135deg, #FF416C, #FF4B2B)',
-        color: 'white',
+        right: '20px',
+        zIndex: 99999,
+        padding: '16px 28px',
+        borderRadius: '30px',
+        background: '#ff416c',
+        color: '#fff',
+        fontWeight: 'bold',
         border: 'none',
-        borderRadius: '50px',
-        padding: '18px 32px',
-        fontSize: '16px',
-        fontWeight: '900',
-        boxShadow: '0 6px 25px rgba(255, 65, 108, 0.6), 0 0 0 2px rgba(255, 255, 255, 0.3)',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '10px',
-        textTransform: 'uppercase',
-        letterSpacing: '1px',
-        fontFamily: '"Segoe UI", "Roboto", sans-serif'
+        cursor: 'pointer'
     });
-    
-    // Animación para que sea más visible
-    scanBtn.style.animation = 'pulseUber 1.5s infinite alternate';
-    
-    // Agregar animación CSS
-    const estiloAnimacion = document.createElement('style');
-    estiloAnimacion.textContent = `
-        @keyframes pulseUber {
-            0% { transform: scale(1); box-shadow: 0 6px 25px rgba(255, 65, 108, 0.6); }
-            100% { transform: scale(1.05); box-shadow: 0 8px 35px rgba(255, 65, 108, 0.9); }
-        }
-        
-        #uber-fast-scan:active {
-            transform: scale(0.95) !important;
-            box-shadow: 0 3px 15px rgba(255, 65, 108, 0.4) !important;
-        }
-    `;
-    document.head.appendChild(estiloAnimacion);
-    
-    // Evento CLICK optimizado
-    scanBtn.onclick = escanearUberUltraRapido;
-    
-    document.body.appendChild(scanBtn);
-    console.log('✅ Botón Uber Rápido creado');
+
+    btn.onclick = escanearUber;
+    document.body.appendChild(btn);
 }
 
-// ✅ 3. FUNCIÓN PRINCIPAL - ESCANEO ULTRA-RÁPIDO
-async function escanearUberUltraRapido() {
-    console.time('⏱️ TOTAL Escaneo Uber');
-    
-    // Crear input de archivo MÁS RÁPIDO
+/* =======================
+   3️⃣ ESCANEAR IMAGEN
+   ======================= */
+async function escanearUber() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.capture = 'environment';
-    input.style.display = 'none';
-    
-    input.onchange = async (e) => {
+
+    input.onchange = async e => {
         const file = e.target.files[0];
         if (!file) return;
-        
-        // ✅ MOSTRAR FEEDBACK INMEDIATO (antes de procesar)
-        const feedback = mostrarFeedbackInmediato();
-        
-        try {
-            // ✅ PROCESAMIENTO EN PARALELO (más rápido)
-            const resultados = await Promise.race([
-                procesarImagenRapida(file),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout 2s')), 2000)
-                )
-            ]);
-            
-            // ✅ ELIMINAR FEEDBACK
-            if (feedback && feedback.parentNode) {
-                feedback.remove();
-            }
-            
-            // ✅ MOSTRAR RESULTADOS
-            mostrarResultadosUber(resultados);
-            
-        } catch (error) {
-            console.error('❌ Error en escaneo:', error);
-            
-            // Eliminar feedback
-            if (feedback && feedback.parentNode) {
-                feedback.remove();
-            }
-            
-            // MODO EMERGENCIA: Usar OCR básico
-            const datosEmergencia = await procesamientoEmergencia(file);
-            mostrarResultadosUber(datosEmergencia);
-        }
-        
-        console.timeEnd('⏱️ TOTAL Escaneo Uber');
+
+        const texto = await hacerOCR(file);
+        const datos = extraerDatosUber(texto);
+        mostrarResultados(datos);
     };
-    
-    // Limpiar inputs anteriores
-    document.querySelectorAll('input[type="file"].temp-scan').forEach(el => el.remove());
-    input.className = 'temp-scan';
-    
-    document.body.appendChild(input);
+
     input.click();
 }
 
-// ✅ 4. PROCESAR IMAGEN RÁPIDA (método optimizado)
-async function procesarImagenRapida(file) {
-    return new Promise(async (resolve) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-        
-        img.onload = async function() {
-            // ✅ REDUCIR IMAGEN A 500px máximo (más rápido)
+/* =======================
+   4️⃣ OCR OPTIMIZADO
+   ======================= */
+async function hacerOCR(file) {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    return new Promise(resolve => {
+        img.onload = async () => {
             const canvas = document.createElement('canvas');
-            const maxSize = 500;
-            let width = img.width;
-            let height = img.height;
-            
-            if (width > height) {
-                if (width > maxSize) {
-                    height = Math.round((height * maxSize) / width);
-                    width = maxSize;
-                }
-            } else {
-                if (height > maxSize) {
-                    width = Math.round((width * maxSize) / height);
-                    height = maxSize;
-                }
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            
+            const max = 600;
+            let w = img.width, h = img.height;
+
+            if (w > h && w > max) { h *= max / w; w = max; }
+            else if (h > max) { w *= max / h; h = max; }
+
+            canvas.width = w;
+            canvas.height = h;
             const ctx = canvas.getContext('2d');
-            
-            // ✅ FILTROS BÁSICOS PARA MEJORAR TEXTO
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, width, height);
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // ✅ CONVERTIR A BLANCO Y NEGRO (OCR más rápido)
-            const imageData = ctx.getImageData(0, 0, width, height);
-            const data = imageData.data;
-            
-            for (let i = 0; i < data.length; i += 4) {
-                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                // Blanco puro o negro puro
-                data[i] = data[i + 1] = data[i + 2] = avg > 150 ? 255 : 0;
-            }
-            
-            ctx.putImageData(imageData, 0, 0);
-            
-            // ✅ CONVERTIR A BLOB de baja calidad (más rápido)
-            canvas.toBlob(async (blob) => {
-                URL.revokeObjectURL(url);
-                
+            ctx.drawImage(img, 0, 0, w, h);
+
+            canvas.toBlob(async blob => {
+                let texto = '';
                 try {
-                    // ✅ OCR RÁPIDO con configuración mínima
-                    let texto = '';
-                    
-                    if (window.workerReady && window.ocrWorker) {
-                        const result = await window.ocrWorker.recognize(blob);
-                        texto = result.data.text;
-                    } else {
-                        // Fallback: OCR directo
-                        const result = await Tesseract.recognize(blob, 'eng');
-                        texto = result.data.text;
-                    }
-                    
-                    // ✅ PROCESAR TEXTO RÁPIDAMENTE CON LAS REGLAS ESPECÍFICAS
-                    const datos = extraerDatosUberPriority(texto);
-                    resolve(datos);
-                    
-                } catch (ocrError) {
-                    console.error('❌ Error OCR:', ocrError);
-                    // Devolver datos vacíos pero no fallar
-                    resolve({ 
-                        tarifa: null, 
-                        minutosBusqueda: null, 
-                        distanciaBusqueda: null,
-                        minutosViaje: null, 
-                        distanciaViaje: null,
-                        minutosTotal: null,
-                        distanciaTotal: null
-                    });
+                    const res = window.workerReady
+                        ? await window.ocrWorker.recognize(blob)
+                        : await Tesseract.recognize(blob, 'eng');
+
+                    texto = res.data.text;
+                } catch (e) {
+                    console.error('❌ OCR falló', e);
                 }
-                
-            }, 'image/jpeg', 0.6); // Calidad baja = más rápido
-            
+
+                URL.revokeObjectURL(url);
+                resolve(texto);
+            }, 'image/jpeg', 0.7);
         };
-        
-        img.onerror = function() {
-            URL.revokeObjectURL(url);
-            resolve({ 
-                tarifa: null, 
-                minutosBusqueda: null, 
-                distanciaBusqueda: null,
-                minutosViaje: null, 
-                distanciaViaje: null,
-                minutosTotal: null,
-                distanciaTotal: null
-            });
-        };
-        
         img.src = url;
     });
 }
 
-// ✅ 5. EXTRACCIÓN DE DATOS UBER PRIORITY (NUEVO - REGLAS ESPECÍFICAS)
-function extraerDatosUberPriority(texto) {
-    console.log('📝 Texto extraído:', texto);
-    
-    const textoLineas = texto.split('\n').map(line => line.trim());
+/* =======================
+   5️⃣ EXTRACCIÓN INTELIGENTE
+   ======================= */
+function extraerDatosUber(texto) {
+    console.log('📝 Texto OCR:', texto);
+
     let tarifa = null;
-    let minutosBusqueda = null;
-    let distanciaBusqueda = null;
-    let minutosViaje = null;
-    let distanciaViaje = null;
-    
-    // 1. BUSCAR TARIFA PRINCIPAL (RD$xxx.xx) - DEBE ESTAR EN LAS PRIMERAS LÍNEAS
-    const patronTarifaPrincipal = /RD\$?[\s]*(\d{1,3}[.,]\d{2})/;
-    const patronTarifaAlternativa = /(\d{1,3}[.,]\d{2})[\s]*RD\$?/;
-    
-    for (let i = 0; i < Math.min(5, textoLineas.length); i++) {
-        const linea = textoLineas[i];
-        let match = linea.match(patronTarifaPrincipal);
-        
-        if (!match) {
-            match = linea.match(patronTarifaAlternativa);
-        }
-        
-        if (match) {
-            const valor = parseFloat(match[1].replace(',', '.'));
-            // Verificar que sea una tarifa razonable (> 50 y < 1000)
-            if (valor > 50 && valor < 1000) {
-                tarifa = valor;
-                console.log('✅ Tarifa encontrada:', tarifa, 'en línea:', i);
-                break;
-            }
-        }
-    }
-    
-    // 2. BUSCAR "A X min (X.X km)" - TIEMPO Y DISTANCIA DE BÚSQUEDA
-    for (let i = 0; i < textoLineas.length; i++) {
-        const linea = textoLineas[i];
-        
-        // Patrón para "A 5 min (1.1 km)" o similar
-        const patronBusqueda = /A[\s]*(\d+)[\s]*(?:min|mi)[\s]*\([\s]*(\d+(?:[.,]\d+)?)[\s]*(?:km|k)/i;
-        const matchBusqueda = linea.match(patronBusqueda);
-        
-        if (matchBusqueda) {
-            minutosBusqueda = parseInt(matchBusqueda[1]);
-            distanciaBusqueda = parseFloat(matchBusqueda[2].replace(',', '.'));
-            console.log('✅ Tiempo búsqueda:', minutosBusqueda, 'min');
-            console.log('✅ Distancia búsqueda:', distanciaBusqueda, 'km');
+    let minB = null, kmB = null;
+    let minV = null, kmV = null;
+
+    /* --- TARIFA --- */
+    const nums = texto.match(/\d{2,3}[.,]\d{2}/g) || [];
+    for (const n of nums) {
+        const v = parseFloat(n.replace(',', '.'));
+        if (v >= 80 && v <= 500) {
+            tarifa = v;
+            console.log('✅ Tarifa:', tarifa);
             break;
         }
     }
-    
-    // 3. BUSCAR "Viaje: X min (X.X km)" - TIEMPO Y DISTANCIA DE VIAJE
-    for (let i = 0; i < textoLineas.length; i++) {
-        const linea = textoLineas[i].toLowerCase();
-        
-        if (linea.includes('viaje') || linea.includes('viaje:')) {
-            // Buscar patrones como "Viaje: 11 min (4.2 km)" o "11 min (4.2 km)"
-            const patronViaje = /(?:viaje:?[\s]*)?(\d+)[\s]*(?:min|mi)[\s]*\([\s]*(\d+(?:[.,]\d+)?)[\s]*(?:km|k)/;
-            const matchViaje = linea.match(patronViaje);
-            
-            if (matchViaje) {
-                minutosViaje = parseInt(matchViaje[1]);
-                distanciaViaje = parseFloat(matchViaje[2].replace(',', '.'));
-                console.log('✅ Tiempo viaje:', minutosViaje, 'min');
-                console.log('✅ Distancia viaje:', distanciaViaje, 'km');
-                break;
-            }
+
+    /* --- LLEGADA --- */
+    const matchB = texto.match(/A\s*(\d+)\s*min\s*\((\d+(?:[.,]\d+)?)\s*k/i);
+    if (matchB) {
+        minB = parseInt(matchB[1]);
+        kmB = parseFloat(matchB[2].replace(',', '.'));
+
+        // 🔥 Corrección OCR 11km → 1.1km
+        if (kmB >= 10 && kmB <= 15 && minB <= 6) {
+            console.warn('⚠️ Corrigiendo OCR km búsqueda:', kmB, '→', kmB / 10);
+            kmB = kmB / 10;
         }
     }
-    
-    // 4. FALLBACK: Si no encontró con patrones específicos, buscar números en contexto
-    if (!tarifa) {
-        // Buscar cualquier número que parezca una tarifa (con decimales)
-        const todosNumeros = texto.match(/\d+[.,]\d{2}/g) || [];
-        for (const numStr of todosNumeros) {
-            const valor = parseFloat(numStr.replace(',', '.'));
-            if (valor > 50 && valor < 1000) {
-                tarifa = valor;
-                console.log('✅ Tarifa (fallback):', tarifa);
-                break;
-            }
-        }
+
+    /* --- VIAJE --- */
+    const matchV = texto.match(/Viaje[:\s]*?(\d+)\s*min\s*\((\d+(?:[.,]\d+)?)\s*k/i);
+    if (matchV) {
+        minV = parseInt(matchV[1]);
+        kmV = parseFloat(matchV[2].replace(',', '.'));
     }
-    
-    if (!minutosBusqueda) {
-        // Buscar patron "X min" después de "A" o similar
-        const patronMinBusqueda = /A[\s\S]*?(\d+)[\s]*min/i;
-        const match = texto.match(patronMinBusqueda);
-        if (match) {
-            minutosBusqueda = parseInt(match[1]);
-            console.log('✅ Tiempo búsqueda (fallback):', minutosBusqueda);
-        }
-    }
-    
-    if (!distanciaBusqueda) {
-        // Buscar primer número con decimal que sea pequeño (< 10) después de "A"
-        const patronKmBusqueda = /A[\s\S]*?\([\s]*(\d+[.,]\d+)[\s]*k/i;
-        const match = texto.match(patronKmBusqueda);
-        if (match) {
-            distanciaBusqueda = parseFloat(match[1].replace(',', '.'));
-            console.log('✅ Distancia búsqueda (fallback):', distanciaBusqueda);
-        }
-    }
-    
-    if (!minutosViaje) {
-        // Buscar "X min" que no sea de búsqueda (mayor que 5 min típicamente)
-        const patronMinViaje = /(?:viaje|viaje:)[\s\S]*?(\d+)[\s]*min/i;
-        const match = texto.match(patronMinViaje);
-        if (match) {
-            const valor = parseInt(match[1]);
-            if (valor > 5) { // Los viajes suelen ser > 5 min
-                minutosViaje = valor;
-                console.log('✅ Tiempo viaje (fallback):', minutosViaje);
-            }
-        }
-    }
-    
-    if (!distanciaViaje) {
-        // Buscar número con decimal mayor (> 2 km típicamente) después de "viaje"
-        const patronKmViaje = /(?:viaje|viaje:)[\s\S]*?\([\s]*(\d+[.,]\d+)[\s]*k/i;
-        const match = texto.match(patronKmViaje);
-        if (match) {
-            const valor = parseFloat(match[1].replace(',', '.'));
-            if (valor > 2) { // Los viajes suelen ser > 2 km
-                distanciaViaje = valor;
-                console.log('✅ Distancia viaje (fallback):', distanciaViaje);
-            }
-        }
-    }
-    
-    // 5. CALCULAR TOTALES
-    const minutosTotal = (minutosBusqueda || 0) + (minutosViaje || 0);
-    const distanciaTotal = (distanciaBusqueda || 0) + (distanciaViaje || 0);
-    
+
     return {
-        tarifa: tarifa ? Math.round(tarifa * 100) / 100 : null,
-        minutosBusqueda: minutosBusqueda,
-        distanciaBusqueda: distanciaBusqueda ? Math.round(distanciaBusqueda * 10) / 10 : null,
-        minutosViaje: minutosViaje,
-        distanciaViaje: distanciaViaje ? Math.round(distanciaViaje * 10) / 10 : null,
-        minutosTotal: minutosTotal > 0 ? minutosTotal : null,
-        distanciaTotal: distanciaTotal > 0 ? Math.round(distanciaTotal * 10) / 10 : null,
-        textoOriginal: texto.substring(0, 200)
+        tarifa,
+        minutosBusqueda: minB,
+        distanciaBusqueda: kmB,
+        minutosViaje: minV,
+        distanciaViaje: kmV,
+        minutosTotal: (minB || 0) + (minV || 0),
+        distanciaTotal: Math.round(((kmB || 0) + (kmV || 0)) * 10) / 10
     };
 }
 
-// ✅ 6. FEEDBACK VISUAL INMEDIATO
-function mostrarFeedbackInmediato() {
-    const feedback = document.createElement('div');
-    feedback.id = 'feedback-uber-rapido';
-    feedback.innerHTML = `
-        <div style="
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.92);
-            color: #FF416C;
-            padding: 25px 35px;
-            border-radius: 20px;
-            z-index: 100000;
-            text-align: center;
-            font-family: 'Segoe UI', sans-serif;
-            border: 3px solid #FF416C;
-            min-width: 280px;
-            box-shadow: 0 0 50px rgba(255, 65, 108, 0.4);
-            backdrop-filter: blur(15px);
-        ">
-            <div style="font-size: 48px; margin-bottom: 15px;">⚡</div>
-            <div style="font-weight: 800; font-size: 20px; margin-bottom: 10px; letter-spacing: 1.5px;">
-                ESCANEANDO UBER
-            </div>
-            <div id="contador-uber" style="font-size: 32px; font-weight: bold; margin: 15px 0; color: #FF416C;">
-                0.0s
-            </div>
-            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 20px;">
-                PROCESANDO EN TIEMPO REAL
-            </div>
-            
-            <div style="background: rgba(255, 65, 108, 0.15); border-radius: 12px; padding: 12px; margin-top: 15px;">
-                <div id="estado-uber" style="font-size: 16px; font-weight: 600;">
-                    Iniciando análisis...
-                </div>
-                <div style="display: flex; justify-content: center; gap: 8px; margin-top: 12px;">
-                    <div class="punto-uber" style="animation-delay: 0s;"></div>
-                    <div class="punto-uber" style="animation-delay: 0.2s;"></div>
-                    <div class="punto-uber" style="animation-delay: 0.4s;"></div>
-                    <div class="punto-uber" style="animation-delay: 0.6s;"></div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Estilos para los puntos
-    const estilos = document.createElement('style');
-    estilos.textContent = `
-        .punto-uber {
-            width: 10px;
-            height: 10px;
-            background: #FF416C;
-            border-radius: 50%;
-            animation: puntoUberPulse 1.2s infinite;
-        }
-        
-        @keyframes puntoUberPulse {
-            0%, 100% { opacity: 0.3; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-    `;
-    feedback.appendChild(estilos);
-    
-    document.body.appendChild(feedback);
-    
-    // Contador de tiempo
-    let inicio = Date.now();
-    const intervalo = setInterval(() => {
-        const tiempo = (Date.now() - inicio) / 1000;
-        const contador = document.getElementById('contador-uber');
-        const estado = document.getElementById('estado-uber');
-        
-        if (contador) contador.textContent = tiempo.toFixed(1) + 's';
-        
-        if (estado) {
-            if (tiempo < 0.4) estado.textContent = 'Optimizando imagen...';
-            else if (tiempo < 0.9) estado.textContent = 'Buscando tarifa...';
-            else if (tiempo < 1.4) estado.textContent = 'Analizando tiempos...';
-            else if (tiempo < 1.9) estado.textContent = 'Calculando rentabilidad...';
-            else estado.textContent = 'Finalizando...';
-        }
-        
-        // Auto-eliminar después de 3 segundos (seguridad)
-        if (tiempo > 3) {
-            clearInterval(intervalo);
-            if (feedback.parentNode) {
-                feedback.remove();
-            }
+/* =======================
+   6️⃣ MOSTRAR + CALCULAR
+   ======================= */
+function mostrarResultados(d) {
+    console.log('📊 Datos finales:', d);
+
+    if (d.tarifa && document.getElementById('tarifa'))
+        document.getElementById('tarifa').value = d.tarifa;
+
+    if (d.minutosTotal && document.getElementById('minutos'))
+        document.getElementById('minutos').value = d.minutosTotal;
+
+    if (d.distanciaTotal && document.getElementById('distancia'))
+        document.getElementById('distancia').value = d.distanciaTotal;
+
+    setTimeout(() => {
+        if (typeof manejarCalculoAutomatico === 'function') {
+            manejarCalculoAutomatico();
+        } else if (typeof calcularRentabilidad === 'function') {
+            calcularRentabilidad();
         }
     }, 100);
-    
-    // Guardar intervalo para limpiar
-    feedback.dataset.intervalo = intervalo;
-    
-    return feedback;
 }
 
-// ✅ 7. MOSTRAR RESULTADOS (ACTUALIZADO)
-function mostrarResultadosUber(datos) {
-    console.log('📊 Resultados Uber Priority:', datos);
-    
-    // AUTORRELLENAR CAMPOS
-    if (datos.tarifa && document.getElementById('tarifa')) {
-        document.getElementById('tarifa').value = datos.tarifa;
-    }
-    
-    // Usar el tiempo total (búsqueda + viaje) o solo viaje si no hay total
-    const minutosARellenar = datos.minutosTotal || datos.minutosViaje;
-    if (minutosARellenar && document.getElementById('minutos')) {
-        document.getElementById('minutos').value = minutosARellenar;
-    }
-    
-    // Usar la distancia total (búsqueda + viaje) o solo viaje si no hay total
-    const distanciaARellenar = datos.distanciaTotal || datos.distanciaViaje;
-    if (distanciaARellenar && document.getElementById('distancia')) {
-        document.getElementById('distancia').value = distanciaARellenar;
-    }
-    
-    // Si tenemos datos suficientes, calcular automáticamente
-    if ((datos.tarifa && (minutosARellenar || datos.minutosViaje)) || 
-        (datos.tarifa && (distanciaARellenar || datos.distanciaViaje))) {
-
-        // 🔥 CONECTAR CON EL MOTOR REAL DE LA APP
-if (datos.tarifa && datos.minutosTotal && datos.distanciaTotal) {
-    console.log('🧩 Conectando OCR con motor principal...');
-
-    viajeActual = {
-        tarifa: datos.tarifa,
-        tiempo: datos.minutosTotal,
-        distancia: datos.distanciaTotal,
-        origen: 'OCR',
-        timestamp: Date.now()
-    };
-
-    // ACTIVAR FLUJO REAL
-    cronometroActivo = true;
-
-    // DISPARAR CÁLCULO REAL
-    calcularRentabilidad();
-
-    mostrarNotificacionUberPriority(datos);
-} else {
-    mostrarStatus('⚠️ Datos incompletos para análisis automático', 'warning');
-}
-   
-    } else {
-        // Mostrar lo que sí se encontró
-        const mensaje = [];
-        if (datos.tarifa) mensaje.push(`RD$${datos.tarifa}`);
-        if (datos.minutosTotal) mensaje.push(`${datos.minutosTotal}min total`);
-        if (datos.distanciaTotal) mensaje.push(`${datos.distanciaTotal}km total`);
-        
-        if (mensaje.length > 0) {
-            mostrarStatus(`✅ ${mensaje.join(' | ')}`, 'success');
-        } else {
-            mostrarStatus('⚠️ No se encontraron datos. Captura de nuevo.', 'warning');
-        }
-    }
-}
-
-// ✅ 8. NOTIFICACIÓN DE ÉXITO PARA UBER PRIORITY (ACTUALIZADA)
-function mostrarNotificacionUberPriority(datos) {
-    const notificacion = document.createElement('div');
-    notificacion.innerHTML = `
-        <div style="
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            background: linear-gradient(135deg, #00b09b, #96c93d);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 12px;
-            z-index: 99998;
-            min-width: 240px;
-            box-shadow: 0 8px 30px rgba(0, 176, 155, 0.4);
-            border-left: 5px solid #ffffff;
-            animation: slideInUber 0.4s ease-out;
-            font-family: 'Segoe UI', sans-serif;
-        ">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                <div style="font-size: 28px;">🎯</div>
-                <div style="font-weight: 700; font-size: 16px;">UBER PRIORITY</div>
-            </div>
-            
-            <div style="background: rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px; margin: 8px 0;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span>Tarifa:</span>
-                    <span style="font-weight: 800;">RD$${datos.tarifa || '?'}</span>
-                </div>
-                
-                ${datos.minutosBusqueda ? `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 12px;">
-                    <span>Búsqueda:</span>
-                    <span>${datos.minutosBusqueda} min (${datos.distanciaBusqueda || '?'} km)</span>
-                </div>
-                ` : ''}
-                
-                ${datos.minutosViaje ? `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 12px;">
-                    <span>Viaje:</span>
-                    <span>${datos.minutosViaje} min (${datos.distanciaViaje || '?'} km)</span>
-                </div>
-                ` : ''}
-                
-                <div style="border-top: 1px solid rgba(255, 255, 255, 0.3); margin: 6px 0; padding-top: 4px;">
-                    <div style="display: flex; justify-content: space-between; font-weight: bold;">
-                        <span>TOTAL:</span>
-                        <span>${datos.minutosTotal || datos.minutosViaje || '?'} min / ${datos.distanciaTotal || datos.distanciaViaje || '?'} km</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div style="font-size: 11px; text-align: center; opacity: 0.9; margin-top: 8px;">
-                Datos calculados correctamente
-            </div>
-        </div>
-    `;
-    
-    // Animación CSS
-    const estiloAnim = document.createElement('style');
-    estiloAnim.textContent = `
-        @keyframes slideInUber {
-            from { transform: translateX(100px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-    `;
-    notificacion.appendChild(estiloAnim);
-    
-    document.body.appendChild(notificacion);
-    
-    // Auto-eliminar después de 4 segundos
-    setTimeout(() => {
-        if (notificacion.parentNode) {
-            notificacion.style.animation = 'fadeOut 0.5s ease-out forwards';
-            setTimeout(() => notificacion.remove(), 500);
-        }
-    }, 4000);
-}
-
-// ✅ 9. MODO EMERGENCIA (si todo falla)
-async function procesamientoEmergencia(file) {
-    // Convertir imagen a texto MUY básico
-    return new Promise((resolve) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-        
-        img.onload = function() {
-            // Solo reducir tamaño
-            const canvas = document.createElement('canvas');
-            canvas.width = 300;
-            canvas.height = 300;
-            
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, 300, 300);
-            
-            canvas.toBlob(async (blob) => {
-                URL.revokeObjectURL(url);
-                
-                try {
-                    // OCR MUY RÁPIDO sin configuraciones
-                    const result = await Tesseract.recognize(blob, 'eng');
-                    const texto = result.data.text.toLowerCase();
-                    
-                    // Búsqueda básica con las nuevas reglas
-                    let tarifa = null;
-                    const matchTarifa = texto.match(/rd\s*[\$\s]*(\d{2,3}(?:[.,]\d{2})?)/);
-                    if (matchTarifa) {
-                        const valor = parseFloat(matchTarifa[1].replace(',', '.'));
-                        if (valor > 50 && valor < 1000) tarifa = valor;
-                    }
-                    
-                    // Buscar tiempos y distancias simples
-                    let minutosTotal = 0;
-                    const matchesMin = texto.match(/(\d+)\s*min/g);
-                    if (matchesMin) {
-                        minutosTotal = matchesMin.reduce((sum, match) => {
-                            const num = match.match(/\d+/);
-                            return sum + (num ? parseInt(num[0]) : 0);
-                        }, 0);
-                    }
-                    
-                    let kmTotal = 0;
-                    const matchesKm = texto.match(/(\d+(?:[.,]\d+)?)\s*km/g);
-                    if (matchesKm) {
-                        kmTotal = matchesKm.reduce((sum, match) => {
-                            const num = match.match(/\d+(?:[.,]\d+)?/);
-                            return sum + (num ? parseFloat(num[0].replace(',', '.')) : 0);
-                        }, 0);
-                    }
-                    
-                    resolve({ 
-                        tarifa, 
-                        minutosTotal: minutosTotal > 0 ? minutosTotal : null,
-                        distanciaTotal: kmTotal > 0 ? kmTotal : null 
-                    });
-                    
-                } catch (e) {
-                    resolve({ 
-                        tarifa: null, 
-                        minutosTotal: null, 
-                        distanciaTotal: null 
-                    });
-                }
-                
-            }, 'image/jpeg', 0.5);
-        };
-        
-        img.src = url;
-    });
-}
-
-// ✅ 10. INTEGRACIÓN CON TU CÓDIGO EXISTENTE
-
-// REEMPLAZA TODO TU CÓDIGO OCR CON ESTO:
-window.escaneoUberRapido = escanearUberUltraRapido;
-window.inicializarOCRSuperRapido = inicializarOCRSuperRapido;
-
-// Inicializar cuando la página cargue
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarOCRSuperRapido);
-} else {
-    inicializarOCRSuperRapido();
-}
-
-// También inicializar después de 1 segundo por si acaso
-setTimeout(inicializarOCRSuperRapido, 1000);
-
-// Atajo de teclado: Ctrl+Espacio para escanear rápido
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
-        e.preventDefault();
-        escanearUberUltraRapido();
-    }
+/* =======================
+   7️⃣ AUTO-INICIO
+   ======================= */
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarOCR();
+    crearBotonUber();
 });
-
-console.log('🚀 Sistema Uber Rápido cargado - Listo en 2 segundos');
 
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
