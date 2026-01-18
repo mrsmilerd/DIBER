@@ -5549,7 +5549,6 @@ function mostrarStatus(mensaje, tipo = 'info') {
 }
 
 } // Cierre de la función principal
-} // Cierre del bloque de control si existe
 
 // EXPORTAR FUNCIONES PARA QUE NO DEN ERROR
 window.escaneoUltraRapidoV2 = escaneoUltraRapidoV2;
@@ -5565,6 +5564,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
