@@ -5224,6 +5224,7 @@ async function escaneoUltraRapidoV2() {
     input.click();
 }
 
+// BUSCA ESTA FUNCIÓN Y REEMPLÁZALA COMPLETAMENTE
 async function optimizarParaOCR(blob) {
     return new Promise((resolve) => {
         const img = new Image();
@@ -5232,11 +5233,13 @@ async function optimizarParaOCR(blob) {
         img.onload = () => {
             const canvas = document.createElement('canvas');
             
-            // Reducir resolución si es muy grande
+            // CONFIGURACIÓN CRÍTICA PARA VELOCIDAD (800px es suficiente para Uber)
+            const maxDim = 800; 
+            
             let width = img.width;
             let height = img.height;
-            const maxDim = 1920;
             
+            // Si la foto es muy grande, la achicamos aquí mismo
             if (width > maxDim || height > maxDim) {
                 if (width > height) {
                     height = (height / width) * maxDim;
@@ -5255,24 +5258,24 @@ async function optimizarParaOCR(blob) {
                 willReadFrequently: true 
             });
             
-            // Dibujar imagen
+            // Dibujamos la imagen ya con el tamaño reducido
             ctx.drawImage(img, 0, 0, width, height);
             
-            // Aumentar contraste
+            // Aplicar contraste para que el OCR lea más rápido
             const imageData = ctx.getImageData(0, 0, width, height);
-            aplicarContrasteRapido(imageData);
+            aplicarContrasteRapido(imageData); // Esta función ya la tienes en tu código
             ctx.putImageData(imageData, 0, 0);
             
             URL.revokeObjectURL(url);
             
-            // Devolver blob optimizado
-            canvas.toBlob(resolve, 'image/jpeg', 0.8);
+            // Devolver la imagen procesada lista para el OCR
+            canvas.toBlob(resolve, 'image/jpeg', 0.7);
         };
         
         img.onerror = () => {
             console.error('❌ Error cargando imagen');
             URL.revokeObjectURL(url);
-            resolve(blob); // Devolver original si falla
+            resolve(blob); 
         };
         
         img.src = url;
@@ -5471,17 +5474,47 @@ function crearContadorTiempo() {
     return overlay;
 }
 
-function inicializarScannerUltraRapido() {
-    console.log('⚡ Inicializando sistema ultra-rápido V2...');
-    
-    // Remover botón anterior si existe
-    const btnAnterior = document.getElementById('ultra-fast-scan');
-    if (btnAnterior) {
-        console.log('🗑️ Removiendo botón anterior');
-        btnAnterior.remove();
+async function inicializarScannerUltraRapido() {
+    // Esto prepara el motor de Tesseract con la "lista blanca" de números
+    if (typeof Tesseract !== 'undefined') {
+        ocrWorker = await Tesseract.createWorker('eng');
+        await ocrWorker.setParameters({
+            tessedit_char_whitelist: '0123456789.,$RDminAkm', 
+            tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT,
+        });
+        workerReady = true;
     }
     
-    // Crear botón nuevo
+    console.log('⚡ Inicializando sistema ultra-rápido V2...');
+
+    // 1. CONFIGURACIÓN DEL MOTOR OCR (Esto es lo que te falta)
+    try {
+        if (typeof Tesseract !== 'undefined') {
+            // Creamos el trabajador indicando inglés (más rápido para números)
+            ocrWorker = await Tesseract.createWorker('eng');
+            
+            // CONFIGURACIÓN DE ALTA VELOCIDAD
+            await ocrWorker.setParameters({
+                // Solo busca estos caracteres (ignora el resto del abecedario)
+                tessedit_char_whitelist: '0123456789.,$RDminAkm ', 
+                // Modo de segmentación: Trata la imagen como un bloque de texto disperso
+                tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT,
+                // No pierdas tiempo creando archivos de salida innecesarios
+                tessjs_create_hocr: '0',
+                tessjs_create_tsv: '0'
+            });
+            
+            workerReady = true;
+            console.log('✅ Motor OCR configurado y listo');
+        }
+    } catch (e) {
+        console.error('❌ Error configurando Tesseract:', e);
+    }
+    
+    // 2. CREACIÓN DEL BOTÓN (Lo que ya tenías)
+    const btnAnterior = document.getElementById('ultra-fast-scan');
+    if (btnAnterior) btnAnterior.remove();
+    
     const scanBtn = document.createElement('button');
     scanBtn.id = 'ultra-fast-scan';
     scanBtn.innerHTML = '⚡ SCAN';
@@ -5499,40 +5532,14 @@ function inicializarScannerUltraRapido() {
         font-weight: 900 !important;
         box-shadow: 0 6px 25px rgba(0, 255, 136, 0.6) !important;
         cursor: pointer !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 8px !important;
-        animation: ultraPulse 1.5s infinite !important;
-        transition: transform 0.2s !important;
     `;
-    
-    // Animación
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes ultraPulse {
-            0% { transform: scale(1); box-shadow: 0 6px 25px rgba(0, 255, 136, 0.6); }
-            50% { transform: scale(1.08); box-shadow: 0 8px 35px rgba(0, 255, 136, 0.9); }
-            100% { transform: scale(1); box-shadow: 0 6px 25px rgba(0, 255, 136, 0.6); }
-        }
-        #ultra-fast-scan:active {
-            transform: scale(0.95) !important;
-        }
-    `;
-    document.head.appendChild(style);
     
     scanBtn.onclick = () => {
-        console.log('🖱️ Botón SCAN presionado');
-        
-        // Vibración al tocar
         if (navigator.vibrate) navigator.vibrate(50);
-        
-        // Ejecutar escaneo
         escaneoUltraRapidoV2();
     };
     
     document.body.appendChild(scanBtn);
-    console.log('✅ Botón ultra-rápido V2 creado y añadido al DOM');
 }
 
 function mostrarStatus(mensaje, tipo = 'info') {
@@ -5609,3 +5616,4 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
