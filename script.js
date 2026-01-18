@@ -5149,346 +5149,417 @@ window.onclick = function(event) {
 };
 
 // =============================================
-// SISTEMA ULTRA-RÁPIDO - 3 SEGUNDOS MÁXIMO
+// 🚀 SISTEMA DE ESCANEO ULTRA-RÁPIDO V2
 // =============================================
 
-let scannerUltraRapido = null;
+let ocrCacheStream = null;
+
+async function prepararCamara() {
+    if (!ocrCacheStream) {
+        try {
+            ocrCacheStream = await navigator.mediaDevices.getUserMedia({
+                video: { 
+                    facingMode: 'environment',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            });
+            console.log('📷 Cámara pre-cargada');
+        } catch (e) {
+            console.warn('⚠️ No se pudo pre-cargar cámara:', e);
+        }
+    }
+}
+
+async function escaneoUltraRapidoV2() {
+    console.log('⚡ INICIO ESCANEO ULTRA-RÁPIDO V2');
+    console.time('⏱️ TIEMPO TOTAL');
+    
+    if (!workerReady || !ocrWorker) {
+        mostrarStatus('⏳ Inicializando OCR... espera 2 segundos', 'warning');
+        await new Promise(r => setTimeout(r, 2000));
+        if (!workerReady) {
+            mostrarStatus('❌ OCR no disponible. Ingresa manual', 'error');
+            return;
+        }
+    }
+    
+    const startTime = Date.now();
+    const timerOverlay = crearContadorTiempo();
+    
+    try {
+        const foto = await capturarFotoRapida();
+        console.log(`📸 Foto capturada en ${Date.now() - startTime}ms`);
+        
+        const imagenOptimizada = await optimizarParaOCR(foto);
+        console.log(`🔧 Imagen optimizada en ${Date.now() - startTime}ms`);
+        
+        console.time('🔍 OCR Worker');
+        const resultado = await ocrWorker.recognize(imagenOptimizada);
+        console.timeEnd('🔍 OCR Worker');
+        
+        const tiempoTotal = Date.now() - startTime;
+        procesarDatosUltraRapido(resultado.data.text, tiempoTotal);
+        console.timeEnd('⏱️ TIEMPO TOTAL');
+        
+    } catch (error) {
+        console.error('❌ Error en escaneo:', error);
+        mostrarStatus('⚠️ Error. Intenta de nuevo o ingresa manual', 'error');
+    } finally {
+        if (timerOverlay && timerOverlay.parentNode) {
+            timerOverlay.parentNode.removeChild(timerOverlay);
+        }
+    }
+}
+
+function capturarFotoRapida() {
+    return new Promise((resolve, reject) => {
+        if (ocrCacheStream) {
+            const video = document.createElement('video');
+            video.srcObject = ocrCacheStream;
+            video.play();
+            
+            video.onloadedmetadata = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1280;
+                canvas.height = 720;
+                
+                const ctx = canvas.getContext('2d', { alpha: false });
+                ctx.drawImage(video, 0, 0, 1280, 720);
+                
+                canvas.toBlob(resolve, 'image/jpeg', 0.85);
+            };
+        } else {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment';
+            
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) resolve(file);
+                else reject('No se seleccionó archivo');
+            };
+            
+            input.click();
+        }
+    });
+}
+
+async function optimizarParaOCR(blob) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(blob);
+        
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 1920;
+            
+            if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                    height = (height / width) * maxDim;
+                    width = maxDim;
+                } else {
+                    width = (width / height) * maxDim;
+                    height = maxDim;
+                }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d', { 
+                alpha: false,
+                willReadFrequently: true 
+            });
+            
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            const imageData = ctx.getImageData(0, 0, width, height);
+            aplicarContrasteRapido(imageData);
+            ctx.putImageData(imageData, 0, 0);
+            
+            URL.revokeObjectURL(url);
+            canvas.toBlob(resolve, 'image/jpeg', 0.8);
+        };
+        
+        img.src = url;
+    });
+}
+
+function aplicarContrasteRapido(imageData) {
+    const data = imageData.data;
+    const factor = 1.3;
+    
+    for (let i = 0; i < data.length; i += 4) {
+        data[i] = Math.min(255, Math.max(0, (data[i] - 128) * factor + 128));
+        data[i+1] = Math.min(255, Math.max(0, (data[i+1] - 128) * factor + 128));
+        data[i+2] = Math.min(255, Math.max(0, (data[i+2] - 128) * factor + 128));
+    }
+}
+
+function procesarDatosUltraRapido(textoOCR, tiempoTotal) {
+    console.log('⚡ Procesando datos...', textoOCR.substring(0, 100));
+    
+    const patrones = {
+        tarifa: /RD\$?\s*(\d+\.?\d{0,2})/i,
+        tarifaAlt: /(\d+\.?\d{2})\s*RD/i,
+        llegada: /A\s*(\d+)\s*min/i,
+        viaje: /Viaje[:\s]*(\d+)\s*min/i,
+        distanciaTotal: /([\d.]+)\s*km/gi
+    };
+    
+    let tarifa = 0;
+    let minutos = 0;
+    let distancia = 0;
+    
+    let match = textoOCR.match(patrones.tarifa);
+    if (!match) match = textoOCR.match(patrones.tarifaAlt);
+    if (match) {
+        tarifa = parseFloat(match[1]);
+        console.log('💰 Tarifa:', tarifa);
+    }
+    
+    const mLlegada = textoOCR.match(patrones.llegada);
+    const mViaje = textoOCR.match(patrones.viaje);
+    
+    if (mLlegada) minutos += parseInt(mLlegada[1]);
+    if (mViaje) minutos += parseInt(mViaje[1]);
+    
+    console.log('⏱️ Minutos totales:', minutos);
+    
+    const distancias = [...textoOCR.matchAll(patrones.distanciaTotal)];
+    if (distancias.length > 0) {
+        distancia = distancias.reduce((sum, m) => sum + parseFloat(m[1]), 0);
+        console.log('🛣️ Distancia total:', distancia, 'km');
+    }
+    
+    const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0;
+    
+    if (datosCompletos) {
+        if (elementos?.tarifa) elementos.tarifa.value = tarifa;
+        if (elementos?.minutos) elementos.minutos.value = minutos;
+        if (elementos?.distancia) elementos.distancia.value = distancia.toFixed(1);
+        
+        setTimeout(() => {
+            if (typeof manejarCalculoAutomatico === 'function') {
+                manejarCalculoAutomatico();
+                
+                if (navigator.vibrate) navigator.vibrate([50, 100, 50]);
+                
+                mostrarStatus(`✅ Listo en ${(tiempoTotal/1000).toFixed(1)}s!`, 'success');
+            }
+        }, 50);
+        
+    } else {
+        const encontrados = [];
+        if (tarifa > 0) {
+            encontrados.push(`RD$${tarifa}`);
+            if (elementos?.tarifa) elementos.tarifa.value = tarifa;
+        }
+        if (minutos > 0) {
+            encontrados.push(`${minutos} min`);
+            if (elementos?.minutos) elementos.minutos.value = minutos;
+        }
+        if (distancia > 0) {
+            encontrados.push(`${distancia.toFixed(1)} km`);
+            if (elementos?.distancia) elementos.distancia.value = distancia.toFixed(1);
+        }
+        
+        if (encontrados.length > 0) {
+            mostrarStatus(`⚠️ Encontrado: ${encontrados.join(' | ')}. Completa el resto`, 'warning');
+        } else {
+            mostrarStatus('❌ No se detectaron datos. Ingresa manualmente', 'error');
+        }
+    }
+    
+    console.log('📊 RESULTADO:', { tarifa, minutos, distancia, tiempoTotal: `${tiempoTotal}ms` });
+}
+
+function crearContadorTiempo() {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.95);
+        color: #00ff88;
+        padding: 30px;
+        border-radius: 20px;
+        z-index: 10000;
+        text-align: center;
+        font-family: 'Courier New', monospace;
+        border: 3px solid #00ff88;
+        min-width: 250px;
+        box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+    `;
+    
+    overlay.innerHTML = `
+        <div style="font-size: 50px; margin-bottom: 15px; animation: pulse 1s infinite;">⚡</div>
+        <div style="font-weight: bold; font-size: 18px; margin-bottom: 10px;">ANALIZANDO</div>
+        <div id="timer-contador" style="font-size: 32px; font-weight: bold; color: #00ff88; margin: 15px 0;"></div>
+        <div style="font-size: 12px; opacity: 0.7;">Objetivo: 3 segundos</div>
+        <style>
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+            }
+        </style>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    const start = Date.now();
+    const interval = setInterval(() => {
+        const elapsed = (Date.now() - start) / 1000;
+        const timerEl = document.getElementById('timer-contador');
+        if (timerEl) {
+            timerEl.textContent = elapsed.toFixed(1) + 's';
+            
+            if (elapsed < 3) {
+                timerEl.style.color = '#00ff88';
+            } else if (elapsed < 5) {
+                timerEl.style.color = '#ffaa00';
+            } else {
+                timerEl.style.color = '#ff4444';
+            }
+        } else {
+            clearInterval(interval);
+        }
+    }, 100);
+    
+    setTimeout(() => {
+        clearInterval(interval);
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }, 10000);
+    
+    return overlay;
+}
 
 function inicializarScannerUltraRapido() {
-    console.log('⚡ Inicializando sistema ultra-rápido...');
+    console.log('⚡ Inicializando sistema ultra-rápido V2...');
     
-    // Botón ULTRA rápido
+    const btnAnterior = document.getElementById('ultra-fast-scan');
+    if (btnAnterior) btnAnterior.remove();
+    
     const scanBtn = document.createElement('button');
     scanBtn.id = 'ultra-fast-scan';
-    scanBtn.innerHTML = '⚡ RÁPIDO';
+    scanBtn.innerHTML = '⚡ SCAN';
     scanBtn.style.cssText = `
         position: fixed !important;
         bottom: 100px !important;
         right: 20px !important;
         z-index: 9999 !important;
-        background: linear-gradient(135deg, #00b09b, #96c93d) !important;
-        color: white !important;
+        background: linear-gradient(135deg, #00ff88, #00cc66) !important;
+        color: black !important;
         border: none !important;
         border-radius: 50px !important;
-        padding: 15px 25px !important;
-        font-size: 16px !important;
-        font-weight: bold !important;
-        box-shadow: 0 6px 25px rgba(0, 176, 155, 0.5) !important;
+        padding: 15px 30px !important;
+        font-size: 18px !important;
+        font-weight: 900 !important;
+        box-shadow: 0 6px 25px rgba(0, 255, 136, 0.6) !important;
         cursor: pointer !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         gap: 8px !important;
-        animation: ultraPulse 1s infinite !important;
+        animation: ultraPulse 1.5s infinite !important;
+        transition: transform 0.2s !important;
     `;
     
-    // Estilos para la animación
     const style = document.createElement('style');
     style.textContent = `
         @keyframes ultraPulse {
-            0% { transform: scale(1); box-shadow: 0 6px 25px rgba(0, 176, 155, 0.5); }
-            50% { transform: scale(1.05); box-shadow: 0 8px 30px rgba(0, 176, 155, 0.8); }
-            100% { transform: scale(1); box-shadow: 0 6px 25px rgba(0, 176, 155, 0.5); }
+            0% { transform: scale(1); box-shadow: 0 6px 25px rgba(0, 255, 136, 0.6); }
+            50% { transform: scale(1.08); box-shadow: 0 8px 35px rgba(0, 255, 136, 0.9); }
+            100% { transform: scale(1); box-shadow: 0 6px 25px rgba(0, 255, 136, 0.6); }
+        }
+        #ultra-fast-scan:active {
+            transform: scale(0.95) !important;
         }
     `;
     document.head.appendChild(style);
     
-    scanBtn.onclick = escaneoUltraRapido;
-    document.body.appendChild(scanBtn);
-    
-    console.log('✅ Botón ultra-rápido creado');
-}
-
-function escaneoUltraRapido() {
-    console.time('⚡ Tiempo total escaneo');
-    
-    // Input simple sin preprocesamiento
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
-    
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        // Mostrar contador de tiempo
-        const timerMsg = document.createElement('div');
-        timerMsg.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(0,0,0,0.95);
-                color: #00ff88;
-                padding: 20px;
-                border-radius: 15px;
-                z-index: 10000;
-                text-align: center;
-                font-family: monospace;
-                border: 2px solid #00ff88;
-                min-width: 200px;
-            ">
-                <div style="font-size: 40px; margin-bottom: 10px;">⚡</div>
-                <div style="font-weight: bold; margin-bottom: 10px;">ESCANEO RÁPIDO</div>
-                <div id="timer" style="font-size: 24px; font-weight: bold; margin: 10px 0;">0.0s</div>
-                <div style="font-size: 12px; opacity: 0.7;">Máximo: 3 segundos</div>
-            </div>
-        `;
-        document.body.appendChild(timerMsg);
-        
-        let startTime = Date.now();
-        const timerInterval = setInterval(() => {
-            const elapsed = (Date.now() - startTime) / 1000;
-            const timerEl = document.getElementById('timer');
-            if (timerEl) timerEl.textContent = elapsed.toFixed(1) + 's';
-        }, 100);
-        
-        try {
-            // OCR DIRECTO SIN PREPROCESAMIENTO
-            console.time('OCR directo');
-            const result = await Tesseract.recognize(file, 'eng');
-            console.timeEnd('OCR directo');
-            
-            clearInterval(timerInterval);
-            if (document.body.contains(timerMsg)) {
-                document.body.removeChild(timerMsg);
-            }
-            
-            console.timeEnd('⚡ Tiempo total escaneo');
-            
-            // Procesamiento RÁPIDO de datos
-            procesarDatosRapido(result.data.text, startTime);
-            
-        } catch (error) {
-            clearInterval(timerInterval);
-            if (document.body.contains(timerMsg)) {
-                document.body.removeChild(timerMsg);
-            }
-            
-            console.error('❌ Error rápido:', error);
-            mostrarStatus('⚠️ Usa captura directa o ingresa manual', 'warning');
-        }
+    scanBtn.onclick = () => {
+        if (navigator.vibrate) navigator.vibrate(50);
+        escaneoUltraRapidoV2();
     };
     
-    input.click();
+    document.body.appendChild(scanBtn);
+    setTimeout(prepararCamara, 2000);
+    
+    console.log('✅ Botón ultra-rápido V2 creado');
 }
 
-function procesarDatosRapido(textoOCR, startTime) {
-    console.log('⚡ Procesando datos rápidamente...');
+function mostrarStatus(mensaje, tipo = 'info') {
+    const anterior = document.getElementById('status-message');
+    if (anterior) anterior.remove();
     
-    // TIEMPO 1: Búsqueda directa de patrones clave (sin normalización compleja)
-    const tiempoTotal = Date.now() - startTime;
-    console.log(`⏱️ Tiempo transcurrido: ${tiempoTotal}ms`);
+    const colores = {
+        success: '#00ff88',
+        warning: '#ffaa00',
+        error: '#ff4444',
+        info: '#00aaff'
+    };
     
-    // Búsqueda ULTRA RÁPIDA de solo lo esencial
-    let tarifa = null;
-    let tiempoLlegada = 0;
-    let tiempoViaje = 0;
-    let distancia = 0;
-    
-    // 1. BUSCAR TARIFA (RD$xxx.xx)
-    const tarifaMatch = textoOCR.match(/RD\s*[\$\s]*(\d+[.,]\d{2})/);
-    if (tarifaMatch) {
-        tarifa = parseFloat(tarifaMatch[1].replace(',', '.'));
-        console.log('💰 Tarifa encontrada rápido:', tarifa);
-    }
-    
-    // 2. BUSCAR "A X min (Y km)" - Solo números
-    const llegadaMatch = textoOCR.match(/A\s*(\d+)\s*min.*?([\d.,]+)\s*km/i);
-    if (llegadaMatch) {
-        tiempoLlegada = parseInt(llegadaMatch[1]);
-        const kmLlegada = parseFloat(llegadaMatch[2].replace(',', '.'));
-        console.log('🚶 Llegada rápida:', tiempoLlegada, 'min', kmLlegada, 'km');
-        distancia += kmLlegada;
-    }
-    
-    // 3. BUSCAR "Viaje: X min (Y km)" - Solo números  
-    const viajeMatch = textoOCR.match(/Viaje[:\s]*(\d+)\s*min.*?([\d.,]+)\s*km/i);
-    if (viajeMatch) {
-        tiempoViaje = parseInt(viajeMatch[1]);
-        const kmViaje = parseFloat(viajeMatch[2].replace(',', '.'));
-        console.log('🚗 Viaje rápido:', tiempoViaje, 'min', kmViaje, 'km');
-        distancia += kmViaje;
-    }
-    
-    // 4. SI FALLAN LOS PATRONES, BUSCAR SOLO NÚMEROS
-    if (!tarifa || !tiempoLlegada || !tiempoViaje) {
-        console.log('🔍 Búsqueda de emergencia...');
-        const numeros = textoOCR.match(/\d+[.,]?\d*/g) || [];
-        
-        if (numeros.length >= 3) {
-            // Ordenar y asignar rápido
-            const nums = numeros.map(n => parseFloat(n.replace(',', '.')));
-            nums.sort((a, b) => b - a);
-            
-            if (!tarifa) tarifa = nums[0];
-            if (!tiempoLlegada && nums.length > 1) tiempoLlegada = Math.round(nums[1]);
-            if (!tiempoViaje && nums.length > 2) tiempoViaje = Math.round(nums[2]);
-            if (distancia === 0 && nums.length > 3) distancia = nums[3];
-        }
-    }
-    
-    const tiempoTotalMin = tiempoLlegada + tiempoViaje;
-    
-    console.log('📊 RESULTADO RÁPIDO:', {
-        tarifa,
-        tiempoTotal: tiempoTotalMin,
-        distancia,
-        tiempoProcesamiento: tiempoTotal + 'ms'
-    });
-    
-    // VALIDACIÓN RÁPIDA
-    if (tarifa && tiempoTotalMin > 0 && distancia > 0) {
-        // AUTORELLENAR INMEDIATAMENTE
-        if (elementos?.tarifa) elementos.tarifa.value = tarifa;
-        if (elementos?.minutos) elementos.minutos.value = tiempoTotalMin;
-        if (elementos?.distancia) elementos.distancia.value = distancia;
-        
-        // CALCULAR INMEDIATAMENTE
-        setTimeout(() => {
-            if (typeof manejarCalculoAutomatico === 'function') {
-                manejarCalculoAutomatico();
-                mostrarStatus(`✅ Listo en ${(tiempoTotal/1000).toFixed(1)}s!`, 'success');
-            }
-        }, 100);
-        
-    } else {
-        // FALLBACK: Mostrar lo que SÍ se encontró
-        const datosEncontrados = [];
-        if (tarifa) datosEncontrados.push(`RD$${tarifa}`);
-        if (tiempoLlegada) datosEncontrados.push(`Llegada: ${tiempoLlegada}min`);
-        if (tiempoViaje) datosEncontrados.push(`Viaje: ${tiempoViaje}min`);
-        if (distancia > 0) datosEncontrados.push(`${distancia}km`);
-        
-        mostrarStatus(`⚠️ Encontrado: ${datosEncontrados.join(' | ')}. Completa manualmente.`, 'warning');
-        
-        // Autorellenar lo que SÍ se encontró
-        if (tarifa && elementos?.tarifa) elementos.tarifa.value = tarifa;
-        if (tiempoTotalMin > 0 && elementos?.minutos) elementos.minutos.value = tiempoTotalMin;
-        if (distancia > 0 && elementos?.distancia) elementos.distancia.value = distancia;
-    }
-}
-
-// =============================================
-// SISTEMA DE CAPTURA DIRECTA MÁS RÁPIDO AÚN
-// =============================================
-
-function escaneoDirectoConCamara() {
-    // Usar API de cámara directamente si está disponible
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        mostrarCamaraDirecta();
-    } else {
-        escaneoUltraRapido(); // Fallback al método anterior
-    }
-}
-
-function mostrarCamaraDirecta() {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
+    const status = document.createElement('div');
+    status.id = 'status-message';
+    status.style.cssText = `
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: black;
-        z-index: 10000;
-        display: flex;
-        flex-direction: column;
+        bottom: 180px;
+        right: 20px;
+        background: ${colores[tipo] || colores.info};
+        color: black;
+        padding: 15px 20px;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 14px;
+        z-index: 9998;
+        max-width: 300px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease-out;
     `;
     
-    overlay.innerHTML = `
-        <div style="flex: 1; position: relative;">
-            <video id="direct-camera" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-            <div style="position: absolute; bottom: 100px; left: 0; width: 100%; text-align: center; color: white;">
-                <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Enfoca los números y captura</div>
-                <button id="capture-btn" style="
-                    background: #00ff88;
-                    color: black;
-                    border: none;
-                    border-radius: 50%;
-                    width: 70px;
-                    height: 70px;
-                    font-size: 24px;
-                    cursor: pointer;
-                    box-shadow: 0 0 20px #00ff88;
-                ">
-                    📸
-                </button>
-                <div style="margin-top: 10px; font-size: 14px; opacity: 0.8;">Toca para capturar</div>
-            </div>
-        </div>
-    `;
+    status.textContent = mensaje;
+    document.body.appendChild(status);
     
-    document.body.appendChild(overlay);
-    
-    // Acceder a la cámara
-    navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' },
-        audio: false 
-    }).then(stream => {
-        const video = document.getElementById('direct-camera');
-        video.srcObject = stream;
-        
-        // Capturar foto
-        document.getElementById('capture-btn').onclick = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
-            
-            // Detener cámara
-            stream.getTracks().forEach(track => track.stop());
-            
-            // OCR RÁPIDO
-            canvas.toBlob(async (blob) => {
-                document.body.removeChild(overlay);
-                
-                // OCR directo sin preprocesamiento
-                const result = await Tesseract.recognize(blob, 'eng');
-                procesarDatosRapido(result.data.text, Date.now());
-            }, 'image/jpeg', 0.8);
-        };
-        
-    }).catch(error => {
-        console.error('Error cámara:', error);
-        document.body.removeChild(overlay);
-        escaneoUltraRapido(); // Fallback
-    });
-}
-
-// =============================================
-// FUNCIÓN DE EMERGENCIA: OCR PARCIAL
-// =============================================
-
-function procesamientoParcialEnTiempo(textoOCR, tiempoLimite = 2000) {
-    return new Promise((resolve) => {
-        const start = Date.now();
-        
-        // Búsqueda PARCIAL mientras hay tiempo
-        let tarifa = null;
-        let tiempo = 0;
-        
-        // Solo buscar lo MÁS IMPORTANTE primero
-        const tarifaMatch = textoOCR.match(/RD\s*[\$\s]*(\d+[.,]\d{2})/);
-        if (tarifaMatch) tarifa = parseFloat(tarifaMatch[1]);
-        
-        // Si ya pasó el tiempo, devolver lo que haya
-        if (Date.now() - start > tiempoLimite * 0.5) {
-            resolve({ tarifa, tiempo, distancia: 0, parcial: true });
-            return;
+    setTimeout(() => {
+        if (status.parentNode) {
+            status.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => status.remove(), 300);
         }
-        
-        // Buscar tiempo si aún hay tiempo
-        const tiempoMatch = textoOCR.match(/(\d+)\s*min/);
-        if (tiempoMatch) tiempo = parseInt(tiempoMatch[1]);
-        
-        resolve({ tarifa, tiempo, distancia: 0, parcial: true });
-    });
+    }, 4000);
+    
+    if (!document.getElementById('status-animations')) {
+        const animations = document.createElement('style');
+        animations.id = 'status-animations';
+        animations.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(400px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(400px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(animations);
+    }
 }
+
+window.escaneoUltraRapidoV2 = escaneoUltraRapidoV2;
+window.inicializarScannerUltraRapido = inicializarScannerUltraRapido;
+window.prepararCamara = prepararCamara;
+
+console.log('✅ Módulo de escaneo ultra-rápido V2 cargado');
+
+// ============================================
+// ✅ FIN DEL CÓDIGO OPTIMIZADO
+// ============================================
 
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
