@@ -5678,15 +5678,30 @@ function mostrarResultadosUber(datos) {
     // Si tenemos datos suficientes, calcular automáticamente
     if ((datos.tarifa && (minutosARellenar || datos.minutosViaje)) || 
         (datos.tarifa && (distanciaARellenar || datos.distanciaViaje))) {
-        // Forzar cálculo automático
-        setTimeout(() => {
-            if (typeof manejarCalculoAutomatico === 'function') {
-                manejarCalculoAutomatico();
-                
-                // Mostrar notificación de éxito con más detalles
-                mostrarNotificacionUberPriority(datos);
-            }
-        }, 100);
+
+        // 🔥 CONECTAR CON EL MOTOR REAL DE LA APP
+if (datos.tarifa && datos.minutosTotal && datos.distanciaTotal) {
+    console.log('🧩 Conectando OCR con motor principal...');
+
+    viajeActual = {
+        tarifa: datos.tarifa,
+        tiempo: datos.minutosTotal,
+        distancia: datos.distanciaTotal,
+        origen: 'OCR',
+        timestamp: Date.now()
+    };
+
+    // ACTIVAR FLUJO REAL
+    cronometroActivo = true;
+
+    // DISPARAR CÁLCULO REAL
+    calcularRentabilidad();
+
+    mostrarNotificacionUberPriority(datos);
+} else {
+    mostrarStatus('⚠️ Datos incompletos para análisis automático', 'warning');
+}
+   
     } else {
         // Mostrar lo que sí se encontró
         const mensaje = [];
@@ -5884,6 +5899,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
