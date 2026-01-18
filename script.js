@@ -5291,46 +5291,47 @@ function aplicarContrasteRapido(imageData) {
 }
 
 function procesarDatosUltraRapido(textoOCR, tiempoTotal) {
-    console.log('📄 Texto Sucio Recibido:', textoOCR);
+    console.log('📄 Texto Bruto:', textoOCR);
 
-    // 1. LIMPIEZA AGRESIVA
-    // Convertimos todo a minúsculas y quitamos caracteres que confunden al OCR
-    const texto = textoOCR.toLowerCase().replace(/[|i!lji]/g, 'i'); 
+    // 1. LIMPIEZA TOTAL: Quitamos espacios extraños y corregimos el error del punto decimal
+    // Esto une "120. 52" en "120.52"
+    const texto = textoOCR.replace(/(\d+)\.\s+(\d+)/g, '$1.$2').toLowerCase();
 
-    // 2. EXTRAER TARIFA (El número más grande que tenga RD$ o esté solo)
+    // 2. EXTRAER TARIFA (Lógica de exclusión)
     let tarifa = 0;
-    const montosEncontrados = texto.match(/\d+[.,]\d{2}/g); // Busca formatos como 120.52
-    if (montosEncontrados) {
-        const valores = montosEncontrados.map(m => parseFloat(m.replace(',', '.')));
-        tarifa = Math.max(...valores); 
-        // Filtro: Si el más grande es muy pequeño (como el bono de 16.74), buscamos mejor
-        console.log('💰 Tarifa detectada:', tarifa);
+    const montos = texto.match(/\d+\.\d{2}/g); 
+    if (montos) {
+        const valores = montos.map(m => parseFloat(m));
+        // Filtro: Uber casi nunca cuesta menos de 70-80 pesos. 
+        // Ignoramos montos menores a 50 para saltar los incentivos como 16.74
+        const tarifasReales = valores.filter(v => v > 50);
+        tarifa = tarifasReales.length > 0 ? Math.max(...tarifasReales) : Math.max(...valores);
     }
 
-    // 3. EXTRAER TIEMPOS (Sumar todos los números que tengan "min" cerca)
-    // En tu ejemplo: "5min" y "11 min"
+    // 3. EXTRAER TIEMPOS (Con filtro de realidad)
     let minutosTotal = 0;
-    const regexMinutos = /(\d+)\s*(?:min|mi|m\b|n)/g;
+    // Solo buscamos números de 1 o 2 dígitos seguidos de "min" (Uber no suele dar viajes de +100 min)
+    const regexMinutos = /\b(\d{1,2})\s*(?:min|mi|n|m)\b/g;
     const matchesMin = [...texto.matchAll(regexMinutos)];
     
     if (matchesMin.length > 0) {
-        // Sumamos todos los números encontrados
-        minutosTotal = matchesMin.reduce((sum, m) => sum + parseInt(m[1]), 0);
-        console.log('⏱️ Suma de minutos:', minutosTotal);
+        // Sumamos solo si el número es lógico (menos de 60 min por tramo)
+        minutosTotal = matchesMin.reduce((sum, m) => {
+            const num = parseInt(m[1]);
+            return (num < 60) ? sum + num : sum;
+        }, 0);
     }
 
-    // 4. EXTRAER DISTANCIAS (Sumar todos los números que tengan "km" cerca)
-    // En tu ejemplo: "1.1km" y "4.2km"
+    // 4. EXTRAER DISTANCIAS
     let distanciaTotal = 0;
-    const regexKM = /(\d+[.,]\d+)\s*(?:km|kn|k)/g;
+    const regexKM = /(\d+[.,]\d+)\s*(?:km|k)/g;
     const matchesKM = [...texto.matchAll(regexKM)];
 
     if (matchesKM.length > 0) {
         distanciaTotal = matchesKM.reduce((sum, m) => sum + parseFloat(m[1].replace(',', '.')), 0);
-        console.log('🛣️ Suma de KM:', distanciaTotal);
     }
 
-    // --- CARGAR EN LA INTERFAZ ---
+    // --- CARGAR EN INTERFAZ ---
     if (elementos) {
         if (tarifa > 0) elementos.tarifa.value = tarifa;
         if (minutosTotal > 0) elementos.minutos.value = minutosTotal;
@@ -5338,11 +5339,11 @@ function procesarDatosUltraRapido(textoOCR, tiempoTotal) {
     }
 
     // --- LANZAR CÁLCULO ---
-    if (tarifa > 0 && minutosTotal > 0) {
+    if (tarifa > 50 && minutosTotal > 0) {
         setTimeout(() => {
             if (typeof manejarCalculoAutomatico === 'function') {
                 manejarCalculoAutomatico();
-                mostrarStatus(`✅ Detectado: RD$${tarifa} | ${minutosTotal}min | ${distanciaTotal}km`, 'success');
+                mostrarStatus(`✅ RD$${tarifa} | ${minutosTotal} min | ${distanciaTotal.toFixed(1)} km`, 'success');
             }
         }, 300);
     }
@@ -5560,6 +5561,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
