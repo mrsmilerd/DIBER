@@ -42,29 +42,6 @@ const firebaseConfig = {
 // --- Elementos DOM ---
 const elementos = {};
 
-function obtenerElementos() {
-    if (window._elementosCache && Object.keys(window._elementosCache).length > 0) {
-        return window._elementosCache;
-    }
-    
-    const elementos = {};
-    const ids = [
-        'tarifa', 'minutos', 'distancia', 
-        'resultado-rapido', 'history-list',
-        'perfil-screen', 'config-perfil-screen', 'main-screen'
-    ];
-    
-    ids.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            elementos[id] = elemento;
-        }
-    });
-    
-    window._elementosCache = elementos;
-    return elementos;
-}
-
 // =============================================
 // CONSTANTE DE NEGOCIO
 // =============================================
@@ -4955,6 +4932,26 @@ async function inicializarApp() {
         }
     }
 
+// INICIALIZAR SISTEMA ULTRA RÁPIDO
+    setTimeout(() => {
+        inicializarScannerUltraRapido();
+        console.log('⚡ Sistema ultra-rápido listo');
+    }, 2000);
+}
+
+// ✅ FUNCIÓN SIMPLIFICADA: Solo verifica si Google Maps está disponible
+function waitForGoogleMaps() {
+    return new Promise((resolve, reject) => {
+        if (window.google && window.google.maps) {
+            resolve();
+            return;
+        }
+        
+        // Si no está disponible, rechazar inmediatamente
+        reject(new Error('Google Maps no está disponible'));
+    });
+}
+
 // AGREGAR estas funciones utilitarias:
 
 function mostrarEstadisticasAprendizaje() {
@@ -5150,12 +5147,351 @@ window.onclick = function(event) {
         }
     }
 };
-    } 
-} 
-   
+
+// =============================================
+// SISTEMA ULTRA-RÁPIDO - 3 SEGUNDOS MÁXIMO
+// =============================================
+
+let scannerUltraRapido = null;
+
+function inicializarScannerUltraRapido() {
+    console.log('⚡ Inicializando sistema ultra-rápido...');
+    
+    // Botón ULTRA rápido
+    const scanBtn = document.createElement('button');
+    scanBtn.id = 'ultra-fast-scan';
+    scanBtn.innerHTML = '⚡ RÁPIDO';
+    scanBtn.style.cssText = `
+        position: fixed !important;
+        bottom: 100px !important;
+        right: 20px !important;
+        z-index: 9999 !important;
+        background: linear-gradient(135deg, #00b09b, #96c93d) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 50px !important;
+        padding: 15px 25px !important;
+        font-size: 16px !important;
+        font-weight: bold !important;
+        box-shadow: 0 6px 25px rgba(0, 176, 155, 0.5) !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        animation: ultraPulse 1s infinite !important;
+    `;
+    
+    // Estilos para la animación
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes ultraPulse {
+            0% { transform: scale(1); box-shadow: 0 6px 25px rgba(0, 176, 155, 0.5); }
+            50% { transform: scale(1.05); box-shadow: 0 8px 30px rgba(0, 176, 155, 0.8); }
+            100% { transform: scale(1); box-shadow: 0 6px 25px rgba(0, 176, 155, 0.5); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    scanBtn.onclick = escaneoUltraRapido;
+    document.body.appendChild(scanBtn);
+    
+    console.log('✅ Botón ultra-rápido creado');
+}
+
+function escaneoUltraRapido() {
+    console.time('⚡ Tiempo total escaneo');
+    
+    // Input simple sin preprocesamiento
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Mostrar contador de tiempo
+        const timerMsg = document.createElement('div');
+        timerMsg.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.95);
+                color: #00ff88;
+                padding: 20px;
+                border-radius: 15px;
+                z-index: 10000;
+                text-align: center;
+                font-family: monospace;
+                border: 2px solid #00ff88;
+                min-width: 200px;
+            ">
+                <div style="font-size: 40px; margin-bottom: 10px;">⚡</div>
+                <div style="font-weight: bold; margin-bottom: 10px;">ESCANEO RÁPIDO</div>
+                <div id="timer" style="font-size: 24px; font-weight: bold; margin: 10px 0;">0.0s</div>
+                <div style="font-size: 12px; opacity: 0.7;">Máximo: 3 segundos</div>
+            </div>
+        `;
+        document.body.appendChild(timerMsg);
+        
+        let startTime = Date.now();
+        const timerInterval = setInterval(() => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const timerEl = document.getElementById('timer');
+            if (timerEl) timerEl.textContent = elapsed.toFixed(1) + 's';
+        }, 100);
+        
+        try {
+            // OCR DIRECTO SIN PREPROCESAMIENTO
+            console.time('OCR directo');
+            const result = await Tesseract.recognize(file, 'eng');
+            console.timeEnd('OCR directo');
+            
+            clearInterval(timerInterval);
+            if (document.body.contains(timerMsg)) {
+                document.body.removeChild(timerMsg);
+            }
+            
+            console.timeEnd('⚡ Tiempo total escaneo');
+            
+            // Procesamiento RÁPIDO de datos
+            procesarDatosRapido(result.data.text, startTime);
+            
+        } catch (error) {
+            clearInterval(timerInterval);
+            if (document.body.contains(timerMsg)) {
+                document.body.removeChild(timerMsg);
+            }
+            
+            console.error('❌ Error rápido:', error);
+            mostrarStatus('⚠️ Usa captura directa o ingresa manual', 'warning');
+        }
+    };
+    
+    input.click();
+}
+
+function procesarDatosRapido(textoOCR, startTime) {
+    console.log('⚡ Procesando datos rápidamente...');
+    
+    // TIEMPO 1: Búsqueda directa de patrones clave (sin normalización compleja)
+    const tiempoTotal = Date.now() - startTime;
+    console.log(`⏱️ Tiempo transcurrido: ${tiempoTotal}ms`);
+    
+    // Búsqueda ULTRA RÁPIDA de solo lo esencial
+    let tarifa = null;
+    let tiempoLlegada = 0;
+    let tiempoViaje = 0;
+    let distancia = 0;
+    
+    // 1. BUSCAR TARIFA (RD$xxx.xx)
+    const tarifaMatch = textoOCR.match(/RD\s*[\$\s]*(\d+[.,]\d{2})/);
+    if (tarifaMatch) {
+        tarifa = parseFloat(tarifaMatch[1].replace(',', '.'));
+        console.log('💰 Tarifa encontrada rápido:', tarifa);
+    }
+    
+    // 2. BUSCAR "A X min (Y km)" - Solo números
+    const llegadaMatch = textoOCR.match(/A\s*(\d+)\s*min.*?([\d.,]+)\s*km/i);
+    if (llegadaMatch) {
+        tiempoLlegada = parseInt(llegadaMatch[1]);
+        const kmLlegada = parseFloat(llegadaMatch[2].replace(',', '.'));
+        console.log('🚶 Llegada rápida:', tiempoLlegada, 'min', kmLlegada, 'km');
+        distancia += kmLlegada;
+    }
+    
+    // 3. BUSCAR "Viaje: X min (Y km)" - Solo números  
+    const viajeMatch = textoOCR.match(/Viaje[:\s]*(\d+)\s*min.*?([\d.,]+)\s*km/i);
+    if (viajeMatch) {
+        tiempoViaje = parseInt(viajeMatch[1]);
+        const kmViaje = parseFloat(viajeMatch[2].replace(',', '.'));
+        console.log('🚗 Viaje rápido:', tiempoViaje, 'min', kmViaje, 'km');
+        distancia += kmViaje;
+    }
+    
+    // 4. SI FALLAN LOS PATRONES, BUSCAR SOLO NÚMEROS
+    if (!tarifa || !tiempoLlegada || !tiempoViaje) {
+        console.log('🔍 Búsqueda de emergencia...');
+        const numeros = textoOCR.match(/\d+[.,]?\d*/g) || [];
+        
+        if (numeros.length >= 3) {
+            // Ordenar y asignar rápido
+            const nums = numeros.map(n => parseFloat(n.replace(',', '.')));
+            nums.sort((a, b) => b - a);
+            
+            if (!tarifa) tarifa = nums[0];
+            if (!tiempoLlegada && nums.length > 1) tiempoLlegada = Math.round(nums[1]);
+            if (!tiempoViaje && nums.length > 2) tiempoViaje = Math.round(nums[2]);
+            if (distancia === 0 && nums.length > 3) distancia = nums[3];
+        }
+    }
+    
+    const tiempoTotalMin = tiempoLlegada + tiempoViaje;
+    
+    console.log('📊 RESULTADO RÁPIDO:', {
+        tarifa,
+        tiempoTotal: tiempoTotalMin,
+        distancia,
+        tiempoProcesamiento: tiempoTotal + 'ms'
+    });
+    
+    // VALIDACIÓN RÁPIDA
+    if (tarifa && tiempoTotalMin > 0 && distancia > 0) {
+        // AUTORELLENAR INMEDIATAMENTE
+        if (elementos?.tarifa) elementos.tarifa.value = tarifa;
+        if (elementos?.minutos) elementos.minutos.value = tiempoTotalMin;
+        if (elementos?.distancia) elementos.distancia.value = distancia;
+        
+        // CALCULAR INMEDIATAMENTE
+        setTimeout(() => {
+            if (typeof manejarCalculoAutomatico === 'function') {
+                manejarCalculoAutomatico();
+                mostrarStatus(`✅ Listo en ${(tiempoTotal/1000).toFixed(1)}s!`, 'success');
+            }
+        }, 100);
+        
+    } else {
+        // FALLBACK: Mostrar lo que SÍ se encontró
+        const datosEncontrados = [];
+        if (tarifa) datosEncontrados.push(`RD$${tarifa}`);
+        if (tiempoLlegada) datosEncontrados.push(`Llegada: ${tiempoLlegada}min`);
+        if (tiempoViaje) datosEncontrados.push(`Viaje: ${tiempoViaje}min`);
+        if (distancia > 0) datosEncontrados.push(`${distancia}km`);
+        
+        mostrarStatus(`⚠️ Encontrado: ${datosEncontrados.join(' | ')}. Completa manualmente.`, 'warning');
+        
+        // Autorellenar lo que SÍ se encontró
+        if (tarifa && elementos?.tarifa) elementos.tarifa.value = tarifa;
+        if (tiempoTotalMin > 0 && elementos?.minutos) elementos.minutos.value = tiempoTotalMin;
+        if (distancia > 0 && elementos?.distancia) elementos.distancia.value = distancia;
+    }
+}
+
+// =============================================
+// SISTEMA DE CAPTURA DIRECTA MÁS RÁPIDO AÚN
+// =============================================
+
+function escaneoDirectoConCamara() {
+    // Usar API de cámara directamente si está disponible
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        mostrarCamaraDirecta();
+    } else {
+        escaneoUltraRapido(); // Fallback al método anterior
+    }
+}
+
+function mostrarCamaraDirecta() {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: black;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+    `;
+    
+    overlay.innerHTML = `
+        <div style="flex: 1; position: relative;">
+            <video id="direct-camera" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+            <div style="position: absolute; bottom: 100px; left: 0; width: 100%; text-align: center; color: white;">
+                <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Enfoca los números y captura</div>
+                <button id="capture-btn" style="
+                    background: #00ff88;
+                    color: black;
+                    border: none;
+                    border-radius: 50%;
+                    width: 70px;
+                    height: 70px;
+                    font-size: 24px;
+                    cursor: pointer;
+                    box-shadow: 0 0 20px #00ff88;
+                ">
+                    📸
+                </button>
+                <div style="margin-top: 10px; font-size: 14px; opacity: 0.8;">Toca para capturar</div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Acceder a la cámara
+    navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' },
+        audio: false 
+    }).then(stream => {
+        const video = document.getElementById('direct-camera');
+        video.srcObject = stream;
+        
+        // Capturar foto
+        document.getElementById('capture-btn').onclick = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            // Detener cámara
+            stream.getTracks().forEach(track => track.stop());
+            
+            // OCR RÁPIDO
+            canvas.toBlob(async (blob) => {
+                document.body.removeChild(overlay);
+                
+                // OCR directo sin preprocesamiento
+                const result = await Tesseract.recognize(blob, 'eng');
+                procesarDatosRapido(result.data.text, Date.now());
+            }, 'image/jpeg', 0.8);
+        };
+        
+    }).catch(error => {
+        console.error('Error cámara:', error);
+        document.body.removeChild(overlay);
+        escaneoUltraRapido(); // Fallback
+    });
+}
+
+// =============================================
+// FUNCIÓN DE EMERGENCIA: OCR PARCIAL
+// =============================================
+
+function procesamientoParcialEnTiempo(textoOCR, tiempoLimite = 2000) {
+    return new Promise((resolve) => {
+        const start = Date.now();
+        
+        // Búsqueda PARCIAL mientras hay tiempo
+        let tarifa = null;
+        let tiempo = 0;
+        
+        // Solo buscar lo MÁS IMPORTANTE primero
+        const tarifaMatch = textoOCR.match(/RD\s*[\$\s]*(\d+[.,]\d{2})/);
+        if (tarifaMatch) tarifa = parseFloat(tarifaMatch[1]);
+        
+        // Si ya pasó el tiempo, devolver lo que haya
+        if (Date.now() - start > tiempoLimite * 0.5) {
+            resolve({ tarifa, tiempo, distancia: 0, parcial: true });
+            return;
+        }
+        
+        // Buscar tiempo si aún hay tiempo
+        const tiempoMatch = textoOCR.match(/(\d+)\s*min/);
+        if (tiempoMatch) tiempo = parseInt(tiempoMatch[1]);
+        
+        resolve({ tarifa, tiempo, distancia: 0, parcial: true });
+    });
+}
+
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
-
