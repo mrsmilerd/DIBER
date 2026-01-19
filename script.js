@@ -5235,18 +5235,27 @@ function extraerDatosDeUber(textoOCR) {
     console.log('⏱️ TOTAL minutos:', minutosTotal);
     console.log('🛣️ TOTAL km:', distanciaTotal);
 
-    /* =====================================================
-       🔗 PUENTE CON TU SISTEMA REAL
-       ===================================================== */
-    if (tarifa && (minutosTotal > 0 || distanciaTotal > 0)) {
-        ejecutarCalculoRentabilidad({
-            tarifa,
-            minutos: minutosTotal,
-            distancia: distanciaTotal
-        });
-    } else {
-        console.warn('⚠️ Datos insuficientes para calcular');
-    }
+    // ===============================
+// 🔗 PUENTE OCR → SISTEMA DIBER
+// ===============================
+if (
+    tarifa > 0 &&
+    minutosTotal > 0 &&
+    distanciaTotal > 0
+) {
+    console.log("🔄 Ejecutando cálculo de rentabilidad...");
+
+    manejarCalculoAutomatico({
+        tarifa: tarifa,
+        minutos: minutosTotal,
+        distancia: distanciaTotal
+    });
+} else {
+    console.warn("⚠️ Datos incompletos, no se ejecuta el cálculo", {
+        tarifa,
+        minutosTotal,
+        distanciaTotal
+    });
 }
 
 /* ============================================================
@@ -5363,6 +5372,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
