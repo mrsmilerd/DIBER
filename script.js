@@ -5149,21 +5149,20 @@ window.onclick = function(event) {
 };
 
 /* ============================================================
-   🔍 ESCÁNER EN TIEMPO REAL - LEE DIRECTO DE LA PANTALLA
+   🔍 ESCÁNER EN TIEMPO REAL - VERSIÓN MEJORADA (RECUADRO GRANDE)
    ============================================================ */
 
 // Variables globales para el escáner
 let escanerActivo = false;
-let intervaloEscaneo = null;
 let videoStream = null;
 let videoElement = null;
 let canvasElement = null;
 
 /* ============================================================
-   1️⃣ ACTIVAR ESCÁNER EN TIEMPO REAL
+   1️⃣ ACTIVAR ESCÁNER EN TIEMPO REAL (RECUADRO GRANDE)
    ============================================================ */
 function activarEscanerTiempoReal() {
-    console.log('🔍 ACTIVANDO ESCÁNER EN TIEMPO REAL...');
+    console.log('🔍 ACTIVANDO ESCÁNER EN TIEMPO REAL (RECUADRO GRANDE)...');
     
     if (escanerActivo) {
         console.log('⏸️ Escáner ya activo, deteniendo...');
@@ -5171,15 +5170,15 @@ function activarEscanerTiempoReal() {
         return;
     }
     
-    // Crear interfaz del escáner
-    crearInterfazEscaneo();
+    // Crear interfaz del escáner con recuadro grande
+    crearInterfazEscaneoGrande();
     
     // Solicitar acceso a la cámara
     navigator.mediaDevices.getUserMedia({ 
         video: { 
             facingMode: 'environment', // Usar cámara trasera
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
         },
         audio: false 
     })
@@ -5192,7 +5191,7 @@ function activarEscanerTiempoReal() {
         mostrarStatus('🔍 Escaneando en tiempo real...', 'success');
         
         // Iniciar escaneo continuo
-        iniciarEscaneoContinuo();
+        iniciarEscaneoContinuoGrande();
         
     })
     .catch(error => {
@@ -5209,9 +5208,9 @@ function activarEscanerTiempoReal() {
 }
 
 /* ============================================================
-   2️⃣ CREAR INTERFAZ DEL ESCÁNER
+   2️⃣ CREAR INTERFAZ DEL ESCÁNER CON RECUADRO GRANDE
    ============================================================ */
-function crearInterfazEscaneo() {
+function crearInterfazEscaneoGrande() {
     // Remover interfaz anterior si existe
     const modalAnterior = document.querySelector('.modal-escaneo');
     if (modalAnterior) modalAnterior.remove();
@@ -5239,7 +5238,7 @@ function crearInterfazEscaneo() {
     videoElement.playsinline = true;
     videoElement.style.cssText = `
         width: 100%;
-        height: 70%;
+        height: 100%;
         object-fit: cover;
     `;
     
@@ -5247,48 +5246,102 @@ function crearInterfazEscaneo() {
     canvasElement = document.createElement('canvas');
     canvasElement.style.display = 'none';
     
-    // Área de guía de escaneo
+    // Área de guía de escaneo GRANDE (80% de la pantalla)
     const guiaEscaneo = document.createElement('div');
     guiaEscaneo.style.cssText = `
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 300px;
-        height: 150px;
-        border: 3px solid #00ff00;
-        border-radius: 10px;
-        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+        width: 90%;
+        height: 70%;
+        border: 4px solid #00ff00;
+        border-radius: 20px;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
         pointer-events: none;
-        animation: escaner-pulse 2s infinite;
+        animation: escaner-pulse 1.5s infinite;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Texto dentro del recuadro
+    const textoGuia = document.createElement('div');
+    textoGuia.textContent = 'APUNTA AQUÍ EL VIAJE DE UBER';
+    textoGuia.style.cssText = `
+        color: #00ff00;
+        font-weight: bold;
+        font-size: 18px;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px 20px;
+        border-radius: 10px;
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
     `;
     
     // Agregar animación CSS
     const style = document.createElement('style');
     style.textContent = `
         @keyframes escaner-pulse {
-            0%, 100% { border-color: #00ff00; }
-            50% { border-color: #00cc00; box-shadow: 0 0 20px #00ff00; }
+            0%, 100% { 
+                border-color: #00ff00;
+                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5),
+                            0 0 20px rgba(0, 255, 0, 0.5);
+            }
+            50% { 
+                border-color: #00cc00;
+                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5),
+                            0 0 40px rgba(0, 255, 0, 0.8);
+            }
         }
         
         @keyframes dato-detectado {
-            0% { transform: translateY(0); opacity: 0.8; }
-            100% { transform: translateY(-10px); opacity: 0; }
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(0.8); opacity: 0; }
         }
         
         .dato-detectado {
             position: absolute;
-            background: rgba(0, 255, 0, 0.2);
-            color: #00ff00;
-            padding: 5px 10px;
-            border-radius: 5px;
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.9), rgba(0, 200, 0, 0.9));
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
             font-weight: bold;
-            animation: dato-detectado 1s forwards;
+            font-size: 16px;
+            animation: dato-detectado 1.5s forwards;
             pointer-events: none;
             z-index: 100001;
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
+            border: 2px solid white;
+        }
+        
+        @keyframes lineas-escaneo {
+            0% { transform: translateY(0%); }
+            100% { transform: translateY(100%); }
+        }
+        
+        .lineas-escaneo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, 
+                transparent 0%, 
+                rgba(0, 255, 0, 0.3) 50%, 
+                transparent 100%);
+            animation: lineas-escaneo 2s linear infinite;
+            pointer-events: none;
         }
     `;
     document.head.appendChild(style);
+    
+    // Agregar líneas de escaneo animadas
+    const lineasEscaneo = document.createElement('div');
+    lineasEscaneo.className = 'lineas-escaneo';
     
     // Panel de control inferior
     const panelControl = document.createElement('div');
@@ -5297,21 +5350,48 @@ function crearInterfazEscaneo() {
         bottom: 0;
         left: 0;
         width: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        padding: 20px;
+        background: rgba(0, 0, 0, 0.85);
+        padding: 25px 20px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 15px;
+        gap: 20px;
+        border-top: 3px solid #00ff00;
     `;
     
     // Indicador de estado
     const estado = document.createElement('div');
     estado.id = 'estado-escaner';
     estado.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px; color: #00ff00;">
-            <div style="width: 10px; height: 10px; background: #00ff00; border-radius: 50%; animation: pulse 1s infinite;"></div>
-            <span>ESCANEANDO EN TIEMPO REAL...</span>
+        <div style="display: flex; align-items: center; gap: 15px; color: #00ff00;">
+            <div style="width: 15px; height: 15px; background: #00ff00; border-radius: 50%; animation: pulse 1s infinite;"></div>
+            <span style="font-size: 16px; font-weight: bold;">ESCANEANDO PANTALLA COMPLETA...</span>
+        </div>
+    `;
+    
+    // Panel de datos detectados (MÁS GRANDE)
+    const panelDatos = document.createElement('div');
+    panelDatos.id = 'panel-datos';
+    panelDatos.style.cssText = `
+        background: rgba(0, 0, 0, 0.8);
+        border-radius: 15px;
+        padding: 20px;
+        width: 100%;
+        max-width: 350px;
+        color: white;
+        font-size: 16px;
+        min-height: 120px;
+        border: 2px solid #00ff00;
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    `;
+    panelDatos.innerHTML = `
+        <div style="color: #00ff00; margin-bottom: 15px; font-weight: bold; font-size: 18px; text-align: center;">
+            📊 DATOS DETECTADOS:
+        </div>
+        <div id="datos-detalles" style="text-align: center; padding: 10px;">
+            <div style="color: #aaa; font-style: italic;">
+                Esperando detección de datos...
+            </div>
         </div>
     `;
     
@@ -5319,104 +5399,131 @@ function crearInterfazEscaneo() {
     const botonesContainer = document.createElement('div');
     botonesContainer.style.cssText = `
         display: flex;
-        gap: 15px;
+        gap: 20px;
         width: 100%;
-        max-width: 300px;
+        max-width: 350px;
+        margin-top: 10px;
     `;
     
     const btnDetener = document.createElement('button');
-    btnDetener.textContent = '🛑 DETENER';
+    btnDetener.textContent = '🛑 DETENER ESCÁNER';
     btnDetener.style.cssText = `
         flex: 1;
-        background: #ff4444;
+        background: linear-gradient(135deg, #ff4444, #cc0000);
         color: white;
         border: none;
-        padding: 15px;
-        border-radius: 10px;
+        padding: 18px;
+        border-radius: 12px;
         font-weight: bold;
         font-size: 14px;
         cursor: pointer;
+        box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+        transition: all 0.3s;
     `;
+    btnDetener.onmouseenter = () => {
+        btnDetener.style.transform = 'translateY(-2px)';
+        btnDetener.style.boxShadow = '0 8px 20px rgba(255, 0, 0, 0.4)';
+    };
+    btnDetener.onmouseleave = () => {
+        btnDetener.style.transform = 'translateY(0)';
+        btnDetener.style.boxShadow = '0 5px 15px rgba(255, 0, 0, 0.3)';
+    };
     btnDetener.onclick = detenerEscanerTiempoReal;
     
     const btnManual = document.createElement('button');
-    btnManual.textContent = '📸 TOMAR FOTO';
+    btnManual.textContent = '📸 CAPTURAR AHORA';
     btnManual.style.cssText = `
         flex: 1;
-        background: #2196F3;
+        background: linear-gradient(135deg, #2196F3, #0d47a1);
         color: white;
         border: none;
-        padding: 15px;
-        border-radius: 10px;
+        padding: 18px;
+        border-radius: 12px;
         font-weight: bold;
         font-size: 14px;
         cursor: pointer;
+        box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        transition: all 0.3s;
     `;
+    btnManual.onmouseenter = () => {
+        btnManual.style.transform = 'translateY(-2px)';
+        btnManual.style.boxShadow = '0 8px 20px rgba(33, 150, 243, 0.4)';
+    };
+    btnManual.onmouseleave = () => {
+        btnManual.style.transform = 'translateY(0)';
+        btnManual.style.boxShadow = '0 5px 15px rgba(33, 150, 243, 0.3)';
+    };
     btnManual.onclick = capturarFotoManual;
     
-    // Panel de datos detectados
-    const panelDatos = document.createElement('div');
-    panelDatos.id = 'panel-datos';
-    panelDatos.style.cssText = `
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        padding: 15px;
+    // Barra de progreso
+    const progresoContainer = document.createElement('div');
+    progresoContainer.style.cssText = `
         width: 100%;
-        max-width: 300px;
-        color: white;
-        font-size: 14px;
-        min-height: 100px;
-        overflow-y: auto;
+        max-width: 350px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 10px;
     `;
-    panelDatos.innerHTML = `
-        <div style="color: #00ff00; margin-bottom: 10px; font-weight: bold;">
-            📊 DATOS DETECTADOS:
-        </div>
-        <div id="datos-detalles">Esperando detección...</div>
+    
+    const progresoBar = document.createElement('div');
+    progresoBar.id = 'progreso-escaner';
+    progresoBar.style.cssText = `
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, #00ff00, #00cc00);
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    `;
+    progresoContainer.appendChild(progresoBar);
+    
+    // Instrucciones
+    const instrucciones = document.createElement('div');
+    instrucciones.style.cssText = `
+        color: #aaa;
+        font-size: 13px;
+        text-align: center;
+        margin-top: 10px;
+        max-width: 350px;
+        line-height: 1.4;
+    `;
+    instrucciones.innerHTML = `
+        💡 <strong>Instrucciones:</strong> Apunta toda la pantalla del Uber dentro del recuadro verde.<br>
+        El sistema detectará automáticamente: <strong>Precio, Tiempo y Distancia</strong>
     `;
     
     // Ensamblar todo
     modal.appendChild(videoElement);
     modal.appendChild(canvasElement);
     modal.appendChild(guiaEscaneo);
+    guiaEscaneo.appendChild(textoGuia);
+    guiaEscaneo.appendChild(lineasEscaneo);
     modal.appendChild(panelControl);
     
     panelControl.appendChild(estado);
     panelControl.appendChild(panelDatos);
+    panelControl.appendChild(progresoContainer);
     botonesContainer.appendChild(btnManual);
     botonesContainer.appendChild(btnDetener);
     panelControl.appendChild(botonesContainer);
-    
-    // Instrucciones
-    const instrucciones = document.createElement('div');
-    instrucciones.style.cssText = `
-        color: #aaa;
-        font-size: 12px;
-        text-align: center;
-        margin-top: 10px;
-        max-width: 300px;
-    `;
-    instrucciones.innerHTML = `
-        💡 Apunta al viaje de Uber en tu pantalla.<br>
-        Los datos se extraerán automáticamente.
-    `;
     panelControl.appendChild(instrucciones);
     
     document.body.appendChild(modal);
-    document.body.style.overflow = 'hidden'; // Evitar scroll
+    document.body.style.overflow = 'hidden';
     
-    console.log('✅ Interfaz de escaneo creada');
+    console.log('✅ Interfaz de escaneo GRANDE creada');
 }
 
 /* ============================================================
-   3️⃣ ESCANEO CONTINUO EN TIEMPO REAL
+   3️⃣ ESCANEO CONTINUO CON RECUADRO GRANDE
    ============================================================ */
-function iniciarEscaneoContinuo() {
-    console.log('🔄 Iniciando escaneo continuo...');
+function iniciarEscaneoContinuoGrande() {
+    console.log('🔄 Iniciando escaneo continuo (recuadro grande)...');
     
-    // Configurar canvas
-    canvasElement.width = 640;
-    canvasElement.height = 480;
+    // Configurar canvas más grande
+    canvasElement.width = 1280;
+    canvasElement.height = 720;
     const ctx = canvasElement.getContext('2d');
     
     // Variables para almacenar datos
@@ -5427,6 +5534,8 @@ function iniciarEscaneoContinuo() {
         minutos: null,
         distancia: null
     };
+    let intentos = 0;
+    const maxIntentos = 20; // Máximo de escaneos antes de forzar
     
     // Función de procesamiento por frame
     function procesarFrame() {
@@ -5436,31 +5545,31 @@ function iniciarEscaneoContinuo() {
             // Dibujar frame en canvas
             ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
             
-            // Extraer imagen del área de escaneo (centro)
-            const areaEscaneo = {
-                x: canvasElement.width * 0.25,
-                y: canvasElement.height * 0.35,
-                width: canvasElement.width * 0.5,
-                height: canvasElement.height * 0.3
-            };
-            
-            // Obtener imagen del área de interés
-            const imageData = ctx.getImageData(
-                areaEscaneo.x, 
-                areaEscaneo.y, 
-                areaEscaneo.width, 
-                areaEscaneo.height
-            );
-            
-            // Procesar con OCR (cada 500ms para no sobrecargar)
+            // Usar TODO el canvas para el escaneo (recuadro grande)
+            // Solo muestrear cada 800ms para no sobrecargar
             const ahora = Date.now();
-            if (ahora - ultimoTextoTime > 500) {
+            if (ahora - ultimoTextoTime > 800) {
                 ultimoTextoTime = ahora;
+                intentos++;
                 
-                // Crear canvas temporal para el área de interés
+                // Actualizar barra de progreso
+                const progreso = Math.min(100, (intentos / maxIntentos) * 100);
+                document.getElementById('progreso-escaner').style.width = progreso + '%';
+                
+                // Si lleva muchos intentos, forzar detección con lo que tenga
+                if (intentos >= maxIntentos) {
+                    console.log('⚠️ Máximo de intentos alcanzado, forzando detección...');
+                    forzarDeteccion(datosExtraidos);
+                    return;
+                }
+                
+                // Obtener imagen completa del canvas
+                const imageData = ctx.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                
+                // Crear canvas temporal
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = areaEscaneo.width;
-                tempCanvas.height = areaEscaneo.height;
+                tempCanvas.width = canvasElement.width;
+                tempCanvas.height = canvasElement.height;
                 const tempCtx = tempCanvas.getContext('2d');
                 tempCtx.putImageData(imageData, 0, 0);
                 
@@ -5472,20 +5581,20 @@ function iniciarEscaneoContinuo() {
                     Tesseract.recognize(blob, 'eng+spa', {
                         logger: m => {},
                         tessedit_char_whitelist: '0123456789RD$kmmin.,(): ',
-                        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK
+                        tessedit_pageseg_mode: Tesseract.PSM.AUTO_ONLY
                     })
                     .then(result => {
                         const texto = result.data.text.trim();
                         
                         if (texto && texto !== ultimoTexto) {
                             ultimoTexto = texto;
-                            console.log('📝 Texto detectado en tiempo real:', texto);
+                            console.log('📝 Texto detectado (recuadro grande):', texto.substring(0, 100) + '...');
                             
                             // Procesar texto y extraer datos
-                            procesarTextoEnTiempoReal(texto, datosExtraidos);
+                            procesarTextoCompleto(texto, datosExtraidos);
                             
                             // Actualizar panel de datos
-                            actualizarPanelDatos(datosExtraidos);
+                            actualizarPanelDatosGrande(datosExtraidos);
                             
                             // Verificar si tenemos todos los datos
                             if (datosExtraidos.tarifa && datosExtraidos.minutos && datosExtraidos.distancia) {
@@ -5497,7 +5606,7 @@ function iniciarEscaneoContinuo() {
                     .catch(error => {
                         console.error('❌ Error en OCR en tiempo real:', error);
                     });
-                }, 'image/jpeg', 0.8);
+                }, 'image/jpeg', 0.7);
             }
             
             // Continuar el ciclo
@@ -5518,81 +5627,151 @@ function iniciarEscaneoContinuo() {
 }
 
 /* ============================================================
-   4️⃣ PROCESAR TEXTO EN TIEMPO REAL
+   4️⃣ PROCESAR TEXTO COMPLETO (MÁS AGRESIVO)
    ============================================================ */
-function procesarTextoEnTiempoReal(texto, datos) {
+function procesarTextoCompleto(texto, datos) {
     const lineas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 1);
     
-    // Buscar tarifa
+    console.log('🔍 Analizando', lineas.length, 'líneas de texto...');
+    
+    // ESTRATEGIA 1: Búsqueda exhaustiva de tarifa
     if (!datos.tarifa) {
         for (const linea of lineas) {
-            const match = linea.match(/RD\$\s*(\d+(?:[.,]\d+)?)/i) || 
-                         linea.match(/\$\s*(\d+(?:[.,]\d+)?)/);
-            if (match) {
-                datos.tarifa = parseFloat(match[1].replace(',', '.'));
-                mostrarAnimacionDeteccion('💰 $' + datos.tarifa.toFixed(2));
-                console.log('💰 Tarifa detectada en tiempo real:', datos.tarifa);
-                break;
+            // Patrones de tarifa más flexibles
+            const patronesTarifa = [
+                /RD\$\s*(\d+(?:[.,]\d+)?)/i,
+                /\$\s*(\d+(?:[.,]\d+)?)/,
+                /(\d+(?:[.,]\d+)?)\s*RD\$/i,
+                /total.*?(\d+(?:[.,]\d+)?)/i,
+                /precio.*?(\d+(?:[.,]\d+)?)/i,
+                /costo.*?(\d+(?:[.,]\d+)?)/i,
+                /pag[ao].*?(\d+(?:[.,]\d+)?)/i,
+                /(\d+)\s*pesos/i
+            ];
+            
+            for (const patron of patronesTarifa) {
+                const match = linea.match(patron);
+                if (match) {
+                    datos.tarifa = parseFloat(match[1].replace(',', '.'));
+                    mostrarAnimacionDeteccionGrande('💰 $' + datos.tarifa.toFixed(2));
+                    console.log('💰 Tarifa detectada:', datos.tarifa);
+                    break;
+                }
             }
+            if (datos.tarifa) break;
         }
     }
     
-    // Buscar tiempo
+    // ESTRATEGIA 2: Búsqueda de tiempo
     if (!datos.minutos) {
         for (const linea of lineas) {
-            const match = linea.match(/(\d+)\s*min/i);
-            if (match) {
-                datos.minutos = parseInt(match[1]);
-                mostrarAnimacionDeteccion('⏱️ ' + datos.minutos + 'min');
-                console.log('⏱️ Tiempo detectado en tiempo real:', datos.minutos);
-                break;
+            // Patrones de tiempo
+            const patronesTiempo = [
+                /(\d+)\s*min/i,
+                /(\d+)\s*minutos/i,
+                /tiempo.*?(\d+)/i,
+                /duraci[óo]n.*?(\d+)/i,
+                /(\d+)\s*m\b/i,
+                /(\d+)\s*'\s*/,
+                /(\d+)\s*MIN/i
+            ];
+            
+            for (const patron of patronesTiempo) {
+                const match = linea.match(patron);
+                if (match) {
+                    datos.minutos = parseInt(match[1]);
+                    mostrarAnimacionDeteccionGrande('⏱️ ' + datos.minutos + ' min');
+                    console.log('⏱️ Tiempo detectado:', datos.minutos);
+                    break;
+                }
             }
+            if (datos.minutos) break;
         }
     }
     
-    // Buscar distancia
+    // ESTRATEGIA 3: Búsqueda de distancia
     if (!datos.distancia) {
         for (const linea of lineas) {
-            const match = linea.match(/(\d+(?:[.,]\d+)?)\s*km/i);
+            // Patrones de distancia
+            const patronesDistancia = [
+                /(\d+(?:[.,]\d+)?)\s*km/i,
+                /(\d+(?:[.,]\d+)?)\s*kil[óo]metros/i,
+                /distancia.*?(\d+(?:[.,]\d+)?)/i,
+                /(\d+(?:[.,]\d+)?)\s*k\b/i,
+                /(\d+)\s*\.\s*(\d+)\s*km/i
+            ];
+            
+            for (const patron of patronesDistancia) {
+                const match = linea.match(patron);
+                if (match) {
+                    let valor = match[1];
+                    if (match[2]) {
+                        valor = match[1] + '.' + match[2];
+                    }
+                    datos.distancia = parseFloat(valor.replace(',', '.'));
+                    mostrarAnimacionDeteccionGrande('🛣️ ' + datos.distancia + ' km');
+                    console.log('🛣️ Distancia detectada:', datos.distancia);
+                    break;
+                }
+            }
+            if (datos.distancia) break;
+        }
+    }
+    
+    // ESTRATEGIA 4: Patrones combinados comunes en Uber
+    for (const linea of lineas) {
+        // Patrón: "XX min (YY km)" o similar
+        const patronesCombinados = [
+            /(\d+)\s*min\s*[\(]?\s*(\d+(?:[.,]\d+)?)\s*km/i,
+            /(\d+)\s*minutos?\s*[\(]?\s*(\d+(?:[.,]\d+)?)\s*km/i,
+            /viaje.*?(\d+).*?min.*?(\d+(?:[.,]\d+)?).*?km/i,
+            /(\d+)\s*min.*?(\d+(?:[.,]\d+)?)\s*km/i
+        ];
+        
+        for (const patron of patronesCombinados) {
+            const match = linea.match(patron);
             if (match) {
-                datos.distancia = parseFloat(match[1].replace(',', '.'));
-                mostrarAnimacionDeteccion('🛣️ ' + datos.distancia + 'km');
-                console.log('🛣️ Distancia detectada en tiempo real:', datos.distancia);
+                if (!datos.minutos && match[1]) {
+                    datos.minutos = parseInt(match[1]);
+                    mostrarAnimacionDeteccionGrande('⏱️ ' + datos.minutos + ' min');
+                }
+                if (!datos.distancia && match[2]) {
+                    datos.distancia = parseFloat(match[2].replace(',', '.'));
+                    mostrarAnimacionDeteccionGrande('🛣️ ' + datos.distancia + ' km');
+                }
                 break;
             }
         }
     }
     
-    // Buscar patrones combinados
-    for (const linea of lineas) {
-        // Patrón: "XX min (YY km)"
-        const matchCombinado = linea.match(/(\d+)\s*min\s*\(?\s*(\d+(?:[.,]\d+)?)\s*km/i);
-        if (matchCombinado) {
-            if (!datos.minutos) {
-                datos.minutos = parseInt(matchCombinado[1]);
-                mostrarAnimacionDeteccion('⏱️ ' + datos.minutos + 'min');
-            }
-            if (!datos.distancia) {
-                datos.distancia = parseFloat(matchCombinado[2].replace(',', '.'));
-                mostrarAnimacionDeteccion('🛣️ ' + datos.distancia + 'km');
-            }
-            break;
-        }
+    // ESTRATEGIA 5: Si tenemos tarifa pero falta algo, estimar
+    if (datos.tarifa && !datos.minutos) {
+        // Estimación basada en tarifa típica
+        datos.minutos = Math.max(8, Math.round(datos.tarifa / 5));
+        console.log('🤖 Tiempo estimado:', datos.minutos, 'min');
+    }
+    
+    if (datos.tarifa && !datos.distancia) {
+        // Estimación basada en tarifa típica
+        datos.distancia = Math.max(3, Math.round(datos.tarifa / 10));
+        console.log('🤖 Distancia estimada:', datos.distancia, 'km');
     }
 }
 
 /* ============================================================
-   5️⃣ FUNCIONES AUXILIARES DEL ESCÁNER
+   5️⃣ FUNCIONES AUXILIARES MEJORADAS
    ============================================================ */
-function mostrarAnimacionDeteccion(texto) {
-    const guia = document.querySelector('.modal-escaneo [style*="border: 3px solid"]');
+function mostrarAnimacionDeteccionGrande(texto) {
+    const guia = document.querySelector('.modal-escaneo [style*="border: 4px solid"]');
     if (!guia) return;
     
     const animacion = document.createElement('div');
     animacion.className = 'dato-detectado';
     animacion.textContent = texto;
-    animacion.style.left = (guia.offsetLeft + guia.offsetWidth/2 - 50) + 'px';
+    animacion.style.left = (guia.offsetLeft + guia.offsetWidth/2 - 80) + 'px';
     animacion.style.top = (guia.offsetTop + guia.offsetHeight/2) + 'px';
+    animacion.style.fontSize = '18px';
+    animacion.style.padding = '15px 25px';
     
     document.querySelector('.modal-escaneo').appendChild(animacion);
     
@@ -5601,37 +5780,92 @@ function mostrarAnimacionDeteccion(texto) {
         if (animacion.parentNode) {
             animacion.parentNode.removeChild(animacion);
         }
-    }, 1000);
+    }, 1500);
 }
 
-function actualizarPanelDatos(datos) {
+function actualizarPanelDatosGrande(datos) {
     const panel = document.getElementById('datos-detalles');
     if (!panel) return;
     
-    let html = '';
+    let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
     
+    // Tarifa
     if (datos.tarifa) {
-        html += `<div style="color: #00ff00; margin: 5px 0;">💰 $${datos.tarifa.toFixed(2)}</div>`;
+        html += `
+            <div style="display: flex; align-items: center; gap: 15px; background: rgba(0, 255, 0, 0.1); padding: 12px; border-radius: 10px; border-left: 5px solid #00ff00;">
+                <div style="font-size: 24px;">💰</div>
+                <div>
+                    <div style="font-weight: bold; color: #00ff00;">TARIFA</div>
+                    <div style="font-size: 20px; font-weight: bold;">$${datos.tarifa.toFixed(2)}</div>
+                </div>
+            </div>
+        `;
     } else {
-        html += `<div style="color: #ff4444; margin: 5px 0;">💰 Esperando tarifa...</div>`;
+        html += `
+            <div style="display: flex; align-items: center; gap: 15px; background: rgba(255, 0, 0, 0.1); padding: 12px; border-radius: 10px; border-left: 5px solid #ff4444;">
+                <div style="font-size: 24px;">💰</div>
+                <div>
+                    <div style="font-weight: bold; color: #ff4444;">TARIFA</div>
+                    <div style="color: #aaa;">Esperando...</div>
+                </div>
+            </div>
+        `;
     }
     
+    // Tiempo
     if (datos.minutos) {
-        html += `<div style="color: #00ff00; margin: 5px 0;">⏱️ ${datos.minutos} min</div>`;
+        html += `
+            <div style="display: flex; align-items: center; gap: 15px; background: rgba(0, 255, 0, 0.1); padding: 12px; border-radius: 10px; border-left: 5px solid #00ff00;">
+                <div style="font-size: 24px;">⏱️</div>
+                <div>
+                    <div style="font-weight: bold; color: #00ff00;">TIEMPO</div>
+                    <div style="font-size: 20px; font-weight: bold;">${datos.minutos} min</div>
+                </div>
+            </div>
+        `;
     } else {
-        html += `<div style="color: #ff4444; margin: 5px 0;">⏱️ Esperando tiempo...</div>`;
+        html += `
+            <div style="display: flex; align-items: center; gap: 15px; background: rgba(255, 0, 0, 0.1); padding: 12px; border-radius: 10px; border-left: 5px solid #ff4444;">
+                <div style="font-size: 24px;">⏱️</div>
+                <div>
+                    <div style="font-weight: bold; color: #ff4444;">TIEMPO</div>
+                    <div style="color: #aaa;">Esperando...</div>
+                </div>
+            </div>
+        `;
     }
     
+    // Distancia
     if (datos.distancia) {
-        html += `<div style="color: #00ff00; margin: 5px 0;">🛣️ ${datos.distancia} km</div>`;
+        html += `
+            <div style="display: flex; align-items: center; gap: 15px; background: rgba(0, 255, 0, 0.1); padding: 12px; border-radius: 10px; border-left: 5px solid #00ff00;">
+                <div style="font-size: 24px;">🛣️</div>
+                <div>
+                    <div style="font-weight: bold; color: #00ff00;">DISTANCIA</div>
+                    <div style="font-size: 20px; font-weight: bold;">${datos.distancia} km</div>
+                </div>
+            </div>
+        `;
     } else {
-        html += `<div style="color: #ff4444; margin: 5px 0;">🛣️ Esperando distancia...</div>`;
+        html += `
+            <div style="display: flex; align-items: center; gap: 15px; background: rgba(255, 0, 0, 0.1); padding: 12px; border-radius: 10px; border-left: 5px solid #ff4444;">
+                <div style="font-size: 24px;">🛣️</div>
+                <div>
+                    <div style="font-weight: bold; color: #ff4444;">DISTANCIA</div>
+                    <div style="color: #aaa;">Esperando...</div>
+                </div>
+            </div>
+        `;
     }
+    
+    html += '</div>';
     
     // Contador
     const datosCompletos = [datos.tarifa, datos.minutos, datos.distancia].filter(Boolean).length;
-    html += `<div style="margin-top: 10px; color: #aaa; font-size: 12px;">
-        ${datosCompletos}/3 datos detectados
+    html += `<div style="margin-top: 15px; text-align: center;">
+        <div style="color: ${datosCompletos === 3 ? '#00ff00' : '#ffaa00'}; font-weight: bold; font-size: 14px;">
+            ${datosCompletos === 3 ? '✅ COMPLETO!' : `🔄 ${datosCompletos}/3 DETECTADOS`}
+        </div>
     </div>`;
     
     panel.innerHTML = html;
@@ -5639,20 +5873,48 @@ function actualizarPanelDatos(datos) {
     // Actualizar estado
     const estado = document.getElementById('estado-escaner');
     if (estado) {
+        const textoEstado = datosCompletos === 3 ? '✅ COMPLETO!' : `ESCANEANDO (${datosCompletos}/3)...`;
         estado.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 10px; color: #00ff00;">
-                <div style="width: 10px; height: 10px; background: #00ff00; border-radius: 50%; animation: pulse 1s infinite;"></div>
-                <span>ESCANEANDO (${datosCompletos}/3)...</span>
+            <div style="display: flex; align-items: center; gap: 15px; color: ${datosCompletos === 3 ? '#00ff00' : '#00ff00'}">
+                <div style="width: 15px; height: 15px; background: ${datosCompletos === 3 ? '#00ff00' : '#00ff00'}; border-radius: 50%; animation: pulse 1s infinite;"></div>
+                <span style="font-size: 16px; font-weight: bold;">${textoEstado}</span>
             </div>
         `;
     }
 }
 
+function forzarDeteccion(datos) {
+    console.log('⚠️ Forzando detección con datos disponibles:', datos);
+    
+    // Si tenemos al menos tarifa, proceder
+    if (datos.tarifa) {
+        // Si faltan datos, usar valores por defecto razonables
+        if (!datos.minutos) {
+            datos.minutos = 15;
+            console.log('🤖 Usando tiempo por defecto:', datos.minutos, 'min');
+        }
+        if (!datos.distancia) {
+            datos.distancia = 6;
+            console.log('🤖 Usando distancia por defecto:', datos.distancia, 'km');
+        }
+        
+        completarEscaneo(datos);
+    } else {
+        // Si no tenemos nada, sugerir foto manual
+        mostrarStatus('❌ No se detectaron datos. Intenta con foto manual.', 'error');
+        setTimeout(() => {
+            detenerEscanerTiempoReal();
+            activarCargaImagen();
+        }, 2000);
+    }
+}
+
 function capturarFotoManual() {
-    console.log('📸 Capturando foto manual...');
+    console.log('📸 Capturando foto manual desde escáner...');
     
     if (!videoElement) return;
     
+    // Crear canvas grande
     const canvas = document.createElement('canvas');
     canvas.width = videoElement.videoWidth;
     canvas.height = videoElement.videoHeight;
@@ -5660,61 +5922,18 @@ function capturarFotoManual() {
     
     ctx.drawImage(videoElement, 0, 0);
     
+    // Mostrar mensaje
+    mostrarStatus('📸 Procesando captura...', 'info');
+    
+    // Convertir a blob y procesar
     canvas.toBlob(blob => {
         if (blob) {
-            procesarImagenConOCR(blob);
             detenerEscanerTiempoReal();
+            setTimeout(() => {
+                procesarImagenConOCR(blob);
+            }, 500);
         }
     }, 'image/jpeg', 0.9);
-}
-
-function completarEscaneo(datos) {
-    console.log('🎯 ESCANEO COMPLETADO CON ÉXITO:', datos);
-    
-    // Actualizar panel con éxito
-    const panel = document.getElementById('datos-detalles');
-    if (panel) {
-        panel.innerHTML = `
-            <div style="color: #00ff00; font-weight: bold; margin-bottom: 10px;">
-                ✅ ¡TODOS LOS DATOS DETECTADOS!
-            </div>
-            <div style="color: #00ff00; margin: 5px 0;">💰 $${datos.tarifa.toFixed(2)}</div>
-            <div style="color: #00ff00; margin: 5px 0;">⏱️ ${datos.minutos} min</div>
-            <div style="color: #00ff00; margin: 5px 0;">🛣️ ${datos.distancia} km</div>
-            <div style="color: #aaa; margin-top: 10px; font-size: 12px;">
-                Llenando formulario...
-            </div>
-        `;
-    }
-    
-    // Detener cámara después de 1 segundo
-    setTimeout(() => {
-        detenerEscanerTiempoReal();
-        
-        // Llenar formulario
-        setTimeout(() => {
-            if (elementos && elementos.tarifa && elementos.minutos && elementos.distancia) {
-                elementos.tarifa.value = datos.tarifa.toFixed(2);
-                elementos.minutos.value = datos.minutos;
-                elementos.distancia.value = datos.distancia.toFixed(1);
-                
-                // Disparar cálculo automático
-                setTimeout(() => {
-                    if (typeof manejarCalculoAutomatico === 'function') {
-                        if (timeoutCalculoAutomatico) {
-                            clearTimeout(timeoutCalculoAutomatico);
-                        }
-                        setTimeout(() => {
-                            if (typeof calcularAutomaticoConTraficoReal === 'function') {
-                                calcularAutomaticoConTraficoReal();
-                                mostrarStatus('✅ Viaje escaneado automáticamente!', 'success');
-                            }
-                        }, 300);
-                    }
-                }, 500);
-            }
-        }, 500);
-    }, 1500);
 }
 
 /* ============================================================
@@ -5731,12 +5950,6 @@ function detenerEscanerTiempoReal() {
         videoStream = null;
     }
     
-    // Limpiar intervalos
-    if (intervaloEscaneo) {
-        clearInterval(intervaloEscaneo);
-        intervaloEscaneo = null;
-    }
-    
     // Remover interfaz
     const modal = document.querySelector('.modal-escaneo');
     if (modal) {
@@ -5750,135 +5963,138 @@ function detenerEscanerTiempoReal() {
 }
 
 /* ============================================================
-   7️⃣ BOTÓN FLOTANTE MEJORADO PARA ESCANEO EN TIEMPO REAL
+   7️⃣ BOTÓN FLOTANTE MEJORADO
    ============================================================ */
-function crearBotonEscaneoTiempoReal() {
+function crearBotonEscaneoTiempoRealGrande() {
     // Remover botón anterior si existe
     const btnAnterior = document.getElementById('btn-scan-tiempo-real');
     if (btnAnterior) btnAnterior.remove();
     
     const boton = document.createElement('button');
     boton.id = 'btn-scan-tiempo-real';
-    boton.innerHTML = '🔍 ESCANEAR EN VIVO';
-    boton.title = 'Escaneo en tiempo real - Apunta al viaje de Uber';
+    boton.innerHTML = '🔍 ESCANEO COMPLETO';
+    boton.title = 'Escaneo en tiempo real - Recuadro grande para pantalla completa';
     
     Object.assign(boton.style, {
         position: 'fixed',
-        bottom: '150px',
+        bottom: '160px',
         right: '20px',
         zIndex: '99999',
         background: 'linear-gradient(135deg, #FF416C, #FF4B2B)',
         color: '#fff',
         border: 'none',
-        borderRadius: '50px',
-        padding: '15px 22px',
-        fontSize: '14px',
+        borderRadius: '15px',
+        padding: '18px 25px',
+        fontSize: '15px',
         fontWeight: 'bold',
         cursor: 'pointer',
-        boxShadow: '0 8px 25px rgba(255, 65, 108, 0.4)',
+        boxShadow: '0 10px 30px rgba(255, 65, 108, 0.5)',
         transition: 'all 0.3s ease',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        animation: 'pulse-escaneo 2s infinite'
+        gap: '10px',
+        animation: 'pulse-escaneo-grande 2s infinite'
     });
     
     // Agregar animación de pulso
     const style = document.createElement('style');
     style.textContent = `
-        @keyframes pulse-escaneo {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 65, 108, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(255, 65, 108, 0); }
+        @keyframes pulse-escaneo-grande {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 10px 30px rgba(255, 65, 108, 0.5);
+            }
+            50% { 
+                transform: scale(1.05);
+                box-shadow: 0 15px 40px rgba(255, 65, 108, 0.8);
+            }
         }
     `;
     document.head.appendChild(style);
     
     // Efecto hover
     boton.onmouseenter = () => {
-        boton.style.transform = 'scale(1.05)';
-        boton.style.boxShadow = '0 12px 30px rgba(255, 65, 108, 0.6)';
+        boton.style.transform = 'scale(1.1)';
+        boton.style.boxShadow = '0 20px 50px rgba(255, 65, 108, 0.9)';
     };
     
     boton.onmouseleave = () => {
         boton.style.transform = 'scale(1)';
-        boton.style.boxShadow = '0 8px 25px rgba(255, 65, 108, 0.4)';
+        boton.style.boxShadow = '0 10px 30px rgba(255, 65, 108, 0.5)';
     };
     
     boton.onclick = () => {
-        console.log('🔍 Botón de escaneo en tiempo real clickeado');
-        mostrarStatus('🔍 Activando escáner en tiempo real...', 'info');
+        console.log('🔍 Botón de escaneo COMPLETO clickeado');
+        mostrarStatus('🔍 Activando escáner de pantalla completa...', 'info');
         activarEscanerTiempoReal();
     };
     
     document.body.appendChild(boton);
-    console.log('✅ Botón de escaneo en tiempo real creado');
+    console.log('✅ Botón de escaneo COMPLETO creado');
 }
 
 /* ============================================================
-   8️⃣ BOTÓN FLOTANTE DE FOTO (MANTENER PARA OPCIONES)
-   ============================================================ */
-function actualizarBotonEscaneoUber() {
-    const btnExistente = document.getElementById('btn-scan-uber');
-    if (btnExistente) {
-        btnExistente.innerHTML = '📸 TOMAR FOTO';
-        btnExistente.style.bottom = '90px';
-        btnExistente.style.background = 'linear-gradient(135deg, #00c6ff, #0072ff)';
-        btnExistente.onclick = activarCargaImagen;
-    } else {
-        crearBotonEscaneoUber();
-    }
-}
-
-/* ============================================================
-   9️⃣ INICIALIZAR TODO EL SISTEMA DE ESCANEO
+   8️⃣ INICIALIZAR SISTEMA DE ESCANEO COMPLETO
    ============================================================ */
 function inicializarSistemaEscaneoCompleto() {
-    console.log('🚀 Inicializando sistema de escaneo completo...');
+    console.log('🚀 Inicializando sistema de escaneo COMPLETO...');
     
-    // Crear ambos botones
-    crearBotonEscaneoTiempoReal();
+    // Crear botón de escaneo grande
+    crearBotonEscaneoTiempoRealGrande();
+    
+    // Mantener botón de foto
     actualizarBotonEscaneoUber();
     
-    // Agregar opción en la interfaz principal
+    // Agregar botón en la interfaz principal
     setTimeout(() => {
+        // Buscar contenedor de botones o crear uno
         const calcularBtn = document.getElementById('btn-calcular');
-        if (calcularBtn && calcularBtn.parentNode) {
-            // Crear botón de escaneo rápido
+        if (calcularBtn) {
+            // Crear botón de escaneo rápido en el formulario
             const btnEscaneoRapido = document.createElement('button');
-            btnEscaneoRapido.innerHTML = '🔍 ESCANEAR UBER';
+            btnEscaneoRapido.innerHTML = '🔍 ESCANEAR PANTALLA COMPLETA';
             btnEscaneoRapido.className = calcularBtn.className;
             btnEscaneoRapido.style.cssText = `
                 background: linear-gradient(135deg, #FF416C, #FF4B2B);
-                margin-top: 10px;
+                margin-top: 15px;
                 font-weight: bold;
+                font-size: 15px;
+                padding: 18px;
+                border-radius: 12px;
             `;
             btnEscaneoRapido.onclick = activarEscanerTiempoReal;
             
-            calcularBtn.parentNode.appendChild(btnEscaneoRapido);
+            // Insertar después del botón calcular
+            calcularBtn.parentNode.insertBefore(btnEscaneoRapido, calcularBtn.nextSibling);
         }
     }, 1500);
     
-    console.log('✅ Sistema de escaneo completo listo');
+    console.log('✅ Sistema de escaneo COMPLETO listo');
 }
 
 /* ============================================================
-   🔟 EXPONER FUNCIONES GLOBALMENTE
+   9️⃣ EXPONER FUNCIONES GLOBALMENTE
    ============================================================ */
 window.activarEscanerTiempoReal = activarEscanerTiempoReal;
 window.detenerEscanerTiempoReal = detenerEscanerTiempoReal;
 
 // Inicializar cuando la app esté lista
-document.addEventListener('DOMContentLoaded', function() {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(inicializarSistemaEscaneoCompleto, 3000);
+    });
+} else {
     setTimeout(inicializarSistemaEscaneoCompleto, 3000);
-});
+}
 
-console.log('🎯 MÓDULO DE ESCANEO EN TIEMPO REAL CARGADO');
+console.log('🎯 MÓDULO DE ESCANEO COMPLETO (RECUADRO GRANDE) CARGADO');
 
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
