@@ -5312,11 +5312,58 @@ window.activarCargaImagen = activarCargaImagen;
 
 console.log('✅ MÓDULO OCR + UBER CARGADO');
 
+/* ============================================================
+   📸 BOTÓN FLOTANTE PARA ESCANEAR VIAJE UBER
+   ============================================================ */
+
+function crearBotonEscaneoUber() {
+    // Evitar duplicados
+    if (document.getElementById('btn-scan-uber')) return;
+
+    const boton = document.createElement('button');
+    boton.id = 'btn-scan-uber';
+    boton.innerHTML = '📸 ESCANEAR VIAJE';
+
+    Object.assign(boton.style, {
+        position: 'fixed',
+        bottom: '90px',
+        right: '20px',
+        zIndex: '99999',
+        background: 'linear-gradient(135deg, #00c6ff, #0072ff)',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '50px',
+        padding: '15px 22px',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        boxShadow: '0 8px 25px rgba(0,0,0,0.4)'
+    });
+
+    boton.onclick = () => {
+        console.log('📸 Escaneo Uber iniciado');
+        activarCargaImagen(); // ← esta función YA existe
+    };
+
+    document.body.appendChild(boton);
+    console.log('✅ Botón de escaneo Uber creado');
+}
+
+/* ============================================================
+   🚀 INICIALIZAR BOTÓN AL CARGAR LA PÁGINA
+   ============================================================ */
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', crearBotonEscaneoUber);
+} else {
+    crearBotonEscaneoUber();
+}
+
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
