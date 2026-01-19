@@ -5250,6 +5250,7 @@ if (
         minutos: minutosTotal,
         distancia: distanciaTotal
     });
+}
 } else {
     console.warn("⚠️ Datos incompletos, no se ejecuta el cálculo", {
         tarifa,
@@ -5372,6 +5373,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
