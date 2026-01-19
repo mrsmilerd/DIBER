@@ -5149,238 +5149,625 @@ window.onclick = function(event) {
 };
 
 /* ============================================================
-   🧠 OCR + EXTRACCIÓN + PUENTE A RENTABILIDAD (COMPLETO)
+   🔍 ESCÁNER EN TIEMPO REAL - LEE DIRECTO DE LA PANTALLA
    ============================================================ */
+
+// Variables globales para el escáner
+let escanerActivo = false;
+let intervaloEscaneo = null;
+let videoStream = null;
+let videoElement = null;
+let canvasElement = null;
 
 /* ============================================================
-   1️⃣ FUNCIÓN PRINCIPAL DE EXTRACCIÓN (CORREGIDA)
+   1️⃣ ACTIVAR ESCÁNER EN TIEMPO REAL
    ============================================================ */
-function extraerDatosDeUber(textoOCR) {
-    console.log('🔥 extraerDatosDeUber EJECUTÁNDOSE');
-    console.log('📝 Texto OCR recibido:', textoOCR);
-
-    if (!textoOCR || typeof textoOCR !== 'string') {
-        console.warn('⚠️ Texto OCR inválido');
+function activarEscanerTiempoReal() {
+    console.log('🔍 ACTIVANDO ESCÁNER EN TIEMPO REAL...');
+    
+    if (escanerActivo) {
+        console.log('⏸️ Escáner ya activo, deteniendo...');
+        detenerEscanerTiempoReal();
         return;
     }
+    
+    // Crear interfaz del escáner
+    crearInterfazEscaneo();
+    
+    // Solicitar acceso a la cámara
+    navigator.mediaDevices.getUserMedia({ 
+        video: { 
+            facingMode: 'environment', // Usar cámara trasera
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+        },
+        audio: false 
+    })
+    .then(stream => {
+        videoStream = stream;
+        videoElement.srcObject = stream;
+        escanerActivo = true;
+        
+        console.log('✅ Cámara activada para escaneo en tiempo real');
+        mostrarStatus('🔍 Escaneando en tiempo real...', 'success');
+        
+        // Iniciar escaneo continuo
+        iniciarEscaneoContinuo();
+        
+    })
+    .catch(error => {
+        console.error('❌ Error al acceder a la cámara:', error);
+        mostrarStatus('❌ Error al acceder a la cámara', 'error');
+        
+        // Fallback: Usar modo foto
+        setTimeout(() => {
+            document.querySelector('.modal-escaneo')?.remove();
+            mostrarStatus('⚠️ Activando modo foto alternativo', 'warning');
+            activarCargaImagen();
+        }, 2000);
+    });
+}
 
-    const lineas = textoOCR
-        .split('\n')
-        .map(l => l.trim())
-        .filter(l => l.length > 0);
-
-    let tarifa = null;
-    let minutosBusqueda = null;
-    let distanciaBusqueda = null;
-    let minutosViaje = null;
-    let distanciaViaje = null;
-
-    /* =====================================================
-       💰 TARIFA → RD$120.52
-       ===================================================== */
-    for (let i = 0; i < Math.min(6, lineas.length); i++) {
-        const match = lineas[i].match(/RD\$\s*(\d+(?:[.,]\d+)?)/i);
-        if (match) {
-            tarifa = parseFloat(match[1].replace(',', '.'));
-            console.log('💰 Tarifa detectada:', tarifa);
-            break;
+/* ============================================================
+   2️⃣ CREAR INTERFAZ DEL ESCÁNER
+   ============================================================ */
+function crearInterfazEscaneo() {
+    // Remover interfaz anterior si existe
+    const modalAnterior = document.querySelector('.modal-escaneo');
+    if (modalAnterior) modalAnterior.remove();
+    
+    // Crear modal principal
+    const modal = document.createElement('div');
+    modal.className = 'modal-escaneo';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 100000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Crear video para la vista previa
+    videoElement = document.createElement('video');
+    videoElement.autoplay = true;
+    videoElement.playsinline = true;
+    videoElement.style.cssText = `
+        width: 100%;
+        height: 70%;
+        object-fit: cover;
+    `;
+    
+    // Crear canvas para procesamiento
+    canvasElement = document.createElement('canvas');
+    canvasElement.style.display = 'none';
+    
+    // Área de guía de escaneo
+    const guiaEscaneo = document.createElement('div');
+    guiaEscaneo.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 300px;
+        height: 150px;
+        border: 3px solid #00ff00;
+        border-radius: 10px;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+        pointer-events: none;
+        animation: escaner-pulse 2s infinite;
+    `;
+    
+    // Agregar animación CSS
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes escaner-pulse {
+            0%, 100% { border-color: #00ff00; }
+            50% { border-color: #00cc00; box-shadow: 0 0 20px #00ff00; }
         }
-    }
-
-    /* =====================================================
-       🚶 LLEGADA → A5min (1.1km)  (OCR SUCIO)
-       ===================================================== */
-    for (const linea of lineas) {
-        const match = linea.match(
-            /A\S*\s*(\d+)\s*min\s*\(?\s*(\d+(?:[.,]\d+)?)\s*km/i
-        );
-
-        if (match) {
-            minutosBusqueda = parseInt(match[1]);
-            distanciaBusqueda = parseFloat(match[2].replace(',', '.'));
-            console.log('🚶 Llegada:', minutosBusqueda, 'min', distanciaBusqueda, 'km');
-            break;
+        
+        @keyframes dato-detectado {
+            0% { transform: translateY(0); opacity: 0.8; }
+            100% { transform: translateY(-10px); opacity: 0; }
         }
-    }
+        
+        .dato-detectado {
+            position: absolute;
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            animation: dato-detectado 1s forwards;
+            pointer-events: none;
+            z-index: 100001;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Panel de control inferior
+    const panelControl = document.createElement('div');
+    panelControl.style.cssText = `
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    `;
+    
+    // Indicador de estado
+    const estado = document.createElement('div');
+    estado.id = 'estado-escaner';
+    estado.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; color: #00ff00;">
+            <div style="width: 10px; height: 10px; background: #00ff00; border-radius: 50%; animation: pulse 1s infinite;"></div>
+            <span>ESCANEANDO EN TIEMPO REAL...</span>
+        </div>
+    `;
+    
+    // Botones de control
+    const botonesContainer = document.createElement('div');
+    botonesContainer.style.cssText = `
+        display: flex;
+        gap: 15px;
+        width: 100%;
+        max-width: 300px;
+    `;
+    
+    const btnDetener = document.createElement('button');
+    btnDetener.textContent = '🛑 DETENER';
+    btnDetener.style.cssText = `
+        flex: 1;
+        background: #ff4444;
+        color: white;
+        border: none;
+        padding: 15px;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+    `;
+    btnDetener.onclick = detenerEscanerTiempoReal;
+    
+    const btnManual = document.createElement('button');
+    btnManual.textContent = '📸 TOMAR FOTO';
+    btnManual.style.cssText = `
+        flex: 1;
+        background: #2196F3;
+        color: white;
+        border: none;
+        padding: 15px;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+    `;
+    btnManual.onclick = capturarFotoManual;
+    
+    // Panel de datos detectados
+    const panelDatos = document.createElement('div');
+    panelDatos.id = 'panel-datos';
+    panelDatos.style.cssText = `
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+        width: 100%;
+        max-width: 300px;
+        color: white;
+        font-size: 14px;
+        min-height: 100px;
+        overflow-y: auto;
+    `;
+    panelDatos.innerHTML = `
+        <div style="color: #00ff00; margin-bottom: 10px; font-weight: bold;">
+            📊 DATOS DETECTADOS:
+        </div>
+        <div id="datos-detalles">Esperando detección...</div>
+    `;
+    
+    // Ensamblar todo
+    modal.appendChild(videoElement);
+    modal.appendChild(canvasElement);
+    modal.appendChild(guiaEscaneo);
+    modal.appendChild(panelControl);
+    
+    panelControl.appendChild(estado);
+    panelControl.appendChild(panelDatos);
+    botonesContainer.appendChild(btnManual);
+    botonesContainer.appendChild(btnDetener);
+    panelControl.appendChild(botonesContainer);
+    
+    // Instrucciones
+    const instrucciones = document.createElement('div');
+    instrucciones.style.cssText = `
+        color: #aaa;
+        font-size: 12px;
+        text-align: center;
+        margin-top: 10px;
+        max-width: 300px;
+    `;
+    instrucciones.innerHTML = `
+        💡 Apunta al viaje de Uber en tu pantalla.<br>
+        Los datos se extraerán automáticamente.
+    `;
+    panelControl.appendChild(instrucciones);
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden'; // Evitar scroll
+    
+    console.log('✅ Interfaz de escaneo creada');
+}
 
-    /* =====================================================
-       🚗 VIAJE → Viaje: 11 min (4.2 km)
-       ===================================================== */
-    for (const linea of lineas) {
-        if (linea.toLowerCase().includes('viaje')) {
-            const match = linea.match(
-                /(\d+)\s*min\s*\(?\s*(\d+(?:[.,]\d+)?)\s*km/i
+/* ============================================================
+   3️⃣ ESCANEO CONTINUO EN TIEMPO REAL
+   ============================================================ */
+function iniciarEscaneoContinuo() {
+    console.log('🔄 Iniciando escaneo continuo...');
+    
+    // Configurar canvas
+    canvasElement.width = 640;
+    canvasElement.height = 480;
+    const ctx = canvasElement.getContext('2d');
+    
+    // Variables para almacenar datos
+    let ultimoTexto = '';
+    let ultimoTextoTime = 0;
+    let datosExtraidos = {
+        tarifa: null,
+        minutos: null,
+        distancia: null
+    };
+    
+    // Función de procesamiento por frame
+    function procesarFrame() {
+        if (!escanerActivo || !videoElement.videoWidth) return;
+        
+        try {
+            // Dibujar frame en canvas
+            ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            
+            // Extraer imagen del área de escaneo (centro)
+            const areaEscaneo = {
+                x: canvasElement.width * 0.25,
+                y: canvasElement.height * 0.35,
+                width: canvasElement.width * 0.5,
+                height: canvasElement.height * 0.3
+            };
+            
+            // Obtener imagen del área de interés
+            const imageData = ctx.getImageData(
+                areaEscaneo.x, 
+                areaEscaneo.y, 
+                areaEscaneo.width, 
+                areaEscaneo.height
             );
+            
+            // Procesar con OCR (cada 500ms para no sobrecargar)
+            const ahora = Date.now();
+            if (ahora - ultimoTextoTime > 500) {
+                ultimoTextoTime = ahora;
+                
+                // Crear canvas temporal para el área de interés
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = areaEscaneo.width;
+                tempCanvas.height = areaEscaneo.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.putImageData(imageData, 0, 0);
+                
+                // Convertir a blob y procesar
+                tempCanvas.toBlob(blob => {
+                    if (!blob) return;
+                    
+                    // Usar Tesseract.js para OCR
+                    Tesseract.recognize(blob, 'eng+spa', {
+                        logger: m => {},
+                        tessedit_char_whitelist: '0123456789RD$kmmin.,(): ',
+                        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK
+                    })
+                    .then(result => {
+                        const texto = result.data.text.trim();
+                        
+                        if (texto && texto !== ultimoTexto) {
+                            ultimoTexto = texto;
+                            console.log('📝 Texto detectado en tiempo real:', texto);
+                            
+                            // Procesar texto y extraer datos
+                            procesarTextoEnTiempoReal(texto, datosExtraidos);
+                            
+                            // Actualizar panel de datos
+                            actualizarPanelDatos(datosExtraidos);
+                            
+                            // Verificar si tenemos todos los datos
+                            if (datosExtraidos.tarifa && datosExtraidos.minutos && datosExtraidos.distancia) {
+                                console.log('✅ TODOS LOS DATOS DETECTADOS!');
+                                completarEscaneo(datosExtraidos);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Error en OCR en tiempo real:', error);
+                    });
+                }, 'image/jpeg', 0.8);
+            }
+            
+            // Continuar el ciclo
+            if (escanerActivo) {
+                requestAnimationFrame(procesarFrame);
+            }
+            
+        } catch (error) {
+            console.error('❌ Error en procesamiento de frame:', error);
+            if (escanerActivo) {
+                requestAnimationFrame(procesarFrame);
+            }
+        }
+    }
+    
+    // Iniciar el procesamiento
+    procesarFrame();
+}
 
+/* ============================================================
+   4️⃣ PROCESAR TEXTO EN TIEMPO REAL
+   ============================================================ */
+function procesarTextoEnTiempoReal(texto, datos) {
+    const lineas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 1);
+    
+    // Buscar tarifa
+    if (!datos.tarifa) {
+        for (const linea of lineas) {
+            const match = linea.match(/RD\$\s*(\d+(?:[.,]\d+)?)/i) || 
+                         linea.match(/\$\s*(\d+(?:[.,]\d+)?)/);
             if (match) {
-                minutosViaje = parseInt(match[1]);
-                distanciaViaje = parseFloat(match[2].replace(',', '.'));
-                console.log('🚗 Viaje:', minutosViaje, 'min', distanciaViaje, 'km');
+                datos.tarifa = parseFloat(match[1].replace(',', '.'));
+                mostrarAnimacionDeteccion('💰 $' + datos.tarifa.toFixed(2));
+                console.log('💰 Tarifa detectada en tiempo real:', datos.tarifa);
                 break;
             }
         }
     }
-
-    /* =====================================================
-       ➕ TOTALES (CLAVE)
-       ===================================================== */
-    const minutosTotal =
-        (minutosBusqueda || 0) +
-        (minutosViaje || 0);
-
-    const distanciaTotal =
-        (distanciaBusqueda || 0) +
-        (distanciaViaje || 0);
-
-    console.log('⏱️ TOTAL minutos:', minutosTotal);
-    console.log('🛣️ TOTAL km:', distanciaTotal);
-
-    // ===============================
-    // 🔗 PUENTE OCR → FORMULARIO
-    // ===============================
-    if (
-        tarifa > 0 &&
-        minutosTotal > 0 &&
-        distanciaTotal > 0
-    ) {
-        console.log("✅ Datos extraídos correctamente");
-        console.log("🔄 Llenando formulario automáticamente...");
-
-        // ✅ LLENAR CAMPOS DEL FORMULARIO
-        if (elementos && elementos.tarifa) {
-            elementos.tarifa.value = tarifa.toFixed(2);
-            console.log('💰 Tarifa establecida:', tarifa.toFixed(2));
-        }
-        
-        if (elementos && elementos.minutos) {
-            elementos.minutos.value = minutosTotal;
-            console.log('⏱️ Minutos establecidos:', minutosTotal);
-        }
-        
-        if (elementos && elementos.distancia) {
-            elementos.distancia.value = distanciaTotal.toFixed(1);
-            console.log('🛣️ Distancia establecida:', distanciaTotal.toFixed(1));
-        }
-        
-        // ✅ DISPARAR CÁLCULO AUTOMÁTICO
-        setTimeout(() => {
-            console.log('🚀 Disparando cálculo automático...');
-            if (typeof manejarCalculoAutomatico === 'function') {
-                // Limpiar timeout anterior si existe
-                if (timeoutCalculoAutomatico) {
-                    clearTimeout(timeoutCalculoAutomatico);
-                }
-                
-                // Ejecutar cálculo inmediatamente
-                calcularAutomaticoConTraficoReal();
-                
-                // Mostrar mensaje de éxito
-                mostrarStatus('✅ Datos extraídos del screenshot', 'success');
-            } else {
-                console.warn('⚠️ Función manejarCalculoAutomatico no disponible');
-                // Intentar con la otra función
-                if (typeof calcularAutomaticoConTraficoReal === 'function') {
-                    calcularAutomaticoConTraficoReal();
-                }
+    
+    // Buscar tiempo
+    if (!datos.minutos) {
+        for (const linea of lineas) {
+            const match = linea.match(/(\d+)\s*min/i);
+            if (match) {
+                datos.minutos = parseInt(match[1]);
+                mostrarAnimacionDeteccion('⏱️ ' + datos.minutos + 'min');
+                console.log('⏱️ Tiempo detectado en tiempo real:', datos.minutos);
+                break;
             }
-        }, 500); // Pequeño delay para asegurar que los campos se actualicen
+        }
+    }
+    
+    // Buscar distancia
+    if (!datos.distancia) {
+        for (const linea of lineas) {
+            const match = linea.match(/(\d+(?:[.,]\d+)?)\s*km/i);
+            if (match) {
+                datos.distancia = parseFloat(match[1].replace(',', '.'));
+                mostrarAnimacionDeteccion('🛣️ ' + datos.distancia + 'km');
+                console.log('🛣️ Distancia detectada en tiempo real:', datos.distancia);
+                break;
+            }
+        }
+    }
+    
+    // Buscar patrones combinados
+    for (const linea of lineas) {
+        // Patrón: "XX min (YY km)"
+        const matchCombinado = linea.match(/(\d+)\s*min\s*\(?\s*(\d+(?:[.,]\d+)?)\s*km/i);
+        if (matchCombinado) {
+            if (!datos.minutos) {
+                datos.minutos = parseInt(matchCombinado[1]);
+                mostrarAnimacionDeteccion('⏱️ ' + datos.minutos + 'min');
+            }
+            if (!datos.distancia) {
+                datos.distancia = parseFloat(matchCombinado[2].replace(',', '.'));
+                mostrarAnimacionDeteccion('🛣️ ' + datos.distancia + 'km');
+            }
+            break;
+        }
+    }
+}
 
+/* ============================================================
+   5️⃣ FUNCIONES AUXILIARES DEL ESCÁNER
+   ============================================================ */
+function mostrarAnimacionDeteccion(texto) {
+    const guia = document.querySelector('.modal-escaneo [style*="border: 3px solid"]');
+    if (!guia) return;
+    
+    const animacion = document.createElement('div');
+    animacion.className = 'dato-detectado';
+    animacion.textContent = texto;
+    animacion.style.left = (guia.offsetLeft + guia.offsetWidth/2 - 50) + 'px';
+    animacion.style.top = (guia.offsetTop + guia.offsetHeight/2) + 'px';
+    
+    document.querySelector('.modal-escaneo').appendChild(animacion);
+    
+    // Remover después de la animación
+    setTimeout(() => {
+        if (animacion.parentNode) {
+            animacion.parentNode.removeChild(animacion);
+        }
+    }, 1000);
+}
+
+function actualizarPanelDatos(datos) {
+    const panel = document.getElementById('datos-detalles');
+    if (!panel) return;
+    
+    let html = '';
+    
+    if (datos.tarifa) {
+        html += `<div style="color: #00ff00; margin: 5px 0;">💰 $${datos.tarifa.toFixed(2)}</div>`;
     } else {
-        console.warn("⚠️ Datos incompletos, no se puede llenar formulario", {
-            tarifa,
-            minutosTotal,
-            distanciaTotal
-        });
-        
-        // Mostrar qué datos faltan
-        let mensaje = "❌ Datos incompletos del OCR: ";
-        if (!tarifa) mensaje += "Falta tarifa. ";
-        if (!minutosTotal) mensaje += "Falta tiempo. ";
-        if (!distanciaTotal) mensaje += "Falta distancia.";
-        
-        mostrarStatus(mensaje, 'error');
+        html += `<div style="color: #ff4444; margin: 5px 0;">💰 Esperando tarifa...</div>`;
+    }
+    
+    if (datos.minutos) {
+        html += `<div style="color: #00ff00; margin: 5px 0;">⏱️ ${datos.minutos} min</div>`;
+    } else {
+        html += `<div style="color: #ff4444; margin: 5px 0;">⏱️ Esperando tiempo...</div>`;
+    }
+    
+    if (datos.distancia) {
+        html += `<div style="color: #00ff00; margin: 5px 0;">🛣️ ${datos.distancia} km</div>`;
+    } else {
+        html += `<div style="color: #ff4444; margin: 5px 0;">🛣️ Esperando distancia...</div>`;
+    }
+    
+    // Contador
+    const datosCompletos = [datos.tarifa, datos.minutos, datos.distancia].filter(Boolean).length;
+    html += `<div style="margin-top: 10px; color: #aaa; font-size: 12px;">
+        ${datosCompletos}/3 datos detectados
+    </div>`;
+    
+    panel.innerHTML = html;
+    
+    // Actualizar estado
+    const estado = document.getElementById('estado-escaner');
+    if (estado) {
+        estado.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px; color: #00ff00;">
+                <div style="width: 10px; height: 10px; background: #00ff00; border-radius: 50%; animation: pulse 1s infinite;"></div>
+                <span>ESCANEANDO (${datosCompletos}/3)...</span>
+            </div>
+        `;
     }
 }
 
-/* ============================================================
-   2️⃣ OCR SIMPLE PARA IMÁGENES
-   ============================================================ */
-async function procesarImagenConOCR(file) {
-    console.log('🔍 Iniciando OCR para imagen...');
+function capturarFotoManual() {
+    console.log('📸 Capturando foto manual...');
     
-    // Mostrar estado de carga
-    mostrarStatus('🔍 Analizando imagen con OCR...', 'info');
+    if (!videoElement) return;
     
-    try {
-        // Verificar que Tesseract esté disponible
-        if (typeof Tesseract === 'undefined') {
-            throw new Error('Tesseract.js no está cargado');
+    const canvas = document.createElement('canvas');
+    canvas.width = videoElement.videoWidth;
+    canvas.height = videoElement.videoHeight;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.drawImage(videoElement, 0, 0);
+    
+    canvas.toBlob(blob => {
+        if (blob) {
+            procesarImagenConOCR(blob);
+            detenerEscanerTiempoReal();
         }
-        
-        const result = await Tesseract.recognize(file, 'eng', {
-            logger: m => console.log('📊 Progreso OCR:', m)
-        });
-        
-        const texto = result.data.text;
-        console.log('📝 Texto extraído por OCR:', texto);
-        
-        // Procesar el texto extraído
-        extraerDatosDeUber(texto);
-        
-    } catch (e) {
-        console.error('❌ Error en OCR:', e);
-        mostrarStatus('❌ Error procesando imagen', 'error');
-    }
+    }, 'image/jpeg', 0.9);
 }
 
-/* ============================================================
-   3️⃣ ACTIVAR CARGA DE IMAGEN
-   ============================================================ */
-function activarCargaImagen() {
-    console.log('📸 Activando selector de imagen...');
+function completarEscaneo(datos) {
+    console.log('🎯 ESCANEO COMPLETADO CON ÉXITO:', datos);
     
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*,image/jpeg,image/png,image/jpg';
-    input.capture = 'environment'; // Usar cámara trasera en móviles
+    // Actualizar panel con éxito
+    const panel = document.getElementById('datos-detalles');
+    if (panel) {
+        panel.innerHTML = `
+            <div style="color: #00ff00; font-weight: bold; margin-bottom: 10px;">
+                ✅ ¡TODOS LOS DATOS DETECTADOS!
+            </div>
+            <div style="color: #00ff00; margin: 5px 0;">💰 $${datos.tarifa.toFixed(2)}</div>
+            <div style="color: #00ff00; margin: 5px 0;">⏱️ ${datos.minutos} min</div>
+            <div style="color: #00ff00; margin: 5px 0;">🛣️ ${datos.distancia} km</div>
+            <div style="color: #aaa; margin-top: 10px; font-size: 12px;">
+                Llenando formulario...
+            </div>
+        `;
+    }
     
-    input.onchange = e => {
-        const file = e.target.files[0];
-        if (file) {
-            console.log('📁 Archivo seleccionado:', file.name, file.size, 'bytes');
-            
-            // Verificar tamaño (máximo 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                mostrarStatus('❌ Imagen muy grande (máx 5MB)', 'error');
-                return;
+    // Detener cámara después de 1 segundo
+    setTimeout(() => {
+        detenerEscanerTiempoReal();
+        
+        // Llenar formulario
+        setTimeout(() => {
+            if (elementos && elementos.tarifa && elementos.minutos && elementos.distancia) {
+                elementos.tarifa.value = datos.tarifa.toFixed(2);
+                elementos.minutos.value = datos.minutos;
+                elementos.distancia.value = datos.distancia.toFixed(1);
+                
+                // Disparar cálculo automático
+                setTimeout(() => {
+                    if (typeof manejarCalculoAutomatico === 'function') {
+                        if (timeoutCalculoAutomatico) {
+                            clearTimeout(timeoutCalculoAutomatico);
+                        }
+                        setTimeout(() => {
+                            if (typeof calcularAutomaticoConTraficoReal === 'function') {
+                                calcularAutomaticoConTraficoReal();
+                                mostrarStatus('✅ Viaje escaneado automáticamente!', 'success');
+                            }
+                        }, 300);
+                    }
+                }, 500);
             }
-            
-            procesarImagenConOCR(file);
-        }
-    };
-    
-    input.click();
+        }, 500);
+    }, 1500);
 }
 
 /* ============================================================
-   📸 BOTÓN FLOTANTE MEJORADO PARA ESCANEAR VIAJE UBER
+   6️⃣ DETENER ESCÁNER
    ============================================================ */
+function detenerEscanerTiempoReal() {
+    console.log('🛑 Deteniendo escáner en tiempo real...');
+    
+    escanerActivo = false;
+    
+    // Detener stream de cámara
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+    
+    // Limpiar intervalos
+    if (intervaloEscaneo) {
+        clearInterval(intervaloEscaneo);
+        intervaloEscaneo = null;
+    }
+    
+    // Remover interfaz
+    const modal = document.querySelector('.modal-escaneo');
+    if (modal) {
+        modal.remove();
+    }
+    
+    // Restaurar scroll
+    document.body.style.overflow = '';
+    
+    mostrarStatus('📡 Escáner detenido', 'info');
+}
 
-function crearBotonEscaneoUber() {
-    // Evitar duplicados
-    if (document.getElementById('btn-scan-uber')) return;
-
+/* ============================================================
+   7️⃣ BOTÓN FLOTANTE MEJORADO PARA ESCANEO EN TIEMPO REAL
+   ============================================================ */
+function crearBotonEscaneoTiempoReal() {
+    // Remover botón anterior si existe
+    const btnAnterior = document.getElementById('btn-scan-tiempo-real');
+    if (btnAnterior) btnAnterior.remove();
+    
     const boton = document.createElement('button');
-    boton.id = 'btn-scan-uber';
-    boton.innerHTML = '📸 ESCANEAR VIAJE';
-    boton.title = 'Tomar foto o seleccionar screenshot de Uber';
-
+    boton.id = 'btn-scan-tiempo-real';
+    boton.innerHTML = '🔍 ESCANEAR EN VIVO';
+    boton.title = 'Escaneo en tiempo real - Apunta al viaje de Uber';
+    
     Object.assign(boton.style, {
         position: 'fixed',
-        bottom: '90px',
+        bottom: '150px',
         right: '20px',
         zIndex: '99999',
-        background: 'linear-gradient(135deg, #00c6ff, #0072ff)',
+        background: 'linear-gradient(135deg, #FF416C, #FF4B2B)',
         color: '#fff',
         border: 'none',
         borderRadius: '50px',
@@ -5388,85 +5775,110 @@ function crearBotonEscaneoUber() {
         fontSize: '14px',
         fontWeight: 'bold',
         cursor: 'pointer',
-        boxShadow: '0 8px 25px rgba(0,0,0,0.4)',
+        boxShadow: '0 8px 25px rgba(255, 65, 108, 0.4)',
         transition: 'all 0.3s ease',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px'
+        gap: '8px',
+        animation: 'pulse-escaneo 2s infinite'
     });
-
+    
+    // Agregar animación de pulso
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes pulse-escaneo {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 65, 108, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 65, 108, 0); }
+        }
+    `;
+    document.head.appendChild(style);
+    
     // Efecto hover
     boton.onmouseenter = () => {
         boton.style.transform = 'scale(1.05)';
-        boton.style.boxShadow = '0 12px 30px rgba(0,0,0,0.5)';
+        boton.style.boxShadow = '0 12px 30px rgba(255, 65, 108, 0.6)';
     };
     
     boton.onmouseleave = () => {
         boton.style.transform = 'scale(1)';
-        boton.style.boxShadow = '0 8px 25px rgba(0,0,0,0.4)';
+        boton.style.boxShadow = '0 8px 25px rgba(255, 65, 108, 0.4)';
     };
-
+    
     boton.onclick = () => {
-        console.log('📸 Botón de escaneo Uber clickeado');
-        mostrarStatus('📸 Selecciona o toma foto del viaje de Uber', 'info');
-        activarCargaImagen();
+        console.log('🔍 Botón de escaneo en tiempo real clickeado');
+        mostrarStatus('🔍 Activando escáner en tiempo real...', 'info');
+        activarEscanerTiempoReal();
     };
-
+    
     document.body.appendChild(boton);
-    console.log('✅ Botón de escaneo Uber creado');
+    console.log('✅ Botón de escaneo en tiempo real creado');
 }
 
 /* ============================================================
-   🚀 INICIALIZAR BOTÓN AL CARGAR LA PÁGINA
+   8️⃣ BOTÓN FLOTANTE DE FOTO (MANTENER PARA OPCIONES)
    ============================================================ */
-function inicializarBotonesOCR() {
-    // Crear botón flotante
-    crearBotonEscaneoUber();
+function actualizarBotonEscaneoUber() {
+    const btnExistente = document.getElementById('btn-scan-uber');
+    if (btnExistente) {
+        btnExistente.innerHTML = '📸 TOMAR FOTO';
+        btnExistente.style.bottom = '90px';
+        btnExistente.style.background = 'linear-gradient(135deg, #00c6ff, #0072ff)';
+        btnExistente.onclick = activarCargaImagen;
+    } else {
+        crearBotonEscaneoUber();
+    }
+}
+
+/* ============================================================
+   9️⃣ INICIALIZAR TODO EL SISTEMA DE ESCANEO
+   ============================================================ */
+function inicializarSistemaEscaneoCompleto() {
+    console.log('🚀 Inicializando sistema de escaneo completo...');
     
-    // También crear un botón en la interfaz principal si quieres
+    // Crear ambos botones
+    crearBotonEscaneoTiempoReal();
+    actualizarBotonEscaneoUber();
+    
+    // Agregar opción en la interfaz principal
     setTimeout(() => {
         const calcularBtn = document.getElementById('btn-calcular');
-        if (calcularBtn) {
-            // Crear contenedor para botones
-            const contenedorBotones = document.createElement('div');
-            contenedorBotones.style.cssText = 'display: flex; gap: 10px; margin-top: 15px;';
+        if (calcularBtn && calcularBtn.parentNode) {
+            // Crear botón de escaneo rápido
+            const btnEscaneoRapido = document.createElement('button');
+            btnEscaneoRapido.innerHTML = '🔍 ESCANEAR UBER';
+            btnEscaneoRapido.className = calcularBtn.className;
+            btnEscaneoRapido.style.cssText = `
+                background: linear-gradient(135deg, #FF416C, #FF4B2B);
+                margin-top: 10px;
+                font-weight: bold;
+            `;
+            btnEscaneoRapido.onclick = activarEscanerTiempoReal;
             
-            // Mover el botón calcular dentro del contenedor
-            calcularBtn.parentNode.insertBefore(contenedorBotones, calcularBtn.nextSibling);
-            contenedorBotones.appendChild(calcularBtn);
-            
-            // Agregar botón OCR
-            const btnOCR = document.createElement('button');
-            btnOCR.innerHTML = '📸 Extraer de Imagen';
-            btnOCR.className = calcularBtn.className;
-            btnOCR.style.cssText = 'background: linear-gradient(135deg, #9C27B0, #673AB7);';
-            btnOCR.onclick = activarCargaImagen;
-            
-            contenedorBotones.appendChild(btnOCR);
+            calcularBtn.parentNode.appendChild(btnEscaneoRapido);
         }
-    }, 1000);
+    }, 1500);
     
-    console.log('✅ Botones OCR inicializados');
+    console.log('✅ Sistema de escaneo completo listo');
 }
 
-// Exponer funciones globalmente
-window.extraerDatosDeUber = extraerDatosDeUber;
-window.activarCargaImagen = activarCargaImagen;
-window.procesarImagenConOCR = procesarImagenConOCR;
+/* ============================================================
+   🔟 EXPONER FUNCIONES GLOBALMENTE
+   ============================================================ */
+window.activarEscanerTiempoReal = activarEscanerTiempoReal;
+window.detenerEscanerTiempoReal = detenerEscanerTiempoReal;
 
-console.log('✅ MÓDULO OCR + UBER CARGADO Y CORREGIDO');
+// Inicializar cuando la app esté lista
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(inicializarSistemaEscaneoCompleto, 3000);
+});
 
-// Inicializar cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarBotonesOCR);
-} else {
-    inicializarBotonesOCR();
-}
+console.log('🎯 MÓDULO DE ESCANEO EN TIEMPO REAL CARGADO');
 
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
