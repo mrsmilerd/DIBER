@@ -5880,7 +5880,11 @@ function mostrarComparacionOCR(textoBruto, textoLimpio) {
    ============================================================ */
 function extraerDatosUberDirecto(texto) {
     console.log('🎯 [EXTRAER] Iniciando extracción de datos Uber...');
-    console.log('📝 [EXTRAER] Texto recibido del OCR:\n', texto);
+    console.log('📝 [EXTRAER] ═══════════════════════════════════════');
+    console.log('📝 [EXTRAER] TEXTO RAW (SIN LIMPIAR):');
+    console.log('📝 [EXTRAER] ═══════════════════════════════════════');
+    console.log(texto);
+    console.log('📝 [EXTRAER] ═══════════════════════════════════════');
     
     const datos = {
         tarifa: null,
@@ -5892,102 +5896,136 @@ function extraerDatosUberDirecto(texto) {
         distanciaTotal: null
     };
     
-    // 🔥 LIMPIEZA DE TEXTO
+    // Limpiar texto
     let textoLimpio = texto
-        .replace(/\n/g, ' ')           // Convertir saltos de línea en espacios
-        .replace(/\s+/g, ' ')          // Normalizar espacios múltiples
-        .replace(/[|]/g, '1')          // Corregir | → 1
-        .replace(/[O]/g, '0')          // Corregir O → 0 (en contexto numérico)
-        .replace(/[l]/g, '1')          // Corregir l → 1
+        .replace(/\n/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/[|]/g, '1')
+        .replace(/[O]/g, '0')
+        .replace(/[l]/g, '1')
         .trim();
     
-    console.log('🧹 [EXTRAER] Texto limpio:', textoLimpio);
+    console.log('🧹 [EXTRAER] ═══════════════════════════════════════');
+    console.log('🧹 [EXTRAER] TEXTO LIMPIO:');
+    console.log('🧹 [EXTRAER] ═══════════════════════════════════════');
+    console.log(textoLimpio);
+    console.log('🧹 [EXTRAER] ═══════════════════════════════════════');
     
-    // 🔥 PATRÓN 1: BUSCAR TARIFA (RD$XXX.XX o RD$ XXX.XX)
+    // 🔥 BUSCAR TARIFA
     const regexTarifa = /RD\$\s*(\d+\.?\d{0,2})/i;
     const matchTarifa = textoLimpio.match(regexTarifa);
     
+    console.log('💰 [TARIFA] Regex:', regexTarifa);
+    console.log('💰 [TARIFA] Match:', matchTarifa);
+    
     if (matchTarifa) {
         datos.tarifa = parseFloat(matchTarifa[1]);
-        console.log('💰 [EXTRAER] ✅ Tarifa encontrada:', datos.tarifa);
+        console.log('💰 [TARIFA] ✅ Encontrada:', datos.tarifa);
     } else {
-        console.log('⚠️ [EXTRAER] ❌ Tarifa NO encontrada');
+        console.log('💰 [TARIFA] ❌ NO encontrada');
     }
     
-    // 🔥 PATRÓN 2: BUSCAR LLEGADA "A X min (Y km)" o "A X min (Y.Y km)"
-    const regexLlegada = /A\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
-    const matchLlegada = textoLimpio.match(regexLlegada);
+    // 🔥 BUSCAR LLEGADA - MÚLTIPLES PATRONES
+    console.log('🚗 [LLEGADA] Probando patrones...');
     
-    if (matchLlegada) {
-        datos.tiempoLlegada = parseInt(matchLlegada[1]);
-        datos.distanciaLlegada = parseFloat(matchLlegada[2]);
-        console.log('🚗 [EXTRAER] ✅ Llegada encontrada:', datos.tiempoLlegada, 'min,', datos.distanciaLlegada, 'km');
+    // Patrón 1: "A 8 min (4.5 km)"
+    const regex1 = /A\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
+    console.log('🚗 [LLEGADA] Patrón 1:', regex1);
+    const match1 = textoLimpio.match(regex1);
+    console.log('🚗 [LLEGADA] Match 1:', match1);
+    
+    // Patrón 2: "8 min (4.5 km)" (sin "A")
+    const regex2 = /(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
+    console.log('🚗 [LLEGADA] Patrón 2:', regex2);
+    const match2 = textoLimpio.match(regex2);
+    console.log('🚗 [LLEGADA] Match 2:', match2);
+    
+    // Patrón 3: Solo números "8" seguido de "4.5"
+    const regex3 = /(\d+).*?(\d+\.?\d*)/;
+    console.log('🚗 [LLEGADA] Patrón 3:', regex3);
+    const match3 = textoLimpio.match(regex3);
+    console.log('🚗 [LLEGADA] Match 3:', match3);
+    
+    if (match1) {
+        datos.tiempoLlegada = parseInt(match1[1]);
+        datos.distanciaLlegada = parseFloat(match1[2]);
+        console.log('🚗 [LLEGADA] ✅ Patrón 1 funcionó:', datos.tiempoLlegada, 'min,', datos.distanciaLlegada, 'km');
+    } else if (match2) {
+        datos.tiempoLlegada = parseInt(match2[1]);
+        datos.distanciaLlegada = parseFloat(match2[2]);
+        console.log('🚗 [LLEGADA] ✅ Patrón 2 funcionó:', datos.tiempoLlegada, 'min,', datos.distanciaLlegada, 'km');
     } else {
-        console.log('⚠️ [EXTRAER] ❌ Llegada NO encontrada');
+        console.log('🚗 [LLEGADA] ❌ Ningún patrón funcionó');
     }
     
-    // 🔥 PATRÓN 3: BUSCAR VIAJE "Viaje: X min (Y km)" o "Viaje X min (Y.Y km)"
-    const regexViaje = /Viaje:?\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
-    const matchViaje = textoLimpio.match(regexViaje);
+    // 🔥 BUSCAR VIAJE - MÚLTIPLES PATRONES
+    console.log('🚕 [VIAJE] Probando patrones...');
     
-    if (matchViaje) {
-        datos.tiempoViaje = parseInt(matchViaje[1]);
-        datos.distanciaViaje = parseFloat(matchViaje[2]);
-        console.log('🚕 [EXTRAER] ✅ Viaje encontrado:', datos.tiempoViaje, 'min,', datos.distanciaViaje, 'km');
+    // Patrón 1: "Viaje: 27 min (12.7 km)"
+    const regexV1 = /Viaje:?\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
+    console.log('🚕 [VIAJE] Patrón 1:', regexV1);
+    const matchV1 = textoLimpio.match(regexV1);
+    console.log('🚕 [VIAJE] Match 1:', matchV1);
+    
+    // Patrón 2: "27 min (12.7 km)" (sin "Viaje")
+    const regexV2 = /(\d{2,})\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
+    console.log('🚕 [VIAJE] Patrón 2:', regexV2);
+    const matchV2 = textoLimpio.match(regexV2);
+    console.log('🚕 [VIAJE] Match 2:', matchV2);
+    
+    if (matchV1) {
+        datos.tiempoViaje = parseInt(matchV1[1]);
+        datos.distanciaViaje = parseFloat(matchV1[2]);
+        console.log('🚕 [VIAJE] ✅ Patrón 1 funcionó:', datos.tiempoViaje, 'min,', datos.distanciaViaje, 'km');
+    } else if (matchV2) {
+        datos.tiempoViaje = parseInt(matchV2[1]);
+        datos.distanciaViaje = parseFloat(matchV2[2]);
+        console.log('🚕 [VIAJE] ✅ Patrón 2 funcionó:', datos.tiempoViaje, 'min,', datos.distanciaViaje, 'km');
     } else {
-        console.log('⚠️ [EXTRAER] ❌ Viaje NO encontrado');
+        console.log('🚕 [VIAJE] ❌ Ningún patrón funcionó');
     }
     
-    // 🔥 CÁLCULO DE TOTALES
+    // 🔥 CALCULAR TOTALES
     if (datos.tiempoLlegada !== null && datos.tiempoViaje !== null) {
         datos.tiempoTotal = datos.tiempoLlegada + datos.tiempoViaje;
-        console.log('⏱️ [EXTRAER] ✅ Tiempo total calculado:', datos.tiempoTotal, 'min');
+        console.log('⏱️ [TOTAL] ✅ Tiempo total:', datos.tiempoTotal, 'min');
+    } else {
+        console.log('⏱️ [TOTAL] ❌ No se pudo calcular tiempo total');
+        console.log('⏱️ [TOTAL] tiempoLlegada:', datos.tiempoLlegada);
+        console.log('⏱️ [TOTAL] tiempoViaje:', datos.tiempoViaje);
     }
     
     if (datos.distanciaLlegada !== null && datos.distanciaViaje !== null) {
         datos.distanciaTotal = parseFloat((datos.distanciaLlegada + datos.distanciaViaje).toFixed(1));
-        console.log('📏 [EXTRAER] ✅ Distancia total calculada:', datos.distanciaTotal, 'km');
+        console.log('📏 [TOTAL] ✅ Distancia total:', datos.distanciaTotal, 'km');
+    } else {
+        console.log('📏 [TOTAL] ❌ No se pudo calcular distancia total');
+        console.log('📏 [TOTAL] distanciaLlegada:', datos.distanciaLlegada);
+        console.log('📏 [TOTAL] distanciaViaje:', datos.distanciaViaje);
     }
     
-    // 🔥 ESTIMACIÓN INTELIGENTE SI FALTAN DATOS
+    // Estimación si falta tiempo
     if (datos.tiempoTotal === null && datos.tarifa !== null) {
-        // Estimación basada en tarifa promedio RD$9/min
         datos.tiempoTotal = Math.round(datos.tarifa / 9);
-        console.log('⚠️ [EXTRAER] ⚡ Tiempo estimado por precio:', datos.tiempoTotal, 'min');
+        console.log('⚠️ [ESTIMACIÓN] Tiempo estimado por precio:', datos.tiempoTotal, 'min');
     }
     
+    // Estimación si falta distancia
     if (datos.distanciaTotal === null && datos.tarifa !== null) {
-        // Estimación basada en tarifa promedio RD$18.5/km
         datos.distanciaTotal = parseFloat((datos.tarifa / 18.5).toFixed(1));
-        console.log('⚠️ [EXTRAER] ⚡ Distancia estimada por precio:', datos.distanciaTotal, 'km');
+        console.log('⚠️ [ESTIMACIÓN] Distancia estimada por precio:', datos.distanciaTotal, 'km');
     }
     
-    // 🔥 VALIDACIÓN DE LÍMITES RAZONABLES
-    if (datos.tiempoTotal !== null) {
-        datos.tiempoTotal = Math.max(5, Math.min(180, datos.tiempoTotal));
-        console.log('🔍 [EXTRAER] Tiempo validado:', datos.tiempoTotal, 'min (límite: 5-180)');
-    }
-    
-    if (datos.distanciaTotal !== null) {
-        datos.distanciaTotal = Math.max(1, Math.min(100, datos.distanciaTotal));
-        console.log('🔍 [EXTRAER] Distancia validada:', datos.distanciaTotal, 'km (límite: 1-100)');
-    }
-    
-    // 🔥 RESUMEN FINAL
-    console.log('📊 [EXTRAER] ═══════════════════════════════════');
-    console.log('📊 [EXTRAER] RESUMEN DE DATOS EXTRAÍDOS:');
-    console.log('📊 [EXTRAER] ═══════════════════════════════════');
-    console.log('💰 Tarifa:', datos.tarifa ? `RD$${datos.tarifa}` : '❌ NO DETECTADA');
-    console.log('⏱️  Tiempo Total:', datos.tiempoTotal ? `${datos.tiempoTotal} min` : '❌ NO DETECTADO');
-    console.log('📏 Distancia Total:', datos.distanciaTotal ? `${datos.distanciaTotal} km` : '❌ NO DETECTADA');
-    console.log('🚗 Llegada:', datos.tiempoLlegada && datos.distanciaLlegada ? 
-        `${datos.tiempoLlegada} min, ${datos.distanciaLlegada} km` : '⚠️ Parcial/No detectada');
-    console.log('🚕 Viaje:', datos.tiempoViaje && datos.distanciaViaje ? 
-        `${datos.tiempoViaje} min, ${datos.distanciaViaje} km` : '⚠️ Parcial/No detectado');
-    console.log('📊 [EXTRAER] ═══════════════════════════════════');
+    console.log('📊 [RESUMEN] ═══════════════════════════════════════');
+    console.log('📊 [RESUMEN] DATOS FINALES:');
+    console.log('📊 [RESUMEN] Tarifa:', datos.tarifa);
+    console.log('📊 [RESUMEN] Tiempo Total:', datos.tiempoTotal);
+    console.log('📊 [RESUMEN] Distancia Total:', datos.distanciaTotal);
+    console.log('📊 [RESUMEN] ═══════════════════════════════════════');
     
     return datos;
 }
+
 /* ============================================================
    8️⃣ MOSTRAR RESULTADOS DE EXTRACCIÓN
    ============================================================ */
@@ -6250,6 +6288,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
