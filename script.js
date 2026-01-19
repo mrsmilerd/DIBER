@@ -5317,47 +5317,26 @@ function extraerDatosUber(texto) {
 /* =======================
    6️⃣ MOSTRAR + CALCULAR
    ======================= */
-function mostrarResultadosUber(datos) {
-    console.log('📊 Resultados OCR finales:', datos);
+function mostrarResultados(d) {
+    console.log('📊 Datos finales:', d);
 
-    if (!datos.tarifa || !datos.minutosTotal || !datos.distanciaTotal) {
-        console.warn('⚠️ Datos incompletos, no se puede calcular');
-        return;
-    }
+    if (d.tarifa && document.getElementById('tarifa'))
+        document.getElementById('tarifa').value = d.tarifa;
 
-    const tarifa = datos.tarifa;
-    const minutos = datos.minutosTotal;
-    const distancia = datos.distanciaTotal;
+    if (d.minutosTotal && document.getElementById('minutos'))
+        document.getElementById('minutos').value = d.minutosTotal;
 
-    console.log('🧮 Enviando a sistema de rentabilidad:', {
-        tarifa,
-        minutos,
-        distancia
-    });
+    if (d.distanciaTotal && document.getElementById('distancia'))
+        document.getElementById('distancia').value = d.distanciaTotal;
 
-    // 🔹 PRIORIDAD 1: perfil
-    if (typeof calcularRentabilidadConPerfil === 'function') {
-        calcularRentabilidadConPerfil(tarifa, minutos, distancia);
-        return;
-    }
-
-    // 🔹 PRIORIDAD 2: cálculo directo
-    if (typeof calcularRentabilidad === 'function') {
-        calcularRentabilidad(tarifa, minutos, distancia);
-        return;
-    }
-
-    // 🔹 PRIORIDAD 3: automático global
-    if (typeof manejarCalculoAutomatico === 'function') {
-        // Guardamos datos donde tu sistema los espera
-        window.viajeActual = { tarifa, minutos, distancia };
-        manejarCalculoAutomatico();
-        return;
-    }
-
-    console.error('❌ No se encontró ninguna función de cálculo');
+    setTimeout(() => {
+        if (typeof manejarCalculoAutomatico === 'function') {
+            manejarCalculoAutomatico();
+        } else if (typeof calcularRentabilidad === 'function') {
+            calcularRentabilidad();
+        }
+    }, 100);
 }
-
 
 /* =======================
    7️⃣ AUTO-INICIO
