@@ -5235,8 +5235,8 @@ function extraerDatosDeUber(textoOCR) {
     console.log('⏱️ TOTAL minutos:', minutosTotal);
     console.log('🛣️ TOTAL km:', distanciaTotal);
 
-    // ===============================
-// 🔗 PUENTE OCR → SISTEMA DIBER
+// ===============================
+// 🔗 PUENTE OCR → SISTEMA UBER
 // ===============================
 if (
     tarifa > 0 &&
@@ -5250,8 +5250,7 @@ if (
         minutos: minutosTotal,
         distancia: distanciaTotal
     });
-}
-    
+
 } else {
     console.warn("⚠️ Datos incompletos, no se ejecuta el cálculo", {
         tarifa,
@@ -5374,6 +5373,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
