@@ -5480,56 +5480,147 @@ function seleccionarImagenIA() {
    4️⃣ PROCESAMIENTO MEJORADO CON TESSERACT
    ============================================================ */
 async function procesarImagenMejorada(file) {
-    console.log('🧠 Procesando imagen con OCR mejorado...');
+    console.log('🧠 [UBER OCR] Iniciando procesamiento optimizado...');
     
-    // Mostrar estado de procesamiento
-    mostrarEstadoProcesamiento('🔍 Iniciando análisis de imagen...', 0);
+    mostrarEstadoProcesamiento('🔍 Preparando imagen para análisis...', 10);
     
     try {
-        // Verificar que Tesseract esté cargado
+        // Verificar que Tesseract esté disponible
         if (typeof Tesseract === 'undefined') {
-            throw new Error('Tesseract.js no está disponible. Recarga la página.');
+            throw new Error('❌ Tesseract.js no está disponible. Recarga la página.');
         }
         
-        console.log('🔄 Configurando Tesseract para pantallas móviles...');
+        console.log('🎨 [UBER OCR] Aplicando pre-procesamiento de imagen...');
         
-        // CONFIGURACIÓN OPTIMIZADA
-        const { data: { text } } = await Tesseract.recognize(file, 'eng+spa', {
+        // 🔥 PASO 1: Pre-procesar imagen (invertir colores, mejorar contraste)
+        const imagenMejorada = await preprocesarImagenUber(file);
+        
+        mostrarEstadoProcesamiento('🤖 Analizando texto con IA...', 30);
+        
+        console.log('📊 [UBER OCR] Ejecutando OCR con configuración optimizada...');
+        
+        // 🔥 PASO 2: OCR con configuración específica para Uber
+        const { data: { text } } = await Tesseract.recognize(imagenMejorada, 'eng', {
             logger: progress => {
                 if (progress.status === 'recognizing text') {
-                    const porcentaje = Math.round(progress.progress * 100);
-                    mostrarEstadoProcesamiento(`📊 Analizando texto... ${porcentaje}%`, porcentaje);
+                    const porcentaje = Math.round(30 + (progress.progress * 60));
+                    mostrarEstadoProcesamiento(`📖 Leyendo texto... ${porcentaje}%`, porcentaje);
                 }
             },
-            // Configuraciones clave para mejorar detección
-            tessedit_char_whitelist: '0123456789RD$kmmin.,(): ',
-            tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT,
+            // ✅ CONFIGURACIÓN ULTRA-OPTIMIZADA PARA UBER
+            tessedit_char_whitelist: '0123456789RD$AViajekm.min() ',
+            tessedit_pageseg_mode: Tesseract.PSM.AUTO, // Detectar bloques automáticamente
             tessedit_ocr_engine_mode: Tesseract.OEM.LSTM_ONLY,
-            preserve_interword_spaces: '0',
-            textord_min_linesize: '2.5',
-            edges_max_children_per_outline: '40'
+            preserve_interword_spaces: '1'
         });
         
-        console.log('✅ OCR completado. Texto detectado:', text.substring(0, 200) + '...');
+        console.log('✅ [UBER OCR] OCR completado exitosamente');
+        console.log('📝 [UBER OCR] Texto detectado:', text);
         
-        // Cerrar estado de procesamiento
+        mostrarEstadoProcesamiento('🎯 Extrayendo datos...', 95);
+        
+        // 🔥 PASO 3: Extraer datos directamente
+        const datosExtraidos = extraerDatosUberDirecto(text);
+        
         cerrarEstadoProcesamiento();
         
-        // Procesar el texto con limpieza inteligente
-        procesarTextoDetectado(text);
+        // 🔥 PASO 4: Mostrar resultados
+        mostrarResultadosExtracion(datosExtraidos);
         
     } catch (error) {
-        console.error('❌ Error en procesamiento IA:', error);
+        console.error('❌ [UBER OCR] Error en procesamiento:', error);
         cerrarEstadoProcesamiento();
         mostrarStatus('❌ Error procesando imagen: ' + error.message, 'error');
         
-        // Intentar con OCR simple como fallback
         setTimeout(() => {
-            if (confirm('El OCR avanzado falló. ¿Intentar con procesamiento básico?')) {
-                procesarConOCRSimple(file);
+            if (confirm('❌ El OCR falló.\n\n¿Intentar nuevamente con otra imagen?')) {
+                activarEscaneoMejorado();
             }
         }, 1000);
     }
+}
+
+/* ============================================================
+   PRE-PROCESAMIENTO DE IMAGEN PARA UBER
+   ============================================================ */
+async function preprocesarImagenUber(file) {
+    console.log('🎨 [PREPROCESAR] Iniciando mejoras de imagen...');
+    
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            const img = new Image();
+            
+            img.onload = () => {
+                console.log('🖼️ [PREPROCESAR] Imagen cargada:', img.width, 'x', img.height);
+                
+                // Crear canvas para procesamiento
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Usar resolución original (importante para OCR)
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // Dibujar imagen original
+                ctx.drawImage(img, 0, 0);
+                
+                // Obtener datos de píxeles
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                console.log('🔄 [PREPROCESAR] Aplicando transformaciones...');
+                
+                // 🔥 TRANSFORMACIÓN 1: Invertir colores (fondo oscuro → claro)
+                // 🔥 TRANSFORMACIÓN 2: Aumentar contraste (mejorar legibilidad)
+                for (let i = 0; i < data.length; i += 4) {
+                    // Invertir cada canal de color (RGB)
+                    data[i] = 255 - data[i];         // Red
+                    data[i + 1] = 255 - data[i + 1]; // Green
+                    data[i + 2] = 255 - data[i + 2]; // Blue
+                    // Alpha (transparencia) no se modifica
+                    
+                    // Calcular promedio para umbral
+                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    
+                    // Aplicar umbral para aumentar contraste
+                    if (avg < 140) {
+                        // Píxeles oscuros → Negro puro
+                        data[i] = data[i + 1] = data[i + 2] = 0;
+                    } else {
+                        // Píxeles claros → Blanco puro
+                        data[i] = data[i + 1] = data[i + 2] = 255;
+                    }
+                }
+                
+                // Aplicar transformaciones al canvas
+                ctx.putImageData(imageData, 0, 0);
+                
+                console.log('✅ [PREPROCESAR] Transformaciones aplicadas exitosamente');
+                
+                // Convertir canvas procesado a blob
+                canvas.toBlob((blob) => {
+                    console.log('💾 [PREPROCESAR] Imagen procesada lista');
+                    resolve(blob);
+                }, 'image/png', 1.0); // Máxima calidad
+            };
+            
+            img.onerror = () => {
+                console.error('❌ [PREPROCESAR] Error cargando imagen');
+                reject(new Error('Error cargando imagen para procesamiento'));
+            };
+            
+            img.src = e.target.result;
+        };
+        
+        reader.onerror = () => {
+            console.error('❌ [PREPROCESAR] Error leyendo archivo');
+            reject(new Error('Error leyendo archivo'));
+        };
+        
+        reader.readAsDataURL(file);
+    });
 }
 
 function mostrarEstadoProcesamiento(mensaje, porcentaje) {
@@ -5784,87 +5875,119 @@ function mostrarComparacionOCR(textoBruto, textoLimpio) {
 /* ============================================================
    7️⃣ EXTRACCIÓN INTELIGENTE DE DATOS
    ============================================================ */
-function extraerDatosInteligentes(texto) {
-    console.log('🎯 Extrayendo datos inteligentemente...');
+/* ============================================================
+   PASO 3: EXTRACCIÓN INTELIGENTE DE DATOS UBER
+   ============================================================ */
+function extraerDatosUberDirecto(texto) {
+    console.log('🎯 [EXTRAER] Iniciando extracción de datos Uber...');
+    console.log('📝 [EXTRAER] Texto recibido del OCR:\n', texto);
     
     const datos = {
         tarifa: null,
-        minutosBusqueda: null,
-        distanciaBusqueda: null,
-        minutosViaje: null,
+        tiempoLlegada: null,
+        distanciaLlegada: null,
+        tiempoViaje: null,
         distanciaViaje: null,
-        minutosTotal: null,
+        tiempoTotal: null,
         distanciaTotal: null
     };
     
-    // BUSCAR PATRONES ESPECÍFICOS DE UBER
-    const lineas = texto.split('\n').filter(l => l.trim().length > 0);
+    // 🔥 LIMPIEZA DE TEXTO
+    let textoLimpio = texto
+        .replace(/\n/g, ' ')           // Convertir saltos de línea en espacios
+        .replace(/\s+/g, ' ')          // Normalizar espacios múltiples
+        .replace(/[|]/g, '1')          // Corregir | → 1
+        .replace(/[O]/g, '0')          // Corregir O → 0 (en contexto numérico)
+        .replace(/[l]/g, '1')          // Corregir l → 1
+        .trim();
     
-    lineas.forEach(linea => {
-        linea = linea.trim();
-        
-        // 1. Buscar tarifa RD$
-        if (!datos.tarifa) {
-            const matchTarifa = linea.match(/RD\$(\d+(?:[.,]\d+)?)/i);
-            if (matchTarifa) {
-                datos.tarifa = parseFloat(matchTarifa[1].replace(',', '.'));
-                console.log('💰 Tarifa detectada:', datos.tarifa);
-            }
-        }
-        
-        // 2. Buscar "Xmin Ykm" (llegada compacta)
-        if (!datos.minutosBusqueda) {
-            const matchLlegada = linea.match(/(\d+)\s*min\s*(\d+(?:[.,]\d+)?)\s*km/i);
-            if (matchLlegada) {
-                datos.minutosBusqueda = parseInt(matchLlegada[1]);
-                datos.distanciaBusqueda = parseFloat(matchLlegada[2].replace(',', '.'));
-                console.log('🚗 Llegada detectada:', datos.minutosBusqueda, 'min', datos.distanciaBusqueda, 'km');
-            }
-        }
-        
-        // 3. Buscar "X min Y km" (viaje con espacios)
-        if (!datos.minutosViaje) {
-            const matchViaje = linea.match(/(\d+)\s*min\s+(\d+(?:[.,]\d+)?)\s*km/i);
-            if (matchViaje && parseInt(matchViaje[1]) > 5) {
-                datos.minutosViaje = parseInt(matchViaje[1]);
-                datos.distanciaViaje = parseFloat(matchViaje[2].replace(',', '.'));
-                console.log('🚕 Viaje detectado:', datos.minutosViaje, 'min', datos.distanciaViaje, 'km');
-            }
-        }
-    });
+    console.log('🧹 [EXTRAER] Texto limpio:', textoLimpio);
     
-    // CALCULAR TOTALES INTELIGENTES
-    if (datos.minutosViaje) {
-        datos.minutosTotal = datos.minutosViaje;
-    } else if (datos.minutosBusqueda) {
-        datos.minutosTotal = datos.minutosBusqueda + 10; // Estimación
-    } else if (datos.tarifa) {
-        datos.minutosTotal = Math.max(10, Math.round(datos.tarifa / 5)); // Estimación por precio
+    // 🔥 PATRÓN 1: BUSCAR TARIFA (RD$XXX.XX o RD$ XXX.XX)
+    const regexTarifa = /RD\$\s*(\d+\.?\d{0,2})/i;
+    const matchTarifa = textoLimpio.match(regexTarifa);
+    
+    if (matchTarifa) {
+        datos.tarifa = parseFloat(matchTarifa[1]);
+        console.log('💰 [EXTRAER] ✅ Tarifa encontrada:', datos.tarifa);
+    } else {
+        console.log('⚠️ [EXTRAER] ❌ Tarifa NO encontrada');
     }
     
-    if (datos.distanciaViaje) {
-        datos.distanciaTotal = datos.distanciaViaje;
-    } else if (datos.distanciaBusqueda) {
-        datos.distanciaTotal = datos.distanciaBusqueda * 4; // Estimación
-    } else if (datos.tarifa) {
-        datos.distanciaTotal = parseFloat((datos.tarifa / 20).toFixed(1)); // Estimación por precio
+    // 🔥 PATRÓN 2: BUSCAR LLEGADA "A X min (Y km)" o "A X min (Y.Y km)"
+    const regexLlegada = /A\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
+    const matchLlegada = textoLimpio.match(regexLlegada);
+    
+    if (matchLlegada) {
+        datos.tiempoLlegada = parseInt(matchLlegada[1]);
+        datos.distanciaLlegada = parseFloat(matchLlegada[2]);
+        console.log('🚗 [EXTRAER] ✅ Llegada encontrada:', datos.tiempoLlegada, 'min,', datos.distanciaLlegada, 'km');
+    } else {
+        console.log('⚠️ [EXTRAER] ❌ Llegada NO encontrada');
     }
     
-    // Límites razonables
-    if (datos.minutosTotal) {
-        datos.minutosTotal = Math.max(5, Math.min(120, datos.minutosTotal));
+    // 🔥 PATRÓN 3: BUSCAR VIAJE "Viaje: X min (Y km)" o "Viaje X min (Y.Y km)"
+    const regexViaje = /Viaje:?\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
+    const matchViaje = textoLimpio.match(regexViaje);
+    
+    if (matchViaje) {
+        datos.tiempoViaje = parseInt(matchViaje[1]);
+        datos.distanciaViaje = parseFloat(matchViaje[2]);
+        console.log('🚕 [EXTRAER] ✅ Viaje encontrado:', datos.tiempoViaje, 'min,', datos.distanciaViaje, 'km');
+    } else {
+        console.log('⚠️ [EXTRAER] ❌ Viaje NO encontrado');
     }
     
-    if (datos.distanciaTotal) {
-        datos.distanciaTotal = Math.max(1, Math.min(50, datos.distanciaTotal));
+    // 🔥 CÁLCULO DE TOTALES
+    if (datos.tiempoLlegada !== null && datos.tiempoViaje !== null) {
+        datos.tiempoTotal = datos.tiempoLlegada + datos.tiempoViaje;
+        console.log('⏱️ [EXTRAER] ✅ Tiempo total calculado:', datos.tiempoTotal, 'min');
     }
     
-    console.log('📊 Datos finales:', datos);
+    if (datos.distanciaLlegada !== null && datos.distanciaViaje !== null) {
+        datos.distanciaTotal = parseFloat((datos.distanciaLlegada + datos.distanciaViaje).toFixed(1));
+        console.log('📏 [EXTRAER] ✅ Distancia total calculada:', datos.distanciaTotal, 'km');
+    }
     
-    // Mostrar resultados
-    mostrarResultadosExtracion(datos);
+    // 🔥 ESTIMACIÓN INTELIGENTE SI FALTAN DATOS
+    if (datos.tiempoTotal === null && datos.tarifa !== null) {
+        // Estimación basada en tarifa promedio RD$9/min
+        datos.tiempoTotal = Math.round(datos.tarifa / 9);
+        console.log('⚠️ [EXTRAER] ⚡ Tiempo estimado por precio:', datos.tiempoTotal, 'min');
+    }
+    
+    if (datos.distanciaTotal === null && datos.tarifa !== null) {
+        // Estimación basada en tarifa promedio RD$18.5/km
+        datos.distanciaTotal = parseFloat((datos.tarifa / 18.5).toFixed(1));
+        console.log('⚠️ [EXTRAER] ⚡ Distancia estimada por precio:', datos.distanciaTotal, 'km');
+    }
+    
+    // 🔥 VALIDACIÓN DE LÍMITES RAZONABLES
+    if (datos.tiempoTotal !== null) {
+        datos.tiempoTotal = Math.max(5, Math.min(180, datos.tiempoTotal));
+        console.log('🔍 [EXTRAER] Tiempo validado:', datos.tiempoTotal, 'min (límite: 5-180)');
+    }
+    
+    if (datos.distanciaTotal !== null) {
+        datos.distanciaTotal = Math.max(1, Math.min(100, datos.distanciaTotal));
+        console.log('🔍 [EXTRAER] Distancia validada:', datos.distanciaTotal, 'km (límite: 1-100)');
+    }
+    
+    // 🔥 RESUMEN FINAL
+    console.log('📊 [EXTRAER] ═══════════════════════════════════');
+    console.log('📊 [EXTRAER] RESUMEN DE DATOS EXTRAÍDOS:');
+    console.log('📊 [EXTRAER] ═══════════════════════════════════');
+    console.log('💰 Tarifa:', datos.tarifa ? `RD$${datos.tarifa}` : '❌ NO DETECTADA');
+    console.log('⏱️  Tiempo Total:', datos.tiempoTotal ? `${datos.tiempoTotal} min` : '❌ NO DETECTADO');
+    console.log('📏 Distancia Total:', datos.distanciaTotal ? `${datos.distanciaTotal} km` : '❌ NO DETECTADA');
+    console.log('🚗 Llegada:', datos.tiempoLlegada && datos.distanciaLlegada ? 
+        `${datos.tiempoLlegada} min, ${datos.distanciaLlegada} km` : '⚠️ Parcial/No detectada');
+    console.log('🚕 Viaje:', datos.tiempoViaje && datos.distanciaViaje ? 
+        `${datos.tiempoViaje} min, ${datos.distanciaViaje} km` : '⚠️ Parcial/No detectado');
+    console.log('📊 [EXTRAER] ═══════════════════════════════════');
+    
+    return datos;
 }
-
 /* ============================================================
    8️⃣ MOSTRAR RESULTADOS DE EXTRACCIÓN
    ============================================================ */
@@ -6127,6 +6250,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
