@@ -5286,7 +5286,7 @@ function ejecutarCalculoRentabilidad({ tarifa, minutos, distancia }) {
 
     console.warn('⚠️ No se encontró función de cálculo');
 }
-
+}
 /* ============================================================
    3️⃣ OCR SIMPLE (SI NO TIENES UNO UNIFICADO)
    ============================================================ */
@@ -5373,3 +5373,4 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
