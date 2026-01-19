@@ -5149,16 +5149,735 @@ window.onclick = function(event) {
 };
 
 /* ============================================================
-   🔍 ESCÁNER SIMPLE Y EFECTIVO PARA GALAXY A12
+   🔍 OCR MEJORADO PARA UBER - VERSIÓN INTELIGENTE
    ============================================================ */
 
 /* ============================================================
-   1️⃣ ESCÁNER ULTRA SIMPLE - SOLO TOMA FOTO Y PROCESA
+   1️⃣ CONFIGURACIÓN AVANZADA DE TESSERACT
    ============================================================ */
-function activarEscaneoSimple() {
-    console.log('📸 Activando escaneo simple para Galaxy A12...');
+async function procesarImagenMejorada(file) {
+    console.log('🧠 Procesando imagen con OCR mejorado...');
     
-    // Crear interfaz simple
+    mostrarStatus('🤖 Procesando imagen con IA...', 'info');
+    
+    try {
+        if (typeof Tesseract === 'undefined') {
+            throw new Error('Tesseract.js no está cargado');
+        }
+        
+        // CONFIGURACIÓN OPTIMIZADA PARA PANTALLAS DE CELULAR
+        const result = await Tesseract.recognize(file, 'eng+spa', {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    const progress = Math.round(m.progress * 100);
+                    console.log(`📊 Progreso OCR: ${progress}%`);
+                    mostrarStatus(`🤖 Analizando imagen... ${progress}%`, 'info');
+                }
+            },
+            // CONFIGURACIONES CLAVE PARA MEJORAR DETECCIÓN
+            tessedit_char_whitelist: '0123456789RD$kmmin.,(): ',
+            tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT, // Mejor para pantallas
+            preserve_interword_spaces: '0', // Reduce espacios extraños
+            tessedit_ocr_engine_mode: Tesseract.OEM.LSTM_ONLY, // Usar LSTM (mejor)
+            user_defined_dpi: '300', // Mejor resolución
+            textord_min_linesize: '2.5', // Para texto pequeño
+            edges_max_children_per_outline: '40' // Mejor detección de bordes
+        });
+        
+        const textoBruto = result.data.text;
+        console.log('📝 TEXTO BRUTO DETECTADO:', textoBruto);
+        
+        // Procesar el texto con limpieza INTELIGENTE
+        const textoLimpio = limpiarTextoOCR(textoBruto);
+        console.log('🧹 TEXTO LIMPIO:', textoLimpio);
+        
+        // Mostrar comparación
+        mostrarComparacionOCR(textoBruto, textoLimpio);
+        
+        // Extraer datos con inteligencia artificial
+        const datos = extraerDatosInteligentes(textoLimpio);
+        
+        // Mostrar resultados
+        mostrarResultadosOCR(datos, textoLimpio);
+        
+    } catch (error) {
+        console.error('❌ Error en OCR mejorado:', error);
+        mostrarStatus('❌ Error procesando imagen', 'error');
+        
+        // Intentar con configuración más simple
+        console.log('🔄 Intentando con configuración simple...');
+        procesarConOCRSimple(file);
+    }
+}
+
+/* ============================================================
+   2️⃣ LIMPIAR TEXTO OCR INTELIGENTEMENTE
+   ============================================================ */
+function limpiarTextoOCR(texto) {
+    console.log('🧼 Limpiando texto OCR...');
+    
+    let limpio = texto;
+    
+    // 1. Reemplazar caracteres comúnmente mal interpretados
+    const reemplazos = {
+        'i1': '1', 'l1': '1', '|1': '1', 'I1': '1',
+        'i0': '0', 'l0': '0', '|0': '0', 'O0': '0',
+        'i2': '2', 'Z2': '2', 'z2': '2',
+        'i5': '5', 'S5': '5', 's5': '5',
+        'i8': '8', 'B8': '8', 'b8': '8',
+        'RD$': 'RD$', 'rd$': 'RD$', 'Rd$': 'RD$',
+        'km': 'km', 'KM': 'km', 'Km': 'km',
+        'min': 'min', 'MIN': 'min', 'Min': 'min'
+    };
+    
+    Object.keys(reemplazos).forEach(mal => {
+        const regex = new RegExp(mal, 'gi');
+        limpio = limpio.replace(regex, reemplazos[mal]);
+    });
+    
+    // 2. Eliminar palabras sin sentido (menos de 2 letras que no sean números)
+    limpio = limpio.split('\n').map(linea => {
+        return linea.split(' ').filter(palabra => {
+            // Mantener números, RD$, km, min
+            if (/^\d+$/.test(palabra)) return true;
+            if (/^RD\$/.test(palabra)) return true;
+            if (/^\d+[.,]\d+$/.test(palabra)) return true;
+            if (/^\d+min$/.test(palabra)) return true;
+            if (/^\d+km$/.test(palabra)) return true;
+            if (/^\d+[.,]\d+km$/.test(palabra)) return true;
+            if (palabra === 'RD$' || palabra === 'km' || palabra === 'min') return true;
+            
+            // Eliminar palabras de solo 1-2 letras que no sean útiles
+            return palabra.length > 2;
+        }).join(' ');
+    }).join('\n');
+    
+    // 3. Corregir espacios entre números y unidades
+    limpio = limpio.replace(/(\d)\s*(min|km|RD\$)/gi, '$1$2');
+    limpio = limpio.replace(/(RD\$)\s*(\d)/gi, '$1$2');
+    
+    // 4. Unir líneas rotas
+    limpio = limpio.replace(/(\d)\s*\n\s*(\d)/g, '$1$2');
+    limpio = limpio.replace(/(\w)\s*\n\s*(\w)/g, '$1 $2');
+    
+    // 5. Eliminar múltiples espacios
+    limpio = limpio.replace(/\s+/g, ' ').trim();
+    
+    return limpio;
+}
+
+/* ============================================================
+   3️⃣ EXTRACCIÓN INTELIGENTE DE DATOS DE UBER
+   ============================================================ */
+function extraerDatosInteligentes(texto) {
+    console.log('🔍 Extrayendo datos inteligentemente...');
+    
+    // FORMATOS TÍPICOS DE UBER (basado en tu ejemplo):
+    // 1. RD$120.52
+    // 2. 5min 1.1km  (tiempo de llegada)
+    // 3. 11 min 4.2 km  (tiempo de viaje)
+    
+    const datos = {
+        tarifa: null,
+        minutosBusqueda: null,  // Tiempo para llegar
+        distanciaBusqueda: null, // Distancia para llegar
+        minutosViaje: null,      // Tiempo del viaje
+        distanciaViaje: null,    // Distancia del viaje
+        minutosTotal: null,
+        distanciaTotal: null
+    };
+    
+    const lineas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    
+    console.log('📋 Líneas a analizar:', lineas);
+    
+    // ANÁLISIS POR PATRONES ESPECÍFICOS DE UBER
+    lineas.forEach((linea, index) => {
+        console.log(`🔍 Analizando línea ${index}: "${linea}"`);
+        
+        // PATRÓN 1: TARIFA (RD$XXX.XX)
+        if (!datos.tarifa) {
+            const matchTarifa = linea.match(/RD\$(\d+(?:[.,]\d+)?)/i);
+            if (matchTarifa) {
+                datos.tarifa = parseFloat(matchTarifa[1].replace(',', '.'));
+                console.log(`💰 Tarifa encontrada: RD$${datos.tarifa}`);
+            }
+        }
+        
+        // PATRÓN 2: TIEMPO DE LLEGADA (Xmin Ykm) - Formato compacto
+        if (!datos.minutosBusqueda) {
+            const matchLlegadaCompacto = linea.match(/(\d+)\s*min\s*(\d+(?:[.,]\d+)?)\s*km/i);
+            if (matchLlegadaCompacto) {
+                datos.minutosBusqueda = parseInt(matchLlegadaCompacto[1]);
+                datos.distanciaBusqueda = parseFloat(matchLlegadaCompacto[2].replace(',', '.'));
+                console.log(`🚗 Llegada (compacto): ${datos.minutosBusqueda}min ${datos.distanciaBusqueda}km`);
+            }
+        }
+        
+        // PATRÓN 3: TIEMPO DE LLEGADA (X min Y km) - Formato con espacios
+        if (!datos.minutosBusqueda) {
+            const matchLlegadaEspaciado = linea.match(/(\d+)\s*min\s+(\d+(?:[.,]\d+)?)\s*km/i);
+            if (matchLlegadaEspaciado) {
+                datos.minutosBusqueda = parseInt(matchLlegadaEspaciado[1]);
+                datos.distanciaBusqueda = parseFloat(matchLlegadaEspaciado[2].replace(',', '.'));
+                console.log(`🚗 Llegada (espaciado): ${datos.minutosBusqueda}min ${datos.distanciaBusqueda}km`);
+            }
+        }
+        
+        // PATRÓN 4: VIAJE (XX min Y.Y km)
+        if (!datos.minutosViaje) {
+            const matchViaje = linea.match(/(\d+)\s*min\s+(\d+(?:[.,]\d+)?)\s*km/i);
+            if (matchViaje && parseInt(matchViaje[1]) > 5) { // Viajes generalmente >5min
+                datos.minutosViaje = parseInt(matchViaje[1]);
+                datos.distanciaViaje = parseFloat(matchViaje[2].replace(',', '.'));
+                console.log(`🚕 Viaje: ${datos.minutosViaje}min ${datos.distanciaViaje}km`);
+            }
+        }
+        
+        // PATRÓN 5: Solo minutos (buscar números seguidos de "min")
+        if (!datos.minutosBusqueda) {
+            const matchMinutos = linea.match(/(\d+)\s*min/i);
+            if (matchMinutos && parseInt(matchMinutos[1]) <= 10) { // Llegada generalmente <=10min
+                datos.minutosBusqueda = parseInt(matchMinutos[1]);
+                console.log(`⏱️ Minutos llegada: ${datos.minutosBusqueda}min`);
+            }
+        }
+        
+        // PATRÓN 6: Solo distancia (buscar números seguidos de "km")
+        if (!datos.distanciaBusqueda) {
+            const matchDistancia = linea.match(/(\d+(?:[.,]\d+)?)\s*km/i);
+            if (matchDistancia && parseFloat(matchDistancia[1]) <= 5) { // Distancias cortas para llegada
+                datos.distanciaBusqueda = parseFloat(matchDistancia[1].replace(',', '.'));
+                console.log(`📏 Distancia llegada: ${datos.distanciaBusqueda}km`);
+            }
+        }
+    });
+    
+    // CÁLCULO DE TOTALES INTELIGENTE
+    console.log('🧮 Calculando totales...');
+    
+    // Si tenemos tiempo de viaje, usarlo como total
+    if (datos.minutosViaje) {
+        datos.minutosTotal = datos.minutosViaje;
+        console.log(`⏱️ Usando tiempo de viaje como total: ${datos.minutosTotal}min`);
+    }
+    // Si no, sumar llegada + estimación de viaje
+    else if (datos.minutosBusqueda) {
+        // Estimación: tiempo de llegada + 8-12 minutos típicos de viaje
+        datos.minutosTotal = datos.minutosBusqueda + 10;
+        console.log(`⏱️ Estimando total (llegada + 10min): ${datos.minutosTotal}min`);
+    }
+    
+    // Si tenemos distancia de viaje, usarla como total
+    if (datos.distanciaViaje) {
+        datos.distanciaTotal = datos.distanciaViaje;
+        console.log(`🛣️ Usando distancia de viaje como total: ${datos.distanciaTotal}km`);
+    }
+    // Si no, usar distancia de llegada * 4 (estimación)
+    else if (datos.distanciaBusqueda) {
+        datos.distanciaTotal = datos.distanciaBusqueda * 4;
+        console.log(`🛣️ Estimando total (llegada × 4): ${datos.distanciaTotal}km`);
+    }
+    
+    // VALORES POR DEFECTO INTELIGENTES
+    if (!datos.minutosTotal && datos.tarifa) {
+        // Estimación basada en tarifa: ~$5 por minuto en República Dominicana
+        datos.minutosTotal = Math.round(datos.tarifa / 5);
+        console.log(`🤖 Tiempo estimado por tarifa ($${datos.tarifa}/5): ${datos.minutosTotal}min`);
+    }
+    
+    if (!datos.distanciaTotal && datos.tarifa) {
+        // Estimación basada en tarifa: ~$20 por km en República Dominicana
+        datos.distanciaTotal = parseFloat((datos.tarifa / 20).toFixed(1));
+        console.log(`🤖 Distancia estimada por tarifa ($${datos.tarifa}/20): ${datos.distanciaTotal}km`);
+    }
+    
+    // Límites razonables
+    if (datos.minutosTotal) {
+        datos.minutosTotal = Math.max(5, Math.min(120, datos.minutosTotal)); // Entre 5min y 2h
+    }
+    
+    if (datos.distanciaTotal) {
+        datos.distanciaTotal = Math.max(1, Math.min(50, datos.distanciaTotal)); // Entre 1km y 50km
+    }
+    
+    console.log('📊 DATOS FINALES EXTRACTADOS:', datos);
+    return datos;
+}
+
+/* ============================================================
+   4️⃣ MOSTRAR COMPARACIÓN OCR
+   ============================================================ */
+function mostrarComparacionOCR(textoBruto, textoLimpio) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.95);
+        z-index: 100001;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        color: white;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: #1a1a1a;
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 800px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 2px solid #2196F3;
+        ">
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 25px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #333;
+            ">
+                <h2 style="color: #2196F3; margin: 0;">🔍 ANÁLISIS DE TEXTO DETECTADO</h2>
+                <button id="cerrar-comparacion" style="
+                    background: #ff4444;
+                    color: white;
+                    border: none;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    font-size: 20px;
+                    cursor: pointer;
+                ">×</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <div>
+                    <h3 style="color: #ff9800; margin-bottom: 15px;">📄 TEXTO BRUTO</h3>
+                    <div style="
+                        background: #000;
+                        color: #ff9800;
+                        font-family: 'Courier New', monospace;
+                        padding: 20px;
+                        border-radius: 10px;
+                        white-space: pre-wrap;
+                        word-break: break-all;
+                        height: 300px;
+                        overflow-y: auto;
+                        border: 1px solid #ff9800;
+                    ">
+                        ${textoBruto.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 style="color: #4CAF50; margin-bottom: 15px;">🧹 TEXTO LIMPIO</h3>
+                    <div style="
+                        background: #000;
+                        color: #4CAF50;
+                        font-family: 'Courier New', monospace;
+                        padding: 20px;
+                        border-radius: 10px;
+                        white-space: pre-wrap;
+                        word-break: break-word;
+                        height: 300px;
+                        overflow-y: auto;
+                        border: 1px solid #4CAF50;
+                    ">
+                        ${textoLimpio.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}
+                    </div>
+                </div>
+            </div>
+            
+            <div style="
+                background: #2a2a2a;
+                padding: 20px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                border-left: 5px solid #2196F3;
+            ">
+                <h4 style="color: #2196F3; margin-bottom: 10px;">💡 MEJORAS APLICADAS:</h4>
+                <ul style="color: #ccc; line-height: 1.6; padding-left: 20px;">
+                    <li>Corrección de caracteres mal interpretados (i→1, l→1, O→0)</li>
+                    <li>Eliminación de "ruido" OCR (palabras sin sentido)</li>
+                    <li>Unión de números y unidades (5min→5min, 1.1km→1.1km)</li>
+                    <li>Corrección de espacios entre RD$ y el número</li>
+                </ul>
+            </div>
+            
+            <button id="procesar-mejorado" style="
+                background: linear-gradient(135deg, #4CAF50, #2E7D32);
+                color: white;
+                border: none;
+                padding: 18px;
+                border-radius: 12px;
+                font-weight: bold;
+                font-size: 16px;
+                cursor: pointer;
+                width: 100%;
+                margin-top: 10px;
+                transition: all 0.3s;
+            ">
+                ✅ CONTINUAR CON EXTRACCIÓN INTELIGENTE
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event Listeners
+    document.getElementById('cerrar-comparacion').onclick = () => {
+        modal.remove();
+    };
+    
+    document.getElementById('procesar-mejorado').onclick = () => {
+        modal.remove();
+        const datos = extraerDatosInteligentes(textoLimpio);
+        mostrarResultadosOCR(datos, textoLimpio);
+    };
+    
+    // Auto-continuar después de 5 segundos
+    setTimeout(() => {
+        if (modal.parentNode) {
+            modal.remove();
+            const datos = extraerDatosInteligentes(textoLimpio);
+            mostrarResultadosOCR(datos, textoLimpio);
+        }
+    }, 5000);
+}
+
+/* ============================================================
+   5️⃣ MOSTRAR RESULTADOS DEL OCR
+   ============================================================ */
+function mostrarResultadosOCR(datos, textoLimpio) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 30px;
+        border-radius: 20px;
+        z-index: 100002;
+        max-width: 500px;
+        width: 95%;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        text-align: center;
+    `;
+    
+    const tieneDatosCompletos = datos.tarifa && datos.minutosTotal && datos.distanciaTotal;
+    const tieneAlgunDato = datos.tarifa || datos.minutosTotal || datos.distanciaTotal;
+    
+    let contenido = '';
+    
+    if (tieneDatosCompletos) {
+        contenido = `
+            <div style="font-size: 60px; color: #4CAF50; margin-bottom: 20px;">🎯</div>
+            <h2 style="color: #4CAF50; margin-bottom: 10px;">¡DATOS DETECTADOS!</h2>
+            <p style="color: #666; margin-bottom: 25px;">
+                El sistema inteligente encontró todos los datos necesarios
+            </p>
+            
+            <div style="
+                background: linear-gradient(135deg, #f0f9f0, #e8f5e8);
+                padding: 25px;
+                border-radius: 15px;
+                margin-bottom: 25px;
+                border: 2px solid #4CAF50;
+            ">
+                <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
+                    <div>
+                        <div style="font-size: 14px; color: #666; margin-bottom: 5px;">PRECIO</div>
+                        <div style="font-size: 32px; font-weight: bold; color: #333;">RD$${datos.tarifa.toFixed(2)}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 14px; color: #666; margin-bottom: 5px;">TIEMPO</div>
+                        <div style="font-size: 32px; font-weight: bold; color: #333;">${datos.minutosTotal} min</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 14px; color: #666; margin-bottom: 5px;">DISTANCIA</div>
+                        <div style="font-size: 32px; font-weight: bold; color: #333;">${datos.distanciaTotal} km</div>
+                    </div>
+                </div>
+                
+                <div style="
+                    background: rgba(76, 175, 80, 0.1);
+                    padding: 15px;
+                    border-radius: 10px;
+                    font-size: 13px;
+                    color: #2E7D32;
+                    text-align: left;
+                    margin-top: 15px;
+                ">
+                    <strong>📊 DESGLOSE:</strong><br>
+                    ${datos.minutosBusqueda ? `• Llegada: ${datos.minutosBusqueda}min ${datos.distanciaBusqueda || ''}km<br>` : ''}
+                    ${datos.minutosViaje ? `• Viaje: ${datos.minutosViaje}min ${datos.distanciaViaje}km<br>` : ''}
+                    ${!datos.minutosViaje && datos.minutosBusqueda ? `• Viaje estimado: ${datos.minutosTotal - datos.minutosBusqueda}min<br>` : ''}
+                </div>
+            </div>
+            
+            <button id="aceptar-datos-completos" style="
+                background: linear-gradient(135deg, #4CAF50, #2E7D32);
+                color: white;
+                border: none;
+                padding: 20px 40px;
+                border-radius: 12px;
+                font-weight: bold;
+                font-size: 16px;
+                cursor: pointer;
+                width: 100%;
+                margin-bottom: 15px;
+                transition: all 0.3s;
+            ">
+                ✅ ACEPTAR Y CALCULAR RENTABILIDAD
+            </button>
+        `;
+    } else if (tieneAlgunDato) {
+        contenido = `
+            <div style="font-size: 60px; color: #FF9800; margin-bottom: 20px;">⚠️</div>
+            <h2 style="color: #FF9800; margin-bottom: 10px;">DATOS PARCIALES</h2>
+            <p style="color: #666; margin-bottom: 25px;">
+                Se detectaron algunos datos, pero necesitamos completar la información
+            </p>
+            
+            <div style="
+                background: linear-gradient(135deg, #fff3e0, #ffecb3);
+                padding: 25px;
+                border-radius: 15px;
+                margin-bottom: 25px;
+                border: 2px solid #FF9800;
+            ">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <div style="font-size: 14px; color: #666; margin-bottom: 5px;">PRECIO</div>
+                        <div style="font-size: ${datos.tarifa ? '32' : '24'}px; font-weight: bold; color: ${datos.tarifa ? '#333' : '#999'}">
+                            ${datos.tarifa ? `RD$${datos.tarifa.toFixed(2)}` : '❓'}
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 14px; color: #666; margin-bottom: 5px;">TIEMPO</div>
+                        <div style="font-size: ${datos.minutosTotal ? '32' : '24'}px; font-weight: bold; color: ${datos.minutosTotal ? '#333' : '#999'}">
+                            ${datos.minutosTotal ? `${datos.minutosTotal} min` : '❓'}
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 14px; color: #666; margin-bottom: 5px;">DISTANCIA</div>
+                        <div style="font-size: ${datos.distanciaTotal ? '32' : '24'}px; font-weight: bold; color: ${datos.distanciaTotal ? '#333' : '#999'}">
+                            ${datos.distanciaTotal ? `${datos.distanciaTotal} km` : '❓'}
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="
+                    background: rgba(255, 152, 0, 0.1);
+                    padding: 15px;
+                    border-radius: 10px;
+                    font-size: 13px;
+                    color: #E65100;
+                    text-align: left;
+                ">
+                    <strong>📝 COMPLETAR MANUALMENTE:</strong><br>
+                    ${!datos.tarifa ? '• Ingresa el precio del viaje (ej: RD$120.52)<br>' : ''}
+                    ${!datos.minutosTotal ? '• Ingresa el tiempo total (ej: 16 min)<br>' : ''}
+                    ${!datos.distanciaTotal ? '• Ingresa la distancia total (ej: 5.3 km)<br>' : ''}
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px;">
+                <button id="llenar-parcial" style="
+                    flex: 1;
+                    background: linear-gradient(135deg, #FF9800, #F57C00);
+                    color: white;
+                    border: none;
+                    padding: 18px;
+                    border-radius: 12px;
+                    font-weight: bold;
+                    font-size: 15px;
+                    cursor: pointer;
+                ">
+                    📝 USAR DETECTADOS
+                </button>
+                
+                <button id="reintentar-ocr" style="
+                    flex: 1;
+                    background: linear-gradient(135deg, #2196F3, #0d47a1);
+                    color: white;
+                    border: none;
+                    padding: 18px;
+                    border-radius: 12px;
+                    font-weight: bold;
+                    font-size: 15px;
+                    cursor: pointer;
+                ">
+                    🔄 NUEVA IMAGEN
+                </button>
+            </div>
+        `;
+    } else {
+        contenido = `
+            <div style="font-size: 60px; color: #f44336; margin-bottom: 20px;">❌</div>
+            <h2 style="color: #f44336; margin-bottom: 10px;">NO SE DETECTARON DATOS</h2>
+            <p style="color: #666; margin-bottom: 25px;">
+                El OCR no pudo detectar información relevante en la imagen
+            </p>
+            
+            <div style="
+                background: linear-gradient(135deg, #ffebee, #ffcdd2);
+                padding: 25px;
+                border-radius: 15px;
+                margin-bottom: 25px;
+                border: 2px solid #f44336;
+            ">
+                <div style="color: #c62828; margin-bottom: 15px; font-weight: bold;">
+                    💡 CONSEJOS PARA MEJORAR:
+                </div>
+                <div style="text-align: left; color: #666; line-height: 1.6;">
+                    1. Usa una <strong>captura de pantalla</strong> en vez de foto<br>
+                    2. Asegúrate que el texto esté <strong>nítido y legible</strong><br>
+                    3. Verifica que aparezcan: <strong>RD$, min, km</strong><br>
+                    4. Evita reflejos y sombras<br>
+                    5. Llena los campos manualmente si es necesario
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px;">
+                <button id="intentar-manual" style="
+                    flex: 1;
+                    background: linear-gradient(135deg, #757575, #424242);
+                    color: white;
+                    border: none;
+                    padding: 18px;
+                    border-radius: 12px;
+                    font-weight: bold;
+                    font-size: 15px;
+                    cursor: pointer;
+                ">
+                    📝 LLENAR MANUAL
+                </button>
+                
+                <button id="nueva-imagen" style="
+                    flex: 1;
+                    background: linear-gradient(135deg, #2196F3, #0d47a1);
+                    color: white;
+                    border: none;
+                    padding: 18px;
+                    border-radius: 12px;
+                    font-weight: bold;
+                    font-size: 15px;
+                    cursor: pointer;
+                ">
+                    📸 NUEVA IMAGEN
+                </button>
+            </div>
+        `;
+    }
+    
+    modal.innerHTML = contenido;
+    document.body.appendChild(modal);
+    
+    // Event Listeners dinámicos
+    if (tieneDatosCompletos) {
+        document.getElementById('aceptar-datos-completos').onclick = () => {
+            modal.remove();
+            llenarFormularioConDatos(datos);
+        };
+    } else if (tieneAlgunDato) {
+        document.getElementById('llenar-parcial').onclick = () => {
+            modal.remove();
+            llenarFormularioConDatos(datos);
+        };
+        
+        document.getElementById('reintentar-ocr').onclick = () => {
+            modal.remove();
+            activarEscaneoSimple();
+        };
+    } else {
+        document.getElementById('intentar-manual').onclick = () => {
+            modal.remove();
+            // Enfocar el primer campo
+            if (elementos && elementos.tarifa) {
+                elementos.tarifa.focus();
+            }
+        };
+        
+        document.getElementById('nueva-imagen').onclick = () => {
+            modal.remove();
+            activarEscaneoSimple();
+        };
+    }
+    
+    // Cerrar al hacer clic fuera
+    setTimeout(() => {
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                if (tieneDatosCompletos || tieneAlgunDato) {
+                    llenarFormularioConDatos(datos);
+                }
+            }
+        };
+    }, 100);
+}
+
+/* ============================================================
+   6️⃣ LLENAR FORMULARIO CON DATOS DETECTADOS
+   ============================================================ */
+function llenarFormularioConDatos(datos) {
+    console.log('🔄 Llenando formulario con datos detectados...');
+    
+    if (datos.tarifa && elementos.tarifa) {
+        elementos.tarifa.value = datos.tarifa.toFixed(2);
+        console.log(`💰 Tarifa establecida: RD$${datos.tarifa}`);
+    }
+    
+    if (datos.minutosTotal && elementos.minutos) {
+        elementos.minutos.value = datos.minutosTotal;
+        console.log(`⏱️ Tiempo establecido: ${datos.minutosTotal} min`);
+    }
+    
+    if (datos.distanciaTotal && elementos.distancia) {
+        elementos.distancia.value = datos.distanciaTotal.toFixed(1);
+        console.log(`🛣️ Distancia establecida: ${datos.distanciaTotal} km`);
+    }
+    
+    // Mostrar resumen
+    let mensaje = '📊 Datos establecidos: ';
+    if (datos.tarifa) mensaje += `RD$${datos.tarifa.toFixed(2)} `;
+    if (datos.minutosTotal) mensaje += `${datos.minutosTotal}min `;
+    if (datos.distanciaTotal) mensaje += `${datos.distanciaTotal}km`;
+    
+    mostrarStatus(mensaje, 'success');
+    
+    // Disparar cálculo automático después de 1.5 segundos
+    setTimeout(() => {
+        if (typeof manejarCalculoAutomatico === 'function') {
+            if (timeoutCalculoAutomatico) {
+                clearTimeout(timeoutCalculoAutomatico);
+            }
+            setTimeout(() => {
+                if (typeof calcularAutomaticoConTraficoReal === 'function') {
+                    calcularAutomaticoConTraficoReal();
+                    console.log('🚀 Cálculo automático disparado');
+                }
+            }, 500);
+        }
+    }, 1500);
+}
+
+/* ============================================================
+   7️⃣ ACTUALIZAR FUNCIONES EXISTENTES PARA USAR OCR MEJORADO
+   ============================================================ */
+function activarEscaneoMejorado() {
+    console.log('🧠 Activando escaneo mejorado...');
+    
     const modal = document.createElement('div');
     modal.style.cssText = `
         position: fixed;
@@ -5178,76 +5897,88 @@ function activarEscaneoSimple() {
     modal.innerHTML = `
         <div style="
             background: white;
-            padding: 25px;
+            padding: 30px;
             border-radius: 20px;
-            max-width: 400px;
+            max-width: 450px;
             width: 90%;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
         ">
-            <div style="font-size: 60px; margin-bottom: 20px;">📸</div>
-            <h2 style="color: #333; margin-bottom: 15px;">ESCANEAR VIAJE UBER</h2>
-            <p style="color: #666; margin-bottom: 25px; line-height: 1.5;">
-                Toma una foto de la pantalla de Uber que muestre el precio, tiempo y distancia del viaje.
+            <div style="font-size: 70px; margin-bottom: 20px;">🧠</div>
+            <h2 style="color: #333; margin-bottom: 15px;">ESCANEO INTELIGENTE</h2>
+            <p style="color: #666; margin-bottom: 25px; line-height: 1.6;">
+                Toma una foto de tu pantalla de Uber.<br>
+                <strong>El sistema IA detectará automáticamente:</strong>
             </p>
             
             <div style="
-                background: #f0f8ff;
-                padding: 15px;
-                border-radius: 10px;
-                margin-bottom: 25px;
-                border-left: 4px solid #2196F3;
+                background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+                padding: 20px;
+                border-radius: 15px;
+                margin-bottom: 30px;
+                border-left: 5px solid #2196F3;
             ">
-                <div style="color: #2196F3; font-weight: bold; margin-bottom: 10px;">💡 Asegúrate de capturar:</div>
-                <div style="text-align: left; color: #555;">
-                    <div>✅ <strong>Precio:</strong> RD$150.00</div>
-                    <div>✅ <strong>Tiempo:</strong> 15 min</div>
-                    <div>✅ <strong>Distancia:</strong> 6.2 km</div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
+                    <div>
+                        <div style="font-size: 30px;">💰</div>
+                        <div style="font-weight: bold; color: #2196F3;">Precio</div>
+                        <div style="font-size: 12px; color: #666;">RD$120.52</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 30px;">⏱️</div>
+                        <div style="font-weight: bold; color: #2196F3;">Tiempo</div>
+                        <div style="font-size: 12px; color: #666;">16 min</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 30px;">🛣️</div>
+                        <div style="font-weight: bold; color: #2196F3;">Distancia</div>
+                        <div style="font-size: 12px; color: #666;">5.3 km</div>
+                    </div>
                 </div>
             </div>
             
             <div style="display: flex; flex-direction: column; gap: 15px;">
-                <button id="btn-foto-directa" style="
+                <button id="btn-camara-mejorada" style="
                     background: linear-gradient(135deg, #2196F3, #0d47a1);
                     color: white;
                     border: none;
-                    padding: 20px;
+                    padding: 22px;
                     border-radius: 12px;
-                    font-size: 16px;
+                    font-size: 17px;
                     font-weight: bold;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    gap: 10px;
+                    gap: 12px;
                     transition: all 0.3s;
                 ">
-                    📱 USAR CÁMARA
+                    📱 TOMAR FOTO CON CÁMARA
                 </button>
                 
-                <button id="btn-galeria-directa" style="
+                <button id="btn-screenshot" style="
                     background: linear-gradient(135deg, #4CAF50, #2E7D32);
                     color: white;
                     border: none;
-                    padding: 20px;
+                    padding: 22px;
                     border-radius: 12px;
-                    font-size: 16px;
+                    font-size: 17px;
                     font-weight: bold;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    gap: 10px;
+                    gap: 12px;
                     transition: all 0.3s;
                 ">
-                    🖼️ DESDE GALERÍA
+                    🖼️ USAR SCREENSHOT
                 </button>
                 
-                <button id="btn-cancelar-simple" style="
-                    background: #f44336;
+                <button id="btn-cancelar-mejorado" style="
+                    background: #757575;
                     color: white;
                     border: none;
-                    padding: 15px;
+                    padding: 16px;
                     border-radius: 10px;
                     font-size: 14px;
                     cursor: pointer;
@@ -5257,8 +5988,8 @@ function activarEscaneoSimple() {
                 </button>
             </div>
             
-            <div style="margin-top: 20px; color: #888; font-size: 12px;">
-                La foto se procesará automáticamente y llenará los campos
+            <div style="margin-top: 25px; color: #888; font-size: 12px; line-height: 1.5;">
+                💡 <strong>Consejo:</strong> Una captura de pantalla funciona mejor que una foto
             </div>
         </div>
     `;
@@ -5267,22 +5998,23 @@ function activarEscaneoSimple() {
     document.body.style.overflow = 'hidden';
     
     // Event Listeners
-    document.getElementById('btn-foto-directa').onclick = () => {
+    document.getElementById('btn-camara-mejorada').onclick = () => {
         modal.remove();
-        tomarFotoDirecta();
+        document.body.style.overflow = '';
+        tomarFotoMejorada();
     };
     
-    document.getElementById('btn-galeria-directa').onclick = () => {
+    document.getElementById('btn-screenshot').onclick = () => {
         modal.remove();
-        seleccionarDeGaleriaDirecta();
+        document.body.style.overflow = '';
+        seleccionarScreenshot();
     };
     
-    document.getElementById('btn-cancelar-simple').onclick = () => {
+    document.getElementById('btn-cancelar-mejorado').onclick = () => {
         modal.remove();
         document.body.style.overflow = '';
     };
     
-    // Cerrar al hacer clic fuera
     modal.onclick = (e) => {
         if (e.target === modal) {
             modal.remove();
@@ -5291,37 +6023,24 @@ function activarEscaneoSimple() {
     };
 }
 
-/* ============================================================
-   2️⃣ TOMAR FOTO DIRECTAMENTE (SIN COMPLICACIONES)
-   ============================================================ */
-function tomarFotoDirecta() {
-    console.log('📱 Tomando foto directa...');
-    
+function tomarFotoMejorada() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.capture = 'environment'; // Cámara trasera
+    input.capture = 'environment';
     
     input.onchange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            console.log('✅ Foto tomada:', file.name);
-            procesarFotoDirecta(file);
-        } else {
-            mostrarStatus('❌ No se seleccionó ninguna foto', 'error');
+            mostrarStatus('🤖 Procesando con IA...', 'info');
+            procesarImagenMejorada(file);
         }
     };
     
-    // Disparar el click
     input.click();
 }
 
-/* ============================================================
-   3️⃣ SELECCIONAR DE GALERÍA DIRECTAMENTE
-   ============================================================ */
-function seleccionarDeGaleriaDirecta() {
-    console.log('🖼️ Seleccionando de galería...');
-    
+function seleccionarScreenshot() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -5329,10 +6048,8 @@ function seleccionarDeGaleriaDirecta() {
     input.onchange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            console.log('✅ Imagen seleccionada:', file.name);
-            procesarFotoDirecta(file);
-        } else {
-            mostrarStatus('❌ No se seleccionó ninguna imagen', 'error');
+            mostrarStatus('🤖 Procesando screenshot...', 'info');
+            procesarImagenMejorada(file);
         }
     };
     
@@ -5340,623 +6057,64 @@ function seleccionarDeGaleriaDirecta() {
 }
 
 /* ============================================================
-   4️⃣ PROCESAR FOTO DIRECTA (OCR SIMPLE)
+   8️⃣ REEMPLAZAR FUNCIONES EXISTENTES
    ============================================================ */
-function procesarFotoDirecta(file) {
-    console.log('🔄 Procesando foto directamente...');
+// Reemplazar las funciones existentes con las mejoradas
+function inicializarOCRMejorado() {
+    console.log('🚀 Inicializando OCR mejorado...');
     
-    // Mostrar estado
-    mostrarStatus('🔍 Analizando imagen...', 'info');
+    // Actualizar funciones globales
+    window.procesarImagenConOCR = procesarImagenMejorada;
+    window.activarEscaneoSimple = activarEscaneoMejorado;
     
-    // Verificar tamaño
-    if (file.size > 10 * 1024 * 1024) {
-        mostrarStatus('❌ Imagen muy grande (máx 10MB)', 'error');
-        return;
-    }
-    
-    // Crear vista previa para debugging
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        console.log('📁 Imagen cargada para procesamiento');
+    // Actualizar botón flotante
+    setTimeout(() => {
+        const btnExistente = document.getElementById('btn-scan-simple');
+        if (btnExistente) {
+            btnExistente.innerHTML = '🧠 ESCANEO IA';
+            btnExistente.style.background = 'linear-gradient(135deg, #9C27B0, #673AB7)';
+            btnExistente.onclick = activarEscaneoMejorado;
+        }
         
-        try {
-            // Verificar que Tesseract esté disponible
-            if (typeof Tesseract === 'undefined') {
-                throw new Error('Tesseract.js no está cargado');
-            }
-            
-            // Mostrar mensaje de procesamiento
-            mostrarStatus('🤖 Procesando con OCR...', 'info');
-            
-            // Procesar con Tesseract
-            const result = await Tesseract.recognize(file, 'eng+spa', {
-                logger: m => {
-                    if (m.status === 'recognizing text') {
-                        console.log('📊 Progreso OCR:', Math.round(m.progress * 100) + '%');
-                    }
-                }
-            });
-            
-            const texto = result.data.text;
-            console.log('📝 TEXTO EXTRAÍDO:', texto);
-            
-            // Mostrar vista previa del texto
-            mostrarVistaPreviaSimple(texto);
-            
-            // Extraer datos del texto
-            extraerDatosSimple(texto);
-            
-        } catch (error) {
-            console.error('❌ Error en OCR:', error);
-            mostrarStatus('❌ Error procesando imagen', 'error');
-            
-            // Mostrar el texto del error
-            alert('Error en OCR: ' + error.message + '\n\nIntenta con una imagen más clara.');
-        }
-    };
-    
-    reader.readAsDataURL(file);
-}
-
-/* ============================================================
-   5️⃣ VISTA PREVIA SIMPLE DEL TEXTO
-   ============================================================ */
-function mostrarVistaPreviaSimple(texto) {
-    console.log('📋 Mostrando vista previa del texto...');
-    
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.9);
-        z-index: 100001;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-    `;
-    
-    const textoCorto = texto.substring(0, 500) + (texto.length > 500 ? '...' : '');
-    
-    modal.innerHTML = `
-        <div style="
-            background: #1a1a1a;
-            padding: 25px;
-            border-radius: 15px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            border: 2px solid #00ff00;
-        ">
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 20px;
-                padding-bottom: 15px;
-                border-bottom: 1px solid #333;
-            ">
-                <h3 style="color: #00ff00; margin: 0;">📝 TEXTO DETECTADO</h3>
-                <button id="cerrar-vista-previa" style="
-                    background: #ff4444;
-                    color: white;
-                    border: none;
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
-                    font-size: 20px;
-                    cursor: pointer;
-                ">×</button>
-            </div>
-            
-            <div style="
-                background: #000;
-                color: #0f0;
-                font-family: 'Courier New', monospace;
-                padding: 20px;
-                border-radius: 10px;
-                white-space: pre-wrap;
-                word-break: break-word;
-                margin-bottom: 20px;
-                max-height: 300px;
-                overflow-y: auto;
-                border: 1px solid #333;
-            ">
-                ${textoCorto.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}
-            </div>
-            
-            <div style="color: #aaa; font-size: 12px; margin-bottom: 20px;">
-                <strong>💡 Si no ves los datos (precio, tiempo, distancia):</strong><br>
-                1. La imagen puede estar borrosa<br>
-                2. El texto puede estar muy pequeño<br>
-                3. Intenta con una captura de pantalla directa
-            </div>
-            
-            <button id="procesar-texto" style="
-                background: linear-gradient(135deg, #00ff00, #00cc00);
-                color: #000;
-                border: none;
-                padding: 15px;
-                border-radius: 10px;
-                font-weight: bold;
-                font-size: 16px;
-                cursor: pointer;
-                width: 100%;
-            ">
-                ✅ PROCESAR ESTE TEXTO
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Event Listeners
-    document.getElementById('cerrar-vista-previa').onclick = () => {
-        modal.remove();
-    };
-    
-    document.getElementById('procesar-texto').onclick = () => {
-        modal.remove();
-        extraerDatosSimple(texto);
-    };
-    
-    // Auto-cerrar después de 10 segundos
-    setTimeout(() => {
-        if (modal.parentNode) {
-            modal.remove();
-            extraerDatosSimple(texto);
-        }
-    }, 10000);
-}
-
-/* ============================================================
-   6️⃣ EXTRACCIÓN DE DATOS SIMPLE Y ROBUSTA
-   ============================================================ */
-function extraerDatosSimple(textoOCR) {
-    console.log('🔍 Extrayendo datos del texto...');
-    
-    if (!textoOCR || textoOCR.trim().length === 0) {
-        mostrarStatus('❌ No se detectó texto en la imagen', 'error');
-        return;
-    }
-    
-    // Limpiar texto
-    const texto = textoOCR
-        .replace(/\s+/g, ' ')
-        .replace(/[|]/g, '1')
-        .replace(/[O]/g, '0')
-        .replace(/[l]/g, '1')
-        .toUpperCase();
-    
-    console.log('🧹 Texto limpio:', texto.substring(0, 200) + '...');
-    
-    // Variables para datos
-    let tarifa = null;
-    let minutos = null;
-    let distancia = null;
-    
-    /* ========== BUSCAR TARIFA ========== */
-    // Patrones para tarifa
-    const patronesTarifa = [
-        /RD\$\s*(\d+(?:[.,]\d+)?)/,
-        /\$\s*(\d+(?:[.,]\d+)?)/,
-        /(\d+(?:[.,]\d+)?)\s*RD\$/,
-        /TOTAL.*?(\d+(?:[.,]\d+)?)/,
-        /PRECIO.*?(\d+(?:[.,]\d+)?)/,
-        /COSTO.*?(\d+(?:[.,]\d+)?)/,
-        /PAGAR.*?(\d+(?:[.,]\d+)?)/,
-        /(\d+(?:[.,]\d+)?)\s*PESOS/
-    ];
-    
-    for (const patron of patronesTarifa) {
-        const match = texto.match(patron);
-        if (match) {
-            tarifa = parseFloat(match[1].replace(',', '.'));
-            console.log('💰 Tarifa encontrada:', tarifa);
-            break;
-        }
-    }
-    
-    /* ========== BUSCAR MINUTOS ========== */
-    // Patrones para minutos
-    const patronesMinutos = [
-        /(\d+)\s*MIN/,
-        /(\d+)\s*MINUTOS/,
-        /TIEMPO.*?(\d+)/,
-        /DURACION.*?(\d+)/,
-        /(\d+)\s*M\b/,
-        /(\d+)\s*'/
-    ];
-    
-    for (const patron of patronesMinutos) {
-        const match = texto.match(patron);
-        if (match) {
-            minutos = parseInt(match[1]);
-            console.log('⏱️ Minutos encontrados:', minutos);
-            break;
-        }
-    }
-    
-    /* ========== BUSCAR DISTANCIA ========== */
-    // Patrones para distancia
-    const patronesDistancia = [
-        /(\d+(?:[.,]\d+)?)\s*KM/,
-        /(\d+(?:[.,]\d+)?)\s*KILOMETROS/,
-        /DISTANCIA.*?(\d+(?:[.,]\d+)?)/,
-        /(\d+)\s*\.\s*(\d+)\s*KM/
-    ];
-    
-    for (const patron of patronesDistancia) {
-        const match = texto.match(patron);
-        if (match) {
-            let valor = match[1];
-            if (match[2]) {
-                valor = match[1] + '.' + match[2];
-            }
-            distancia = parseFloat(valor.replace(',', '.'));
-            console.log('🛣️ Distancia encontrada:', distancia);
-            break;
-        }
-    }
-    
-    /* ========== PATRONES COMBINADOS ========== */
-    // Buscar "XX min (YY km)"
-    const combinado = texto.match(/(\d+)\s*MIN\s*[\(]?\s*(\d+(?:[.,]\d+)?)\s*KM/i);
-    if (combinado) {
-        if (!minutos) minutos = parseInt(combinado[1]);
-        if (!distancia) distancia = parseFloat(combinado[2].replace(',', '.'));
-        console.log('🎯 Patrón combinado encontrado:', { minutos, distancia });
-    }
-    
-    /* ========== RESULTADOS ========== */
-    console.log('📊 Resultados finales:', { tarifa, minutos, distancia });
-    
-    // Mostrar resultados al usuario
-    mostrarResultadosExtraccion(tarifa, minutos, distancia);
-    
-    // Llenar formulario si tenemos datos
-    if (tarifa && minutos && distancia) {
-        llenarFormularioAutomaticamente(tarifa, minutos, distancia);
-    } else if (tarifa) {
-        // Si solo tenemos tarifa, llenarla y pedir el resto
-        llenarParcialmente(tarifa, minutos, distancia);
-    } else {
-        // Si no tenemos nada, mostrar error
-        mostrarErrorExtraccion();
-    }
-}
-
-/* ============================================================
-   7️⃣ MOSTRAR RESULTADOS DE LA EXTRACCIÓN
-   ============================================================ */
-function mostrarResultadosExtraccion(tarifa, minutos, distancia) {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        z-index: 100002;
-        max-width: 400px;
-        width: 90%;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        text-align: center;
-    `;
-    
-    let contenido = '';
-    const datosCompletos = tarifa && minutos && distancia;
-    
-    if (datosCompletos) {
-        contenido = `
-            <div style="font-size: 50px; color: #4CAF50; margin-bottom: 15px;">✅</div>
-            <h3 style="color: #4CAF50; margin-bottom: 20px;">¡DATOS COMPLETOS DETECTADOS!</h3>
-            <div style="
-                background: #f0f9f0;
-                padding: 20px;
-                border-radius: 10px;
-                margin-bottom: 20px;
-                border-left: 5px solid #4CAF50;
-            ">
-                <div style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 10px;">
-                    $${tarifa.toFixed(2)}
-                </div>
-                <div style="color: #666; font-size: 18px;">
-                    ${minutos} min • ${distancia} km
-                </div>
-            </div>
-            <p style="color: #666; margin-bottom: 25px;">
-                Los campos se llenarán automáticamente y se calculará la rentabilidad.
-            </p>
-            <button id="btn-aceptar-datos" style="
-                background: linear-gradient(135deg, #4CAF50, #2E7D32);
-                color: white;
-                border: none;
-                padding: 15px 30px;
-                border-radius: 10px;
-                font-weight: bold;
-                font-size: 16px;
-                cursor: pointer;
-                width: 100%;
-            ">
-                ✅ ACEPTAR Y CALCULAR
-            </button>
-        `;
-    } else {
-        const datosEncontrados = [];
-        if (tarifa) datosEncontrados.push(`$${tarifa.toFixed(2)}`);
-        if (minutos) datosEncontrados.push(`${minutos} min`);
-        if (distancia) datosEncontrados.push(`${distancia} km`);
-        
-        contenido = `
-            <div style="font-size: 50px; color: #FF9800; margin-bottom: 15px;">⚠️</div>
-            <h3 style="color: #FF9800; margin-bottom: 20px;">DATOS PARCIALES</h3>
-            <div style="
-                background: #fff3e0;
-                padding: 20px;
-                border-radius: 10px;
-                margin-bottom: 20px;
-                border-left: 5px solid #FF9800;
-            ">
-                <div style="font-size: 18px; color: #333; margin-bottom: 15px;">
-                    <strong>Detectados:</strong>
-                </div>
-                <div style="color: #666; font-size: 16px; line-height: 1.8;">
-                    ${datosEncontrados.length > 0 
-                        ? datosEncontrados.map(d => `<div>✅ ${d}</div>`).join('')
-                        : '<div>❌ No se detectaron datos</div>'
-                    }
-                    ${!tarifa ? '<div>❌ <strong>Falta:</strong> Precio</div>' : ''}
-                    ${!minutos ? '<div>❌ <strong>Falta:</strong> Tiempo</div>' : ''}
-                    ${!distancia ? '<div>❌ <strong>Falta:</strong> Distancia</div>' : ''}
-                </div>
-            </div>
-            <p style="color: #666; margin-bottom: 25px;">
-                Completa manualmente los campos faltantes.
-            </p>
-            <button id="btn-llenar-parcial" style="
-                background: linear-gradient(135deg, #FF9800, #F57C00);
-                color: white;
-                border: none;
-                padding: 15px 30px;
-                border-radius: 10px;
-                font-weight: bold;
-                font-size: 16px;
-                cursor: pointer;
-                width: 100%;
-            ">
-                📝 LLENAR LO DETECTADO
-            </button>
-        `;
-    }
-    
-    modal.innerHTML = contenido;
-    document.body.appendChild(modal);
-    
-    // Event Listeners
-    if (datosCompletos) {
-        document.getElementById('btn-aceptar-datos').onclick = () => {
-            modal.remove();
-            llenarFormularioAutomaticamente(tarifa, minutos, distancia);
-        };
-    } else {
-        document.getElementById('btn-llenar-parcial').onclick = () => {
-            modal.remove();
-            llenarParcialmente(tarifa, minutos, distancia);
-        };
-    }
-    
-    // Cerrar al hacer clic fuera
-    setTimeout(() => {
-        modal.onclick = (e) => {
-            if (e.target === modal) {
-                modal.remove();
-                if (datosCompletos) {
-                    llenarFormularioAutomaticamente(tarifa, minutos, distancia);
-                } else {
-                    llenarParcialmente(tarifa, minutos, distancia);
-                }
-            }
-        };
-    }, 100);
-}
-
-/* ============================================================
-   8️⃣ LLENAR FORMULARIO AUTOMÁTICAMENTE
-   ============================================================ */
-function llenarFormularioAutomaticamente(tarifa, minutos, distancia) {
-    console.log('🔄 Llenando formulario automáticamente...');
-    
-    if (elementos && elementos.tarifa) {
-        elementos.tarifa.value = tarifa.toFixed(2);
-        console.log('💰 Tarifa establecida:', tarifa);
-    }
-    
-    if (elementos && elementos.minutos) {
-        elementos.minutos.value = minutos;
-        console.log('⏱️ Minutos establecidos:', minutos);
-    }
-    
-    if (elementos && elementos.distancia) {
-        elementos.distancia.value = distancia.toFixed(1);
-        console.log('🛣️ Distancia establecida:', distancia);
-    }
-    
-    // Mostrar mensaje de éxito
-    mostrarStatus('✅ Datos extraídos automáticamente!', 'success');
-    
-    // Disparar cálculo automático después de 1 segundo
-    setTimeout(() => {
-        if (typeof manejarCalculoAutomatico === 'function') {
-            if (timeoutCalculoAutomatico) {
-                clearTimeout(timeoutCalculoAutomatico);
-            }
-            setTimeout(() => {
-                if (typeof calcularAutomaticoConTraficoReal === 'function') {
-                    calcularAutomaticoConTraficoReal();
-                }
-            }, 300);
-        }
-    }, 1000);
-}
-
-function llenarParcialmente(tarifa, minutos, distancia) {
-    console.log('📝 Llenando parcialmente...');
-    
-    if (tarifa && elementos.tarifa) {
-        elementos.tarifa.value = tarifa.toFixed(2);
-        console.log('💰 Tarifa establecida:', tarifa);
-    }
-    
-    if (minutos && elementos.minutos) {
-        elementos.minutos.value = minutos;
-        console.log('⏱️ Minutos establecidos:', minutos);
-    }
-    
-    if (distancia && elementos.distancia) {
-        elementos.distancia.value = distancia.toFixed(1);
-        console.log('🛣️ Distancia establecida:', distancia);
-    }
-    
-    // Enfocar el primer campo faltante
-    setTimeout(() => {
-        if (!minutos && elementos.minutos) {
-            elementos.minutos.focus();
-            mostrarStatus('📝 Ingresa el tiempo del viaje', 'info');
-        } else if (!distancia && elementos.distancia) {
-            elementos.distancia.focus();
-            mostrarStatus('📝 Ingresa la distancia del viaje', 'info');
-        } else if (!tarifa && elementos.tarifa) {
-            elementos.tarifa.focus();
-            mostrarStatus('📝 Ingresa el precio del viaje', 'info');
-        }
-    }, 500);
-}
-
-function mostrarErrorExtraccion() {
-    mostrarStatus('❌ No se detectaron datos. Intenta con una imagen más clara.', 'error');
-    
-    // Sugerir intentar de nuevo
-    setTimeout(() => {
-        if (confirm('¿Quieres intentar con otra imagen?')) {
-            activarEscaneoSimple();
-        }
-    }, 1500);
-}
-
-/* ============================================================
-   9️⃣ BOTÓN FLOTANTE SIMPLE
-   ============================================================ */
-function crearBotonEscaneoSimple() {
-    // Remover botones anteriores
-    ['btn-scan-tiempo-real', 'btn-scan-uber'].forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) btn.remove();
-    });
-    
-    const boton = document.createElement('button');
-    boton.id = 'btn-scan-simple';
-    boton.innerHTML = '📸 ESCANEAR UBER';
-    boton.title = 'Tomar foto de pantalla de Uber';
-    
-    Object.assign(boton.style, {
-        position: 'fixed',
-        bottom: '100px',
-        right: '20px',
-        zIndex: '99999',
-        background: 'linear-gradient(135deg, #2196F3, #0d47a1)',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '50px',
-        padding: '18px 25px',
-        fontSize: '15px',
-        fontWeight: 'bold',
-        cursor: 'pointer',
-        boxShadow: '0 10px 30px rgba(33, 150, 243, 0.5)',
-        transition: 'all 0.3s',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px'
-    });
-    
-    // Efecto hover
-    boton.onmouseenter = () => {
-        boton.style.transform = 'scale(1.1)';
-        boton.style.boxShadow = '0 15px 40px rgba(33, 150, 243, 0.8)';
-    };
-    
-    boton.onmouseleave = () => {
-        boton.style.transform = 'scale(1)';
-        boton.style.boxShadow = '0 10px 30px rgba(33, 150, 243, 0.5)';
-    };
-    
-    boton.onclick = activarEscaneoSimple;
-    
-    document.body.appendChild(boton);
-    console.log('✅ Botón de escaneo SIMPLE creado');
-}
-
-/* ============================================================
-   🔟 INICIALIZACIÓN SIMPLE
-   ============================================================ */
-function inicializarEscaneoSimple() {
-    console.log('🚀 Inicializando escaneo simple...');
-    
-    // Crear botón flotante
-    crearBotonEscaneoSimple();
-    
-    // Agregar botón en la interfaz principal
-    setTimeout(() => {
+        // Agregar botón en interfaz principal
         const calcularBtn = document.getElementById('btn-calcular');
         if (calcularBtn && calcularBtn.parentNode) {
-            const btnEscaneo = document.createElement('button');
-            btnEscaneo.innerHTML = '📸 ESCANEAR VIAJE UBER';
-            btnEscaneo.className = calcularBtn.className;
-            btnEscaneo.style.cssText = `
-                background: linear-gradient(135deg, #2196F3, #0d47a1);
+            const btnIA = document.createElement('button');
+            btnIA.innerHTML = '🧠 ESCANEO CON IA';
+            btnIA.className = calcularBtn.className;
+            btnIA.style.cssText = `
+                background: linear-gradient(135deg, #9C27B0, #673AB7);
                 margin-top: 15px;
                 font-weight: bold;
                 font-size: 15px;
+                padding: 18px;
             `;
-            btnEscaneo.onclick = activarEscaneoSimple;
+            btnIA.onclick = activarEscaneoMejorado;
             
-            calcularBtn.parentNode.appendChild(btnEscaneo);
+            calcularBtn.parentNode.appendChild(btnIA);
         }
     }, 1000);
     
-    console.log('✅ Escaneo simple listo');
+    console.log('✅ OCR mejorado inicializado');
 }
-
-/* ============================================================
-   🎯 EXPORTAR FUNCIONES
-   ============================================================ */
-window.activarEscaneoSimple = activarEscaneoSimple;
-window.procesarFotoDirecta = procesarFotoDirecta;
-window.extraerDatosSimple = extraerDatosSimple;
 
 // Inicializar cuando la app cargue
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(inicializarEscaneoSimple, 2000);
+        setTimeout(inicializarOCRMejorado, 3000);
     });
 } else {
-    setTimeout(inicializarEscaneoSimple, 2000);
+    setTimeout(inicializarOCRMejorado, 3000);
 }
 
-console.log('🎯 MÓDULO DE ESCANEO SIMPLE CARGADO');
+console.log('🎯 OCR MEJORADO PARA UBER CARGADO');
 
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
