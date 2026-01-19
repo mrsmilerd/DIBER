@@ -5149,208 +5149,175 @@ window.onclick = function(event) {
 };
 
 /* ============================================================
-   ⚡ UBER OCR + RENTABILIDAD — VERSIÓN ESTABLE Y CORREGIDA
+   🧠 OCR + EXTRACCIÓN + PUENTE A RENTABILIDAD (COMPLETO)
    ============================================================ */
 
-window.ocrWorker = null;
-window.workerReady = false;
+/* ============================================================
+   1️⃣ FUNCIÓN PRINCIPAL DE EXTRACCIÓN (NO EXISTÍA → CREADA)
+   ============================================================ */
+function extraerDatosDeUber(textoOCR) {
+    console.log('🔥 extraerDatosDeUber EJECUTÁNDOSE');
+    console.log('📝 Texto OCR recibido:', textoOCR);
 
-/* =======================
-   1️⃣ INICIALIZAR OCR
-   ======================= */
-async function inicializarOCR() {
-    if (typeof Tesseract === 'undefined') {
-        console.warn('⚠️ Tesseract no cargado');
+    if (!textoOCR || typeof textoOCR !== 'string') {
+        console.warn('⚠️ Texto OCR inválido');
         return;
     }
 
-    try {
-        window.ocrWorker = await Tesseract.createWorker('eng');
-        window.workerReady = true;
-        console.log('✅ OCR listo');
-    } catch (e) {
-        console.error('❌ Error iniciando OCR', e);
+    const lineas = textoOCR
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
+
+    let tarifa = null;
+    let minutosBusqueda = null;
+    let distanciaBusqueda = null;
+    let minutosViaje = null;
+    let distanciaViaje = null;
+
+    /* =====================================================
+       💰 TARIFA → RD$120.52
+       ===================================================== */
+    for (let i = 0; i < Math.min(6, lineas.length); i++) {
+        const match = lineas[i].match(/RD\$\s*(\d+(?:[.,]\d+)?)/i);
+        if (match) {
+            tarifa = parseFloat(match[1].replace(',', '.'));
+            console.log('💰 Tarifa detectada:', tarifa);
+            break;
+        }
+    }
+
+    /* =====================================================
+       🚶 LLEGADA → A5min (1.1km)  (OCR SUCIO)
+       ===================================================== */
+    for (const linea of lineas) {
+        const match = linea.match(
+            /A\S*\s*(\d+)\s*min\s*\(?\s*(\d+(?:[.,]\d+)?)\s*km/i
+        );
+
+        if (match) {
+            minutosBusqueda = parseInt(match[1]);
+            distanciaBusqueda = parseFloat(match[2].replace(',', '.'));
+            console.log('🚶 Llegada:', minutosBusqueda, 'min', distanciaBusqueda, 'km');
+            break;
+        }
+    }
+
+    /* =====================================================
+       🚗 VIAJE → Viaje: 11 min (4.2 km)
+       ===================================================== */
+    for (const linea of lineas) {
+        if (linea.toLowerCase().includes('viaje')) {
+            const match = linea.match(
+                /(\d+)\s*min\s*\(?\s*(\d+(?:[.,]\d+)?)\s*km/i
+            );
+
+            if (match) {
+                minutosViaje = parseInt(match[1]);
+                distanciaViaje = parseFloat(match[2].replace(',', '.'));
+                console.log('🚗 Viaje:', minutosViaje, 'min', distanciaViaje, 'km');
+                break;
+            }
+        }
+    }
+
+    /* =====================================================
+       ➕ TOTALES (CLAVE)
+       ===================================================== */
+    const minutosTotal =
+        (minutosBusqueda || 0) +
+        (minutosViaje || 0);
+
+    const distanciaTotal =
+        (distanciaBusqueda || 0) +
+        (distanciaViaje || 0);
+
+    console.log('⏱️ TOTAL minutos:', minutosTotal);
+    console.log('🛣️ TOTAL km:', distanciaTotal);
+
+    /* =====================================================
+       🔗 PUENTE CON TU SISTEMA REAL
+       ===================================================== */
+    if (tarifa && (minutosTotal > 0 || distanciaTotal > 0)) {
+        ejecutarCalculoRentabilidad({
+            tarifa,
+            minutos: minutosTotal,
+            distancia: distanciaTotal
+        });
+    } else {
+        console.warn('⚠️ Datos insuficientes para calcular');
     }
 }
 
-/* =======================
-   2️⃣ BOTÓN ESCANEAR
-   ======================= */
-function crearBotonUber() {
-    if (document.getElementById('btn-uber-scan')) return;
+/* ============================================================
+   2️⃣ FUNCIÓN PUENTE (EVITA ERRORES)
+   ============================================================ */
+function ejecutarCalculoRentabilidad({ tarifa, minutos, distancia }) {
+    console.log('🔄 Ejecutando cálculo de rentabilidad...');
+    console.log({ tarifa, minutos, distancia });
 
-    const btn = document.createElement('button');
-    btn.id = 'btn-uber-scan';
-    btn.innerText = '⚡ ESCANEAR UBER';
-    Object.assign(btn.style, {
-        position: 'fixed',
-        bottom: '120px',
-        right: '20px',
-        zIndex: 99999,
-        padding: '16px 28px',
-        borderRadius: '30px',
-        background: '#ff416c',
-        color: '#fff',
-        fontWeight: 'bold',
-        border: 'none',
-        cursor: 'pointer'
-    });
+    // PRIORIDAD 1: tu sistema con perfil
+    if (typeof manejarCalculoAutomatico === 'function') {
+        manejarCalculoAutomatico({ tarifa, minutos, distancia });
+        return;
+    }
 
-    btn.onclick = escanearUber;
-    document.body.appendChild(btn);
+    // PRIORIDAD 2
+    if (typeof calcularRentabilidadConPerfil === 'function') {
+        calcularRentabilidadConPerfil(tarifa, minutos, distancia);
+        return;
+    }
+
+    // PRIORIDAD 3
+    if (typeof calcularRentabilidad === 'function') {
+        calcularRentabilidad(tarifa, minutos, distancia);
+        return;
+    }
+
+    console.warn('⚠️ No se encontró función de cálculo');
 }
 
-/* =======================
-   3️⃣ ESCANEAR IMAGEN
-   ======================= */
-async function escanearUber() {
+/* ============================================================
+   3️⃣ OCR SIMPLE (SI NO TIENES UNO UNIFICADO)
+   ============================================================ */
+async function procesarImagenConOCR(file) {
+    console.log('🔍 Iniciando OCR...');
+    try {
+        const result = await Tesseract.recognize(file, 'eng');
+        const texto = result.data.text;
+        extraerDatosDeUber(texto);
+    } catch (e) {
+        console.error('❌ Error OCR:', e);
+    }
+}
+
+/* ============================================================
+   4️⃣ INPUT DE PRUEBA (OPCIONAL)
+   ============================================================ */
+function activarCargaImagen() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.capture = 'environment';
 
-    input.onchange = async e => {
+    input.onchange = e => {
         const file = e.target.files[0];
-        if (!file) return;
-
-        const texto = await hacerOCR(file);
-        const datos = extraerDatosUber(texto);
-        mostrarResultados(datos);
+        if (file) procesarImagenConOCR(file);
     };
 
     input.click();
 }
 
-/* =======================
-   4️⃣ OCR OPTIMIZADO
-   ======================= */
-async function hacerOCR(file) {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
+// Exponer para consola si quieres probar manual
+window.activarCargaImagen = activarCargaImagen;
 
-    return new Promise(resolve => {
-        img.onload = async () => {
-            const canvas = document.createElement('canvas');
-            const max = 600;
-            let w = img.width, h = img.height;
-
-            if (w > h && w > max) { h *= max / w; w = max; }
-            else if (h > max) { w *= max / h; h = max; }
-
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-
-            canvas.toBlob(async blob => {
-                let texto = '';
-                try {
-                    const res = window.workerReady
-                        ? await window.ocrWorker.recognize(blob)
-                        : await Tesseract.recognize(blob, 'eng');
-
-                    texto = res.data.text;
-                } catch (e) {
-                    console.error('❌ OCR falló', e);
-                }
-
-                URL.revokeObjectURL(url);
-                resolve(texto);
-            }, 'image/jpeg', 0.7);
-        };
-        img.src = url;
-    });
-}
-
-/* =======================
-   5️⃣ EXTRACCIÓN INTELIGENTE
-   ======================= */
-function extraerDatosUber(texto) {
-    console.log('📝 Texto OCR:', texto);
-
-    let tarifa = null;
-    let minB = null, kmB = null;
-    let minV = null, kmV = null;
-
-    /* --- TARIFA --- */
-    const nums = texto.match(/\d{2,3}[.,]\d{2}/g) || [];
-    for (const n of nums) {
-        const v = parseFloat(n.replace(',', '.'));
-        if (v >= 80 && v <= 500) {
-            tarifa = v;
-            console.log('✅ Tarifa:', tarifa);
-            break;
-        }
-    }
-
-    /* --- LLEGADA --- */
-    const matchB = texto.match(/A\s*(\d+)\s*min\s*\((\d+(?:[.,]\d+)?)\s*k/i);
-    if (matchB) {
-        minB = parseInt(matchB[1]);
-        kmB = parseFloat(matchB[2].replace(',', '.'));
-
-        // 🔥 Corrección OCR 11km → 1.1km
-        if (kmB >= 10 && kmB <= 15 && minB <= 6) {
-            console.warn('⚠️ Corrigiendo OCR km búsqueda:', kmB, '→', kmB / 10);
-            kmB = kmB / 10;
-        }
-    }
-
-    /* --- VIAJE --- */
-    const matchV = texto.match(/Viaje[:\s]*?(\d+)\s*min\s*\((\d+(?:[.,]\d+)?)\s*k/i);
-    if (matchV) {
-        minV = parseInt(matchV[1]);
-        kmV = parseFloat(matchV[2].replace(',', '.'));
-    }
-
-    return {
-        tarifa,
-        minutosBusqueda: minB,
-        distanciaBusqueda: kmB,
-        minutosViaje: minV,
-        distanciaViaje: kmV,
-        minutosTotal: (minB || 0) + (minV || 0),
-        distanciaTotal: Math.round(((kmB || 0) + (kmV || 0)) * 10) / 10
-    };
-}
-
-/* =======================
-   6️⃣ MOSTRAR + CALCULAR
-   ======================= */
-function mostrarResultados(d) {
-    console.log('📊 Datos finales:', d);
-
-    if (d.tarifa && document.getElementById('tarifa'))
-        document.getElementById('tarifa').value = d.tarifa;
-
-    if (d.minutosTotal && document.getElementById('minutos'))
-        document.getElementById('minutos').value = d.minutosTotal;
-
-    if (d.distanciaTotal && document.getElementById('distancia'))
-        document.getElementById('distancia').value = d.distanciaTotal;
-
-    setTimeout(() => {
-        if (typeof manejarCalculoAutomatico === 'function') {
-            manejarCalculoAutomatico();
-        } else if (typeof calcularRentabilidad === 'function') {
-            calcularRentabilidad();
-        }
-    }, 100);
-}
-
-/* =======================
-   7️⃣ AUTO-INICIO
-   ======================= */
-document.addEventListener('DOMContentLoaded', () => {
-    inicializarOCR();
-    crearBotonUber();
-});
+console.log('✅ MÓDULO OCR + UBER CARGADO');
 
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
