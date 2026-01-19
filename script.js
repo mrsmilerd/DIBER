@@ -5153,7 +5153,7 @@ window.onclick = function(event) {
    ============================================================ */
 
 /* ============================================================
-   1️⃣ FUNCIÓN PRINCIPAL DE EXTRACCIÓN (NO EXISTÍA → CREADA)
+   1️⃣ FUNCIÓN PRINCIPAL DE EXTRACCIÓN (CORREGIDA)
    ============================================================ */
 function extraerDatosDeUber(textoOCR) {
     console.log('🔥 extraerDatosDeUber EJECUTÁNDOSE');
@@ -5235,95 +5235,135 @@ function extraerDatosDeUber(textoOCR) {
     console.log('⏱️ TOTAL minutos:', minutosTotal);
     console.log('🛣️ TOTAL km:', distanciaTotal);
 
-// ===============================
-// 🔗 PUENTE OCR → SISTEMA UBER
-// ===============================
-if (
-    tarifa > 0 &&
-    minutosTotal > 0 &&
-    distanciaTotal > 0
-) {
-    console.log("🔄 Ejecutando cálculo de rentabilidad...");
+    // ===============================
+    // 🔗 PUENTE OCR → FORMULARIO
+    // ===============================
+    if (
+        tarifa > 0 &&
+        minutosTotal > 0 &&
+        distanciaTotal > 0
+    ) {
+        console.log("✅ Datos extraídos correctamente");
+        console.log("🔄 Llenando formulario automáticamente...");
 
-    manejarCalculoAutomatico({
-        tarifa: tarifa,
-        minutos: minutosTotal,
-        distancia: distanciaTotal
-    });
+        // ✅ LLENAR CAMPOS DEL FORMULARIO
+        if (elementos && elementos.tarifa) {
+            elementos.tarifa.value = tarifa.toFixed(2);
+            console.log('💰 Tarifa establecida:', tarifa.toFixed(2));
+        }
+        
+        if (elementos && elementos.minutos) {
+            elementos.minutos.value = minutosTotal;
+            console.log('⏱️ Minutos establecidos:', minutosTotal);
+        }
+        
+        if (elementos && elementos.distancia) {
+            elementos.distancia.value = distanciaTotal.toFixed(1);
+            console.log('🛣️ Distancia establecida:', distanciaTotal.toFixed(1));
+        }
+        
+        // ✅ DISPARAR CÁLCULO AUTOMÁTICO
+        setTimeout(() => {
+            console.log('🚀 Disparando cálculo automático...');
+            if (typeof manejarCalculoAutomatico === 'function') {
+                // Limpiar timeout anterior si existe
+                if (timeoutCalculoAutomatico) {
+                    clearTimeout(timeoutCalculoAutomatico);
+                }
+                
+                // Ejecutar cálculo inmediatamente
+                calcularAutomaticoConTraficoReal();
+                
+                // Mostrar mensaje de éxito
+                mostrarStatus('✅ Datos extraídos del screenshot', 'success');
+            } else {
+                console.warn('⚠️ Función manejarCalculoAutomatico no disponible');
+                // Intentar con la otra función
+                if (typeof calcularAutomaticoConTraficoReal === 'function') {
+                    calcularAutomaticoConTraficoReal();
+                }
+            }
+        }, 500); // Pequeño delay para asegurar que los campos se actualicen
 
-} else {
-    console.warn("⚠️ Datos incompletos, no se ejecuta el cálculo", {
-        tarifa,
-        minutosTotal,
-        distanciaTotal
-    });
+    } else {
+        console.warn("⚠️ Datos incompletos, no se puede llenar formulario", {
+            tarifa,
+            minutosTotal,
+            distanciaTotal
+        });
+        
+        // Mostrar qué datos faltan
+        let mensaje = "❌ Datos incompletos del OCR: ";
+        if (!tarifa) mensaje += "Falta tarifa. ";
+        if (!minutosTotal) mensaje += "Falta tiempo. ";
+        if (!distanciaTotal) mensaje += "Falta distancia.";
+        
+        mostrarStatus(mensaje, 'error');
+    }
 }
 
 /* ============================================================
-   2️⃣ FUNCIÓN PUENTE (EVITA ERRORES)
-   ============================================================ */
-function ejecutarCalculoRentabilidad({ tarifa, minutos, distancia }) {
-    console.log('🔄 Ejecutando cálculo de rentabilidad...');
-    console.log({ tarifa, minutos, distancia });
-
-    // PRIORIDAD 1: tu sistema con perfil
-    if (typeof manejarCalculoAutomatico === 'function') {
-        manejarCalculoAutomatico({ tarifa, minutos, distancia });
-        return;
-    }
-
-    // PRIORIDAD 2
-    if (typeof calcularRentabilidadConPerfil === 'function') {
-        calcularRentabilidadConPerfil(tarifa, minutos, distancia);
-        return;
-    }
-
-    // PRIORIDAD 3
-    if (typeof calcularRentabilidad === 'function') {
-        calcularRentabilidad(tarifa, minutos, distancia);
-        return;
-    }
-
-    console.warn('⚠️ No se encontró función de cálculo');
-}
-}
-/* ============================================================
-   3️⃣ OCR SIMPLE (SI NO TIENES UNO UNIFICADO)
+   2️⃣ OCR SIMPLE PARA IMÁGENES
    ============================================================ */
 async function procesarImagenConOCR(file) {
-    console.log('🔍 Iniciando OCR...');
+    console.log('🔍 Iniciando OCR para imagen...');
+    
+    // Mostrar estado de carga
+    mostrarStatus('🔍 Analizando imagen con OCR...', 'info');
+    
     try {
-        const result = await Tesseract.recognize(file, 'eng');
+        // Verificar que Tesseract esté disponible
+        if (typeof Tesseract === 'undefined') {
+            throw new Error('Tesseract.js no está cargado');
+        }
+        
+        const result = await Tesseract.recognize(file, 'eng', {
+            logger: m => console.log('📊 Progreso OCR:', m)
+        });
+        
         const texto = result.data.text;
+        console.log('📝 Texto extraído por OCR:', texto);
+        
+        // Procesar el texto extraído
         extraerDatosDeUber(texto);
+        
     } catch (e) {
-        console.error('❌ Error OCR:', e);
+        console.error('❌ Error en OCR:', e);
+        mostrarStatus('❌ Error procesando imagen', 'error');
     }
 }
 
 /* ============================================================
-   4️⃣ INPUT DE PRUEBA (OPCIONAL)
+   3️⃣ ACTIVAR CARGA DE IMAGEN
    ============================================================ */
 function activarCargaImagen() {
+    console.log('📸 Activando selector de imagen...');
+    
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
-
+    input.accept = 'image/*,image/jpeg,image/png,image/jpg';
+    input.capture = 'environment'; // Usar cámara trasera en móviles
+    
     input.onchange = e => {
         const file = e.target.files[0];
-        if (file) procesarImagenConOCR(file);
+        if (file) {
+            console.log('📁 Archivo seleccionado:', file.name, file.size, 'bytes');
+            
+            // Verificar tamaño (máximo 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                mostrarStatus('❌ Imagen muy grande (máx 5MB)', 'error');
+                return;
+            }
+            
+            procesarImagenConOCR(file);
+        }
     };
-
+    
     input.click();
 }
 
-// Exponer para consola si quieres probar manual
-window.activarCargaImagen = activarCargaImagen;
-
-console.log('✅ MÓDULO OCR + UBER CARGADO');
-
 /* ============================================================
-   📸 BOTÓN FLOTANTE PARA ESCANEAR VIAJE UBER
+   📸 BOTÓN FLOTANTE MEJORADO PARA ESCANEAR VIAJE UBER
    ============================================================ */
 
 function crearBotonEscaneoUber() {
@@ -5333,6 +5373,7 @@ function crearBotonEscaneoUber() {
     const boton = document.createElement('button');
     boton.id = 'btn-scan-uber';
     boton.innerHTML = '📸 ESCANEAR VIAJE';
+    boton.title = 'Tomar foto o seleccionar screenshot de Uber';
 
     Object.assign(boton.style, {
         position: 'fixed',
@@ -5347,12 +5388,28 @@ function crearBotonEscaneoUber() {
         fontSize: '14px',
         fontWeight: 'bold',
         cursor: 'pointer',
-        boxShadow: '0 8px 25px rgba(0,0,0,0.4)'
+        boxShadow: '0 8px 25px rgba(0,0,0,0.4)',
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
     });
 
+    // Efecto hover
+    boton.onmouseenter = () => {
+        boton.style.transform = 'scale(1.05)';
+        boton.style.boxShadow = '0 12px 30px rgba(0,0,0,0.5)';
+    };
+    
+    boton.onmouseleave = () => {
+        boton.style.transform = 'scale(1)';
+        boton.style.boxShadow = '0 8px 25px rgba(0,0,0,0.4)';
+    };
+
     boton.onclick = () => {
-        console.log('📸 Escaneo Uber iniciado');
-        activarCargaImagen(); // ← esta función YA existe
+        console.log('📸 Botón de escaneo Uber clickeado');
+        mostrarStatus('📸 Selecciona o toma foto del viaje de Uber', 'info');
+        activarCargaImagen();
     };
 
     document.body.appendChild(boton);
@@ -5362,10 +5419,48 @@ function crearBotonEscaneoUber() {
 /* ============================================================
    🚀 INICIALIZAR BOTÓN AL CARGAR LA PÁGINA
    ============================================================ */
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', crearBotonEscaneoUber);
-} else {
+function inicializarBotonesOCR() {
+    // Crear botón flotante
     crearBotonEscaneoUber();
+    
+    // También crear un botón en la interfaz principal si quieres
+    setTimeout(() => {
+        const calcularBtn = document.getElementById('btn-calcular');
+        if (calcularBtn) {
+            // Crear contenedor para botones
+            const contenedorBotones = document.createElement('div');
+            contenedorBotones.style.cssText = 'display: flex; gap: 10px; margin-top: 15px;';
+            
+            // Mover el botón calcular dentro del contenedor
+            calcularBtn.parentNode.insertBefore(contenedorBotones, calcularBtn.nextSibling);
+            contenedorBotones.appendChild(calcularBtn);
+            
+            // Agregar botón OCR
+            const btnOCR = document.createElement('button');
+            btnOCR.innerHTML = '📸 Extraer de Imagen';
+            btnOCR.className = calcularBtn.className;
+            btnOCR.style.cssText = 'background: linear-gradient(135deg, #9C27B0, #673AB7);';
+            btnOCR.onclick = activarCargaImagen;
+            
+            contenedorBotones.appendChild(btnOCR);
+        }
+    }, 1000);
+    
+    console.log('✅ Botones OCR inicializados');
+}
+
+// Exponer funciones globalmente
+window.extraerDatosDeUber = extraerDatosDeUber;
+window.activarCargaImagen = activarCargaImagen;
+window.procesarImagenConOCR = procesarImagenConOCR;
+
+console.log('✅ MÓDULO OCR + UBER CARGADO Y CORREGIDO');
+
+// Inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarBotonesOCR);
+} else {
+    inicializarBotonesOCR();
 }
 
 window.addEventListener('beforeunload', function() {
@@ -5373,4 +5468,5 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
