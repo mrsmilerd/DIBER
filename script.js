@@ -5149,197 +5149,815 @@ window.onclick = function(event) {
 };
 
 /* ============================================================
-   🚀 SISTEMA DE ESCANEO DUAL (iPad -> Samsung A12) V3.0
-   Optimizado para evitar errores de duplicidad y lectura de pantallas
+   🔍 ESCÁNER SIMPLE Y EFECTIVO PARA GALAXY A12
    ============================================================ */
 
-// Manejo de variables globales seguras
-if (typeof window.ocrWorker === 'undefined') {
-    window.ocrWorker = null;
-    window.workerReady = false;
+/* ============================================================
+   1️⃣ ESCÁNER ULTRA SIMPLE - SOLO TOMA FOTO Y PROCESA
+   ============================================================ */
+function activarEscaneoSimple() {
+    console.log('📸 Activando escaneo simple para Galaxy A12...');
+    
+    // Crear interfaz simple
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 100000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        ">
+            <div style="font-size: 60px; margin-bottom: 20px;">📸</div>
+            <h2 style="color: #333; margin-bottom: 15px;">ESCANEAR VIAJE UBER</h2>
+            <p style="color: #666; margin-bottom: 25px; line-height: 1.5;">
+                Toma una foto de la pantalla de Uber que muestre el precio, tiempo y distancia del viaje.
+            </p>
+            
+            <div style="
+                background: #f0f8ff;
+                padding: 15px;
+                border-radius: 10px;
+                margin-bottom: 25px;
+                border-left: 4px solid #2196F3;
+            ">
+                <div style="color: #2196F3; font-weight: bold; margin-bottom: 10px;">💡 Asegúrate de capturar:</div>
+                <div style="text-align: left; color: #555;">
+                    <div>✅ <strong>Precio:</strong> RD$150.00</div>
+                    <div>✅ <strong>Tiempo:</strong> 15 min</div>
+                    <div>✅ <strong>Distancia:</strong> 6.2 km</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <button id="btn-foto-directa" style="
+                    background: linear-gradient(135deg, #2196F3, #0d47a1);
+                    color: white;
+                    border: none;
+                    padding: 20px;
+                    border-radius: 12px;
+                    font-size: 16px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    transition: all 0.3s;
+                ">
+                    📱 USAR CÁMARA
+                </button>
+                
+                <button id="btn-galeria-directa" style="
+                    background: linear-gradient(135deg, #4CAF50, #2E7D32);
+                    color: white;
+                    border: none;
+                    padding: 20px;
+                    border-radius: 12px;
+                    font-size: 16px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    transition: all 0.3s;
+                ">
+                    🖼️ DESDE GALERÍA
+                </button>
+                
+                <button id="btn-cancelar-simple" style="
+                    background: #f44336;
+                    color: white;
+                    border: none;
+                    padding: 15px;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    cursor: pointer;
+                    margin-top: 10px;
+                ">
+                    Cancelar
+                </button>
+            </div>
+            
+            <div style="margin-top: 20px; color: #888; font-size: 12px;">
+                La foto se procesará automáticamente y llenará los campos
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    // Event Listeners
+    document.getElementById('btn-foto-directa').onclick = () => {
+        modal.remove();
+        tomarFotoDirecta();
+    };
+    
+    document.getElementById('btn-galeria-directa').onclick = () => {
+        modal.remove();
+        seleccionarDeGaleriaDirecta();
+    };
+    
+    document.getElementById('btn-cancelar-simple').onclick = () => {
+        modal.remove();
+        document.body.style.overflow = '';
+    };
+    
+    // Cerrar al hacer clic fuera
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.remove();
+            document.body.style.overflow = '';
+        }
+    };
 }
 
-/**
- * Inicializa el motor Tesseract con parámetros de alta velocidad
- */
-async function inicializarScannerUltraRapido() {
-    if (window.workerReady) return;
+/* ============================================================
+   2️⃣ TOMAR FOTO DIRECTAMENTE (SIN COMPLICACIONES)
+   ============================================================ */
+function tomarFotoDirecta() {
+    console.log('📱 Tomando foto directa...');
     
-    if (typeof Tesseract === 'undefined') {
-        console.warn('⏳ Tesseract no detectado, esperando...');
-        return;
-    }
-    
-    try {
-        console.log('🤖 Iniciando motor de lectura...');
-        window.ocrWorker = await Tesseract.createWorker('eng');
-        
-        await window.ocrWorker.setParameters({
-            tessedit_char_whitelist: '0123456789.,$RDminakm ', 
-            tessedit_pageseg_mode: '6', // Bloque uniforme de texto
-            tessjs_create_hocr: '0',
-            tessjs_create_tsv: '0'
-        });
-        
-        window.workerReady = true;
-        console.log('✅ Escáner listo para usar');
-    } catch (e) {
-        console.error('❌ Error al iniciar OCR:', e);
-    }
-
-    // Crear botón SCAN si no existe
-    if (!document.getElementById('ultra-fast-scan')) {
-        const scanBtn = document.createElement('button');
-        scanBtn.id = 'ultra-fast-scan';
-        scanBtn.innerHTML = '⚡ ESCANEAR IPAD';
-        scanBtn.style.cssText = `
-            position: fixed !important; bottom: 100px !important; right: 20px !important;
-            z-index: 9999 !important; background: #00ff88 !important; color: black !important;
-            border: none !important; border-radius: 50px !important; padding: 15px 30px !important;
-            font-size: 16px !important; font-weight: 900 !important; cursor: pointer !important;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-        `;
-        scanBtn.onclick = () => window.escaneoUltraRapidoV2();
-        document.body.appendChild(scanBtn);
-    }
-}
-
-/**
- * Procesa la captura de la cámara
- */
-async function escaneoUltraRapidoV2() {
-    if (!window.workerReady) {
-        mostrarStatus('⏳ Cargando motor...', 'warning');
-        return;
-    }
-
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.capture = 'environment'; // Abre cámara trasera automáticamente
-
-    input.onchange = async (e) => {
+    input.capture = 'environment'; // Cámara trasera
+    
+    input.onchange = (e) => {
         const file = e.target.files[0];
-        if (!file) return;
-
-        console.time('⏱️ Tiempo Proceso');
-        mostrarStatus('⌛ Leyendo iPad...', 'warning');
-
-        try {
-            const imgLimpia = await optimizarParaOCR(file);
-            const { data: { text } } = await window.ocrWorker.recognize(imgLimpia);
-            procesarDatosUltraRapido(text);
-        } catch (err) {
-            console.error('❌ Error en reconocimiento:', err);
-            mostrarStatus('❌ Error al leer', 'error');
+        if (file) {
+            console.log('✅ Foto tomada:', file.name);
+            procesarFotoDirecta(file);
+        } else {
+            mostrarStatus('❌ No se seleccionó ninguna foto', 'error');
         }
-        console.timeEnd('⏱️ Tiempo Proceso');
     };
+    
+    // Disparar el click
     input.click();
 }
 
-/**
- * Pre-procesamiento de imagen para pantallas digitales
- */
-async function optimizarParaOCR(blob) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const maxDim = 700; // Resolución optimizada para A12
-            let w = img.width, h = img.height;
-            const scale = maxDim / Math.max(w, h);
-            
-            canvas.width = w * scale;
-            canvas.height = h * scale;
-            
-            const ctx = canvas.getContext('2d');
-            // Filtro especial para pantallas: Contraste alto para separar texto del brillo
-            ctx.filter = 'grayscale(1) contrast(2.5) brightness(0.6)';
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
-            canvas.toBlob(resolve, 'image/jpeg', 0.8);
-        };
-        img.src = URL.createObjectURL(blob);
-    });
-}
-
-/**
- * Lógica de negocio: Extraer y sumar tramos de Uber
- */
-function procesarDatosUltraRapido(textoOCR) {
-    console.log('📄 Texto Detectado:', textoOCR);
-
-    // 1. Limpieza de texto (Unir números cortados por el OCR)
-    const texto = textoOCR.replace(/(\d+)\.\s+(\d+)/g, '$1.$2').toLowerCase();
-
-    // 2. Extraer TARIFA (Ignorar incentivos pequeños)
-    let tarifa = 0;
-    const matchesTarifa = texto.match(/(?:rd\$|dop|rd)\s*(\d+[.,]\d+|\d+)/gi);
-    if (matchesTarifa) {
-        const valores = matchesTarifa.map(m => parseFloat(m.replace(/[^\d.]/g, '')));
-        // Priorizar el primer monto mayor a RD$70 (que suele ser la tarifa del viaje)
-        tarifa = valores.find(v => v > 70) || valores[0];
-    }
-
-    // 3. Extraer TIEMPOS (Sumar Recogida + Viaje)
-    let minutosTotal = 0;
-    const matchesMin = [...texto.matchAll(/(\d{1,2})\s*(?:min|mi|m\b|n)/g)];
-    if (matchesMin.length > 0) {
-        minutosTotal = matchesMin.reduce((sum, m) => {
-            const v = parseInt(m[1]);
-            return (v > 0 && v < 60) ? sum + v : sum; // Ignorar ruidos visuales
-        }, 0);
-    }
-
-    // 4. Extraer DISTANCIA (Sumar tramos de KM)
-    let distanciaTotal = 0;
-    const matchesKM = [...texto.matchAll(/(\d+[.,]\d+|\d+)\s*(?:km|k\b|kn)/g)];
-    if (matchesKM.length > 0) {
-        distanciaTotal = matchesKM.reduce((sum, m) => {
-            const v = parseFloat(m[1].replace(',', '.'));
-            return (v > 0 && v < 50) ? sum + v : sum;
-        }, 0);
-    }
-
-    // --- ASIGNAR A LA INTERFAZ ---
-    const elTarifa = document.getElementById('tarifa');
-    const elMinutos = document.getElementById('minutos');
-    const elDistancia = document.getElementById('distancia');
-
-    if (tarifa > 0 && elTarifa) elTarifa.value = tarifa;
-    if (minutosTotal > 0 && elMinutos) elMinutos.value = minutosTotal;
-    if (distanciaTotal > 0 && elDistancia) elDistancia.value = distanciaTotal.toFixed(1);
-
-    // --- DISPARAR CÁLCULOS ---
-    if (tarifa > 0 && minutosTotal > 0) {
-        if (typeof manejarCalculoAutomatico === 'function') {
-            manejarCalculoAutomatico();
-            if (navigator.vibrate) navigator.vibrate([50, 80]);
-            mostrarStatus(`✅ RD$${tarifa} | ${minutosTotal} min | ${distanciaTotal.toFixed(1)} km`, 'success');
+/* ============================================================
+   3️⃣ SELECCIONAR DE GALERÍA DIRECTAMENTE
+   ============================================================ */
+function seleccionarDeGaleriaDirecta() {
+    console.log('🖼️ Seleccionando de galería...');
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            console.log('✅ Imagen seleccionada:', file.name);
+            procesarFotoDirecta(file);
+        } else {
+            mostrarStatus('❌ No se seleccionó ninguna imagen', 'error');
         }
+    };
+    
+    input.click();
+}
+
+/* ============================================================
+   4️⃣ PROCESAR FOTO DIRECTA (OCR SIMPLE)
+   ============================================================ */
+function procesarFotoDirecta(file) {
+    console.log('🔄 Procesando foto directamente...');
+    
+    // Mostrar estado
+    mostrarStatus('🔍 Analizando imagen...', 'info');
+    
+    // Verificar tamaño
+    if (file.size > 10 * 1024 * 1024) {
+        mostrarStatus('❌ Imagen muy grande (máx 10MB)', 'error');
+        return;
+    }
+    
+    // Crear vista previa para debugging
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        console.log('📁 Imagen cargada para procesamiento');
+        
+        try {
+            // Verificar que Tesseract esté disponible
+            if (typeof Tesseract === 'undefined') {
+                throw new Error('Tesseract.js no está cargado');
+            }
+            
+            // Mostrar mensaje de procesamiento
+            mostrarStatus('🤖 Procesando con OCR...', 'info');
+            
+            // Procesar con Tesseract
+            const result = await Tesseract.recognize(file, 'eng+spa', {
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        console.log('📊 Progreso OCR:', Math.round(m.progress * 100) + '%');
+                    }
+                }
+            });
+            
+            const texto = result.data.text;
+            console.log('📝 TEXTO EXTRAÍDO:', texto);
+            
+            // Mostrar vista previa del texto
+            mostrarVistaPreviaSimple(texto);
+            
+            // Extraer datos del texto
+            extraerDatosSimple(texto);
+            
+        } catch (error) {
+            console.error('❌ Error en OCR:', error);
+            mostrarStatus('❌ Error procesando imagen', 'error');
+            
+            // Mostrar el texto del error
+            alert('Error en OCR: ' + error.message + '\n\nIntenta con una imagen más clara.');
+        }
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+/* ============================================================
+   5️⃣ VISTA PREVIA SIMPLE DEL TEXTO
+   ============================================================ */
+function mostrarVistaPreviaSimple(texto) {
+    console.log('📋 Mostrando vista previa del texto...');
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.9);
+        z-index: 100001;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    `;
+    
+    const textoCorto = texto.substring(0, 500) + (texto.length > 500 ? '...' : '');
+    
+    modal.innerHTML = `
+        <div style="
+            background: #1a1a1a;
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 2px solid #00ff00;
+        ">
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #333;
+            ">
+                <h3 style="color: #00ff00; margin: 0;">📝 TEXTO DETECTADO</h3>
+                <button id="cerrar-vista-previa" style="
+                    background: #ff4444;
+                    color: white;
+                    border: none;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    font-size: 20px;
+                    cursor: pointer;
+                ">×</button>
+            </div>
+            
+            <div style="
+                background: #000;
+                color: #0f0;
+                font-family: 'Courier New', monospace;
+                padding: 20px;
+                border-radius: 10px;
+                white-space: pre-wrap;
+                word-break: break-word;
+                margin-bottom: 20px;
+                max-height: 300px;
+                overflow-y: auto;
+                border: 1px solid #333;
+            ">
+                ${textoCorto.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}
+            </div>
+            
+            <div style="color: #aaa; font-size: 12px; margin-bottom: 20px;">
+                <strong>💡 Si no ves los datos (precio, tiempo, distancia):</strong><br>
+                1. La imagen puede estar borrosa<br>
+                2. El texto puede estar muy pequeño<br>
+                3. Intenta con una captura de pantalla directa
+            </div>
+            
+            <button id="procesar-texto" style="
+                background: linear-gradient(135deg, #00ff00, #00cc00);
+                color: #000;
+                border: none;
+                padding: 15px;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 16px;
+                cursor: pointer;
+                width: 100%;
+            ">
+                ✅ PROCESAR ESTE TEXTO
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event Listeners
+    document.getElementById('cerrar-vista-previa').onclick = () => {
+        modal.remove();
+    };
+    
+    document.getElementById('procesar-texto').onclick = () => {
+        modal.remove();
+        extraerDatosSimple(texto);
+    };
+    
+    // Auto-cerrar después de 10 segundos
+    setTimeout(() => {
+        if (modal.parentNode) {
+            modal.remove();
+            extraerDatosSimple(texto);
+        }
+    }, 10000);
+}
+
+/* ============================================================
+   6️⃣ EXTRACCIÓN DE DATOS SIMPLE Y ROBUSTA
+   ============================================================ */
+function extraerDatosSimple(textoOCR) {
+    console.log('🔍 Extrayendo datos del texto...');
+    
+    if (!textoOCR || textoOCR.trim().length === 0) {
+        mostrarStatus('❌ No se detectó texto en la imagen', 'error');
+        return;
+    }
+    
+    // Limpiar texto
+    const texto = textoOCR
+        .replace(/\s+/g, ' ')
+        .replace(/[|]/g, '1')
+        .replace(/[O]/g, '0')
+        .replace(/[l]/g, '1')
+        .toUpperCase();
+    
+    console.log('🧹 Texto limpio:', texto.substring(0, 200) + '...');
+    
+    // Variables para datos
+    let tarifa = null;
+    let minutos = null;
+    let distancia = null;
+    
+    /* ========== BUSCAR TARIFA ========== */
+    // Patrones para tarifa
+    const patronesTarifa = [
+        /RD\$\s*(\d+(?:[.,]\d+)?)/,
+        /\$\s*(\d+(?:[.,]\d+)?)/,
+        /(\d+(?:[.,]\d+)?)\s*RD\$/,
+        /TOTAL.*?(\d+(?:[.,]\d+)?)/,
+        /PRECIO.*?(\d+(?:[.,]\d+)?)/,
+        /COSTO.*?(\d+(?:[.,]\d+)?)/,
+        /PAGAR.*?(\d+(?:[.,]\d+)?)/,
+        /(\d+(?:[.,]\d+)?)\s*PESOS/
+    ];
+    
+    for (const patron of patronesTarifa) {
+        const match = texto.match(patron);
+        if (match) {
+            tarifa = parseFloat(match[1].replace(',', '.'));
+            console.log('💰 Tarifa encontrada:', tarifa);
+            break;
+        }
+    }
+    
+    /* ========== BUSCAR MINUTOS ========== */
+    // Patrones para minutos
+    const patronesMinutos = [
+        /(\d+)\s*MIN/,
+        /(\d+)\s*MINUTOS/,
+        /TIEMPO.*?(\d+)/,
+        /DURACION.*?(\d+)/,
+        /(\d+)\s*M\b/,
+        /(\d+)\s*'/
+    ];
+    
+    for (const patron of patronesMinutos) {
+        const match = texto.match(patron);
+        if (match) {
+            minutos = parseInt(match[1]);
+            console.log('⏱️ Minutos encontrados:', minutos);
+            break;
+        }
+    }
+    
+    /* ========== BUSCAR DISTANCIA ========== */
+    // Patrones para distancia
+    const patronesDistancia = [
+        /(\d+(?:[.,]\d+)?)\s*KM/,
+        /(\d+(?:[.,]\d+)?)\s*KILOMETROS/,
+        /DISTANCIA.*?(\d+(?:[.,]\d+)?)/,
+        /(\d+)\s*\.\s*(\d+)\s*KM/
+    ];
+    
+    for (const patron of patronesDistancia) {
+        const match = texto.match(patron);
+        if (match) {
+            let valor = match[1];
+            if (match[2]) {
+                valor = match[1] + '.' + match[2];
+            }
+            distancia = parseFloat(valor.replace(',', '.'));
+            console.log('🛣️ Distancia encontrada:', distancia);
+            break;
+        }
+    }
+    
+    /* ========== PATRONES COMBINADOS ========== */
+    // Buscar "XX min (YY km)"
+    const combinado = texto.match(/(\d+)\s*MIN\s*[\(]?\s*(\d+(?:[.,]\d+)?)\s*KM/i);
+    if (combinado) {
+        if (!minutos) minutos = parseInt(combinado[1]);
+        if (!distancia) distancia = parseFloat(combinado[2].replace(',', '.'));
+        console.log('🎯 Patrón combinado encontrado:', { minutos, distancia });
+    }
+    
+    /* ========== RESULTADOS ========== */
+    console.log('📊 Resultados finales:', { tarifa, minutos, distancia });
+    
+    // Mostrar resultados al usuario
+    mostrarResultadosExtraccion(tarifa, minutos, distancia);
+    
+    // Llenar formulario si tenemos datos
+    if (tarifa && minutos && distancia) {
+        llenarFormularioAutomaticamente(tarifa, minutos, distancia);
+    } else if (tarifa) {
+        // Si solo tenemos tarifa, llenarla y pedir el resto
+        llenarParcialmente(tarifa, minutos, distancia);
     } else {
-        mostrarStatus('⚠️ Algunos datos no son claros. Reencuadra el iPad.', 'warning');
+        // Si no tenemos nada, mostrar error
+        mostrarErrorExtraccion();
     }
 }
 
-// Inicialización segura
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarScannerUltraRapido);
-} else {
-    inicializarScannerUltraRapido();
+/* ============================================================
+   7️⃣ MOSTRAR RESULTADOS DE LA EXTRACCIÓN
+   ============================================================ */
+function mostrarResultadosExtraccion(tarifa, minutos, distancia) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        z-index: 100002;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        text-align: center;
+    `;
+    
+    let contenido = '';
+    const datosCompletos = tarifa && minutos && distancia;
+    
+    if (datosCompletos) {
+        contenido = `
+            <div style="font-size: 50px; color: #4CAF50; margin-bottom: 15px;">✅</div>
+            <h3 style="color: #4CAF50; margin-bottom: 20px;">¡DATOS COMPLETOS DETECTADOS!</h3>
+            <div style="
+                background: #f0f9f0;
+                padding: 20px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                border-left: 5px solid #4CAF50;
+            ">
+                <div style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 10px;">
+                    $${tarifa.toFixed(2)}
+                </div>
+                <div style="color: #666; font-size: 18px;">
+                    ${minutos} min • ${distancia} km
+                </div>
+            </div>
+            <p style="color: #666; margin-bottom: 25px;">
+                Los campos se llenarán automáticamente y se calculará la rentabilidad.
+            </p>
+            <button id="btn-aceptar-datos" style="
+                background: linear-gradient(135deg, #4CAF50, #2E7D32);
+                color: white;
+                border: none;
+                padding: 15px 30px;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 16px;
+                cursor: pointer;
+                width: 100%;
+            ">
+                ✅ ACEPTAR Y CALCULAR
+            </button>
+        `;
+    } else {
+        const datosEncontrados = [];
+        if (tarifa) datosEncontrados.push(`$${tarifa.toFixed(2)}`);
+        if (minutos) datosEncontrados.push(`${minutos} min`);
+        if (distancia) datosEncontrados.push(`${distancia} km`);
+        
+        contenido = `
+            <div style="font-size: 50px; color: #FF9800; margin-bottom: 15px;">⚠️</div>
+            <h3 style="color: #FF9800; margin-bottom: 20px;">DATOS PARCIALES</h3>
+            <div style="
+                background: #fff3e0;
+                padding: 20px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                border-left: 5px solid #FF9800;
+            ">
+                <div style="font-size: 18px; color: #333; margin-bottom: 15px;">
+                    <strong>Detectados:</strong>
+                </div>
+                <div style="color: #666; font-size: 16px; line-height: 1.8;">
+                    ${datosEncontrados.length > 0 
+                        ? datosEncontrados.map(d => `<div>✅ ${d}</div>`).join('')
+                        : '<div>❌ No se detectaron datos</div>'
+                    }
+                    ${!tarifa ? '<div>❌ <strong>Falta:</strong> Precio</div>' : ''}
+                    ${!minutos ? '<div>❌ <strong>Falta:</strong> Tiempo</div>' : ''}
+                    ${!distancia ? '<div>❌ <strong>Falta:</strong> Distancia</div>' : ''}
+                </div>
+            </div>
+            <p style="color: #666; margin-bottom: 25px;">
+                Completa manualmente los campos faltantes.
+            </p>
+            <button id="btn-llenar-parcial" style="
+                background: linear-gradient(135deg, #FF9800, #F57C00);
+                color: white;
+                border: none;
+                padding: 15px 30px;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 16px;
+                cursor: pointer;
+                width: 100%;
+            ">
+                📝 LLENAR LO DETECTADO
+            </button>
+        `;
+    }
+    
+    modal.innerHTML = contenido;
+    document.body.appendChild(modal);
+    
+    // Event Listeners
+    if (datosCompletos) {
+        document.getElementById('btn-aceptar-datos').onclick = () => {
+            modal.remove();
+            llenarFormularioAutomaticamente(tarifa, minutos, distancia);
+        };
+    } else {
+        document.getElementById('btn-llenar-parcial').onclick = () => {
+            modal.remove();
+            llenarParcialmente(tarifa, minutos, distancia);
+        };
+    }
+    
+    // Cerrar al hacer clic fuera
+    setTimeout(() => {
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                if (datosCompletos) {
+                    llenarFormularioAutomaticamente(tarifa, minutos, distancia);
+                } else {
+                    llenarParcialmente(tarifa, minutos, distancia);
+                }
+            }
+        };
+    }, 100);
 }
 
-// Hacer funciones disponibles globalmente
-window.escaneoUltraRapidoV2 = escaneoUltraRapidoV2;
-window.optimizarParaOCR = optimizarParaOCR;
-window.procesarDatosUltraRapido = procesarDatosUltraRapido;
+/* ============================================================
+   8️⃣ LLENAR FORMULARIO AUTOMÁTICAMENTE
+   ============================================================ */
+function llenarFormularioAutomaticamente(tarifa, minutos, distancia) {
+    console.log('🔄 Llenando formulario automáticamente...');
+    
+    if (elementos && elementos.tarifa) {
+        elementos.tarifa.value = tarifa.toFixed(2);
+        console.log('💰 Tarifa establecida:', tarifa);
+    }
+    
+    if (elementos && elementos.minutos) {
+        elementos.minutos.value = minutos;
+        console.log('⏱️ Minutos establecidos:', minutos);
+    }
+    
+    if (elementos && elementos.distancia) {
+        elementos.distancia.value = distancia.toFixed(1);
+        console.log('🛣️ Distancia establecida:', distancia);
+    }
+    
+    // Mostrar mensaje de éxito
+    mostrarStatus('✅ Datos extraídos automáticamente!', 'success');
+    
+    // Disparar cálculo automático después de 1 segundo
+    setTimeout(() => {
+        if (typeof manejarCalculoAutomatico === 'function') {
+            if (timeoutCalculoAutomatico) {
+                clearTimeout(timeoutCalculoAutomatico);
+            }
+            setTimeout(() => {
+                if (typeof calcularAutomaticoConTraficoReal === 'function') {
+                    calcularAutomaticoConTraficoReal();
+                }
+            }, 300);
+        }
+    }, 1000);
+}
+
+function llenarParcialmente(tarifa, minutos, distancia) {
+    console.log('📝 Llenando parcialmente...');
+    
+    if (tarifa && elementos.tarifa) {
+        elementos.tarifa.value = tarifa.toFixed(2);
+        console.log('💰 Tarifa establecida:', tarifa);
+    }
+    
+    if (minutos && elementos.minutos) {
+        elementos.minutos.value = minutos;
+        console.log('⏱️ Minutos establecidos:', minutos);
+    }
+    
+    if (distancia && elementos.distancia) {
+        elementos.distancia.value = distancia.toFixed(1);
+        console.log('🛣️ Distancia establecida:', distancia);
+    }
+    
+    // Enfocar el primer campo faltante
+    setTimeout(() => {
+        if (!minutos && elementos.minutos) {
+            elementos.minutos.focus();
+            mostrarStatus('📝 Ingresa el tiempo del viaje', 'info');
+        } else if (!distancia && elementos.distancia) {
+            elementos.distancia.focus();
+            mostrarStatus('📝 Ingresa la distancia del viaje', 'info');
+        } else if (!tarifa && elementos.tarifa) {
+            elementos.tarifa.focus();
+            mostrarStatus('📝 Ingresa el precio del viaje', 'info');
+        }
+    }, 500);
+}
+
+function mostrarErrorExtraccion() {
+    mostrarStatus('❌ No se detectaron datos. Intenta con una imagen más clara.', 'error');
+    
+    // Sugerir intentar de nuevo
+    setTimeout(() => {
+        if (confirm('¿Quieres intentar con otra imagen?')) {
+            activarEscaneoSimple();
+        }
+    }, 1500);
+}
+
+/* ============================================================
+   9️⃣ BOTÓN FLOTANTE SIMPLE
+   ============================================================ */
+function crearBotonEscaneoSimple() {
+    // Remover botones anteriores
+    ['btn-scan-tiempo-real', 'btn-scan-uber'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.remove();
+    });
+    
+    const boton = document.createElement('button');
+    boton.id = 'btn-scan-simple';
+    boton.innerHTML = '📸 ESCANEAR UBER';
+    boton.title = 'Tomar foto de pantalla de Uber';
+    
+    Object.assign(boton.style, {
+        position: 'fixed',
+        bottom: '100px',
+        right: '20px',
+        zIndex: '99999',
+        background: 'linear-gradient(135deg, #2196F3, #0d47a1)',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '50px',
+        padding: '18px 25px',
+        fontSize: '15px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        boxShadow: '0 10px 30px rgba(33, 150, 243, 0.5)',
+        transition: 'all 0.3s',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px'
+    });
+    
+    // Efecto hover
+    boton.onmouseenter = () => {
+        boton.style.transform = 'scale(1.1)';
+        boton.style.boxShadow = '0 15px 40px rgba(33, 150, 243, 0.8)';
+    };
+    
+    boton.onmouseleave = () => {
+        boton.style.transform = 'scale(1)';
+        boton.style.boxShadow = '0 10px 30px rgba(33, 150, 243, 0.5)';
+    };
+    
+    boton.onclick = activarEscaneoSimple;
+    
+    document.body.appendChild(boton);
+    console.log('✅ Botón de escaneo SIMPLE creado');
+}
+
+/* ============================================================
+   🔟 INICIALIZACIÓN SIMPLE
+   ============================================================ */
+function inicializarEscaneoSimple() {
+    console.log('🚀 Inicializando escaneo simple...');
+    
+    // Crear botón flotante
+    crearBotonEscaneoSimple();
+    
+    // Agregar botón en la interfaz principal
+    setTimeout(() => {
+        const calcularBtn = document.getElementById('btn-calcular');
+        if (calcularBtn && calcularBtn.parentNode) {
+            const btnEscaneo = document.createElement('button');
+            btnEscaneo.innerHTML = '📸 ESCANEAR VIAJE UBER';
+            btnEscaneo.className = calcularBtn.className;
+            btnEscaneo.style.cssText = `
+                background: linear-gradient(135deg, #2196F3, #0d47a1);
+                margin-top: 15px;
+                font-weight: bold;
+                font-size: 15px;
+            `;
+            btnEscaneo.onclick = activarEscaneoSimple;
+            
+            calcularBtn.parentNode.appendChild(btnEscaneo);
+        }
+    }, 1000);
+    
+    console.log('✅ Escaneo simple listo');
+}
+
+/* ============================================================
+   🎯 EXPORTAR FUNCIONES
+   ============================================================ */
+window.activarEscaneoSimple = activarEscaneoSimple;
+window.procesarFotoDirecta = procesarFotoDirecta;
+window.extraerDatosSimple = extraerDatosSimple;
+
+// Inicializar cuando la app cargue
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(inicializarEscaneoSimple, 2000);
+    });
+} else {
+    setTimeout(inicializarEscaneoSimple, 2000);
+}
+
+console.log('🎯 MÓDULO DE ESCANEO SIMPLE CARGADO');
 
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
