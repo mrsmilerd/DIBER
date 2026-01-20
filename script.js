@@ -5149,28 +5149,34 @@ window.onclick = function(event) {
 };
 
 /* ============================================================
-   🧠 OCR MEJORADO PARA UBER - VERSIÓN COMPLETA CON BOTÓN
+   🚀 OCR UBER - VERSIÓN FINAL OPTIMIZADA
+   ============================================================
+   
+   CARACTERÍSTICAS:
+   ✅ Modo ultra-rápido (sin modals de confirmación)
+   ✅ Detección automática: foto vs screenshot
+   ✅ Pre-procesamiento mejorado para cámara mala
+   ✅ Atajo de teclado (Tecla "U")
+   ✅ Pegar con Ctrl+V
+   ✅ Arrastrar y soltar
+   ✅ Tiempo total: 2-3 segundos
+   
    ============================================================ */
 
 /* ============================================================
-   1️⃣ CREAR BOTÓN FLOTANTE PARA ESCANEO IA
+   1️⃣ BOTÓN FLOTANTE
    ============================================================ */
 function crearBotonFlotanteOCR() {
     console.log('🔄 Creando botón flotante para OCR...');
     
-    // Remover botón anterior si existe
     const botonAnterior = document.getElementById('btn-ocr-ia');
-    if (botonAnterior) {
-        botonAnterior.remove();
-    }
+    if (botonAnterior) botonAnterior.remove();
     
-    // Crear nuevo botón
     const boton = document.createElement('button');
     boton.id = 'btn-ocr-ia';
-    boton.innerHTML = '🧠 ESCANEAR UBER';
-    boton.title = 'Escaneo inteligente con IA - Detecta precios, tiempos y distancias';
+    boton.innerHTML = '⚡ ESCANEAR UBER';
+    boton.title = 'Escaneo ultra-rápido - Detecta precio, tiempo y distancia';
     
-    // Estilos del botón
     Object.assign(boton.style, {
         position: 'fixed',
         bottom: '100px',
@@ -5185,366 +5191,118 @@ function crearBotonFlotanteOCR() {
         fontWeight: 'bold',
         cursor: 'pointer',
         boxShadow: '0 10px 30px rgba(156, 39, 176, 0.5)',
-        transition: 'all 0.3s ease',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        animation: 'pulse-ia 2s infinite'
+        transition: 'all 0.3s ease'
     });
     
-    // Agregar animación de pulso
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes pulse-ia {
-            0%, 100% { 
-                transform: scale(1);
-                box-shadow: 0 10px 30px rgba(156, 39, 176, 0.5);
-            }
-            50% { 
-                transform: scale(1.05);
-                box-shadow: 0 15px 40px rgba(156, 39, 176, 0.8);
-            }
-        }
-        
-        @keyframes flotar {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-        
-        #btn-ocr-ia:hover {
-            animation: flotar 1s infinite;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Efecto hover
-    boton.onmouseenter = () => {
-        boton.style.transform = 'scale(1.1)';
-        boton.style.boxShadow = '0 20px 50px rgba(156, 39, 176, 0.9)';
-    };
-    
-    boton.onmouseleave = () => {
-        boton.style.transform = 'scale(1)';
-        boton.style.boxShadow = '0 10px 30px rgba(156, 39, 176, 0.5)';
-    };
-    
-    // Acción al hacer clic
     boton.onclick = activarEscaneoMejorado;
-    
-    // Agregar al documento
     document.body.appendChild(boton);
     
-    console.log('✅ Botón flotante creado:', boton);
+    console.log('✅ Botón flotante creado');
     return boton;
 }
 
 /* ============================================================
-   2️⃣ ACTIVAR ESCANEO MEJORADO (INTERFAZ)
+   2️⃣ ACTIVAR ESCANEO (ULTRA-RÁPIDO - SIN MODAL)
    ============================================================ */
 function activarEscaneoMejorado() {
-    console.log('🧠 Activando escaneo mejorado...');
-    
-    // Crear modal de interfaz
-    const modal = document.createElement('div');
-    modal.id = 'modal-ocr-ia';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.95);
-        z-index: 100000;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-    `;
-    
-    modal.innerHTML = `
-        <div style="
-            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-            padding: 35px;
-            border-radius: 25px;
-            max-width: 500px;
-            width: 95%;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            border: 2px solid #9C27B0;
-            position: relative;
-        ">
-            <button id="cerrar-modal-ia" style="
-                position: absolute;
-                top: 15px;
-                right: 15px;
-                background: #ff4444;
-                color: white;
-                border: none;
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                font-size: 22px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 2;
-            ">×</button>
-            
-            <div style="font-size: 80px; margin-bottom: 20px; color: #9C27B0;">🧠</div>
-            <h2 style="color: #fff; margin-bottom: 10px; font-size: 28px;">ESCANEO INTELIGENTE</h2>
-            <p style="color: #aaa; margin-bottom: 30px; line-height: 1.6; font-size: 16px;">
-                Toma una foto de tu pantalla de Uber.<br>
-                <strong style="color: #9C27B0;">La IA detectará automáticamente:</strong>
-            </p>
-            
-            <div style="
-                background: rgba(156, 39, 176, 0.1);
-                padding: 25px;
-                border-radius: 20px;
-                margin-bottom: 35px;
-                border: 1px solid rgba(156, 39, 176, 0.3);
-                backdrop-filter: blur(10px);
-            ">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; text-align: center;">
-                    <div>
-                        <div style="font-size: 40px; color: #4CAF50;">💰</div>
-                        <div style="font-weight: bold; color: #4CAF50; font-size: 18px; margin: 10px 0;">Precio</div>
-                        <div style="font-size: 14px; color: #bbb;">RD$120.52</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 40px; color: #2196F3;">⏱️</div>
-                        <div style="font-weight: bold; color: #2196F3; font-size: 18px; margin: 10px 0;">Tiempo</div>
-                        <div style="font-size: 14px; color: #bbb;">16 min</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 40px; color: #FF9800;">🛣️</div>
-                        <div style="font-weight: bold; color: #FF9800; font-size: 18px; margin: 10px 0;">Distancia</div>
-                        <div style="font-size: 14px; color: #bbb;">5.3 km</div>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <div style="color: #9C27B0; font-weight: bold; margin-bottom: 10px;">✨ VENTAJAS:</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; font-size: 13px; color: #ccc;">
-                        <div>✅ Corrige errores OCR</div>
-                        <div>✅ Entiende formatos Uber</div>
-                        <div>✅ Calcula automáticamente</div>
-                        <div>✅ Muestra proceso paso a paso</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-                <button id="btn-camara-ia" style="
-                    background: linear-gradient(135deg, #2196F3, #0d47a1);
-                    color: white;
-                    border: none;
-                    padding: 25px;
-                    border-radius: 15px;
-                    font-size: 18px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 15px;
-                    transition: all 0.3s;
-                ">
-                    <span style="font-size: 24px;">📱</span>
-                    <span>TOMAR FOTO CON CÁMARA</span>
-                </button>
-                
-                <button id="btn-galeria-ia" style="
-                    background: linear-gradient(135deg, #4CAF50, #2E7D32);
-                    color: white;
-                    border: none;
-                    padding: 25px;
-                    border-radius: 15px;
-                    font-size: 18px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 15px;
-                    transition: all 0.3s;
-                ">
-                    <span style="font-size: 24px;">🖼️</span>
-                    <span>USAR SCREENSHOT / GALERÍA</span>
-                </button>
-                
-                <button id="btn-cancelar-ia" style="
-                    background: transparent;
-                    color: #aaa;
-                    border: 1px solid #666;
-                    padding: 18px;
-                    border-radius: 12px;
-                    font-size: 16px;
-                    cursor: pointer;
-                    margin-top: 10px;
-                    transition: all 0.3s;
-                ">
-                    Cancelar
-                </button>
-            </div>
-            
-            <div style="margin-top: 30px; color: #888; font-size: 13px; line-height: 1.6;">
-                💡 <strong>Consejo:</strong> Para mejores resultados, usa una <strong style="color: #4CAF50;">captura de pantalla</strong> en vez de foto con cámara
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    document.body.style.overflow = 'hidden';
-    
-    // Event Listeners
-    document.getElementById('cerrar-modal-ia').onclick = cerrarModalIA;
-    document.getElementById('btn-camara-ia').onclick = tomarFotoIA;
-    document.getElementById('btn-galeria-ia').onclick = seleccionarImagenIA;
-    document.getElementById('btn-cancelar-ia').onclick = cerrarModalIA;
-    
-    // Cerrar al hacer clic fuera del contenido
-    modal.onclick = (e) => {
-        if (e.target === modal) {
-            cerrarModalIA();
-        }
-    };
-    
-    console.log('✅ Modal de escaneo IA creado');
-}
-
-function cerrarModalIA() {
-    const modal = document.getElementById('modal-ocr-ia');
-    if (modal) {
-        modal.remove();
-        document.body.style.overflow = '';
-    }
-}
-
-/* ============================================================
-   3️⃣ FUNCIONES DE CAPTURA PARA IA
-   ============================================================ */
-function tomarFotoIA() {
-    console.log('📱 Tomando foto para IA...');
-    cerrarModalIA();
-    
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment'; // Usar cámara trasera
-    
-    input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            console.log('✅ Foto capturada para IA:', file.name, file.size, 'bytes');
-            mostrarStatus('🤖 Procesando con IA...', 'info');
-            procesarImagenMejorada(file);
-        } else {
-            mostrarStatus('❌ No se seleccionó ninguna foto', 'error');
-        }
-    };
-    
-    // Disparar el selector de archivos
-    setTimeout(() => {
-        input.click();
-    }, 300);
-}
-
-function seleccionarImagenIA() {
-    console.log('🖼️ Seleccionando imagen para IA...');
-    cerrarModalIA();
+    console.log('⚡ [ULTRA-RÁPIDO] Activando escaneo directo...');
     
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     
+    mostrarStatus('📸 Selecciona imagen de Uber...', 'info');
+    
     input.onchange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            console.log('✅ Imagen seleccionada para IA:', file.name, file.size, 'bytes');
-            mostrarStatus('🤖 Procesando screenshot...', 'info');
-            procesarImagenMejorada(file);
+            console.log('✅ Imagen seleccionada:', file.name, file.size, 'bytes');
+            procesarImagenUltraRapido(file);
         } else {
-            mostrarStatus('❌ No se seleccionó ninguna imagen', 'error');
+            mostrarStatus('❌ No se seleccionó imagen', 'error');
         }
     };
     
-    setTimeout(() => {
-        input.click();
-    }, 300);
+    setTimeout(() => input.click(), 100);
 }
 
 /* ============================================================
-   4️⃣ PROCESAMIENTO MEJORADO CON TESSERACT
+   3️⃣ PROCESAMIENTO ULTRA-RÁPIDO
    ============================================================ */
-async function procesarImagenMejorada(file) {
-    console.log('🧠 [UBER OCR] Iniciando procesamiento optimizado...');
+async function procesarImagenUltraRapido(file) {
+    console.log('⚡ [PROCESAMIENTO] Iniciando...');
     
-    mostrarEstadoProcesamiento('🔍 Preparando imagen para análisis...', 10);
+    mostrarIndicadorMinimo('🤖 Analizando...');
     
     try {
-        // Verificar que Tesseract esté disponible
         if (typeof Tesseract === 'undefined') {
-            throw new Error('❌ Tesseract.js no está disponible. Recarga la página.');
+            throw new Error('Tesseract.js no disponible');
         }
         
-        console.log('🎨 [UBER OCR] Aplicando pre-procesamiento de imagen...');
+        // ✅ DETECTAR AUTOMÁTICAMENTE: ¿Foto o Screenshot?
+        const esFotoCamara = detectarTipoImagen(file);
         
-        // 🔥 PASO 1: Pre-procesar imagen (invertir colores, mejorar contraste)
-        const imagenMejorada = await preprocesarImagenUber(file);
+        console.log('📸 Tipo detectado:', esFotoCamara ? 'FOTO CÁMARA' : 'SCREENSHOT');
         
-        mostrarEstadoProcesamiento('🤖 Analizando texto con IA...', 30);
+        // ✅ PRE-PROCESAR SEGÚN TIPO
+        let imagenMejorada;
+        if (esFotoCamara) {
+            mostrarIndicadorMinimo('📸 Mejorando foto...');
+            imagenMejorada = await preprocesarImagenUberCamara(file);
+        } else {
+            mostrarIndicadorMinimo('📱 Procesando screenshot...');
+            imagenMejorada = await preprocesarImagenUber(file);
+        }
         
-        console.log('📊 [UBER OCR] Ejecutando OCR con configuración optimizada...');
+        mostrarIndicadorMinimo('🤖 Leyendo texto...');
         
-        // 🔥 PASO 2: OCR con configuración específica para Uber
+        // ✅ OCR OPTIMIZADO
         const { data: { text } } = await Tesseract.recognize(imagenMejorada, 'eng', {
-            logger: progress => {
-                if (progress.status === 'recognizing text') {
-                    const porcentaje = Math.round(30 + (progress.progress * 60));
-                    mostrarEstadoProcesamiento(`📖 Leyendo texto... ${porcentaje}%`, porcentaje);
-                }
-            },
-            // ✅ CONFIGURACIÓN ULTRA-OPTIMIZADA PARA UBER
             tessedit_char_whitelist: '0123456789RD$AViajekm.min() ',
-            tessedit_pageseg_mode: Tesseract.PSM.AUTO, // Detectar bloques automáticamente
+            tessedit_pageseg_mode: Tesseract.PSM.AUTO,
             tessedit_ocr_engine_mode: Tesseract.OEM.LSTM_ONLY,
             preserve_interword_spaces: '1'
         });
         
-        console.log('✅ [UBER OCR] OCR completado exitosamente');
-        console.log('📝 [UBER OCR] Texto detectado:', text);
+        console.log('✅ OCR completado');
+        console.log('📝 Texto:', text);
         
-        mostrarEstadoProcesamiento('🎯 Extrayendo datos...', 95);
+        // ✅ EXTRAER DATOS
+        const datos = extraerDatosUberDirecto(text);
         
-        // 🔥 PASO 3: Extraer datos directamente
-        const datosExtraidos = extraerDatosUberDirecto(text);
+        // ✅ LLENAR FORMULARIO INMEDIATAMENTE
+        llenarFormularioUltraRapido(datos);
         
-        cerrarEstadoProcesamiento();
-        
-        // 🔥 PASO 4: Mostrar resultados
-        mostrarResultadosExtracion(datosExtraidos);
+        cerrarIndicadorMinimo();
         
     } catch (error) {
-        console.error('❌ [UBER OCR] Error en procesamiento:', error);
-        cerrarEstadoProcesamiento();
-        mostrarStatus('❌ Error procesando imagen: ' + error.message, 'error');
-        
-        setTimeout(() => {
-            if (confirm('❌ El OCR falló.\n\n¿Intentar nuevamente con otra imagen?')) {
-                activarEscaneoMejorado();
-            }
-        }, 1000);
+        console.error('❌ Error:', error);
+        cerrarIndicadorMinimo();
+        mostrarStatus('❌ Error: ' + error.message, 'error');
     }
 }
 
 /* ============================================================
-   PRE-PROCESAMIENTO DE IMAGEN PARA UBER
+   4️⃣ DETECTAR TIPO DE IMAGEN
+   ============================================================ */
+function detectarTipoImagen(file) {
+    // Foto de cámara suele ser > 500KB
+    const esFotoCamara = file.size > 500000;
+    
+    console.log('🔍 Análisis de imagen:', {
+        nombre: file.name,
+        tamaño: (file.size / 1024).toFixed(2) + ' KB',
+        tipo: esFotoCamara ? 'FOTO CÁMARA (baja calidad)' : 'SCREENSHOT (alta calidad)'
+    });
+    
+    return esFotoCamara;
+}
+
+/* ============================================================
+   5️⃣ PRE-PROCESAMIENTO PARA SCREENSHOT
    ============================================================ */
 async function preprocesarImagenUber(file) {
-    console.log('🎨 [PREPROCESAR] Iniciando mejoras de imagen...');
+    console.log('📱 [SCREENSHOT] Pre-procesando...');
     
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -5553,350 +5311,201 @@ async function preprocesarImagenUber(file) {
             const img = new Image();
             
             img.onload = () => {
-                console.log('🖼️ [PREPROCESAR] Imagen cargada:', img.width, 'x', img.height);
-                
-                // Crear canvas para procesamiento
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Usar resolución original (importante para OCR)
                 canvas.width = img.width;
                 canvas.height = img.height;
-                
-                // Dibujar imagen original
                 ctx.drawImage(img, 0, 0);
                 
-                // Obtener datos de píxeles
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imageData.data;
                 
-                console.log('🔄 [PREPROCESAR] Aplicando transformaciones...');
-                
-                // 🔥 TRANSFORMACIÓN 1: Invertir colores (fondo oscuro → claro)
-                // 🔥 TRANSFORMACIÓN 2: Aumentar contraste (mejorar legibilidad)
+                // Invertir colores + Aumentar contraste
                 for (let i = 0; i < data.length; i += 4) {
-                    // Invertir cada canal de color (RGB)
-                    data[i] = 255 - data[i];         // Red
-                    data[i + 1] = 255 - data[i + 1]; // Green
-                    data[i + 2] = 255 - data[i + 2]; // Blue
-                    // Alpha (transparencia) no se modifica
+                    data[i] = 255 - data[i];
+                    data[i + 1] = 255 - data[i + 1];
+                    data[i + 2] = 255 - data[i + 2];
                     
-                    // Calcular promedio para umbral
                     const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                    
-                    // Aplicar umbral para aumentar contraste
                     if (avg < 140) {
-                        // Píxeles oscuros → Negro puro
                         data[i] = data[i + 1] = data[i + 2] = 0;
                     } else {
-                        // Píxeles claros → Blanco puro
                         data[i] = data[i + 1] = data[i + 2] = 255;
                     }
                 }
                 
-                // Aplicar transformaciones al canvas
                 ctx.putImageData(imageData, 0, 0);
-                
-                console.log('✅ [PREPROCESAR] Transformaciones aplicadas exitosamente');
-                
-                // Convertir canvas procesado a blob
-                canvas.toBlob((blob) => {
-                    console.log('💾 [PREPROCESAR] Imagen procesada lista');
-                    resolve(blob);
-                }, 'image/png', 1.0); // Máxima calidad
+                canvas.toBlob((blob) => resolve(blob), 'image/png', 1.0);
             };
             
-            img.onerror = () => {
-                console.error('❌ [PREPROCESAR] Error cargando imagen');
-                reject(new Error('Error cargando imagen para procesamiento'));
-            };
-            
+            img.onerror = reject;
             img.src = e.target.result;
         };
         
-        reader.onerror = () => {
-            console.error('❌ [PREPROCESAR] Error leyendo archivo');
-            reject(new Error('Error leyendo archivo'));
-        };
-        
+        reader.onerror = reject;
         reader.readAsDataURL(file);
     });
 }
 
-function mostrarEstadoProcesamiento(mensaje, porcentaje) {
-    // Remover estado anterior si existe
-    const estadoAnterior = document.getElementById('estado-procesamiento-ia');
-    if (estadoAnterior) estadoAnterior.remove();
-    
-    const estado = document.createElement('div');
-    estado.id = 'estado-procesamiento-ia';
-    estado.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.9);
-        padding: 30px;
-        border-radius: 20px;
-        z-index: 100001;
-        color: white;
-        text-align: center;
-        min-width: 300px;
-        border: 2px solid #9C27B0;
-        backdrop-filter: blur(10px);
-    `;
-    
-    estado.innerHTML = `
-        <div style="font-size: 50px; margin-bottom: 20px;">🤖</div>
-        <div style="font-size: 18px; margin-bottom: 20px; color: #9C27B0; font-weight: bold;">
-            ${mensaje}
-        </div>
-        <div style="
-            width: 100%;
-            height: 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 5px;
-            overflow: hidden;
-            margin-bottom: 15px;
-        ">
-            <div style="
-                width: ${porcentaje}%;
-                height: 100%;
-                background: linear-gradient(90deg, #9C27B0, #673AB7);
-                border-radius: 5px;
-                transition: width 0.3s;
-            "></div>
-        </div>
-        <div style="color: #aaa; font-size: 14px;">
-            Por favor espera mientras la IA analiza la imagen...
-        </div>
-    `;
-    
-    document.body.appendChild(estado);
-}
-
-function cerrarEstadoProcesamiento() {
-    const estado = document.getElementById('estado-procesamiento-ia');
-    if (estado) {
-        estado.remove();
-    }
-}
-
 /* ============================================================
-   5️⃣ PROCESAR TEXTO DETECTADO
+   6️⃣ PRE-PROCESAMIENTO PARA FOTO DE CÁMARA (MEJORADO)
    ============================================================ */
-function procesarTextoDetectado(textoBruto) {
-    console.log('🔍 Procesando texto detectado...');
+async function preprocesarImagenUberCamara(file) {
+    console.log('📸 [CÁMARA] Pre-procesando con mejoras extra...');
     
-    // Paso 1: Limpieza básica
-    let textoLimpio = textoBruto
-        .replace(/\s+/g, ' ')
-        .replace(/[|]/g, '1')
-        .replace(/[O]/g, '0')
-        .replace(/[l]/g, '1')
-        .replace(/i1/gi, '1')
-        .replace(/i0/gi, '0')
-        .replace(/RD\s*\$/gi, 'RD$')
-        .trim();
-    
-    // Paso 2: Mostrar comparación
-    mostrarComparacionOCR(textoBruto, textoLimpio);
-}
-
-/* ============================================================
-   6️⃣ FUNCIONES DE COMPARACIÓN Y EXTRACCIÓN
-   ============================================================ */
-function mostrarComparacionOCR(textoBruto, textoLimpio) {
-    console.log('📊 Mostrando comparación OCR...');
-    
-    const modal = document.createElement('div');
-    modal.id = 'modal-comparacion-ocr';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.95);
-        z-index: 100002;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-    `;
-    
-    modal.innerHTML = `
-        <div style="
-            background: #1a1a1a;
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 800px;
-            width: 95%;
-            max-height: 90vh;
-            overflow-y: auto;
-            border: 2px solid #2196F3;
-        ">
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 25px;
-                padding-bottom: 20px;
-                border-bottom: 1px solid #333;
-            ">
-                <h2 style="color: #2196F3; margin: 0; font-size: 24px;">🔍 ANÁLISIS DE TEXTO</h2>
-                <button id="cerrar-comparacion" style="
-                    background: #ff4444;
-                    color: white;
-                    border: none;
-                    width: 45px;
-                    height: 45px;
-                    border-radius: 50%;
-                    font-size: 22px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                ">×</button>
-            </div>
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            const img = new Image();
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px;">
-                <div>
-                    <h3 style="color: #ff9800; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                        <span>📄</span> TEXTO BRUTO
-                    </h3>
-                    <div style="
-                        background: #000;
-                        color: #ff9800;
-                        font-family: 'Courier New', monospace;
-                        padding: 25px;
-                        border-radius: 15px;
-                        white-space: pre-wrap;
-                        word-break: break-all;
-                        height: 350px;
-                        overflow-y: auto;
-                        border: 1px solid #ff9800;
-                        font-size: 14px;
-                        line-height: 1.5;
-                    ">
-                        ${textoBruto.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}
-                    </div>
-                </div>
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
                 
-                <div>
-                    <h3 style="color: #4CAF50; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                        <span>🧹</span> TEXTO LIMPIO
-                    </h3>
-                    <div style="
-                        background: #000;
-                        color: #4CAF50;
-                        font-family: 'Courier New', monospace;
-                        padding: 25px;
-                        border-radius: 15px;
-                        white-space: pre-wrap;
-                        word-break: break-word;
-                        height: 350px;
-                        overflow-y: auto;
-                        border: 1px solid #4CAF50;
-                        font-size: 14px;
-                        line-height: 1.5;
-                    ">
-                        ${textoLimpio.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}
-                    </div>
-                </div>
-            </div>
+                // ✅ ESCALAR PARA MEJOR OCR
+                const escala = Math.min(2, 2000 / Math.max(img.width, img.height));
+                canvas.width = img.width * escala;
+                canvas.height = img.height * escala;
+                
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // ✅ CONVERTIR A ESCALA DE GRISES
+                let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let data = imageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = data[i + 1] = data[i + 2] = avg;
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                
+                // ✅ AUMENTAR NITIDEZ
+                imageData = aplicarNitidez(ctx, canvas.width, canvas.height);
+                ctx.putImageData(imageData, 0, 0);
+                
+                // ✅ INVERTIR Y BINARIZAR
+                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                data = imageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = 255 - data[i];
+                    data[i + 1] = 255 - data[i + 1];
+                    data[i + 2] = 255 - data[i + 2];
+                }
+                
+                const umbral = calcularUmbralOtsu(data);
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    const valor = data[i];
+                    if (valor > umbral) {
+                        data[i] = data[i + 1] = data[i + 2] = 255;
+                    } else {
+                        data[i] = data[i + 1] = data[i + 2] = 0;
+                    }
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                canvas.toBlob((blob) => resolve(blob), 'image/png', 1.0);
+            };
             
-            <div style="
-                background: rgba(33, 150, 243, 0.1);
-                padding: 25px;
-                border-radius: 15px;
-                margin-bottom: 25px;
-                border-left: 5px solid #2196F3;
-            ">
-                <h4 style="color: #2196F3; margin-bottom: 15px; font-size: 18px;">💡 MEJORAS APLICADAS:</h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div style="color: #ccc; line-height: 1.6;">
-                        <div>✅ Corrección de caracteres</div>
-                        <div>✅ Unión de RD$ con números</div>
-                        <div>✅ Eliminación de ruido OCR</div>
-                    </div>
-                    <div style="color: #ccc; line-height: 1.6;">
-                        <div>✅ Normalización de espacios</div>
-                        <div>✅ Corrección de min/km</div>
-                        <div>✅ Mejor legibilidad</div>
-                    </div>
-                </div>
-            </div>
-            
-            <button id="extraer-datos-ia" style="
-                background: linear-gradient(135deg, #4CAF50, #2E7D32);
-                color: white;
-                border: none;
-                padding: 20px;
-                border-radius: 12px;
-                font-weight: bold;
-                font-size: 18px;
-                cursor: pointer;
-                width: 100%;
-                transition: all 0.3s;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 15px;
-            ">
-                <span style="font-size: 24px;">🎯</span>
-                EXTRAER DATOS INTELIGENTEMENTE
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Event Listeners
-    document.getElementById('cerrar-comparacion').onclick = () => {
-        modal.remove();
-    };
-    
-    document.getElementById('extraer-datos-ia').onclick = () => {
-        modal.remove();
-        extraerDatosInteligentes(textoLimpio);
-    };
-    
-    // Auto-continuar después de 8 segundos
-    setTimeout(() => {
-        if (modal.parentNode) {
-            modal.remove();
-            extraerDatosInteligentes(textoLimpio);
-        }
-    }, 8000);
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 /* ============================================================
-   7️⃣ EXTRACCIÓN INTELIGENTE DE DATOS
+   7️⃣ FILTROS DE PROCESAMIENTO
    ============================================================ */
+function aplicarNitidez(ctx, width, height) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    const output = ctx.createImageData(width, height);
+    
+    const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+    
+    for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+            let r = 0, g = 0, b = 0;
+            
+            for (let ky = -1; ky <= 1; ky++) {
+                for (let kx = -1; kx <= 1; kx++) {
+                    const idx = ((y + ky) * width + (x + kx)) * 4;
+                    const k = kernel[(ky + 1) * 3 + (kx + 1)];
+                    
+                    r += data[idx] * k;
+                    g += data[idx + 1] * k;
+                    b += data[idx + 2] * k;
+                }
+            }
+            
+            const outIdx = (y * width + x) * 4;
+            output.data[outIdx] = Math.min(255, Math.max(0, r));
+            output.data[outIdx + 1] = Math.min(255, Math.max(0, g));
+            output.data[outIdx + 2] = Math.min(255, Math.max(0, b));
+            output.data[outIdx + 3] = 255;
+        }
+    }
+    
+    return output;
+}
+
+function calcularUmbralOtsu(data) {
+    const histograma = new Array(256).fill(0);
+    
+    for (let i = 0; i < data.length; i += 4) {
+        histograma[Math.floor(data[i])]++;
+    }
+    
+    const total = data.length / 4;
+    let sum = 0;
+    
+    for (let i = 0; i < 256; i++) {
+        sum += i * histograma[i];
+    }
+    
+    let sumB = 0, wB = 0, wF = 0, maxVarianza = 0, umbral = 0;
+    
+    for (let t = 0; t < 256; t++) {
+        wB += histograma[t];
+        if (wB === 0) continue;
+        
+        wF = total - wB;
+        if (wF === 0) break;
+        
+        sumB += t * histograma[t];
+        
+        const mB = sumB / wB;
+        const mF = (sum - sumB) / wF;
+        const varianza = wB * wF * (mB - mF) * (mB - mF);
+        
+        if (varianza > maxVarianza) {
+            maxVarianza = varianza;
+            umbral = t;
+        }
+    }
+    
+    return umbral;
+}
+
 /* ============================================================
-   PASO 3: EXTRACCIÓN INTELIGENTE DE DATOS UBER
+   8️⃣ EXTRACCIÓN DE DATOS
    ============================================================ */
 function extraerDatosUberDirecto(texto) {
-    console.log('🎯 [EXTRAER] Iniciando extracción de datos Uber...');
-    console.log('📝 [EXTRAER] ═══════════════════════════════════════');
-    console.log('📝 [EXTRAER] TEXTO RAW (SIN LIMPIAR):');
-    console.log('📝 [EXTRAER] ═══════════════════════════════════════');
-    console.log(texto);
-    console.log('📝 [EXTRAER] ═══════════════════════════════════════');
+    console.log('🎯 [EXTRAER] Iniciando...');
     
     const datos = {
         tarifa: null,
-        tiempoLlegada: null,
-        distanciaLlegada: null,
-        tiempoViaje: null,
-        distanciaViaje: null,
         tiempoTotal: null,
         distanciaTotal: null
     };
     
-    // Limpiar texto
     let textoLimpio = texto
         .replace(/\n/g, ' ')
         .replace(/\s+/g, ' ')
@@ -5905,523 +5514,79 @@ function extraerDatosUberDirecto(texto) {
         .replace(/[l]/g, '1')
         .trim();
     
-    console.log('🧹 [EXTRAER] ═══════════════════════════════════════');
-    console.log('🧹 [EXTRAER] TEXTO LIMPIO:');
-    console.log('🧹 [EXTRAER] ═══════════════════════════════════════');
-    console.log(textoLimpio);
-    console.log('🧹 [EXTRAER] ═══════════════════════════════════════');
+    console.log('📝 Texto limpio:', textoLimpio);
     
-    // 🔥 BUSCAR TARIFA
-    const regexTarifa = /RD\$\s*(\d+\.?\d{0,2})/i;
-    const matchTarifa = textoLimpio.match(regexTarifa);
-    
-    console.log('💰 [TARIFA] Regex:', regexTarifa);
-    console.log('💰 [TARIFA] Match:', matchTarifa);
-    
+    // Buscar tarifa
+    const matchTarifa = textoLimpio.match(/RD\$\s*(\d+\.?\d{0,2})/i);
     if (matchTarifa) {
         datos.tarifa = parseFloat(matchTarifa[1]);
-        console.log('💰 [TARIFA] ✅ Encontrada:', datos.tarifa);
-    } else {
-        console.log('💰 [TARIFA] ❌ NO encontrada');
+        console.log('💰 Tarifa:', datos.tarifa);
     }
     
-    // 🔥 BUSCAR LLEGADA - MÚLTIPLES PATRONES
-    console.log('🚗 [LLEGADA] Probando patrones...');
+    // Buscar llegada "A 8 min (4.5 km)"
+    const matchLlegada = textoLimpio.match(/A\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i);
+    const tiempoLlegada = matchLlegada ? parseInt(matchLlegada[1]) : 0;
+    const distanciaLlegada = matchLlegada ? parseFloat(matchLlegada[2]) : 0;
     
-    // Patrón 1: "A 8 min (4.5 km)"
-    const regex1 = /A\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
-    console.log('🚗 [LLEGADA] Patrón 1:', regex1);
-    const match1 = textoLimpio.match(regex1);
-    console.log('🚗 [LLEGADA] Match 1:', match1);
+    // Buscar viaje "Viaje: 27 min (12.7 km)"
+    const matchViaje = textoLimpio.match(/Viaje:?\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i);
+    const tiempoViaje = matchViaje ? parseInt(matchViaje[1]) : 0;
+    const distanciaViaje = matchViaje ? parseFloat(matchViaje[2]) : 0;
     
-    // Patrón 2: "8 min (4.5 km)" (sin "A")
-    const regex2 = /(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
-    console.log('🚗 [LLEGADA] Patrón 2:', regex2);
-    const match2 = textoLimpio.match(regex2);
-    console.log('🚗 [LLEGADA] Match 2:', match2);
+    // CALCULAR TOTALES
+    datos.tiempoTotal = tiempoLlegada + tiempoViaje;
+    datos.distanciaTotal = parseFloat((distanciaLlegada + distanciaViaje).toFixed(1));
     
-    // Patrón 3: Solo números "8" seguido de "4.5"
-    const regex3 = /(\d+).*?(\d+\.?\d*)/;
-    console.log('🚗 [LLEGADA] Patrón 3:', regex3);
-    const match3 = textoLimpio.match(regex3);
-    console.log('🚗 [LLEGADA] Match 3:', match3);
+    console.log('📊 Datos extraídos:', {
+        tarifa: datos.tarifa,
+        tiempo: datos.tiempoTotal,
+        distancia: datos.distanciaTotal
+    });
     
-    if (match1) {
-        datos.tiempoLlegada = parseInt(match1[1]);
-        datos.distanciaLlegada = parseFloat(match1[2]);
-        console.log('🚗 [LLEGADA] ✅ Patrón 1 funcionó:', datos.tiempoLlegada, 'min,', datos.distanciaLlegada, 'km');
-    } else if (match2) {
-        datos.tiempoLlegada = parseInt(match2[1]);
-        datos.distanciaLlegada = parseFloat(match2[2]);
-        console.log('🚗 [LLEGADA] ✅ Patrón 2 funcionó:', datos.tiempoLlegada, 'min,', datos.distanciaLlegada, 'km');
-    } else {
-        console.log('🚗 [LLEGADA] ❌ Ningún patrón funcionó');
-    }
-    
-    // 🔥 BUSCAR VIAJE - MÚLTIPLES PATRONES
-    console.log('🚕 [VIAJE] Probando patrones...');
-    
-    // Patrón 1: "Viaje: 27 min (12.7 km)"
-    const regexV1 = /Viaje:?\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
-    console.log('🚕 [VIAJE] Patrón 1:', regexV1);
-    const matchV1 = textoLimpio.match(regexV1);
-    console.log('🚕 [VIAJE] Match 1:', matchV1);
-    
-    // Patrón 2: "27 min (12.7 km)" (sin "Viaje")
-    const regexV2 = /(\d{2,})\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i;
-    console.log('🚕 [VIAJE] Patrón 2:', regexV2);
-    const matchV2 = textoLimpio.match(regexV2);
-    console.log('🚕 [VIAJE] Match 2:', matchV2);
-    
-    if (matchV1) {
-        datos.tiempoViaje = parseInt(matchV1[1]);
-        datos.distanciaViaje = parseFloat(matchV1[2]);
-        console.log('🚕 [VIAJE] ✅ Patrón 1 funcionó:', datos.tiempoViaje, 'min,', datos.distanciaViaje, 'km');
-    } else if (matchV2) {
-        datos.tiempoViaje = parseInt(matchV2[1]);
-        datos.distanciaViaje = parseFloat(matchV2[2]);
-        console.log('🚕 [VIAJE] ✅ Patrón 2 funcionó:', datos.tiempoViaje, 'min,', datos.distanciaViaje, 'km');
-    } else {
-        console.log('🚕 [VIAJE] ❌ Ningún patrón funcionó');
-    }
-    
-    // 🔥 CALCULAR TOTALES
-    if (datos.tiempoLlegada !== null && datos.tiempoViaje !== null) {
-        datos.tiempoTotal = datos.tiempoLlegada + datos.tiempoViaje;
-        console.log('⏱️ [TOTAL] ✅ Tiempo total:', datos.tiempoTotal, 'min');
-    } else {
-        console.log('⏱️ [TOTAL] ❌ No se pudo calcular tiempo total');
-        console.log('⏱️ [TOTAL] tiempoLlegada:', datos.tiempoLlegada);
-        console.log('⏱️ [TOTAL] tiempoViaje:', datos.tiempoViaje);
-    }
-    
-    if (datos.distanciaLlegada !== null && datos.distanciaViaje !== null) {
-        datos.distanciaTotal = parseFloat((datos.distanciaLlegada + datos.distanciaViaje).toFixed(1));
-        console.log('📏 [TOTAL] ✅ Distancia total:', datos.distanciaTotal, 'km');
-    } else {
-        console.log('📏 [TOTAL] ❌ No se pudo calcular distancia total');
-        console.log('📏 [TOTAL] distanciaLlegada:', datos.distanciaLlegada);
-        console.log('📏 [TOTAL] distanciaViaje:', datos.distanciaViaje);
-    }
-    
-    // Estimación si falta tiempo
-    if (datos.tiempoTotal === null && datos.tarifa !== null) {
+    // Estimación si falta algo
+    if (!datos.tiempoTotal && datos.tarifa) {
         datos.tiempoTotal = Math.round(datos.tarifa / 9);
-        console.log('⚠️ [ESTIMACIÓN] Tiempo estimado por precio:', datos.tiempoTotal, 'min');
     }
     
-    // Estimación si falta distancia
-    if (datos.distanciaTotal === null && datos.tarifa !== null) {
+    if (!datos.distanciaTotal && datos.tarifa) {
         datos.distanciaTotal = parseFloat((datos.tarifa / 18.5).toFixed(1));
-        console.log('⚠️ [ESTIMACIÓN] Distancia estimada por precio:', datos.distanciaTotal, 'km');
     }
-    
-    console.log('📊 [RESUMEN] ═══════════════════════════════════════');
-    console.log('📊 [RESUMEN] DATOS FINALES:');
-    console.log('📊 [RESUMEN] Tarifa:', datos.tarifa);
-    console.log('📊 [RESUMEN] Tiempo Total:', datos.tiempoTotal);
-    console.log('📊 [RESUMEN] Distancia Total:', datos.distanciaTotal);
-    console.log('📊 [RESUMEN] ═══════════════════════════════════════');
     
     return datos;
 }
 
 /* ============================================================
-   8️⃣ MOSTRAR RESULTADOS DE EXTRACCIÓN
-   ============================================================ */
-function mostrarResultadosExtracion(datos) {
-    const modal = document.createElement('div');
-    modal.id = 'modal-resultados-ia';
-    modal.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 35px;
-        border-radius: 25px;
-        z-index: 100003;
-        max-width: 500px;
-        width: 95%;
-        box-shadow: 0 25px 70px rgba(0,0,0,0.3);
-        text-align: center;
-    `;
-    
-    const tieneCompletos = datos.tarifa && datos.minutosTotal && datos.distanciaTotal;
-    
-    modal.innerHTML = `
-        <div style="font-size: 70px; margin-bottom: 25px; color: ${tieneCompletos ? '#4CAF50' : '#FF9800'}">
-            ${tieneCompletos ? '🎯' : '⚠️'}
-        </div>
-        
-        <h2 style="color: ${tieneCompletos ? '#4CAF50' : '#FF9800'}; margin-bottom: 15px; font-size: 26px;">
-            ${tieneCompletos ? '¡DATOS DETECTADOS!' : 'DATOS PARCIALES'}
-        </h2>
-        
-        <div style="
-            background: ${tieneCompletos ? '#f0f9f0' : '#fff3e0'};
-            padding: 30px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            border: 2px solid ${tieneCompletos ? '#4CAF50' : '#FF9800'};
-        ">
-            <div style="display: flex; justify-content: space-around; margin-bottom: 25px;">
-                <div>
-                    <div style="font-size: 15px; color: #666; margin-bottom: 8px;">PRECIO</div>
-                    <div style="font-size: ${datos.tarifa ? '36' : '28'}px; font-weight: bold; color: ${datos.tarifa ? '#333' : '#999'}">
-                        ${datos.tarifa ? `RD$${datos.tarifa.toFixed(2)}` : '❓'}
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size: 15px; color: #666; margin-bottom: 8px;">TIEMPO</div>
-                    <div style="font-size: ${datos.minutosTotal ? '36' : '28'}px; font-weight: bold; color: ${datos.minutosTotal ? '#333' : '#999'}">
-                        ${datos.minutosTotal ? `${datos.minutosTotal} min` : '❓'}
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size: 15px; color: #666; margin-bottom: 8px;">DISTANCIA</div>
-                    <div style="font-size: ${datos.distanciaTotal ? '36' : '28'}px; font-weight: bold; color: ${datos.distanciaTotal ? '#333' : '#999'}">
-                        ${datos.distanciaTotal ? `${datos.distanciaTotal} km` : '❓'}
-                    </div>
-                </div>
-            </div>
-            
-            ${!tieneCompletos ? `
-            <div style="
-                background: rgba(255, 152, 0, 0.1);
-                padding: 20px;
-                border-radius: 15px;
-                margin-top: 20px;
-                text-align: left;
-            ">
-                <div style="color: #E65100; font-weight: bold; margin-bottom: 10px;">📝 COMPLETAR MANUALMENTE:</div>
-                <div style="color: #666; line-height: 1.8;">
-                    ${!datos.tarifa ? '• Ingresa el precio (ej: RD$120.52)<br>' : ''}
-                    ${!datos.minutosTotal ? '• Ingresa el tiempo total (ej: 16 min)<br>' : ''}
-                    ${!datos.distanciaTotal ? '• Ingresa la distancia total (ej: 5.3 km)<br>' : ''}
-                </div>
-            </div>
-            ` : ''}
-        </div>
-        
-        <button id="aceptar-datos-ia" style="
-            background: linear-gradient(135deg, ${tieneCompletos ? '#4CAF50' : '#FF9800'}, ${tieneCompletos ? '#2E7D32' : '#F57C00'});
-            color: white;
-            border: none;
-            padding: 22px;
-            border-radius: 15px;
-            font-weight: bold;
-            font-size: 18px;
-            cursor: pointer;
-            width: 100%;
-            margin-bottom: 15px;
-            transition: all 0.3s;
-        ">
-            ${tieneCompletos ? '✅ ACEPTAR Y CALCULAR' : '📝 USAR DETECTADOS'}
-        </button>
-        
-        <button id="reintentar-ia" style="
-            background: #2196F3;
-            color: white;
-            border: none;
-            padding: 18px;
-            border-radius: 12px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-        ">
-            🔄 INTENTAR CON OTRA IMAGEN
-        </button>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Event Listeners
-    document.getElementById('aceptar-datos-ia').onclick = () => {
-        modal.remove();
-        llenarFormularioConDatosIA(datos);
-    };
-    
-    document.getElementById('reintentar-ia').onclick = () => {
-        modal.remove();
-        activarEscaneoMejorado();
-    };
-    
-    // Cerrar al hacer clic fuera
-    setTimeout(() => {
-        modal.onclick = (e) => {
-            if (e.target === modal) {
-                modal.remove();
-                llenarFormularioConDatosIA(datos);
-            }
-        };
-    }, 100);
-}
-
-/* ============================================================
-   9️⃣ LLENAR FORMULARIO CON DATOS IA
-   ============================================================ */
-function llenarFormularioConDatosIA(datos) {
-    console.log('🔄 Llenando formulario con datos IA...');
-    
-    if (datos.tarifa && elementos.tarifa) {
-        elementos.tarifa.value = datos.tarifa.toFixed(2);
-    }
-    
-    if (datos.minutosTotal && elementos.minutos) {
-        elementos.minutos.value = datos.minutosTotal;
-    }
-    
-    if (datos.distanciaTotal && elementos.distancia) {
-        elementos.distancia.value = datos.distanciaTotal.toFixed(1);
-    }
-    
-    // Enfocar campo faltante si hay datos parciales
-    setTimeout(() => {
-        if (!datos.minutosTotal && elementos.minutos) {
-            elementos.minutos.focus();
-            mostrarStatus('📝 Ingresa el tiempo del viaje', 'info');
-        } else if (!datos.distanciaTotal && elementos.distancia) {
-            elementos.distancia.focus();
-            mostrarStatus('📝 Ingresa la distancia del viaje', 'info');
-        } else if (!datos.tarifa && elementos.tarifa) {
-            elementos.tarifa.focus();
-            mostrarStatus('📝 Ingresa el precio del viaje', 'info');
-        } else if (datos.tarifa && datos.minutosTotal && datos.distanciaTotal) {
-            mostrarStatus('✅ Datos extraídos automáticamente!', 'success');
-            // Disparar cálculo automático
-            setTimeout(() => {
-                if (typeof manejarCalculoAutomatico === 'function') {
-                    if (timeoutCalculoAutomatico) {
-                        clearTimeout(timeoutCalculoAutomatico);
-                    }
-                    setTimeout(() => {
-                        if (typeof calcularAutomaticoConTraficoReal === 'function') {
-                            calcularAutomaticoConTraficoReal();
-                        }
-                    }, 500);
-                }
-            }, 1500);
-        }
-    }, 500);
-}
-
-/* ============================================================
-   🔟 FUNCIÓN FALLBACK SIMPLE
-   ============================================================ */
-function procesarConOCRSimple(file) {
-    console.log('🔄 Procesando con OCR simple...');
-    
-    mostrarStatus('🔍 Procesando imagen básica...', 'info');
-    
-    Tesseract.recognize(file, 'eng')
-        .then(result => {
-            const texto = result.data.text;
-            alert('Texto detectado (simple):\n\n' + texto.substring(0, 300));
-            extraerDatosInteligentes(texto);
-        })
-        .catch(error => {
-            console.error('❌ Error en OCR simple:', error);
-            mostrarStatus('❌ Error en OCR. Intenta manualmente.', 'error');
-        });
-}
-
-/* ============================================================
-   🎯 INICIALIZACIÓN COMPLETA
-   ============================================================ */
-function inicializarOCRCompleto() {
-    console.log('🚀 Inicializando OCR completo...');
-    
-    // Crear botón flotante
-    crearBotonFlotanteOCR();
-    
-    // Agregar botón en interfaz principal
-    setTimeout(() => {
-        const calcularBtn = document.getElementById('btn-calcular');
-        if (calcularBtn && calcularBtn.parentNode) {
-            const btnIA = document.createElement('button');
-            btnIA.innerHTML = '🧠 ESCANEAR CON IA';
-            btnIA.className = calcularBtn.className;
-            btnIA.style.cssText = `
-                background: linear-gradient(135deg, #9C27B0, #673AB7);
-                margin-top: 15px;
-                font-weight: bold;
-                font-size: 16px;
-                padding: 20px;
-                border-radius: 12px;
-            `;
-            btnIA.onclick = activarEscaneoMejorado;
-            
-            calcularBtn.parentNode.appendChild(btnIA);
-        }
-    }, 1500);
-    
-    console.log('✅ OCR completo inicializado');
-}
-
-/* ============================================================
-   📌 EXPORTAR FUNCIONES GLOBALES
-   ============================================================ */
-window.activarEscaneoMejorado = activarEscaneoMejorado;
-window.procesarImagenMejorada = procesarImagenMejorada;
-window.inicializarOCRCompleto = inicializarOCRCompleto;
-
-// Inicializar automáticamente cuando la app cargue
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(() => {
-            inicializarOCRCompleto();
-            console.log('🎯 OCR IA listo para usar');
-        }, 2000);
-    });
-} else {
-    setTimeout(() => {
-        inicializarOCRCompleto();
-        console.log('🎯 OCR IA listo para usar');
-    }, 2000);
-}
-
-/* ============================================================
-   ⚡ MODO ULTRA-RÁPIDO PARA UBER
-   ============================================================
-   
-   CAMBIOS:
-   ✅ Tomas foto → Analiza automáticamente (SIN confirmaciones)
-   ✅ Llena formulario instantáneamente
-   ✅ Calcula rentabilidad automáticamente
-   ✅ TODO en 2-3 segundos máximo
-   
-   FLUJO:
-   1. Click botón "ESCANEAR UBER" (o atajo de teclado)
-   2. Seleccionar imagen
-   3. ¡LISTO! - Datos en pantalla automáticamente
-   
-   ============================================================ */
-
-/* ============================================================
-   1️⃣ BOTÓN ULTRA-RÁPIDO (REEMPLAZAR)
-   ============================================================ */
-function activarEscaneoMejorado() {
-    console.log('⚡ [ULTRA-RÁPIDO] Activando escaneo directo...');
-    
-    // ✅ DISPARAR SELECTOR DE IMAGEN INMEDIATAMENTE (SIN MODAL)
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    
-    // Mostrar mensaje breve
-    mostrarStatus('📸 Selecciona imagen de Uber...', 'info');
-    
-    input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            console.log('✅ [ULTRA-RÁPIDO] Imagen seleccionada:', file.name);
-            
-            // ⚡ PROCESAR INMEDIATAMENTE (SIN CONFIRMACIÓN)
-            procesarImagenUltraRapido(file);
-        } else {
-            mostrarStatus('❌ No se seleccionó imagen', 'error');
-        }
-    };
-    
-    // Disparar selector
-    setTimeout(() => input.click(), 100);
-}
-
-/* ============================================================
-   2️⃣ PROCESAMIENTO ULTRA-RÁPIDO (NUEVO)
-   ============================================================ */
-async function procesarImagenUltraRapido(file) {
-    console.log('⚡ [ULTRA-RÁPIDO] Procesando imagen...');
-    
-    // Indicador visual mínimo
-    mostrarIndicadorMinimo('🤖 Analizando...');
-    
-    try {
-        // Verificar Tesseract
-        if (typeof Tesseract === 'undefined') {
-            throw new Error('Tesseract.js no disponible');
-        }
-        
-        // Pre-procesar imagen
-        const imagenMejorada = await preprocesarImagenUber(file);
-        
-        // OCR rápido
-        const { data: { text } } = await Tesseract.recognize(imagenMejorada, 'eng', {
-            tessedit_char_whitelist: '0123456789RD$AViajekm.min() ',
-            tessedit_pageseg_mode: Tesseract.PSM.AUTO,
-            tessedit_ocr_engine_mode: Tesseract.OEM.LSTM_ONLY
-        });
-        
-        console.log('✅ [ULTRA-RÁPIDO] OCR completado');
-        
-        // Extraer datos
-        const datos = extraerDatosUberDirecto(text);
-        
-        // ⚡ LLENAR FORMULARIO INMEDIATAMENTE (SIN MODAL)
-        llenarFormularioUltraRapido(datos);
-        
-        cerrarIndicadorMinimo();
-        
-    } catch (error) {
-        console.error('❌ [ULTRA-RÁPIDO] Error:', error);
-        cerrarIndicadorMinimo();
-        mostrarStatus('❌ Error: ' + error.message, 'error');
-    }
-}
-
-/* ============================================================
-   3️⃣ LLENAR FORMULARIO ULTRA-RÁPIDO (NUEVO)
+   9️⃣ LLENAR FORMULARIO
    ============================================================ */
 function llenarFormularioUltraRapido(datos) {
-    console.log('⚡ [ULTRA-RÁPIDO] Llenando formulario...');
+    console.log('⚡ Llenando formulario...');
     
-    // Verificar que tenemos los datos mínimos
-    const tieneCompletos = datos.tarifa && datos.tiempoTotal && datos.distanciaTotal;
-    
-    if (!tieneCompletos) {
-        console.warn('⚠️ [ULTRA-RÁPIDO] Datos incompletos, usando estimaciones');
-        mostrarStatus('⚠️ Algunos datos estimados', 'warning');
-    }
-    
-    // ✅ LLENAR CAMPOS INMEDIATAMENTE
     if (datos.tarifa && elementos.tarifa) {
         elementos.tarifa.value = datos.tarifa.toFixed(2);
-        console.log('💰 Tarifa:', datos.tarifa);
     }
     
     if (datos.tiempoTotal && elementos.minutos) {
         elementos.minutos.value = datos.tiempoTotal;
-        console.log('⏱️ Tiempo:', datos.tiempoTotal);
     }
     
     if (datos.distanciaTotal && elementos.distancia) {
         elementos.distancia.value = datos.distanciaTotal.toFixed(1);
-        console.log('📏 Distancia:', datos.distanciaTotal);
     }
     
-    // ⚡ DISPARAR CÁLCULO AUTOMÁTICO INMEDIATAMENTE
+    // Disparar cálculo automático
     setTimeout(() => {
         if (typeof manejarCalculoAutomatico === 'function') {
             manejarCalculoAutomatico();
         }
     }, 200);
     
-    // Mensaje de éxito breve
     mostrarStatus('✅ Datos cargados - Revisa y acepta', 'success');
-    
-    console.log('✅ [ULTRA-RÁPIDO] Formulario llenado:', {
-        tarifa: datos.tarifa,
-        tiempo: datos.tiempoTotal,
-        distancia: datos.distanciaTotal
-    });
 }
 
 /* ============================================================
-   4️⃣ INDICADOR VISUAL MÍNIMO (NUEVO)
+   🔟 INDICADOR VISUAL
    ============================================================ */
 function mostrarIndicadorMinimo(mensaje) {
-    // Remover indicador anterior
     cerrarIndicadorMinimo();
     
     const indicador = document.createElement('div');
@@ -6439,7 +5604,6 @@ function mostrarIndicadorMinimo(mensaje) {
         font-weight: bold;
         border: 2px solid #2196F3;
         box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-        animation: slideIn 0.3s;
     `;
     
     indicador.innerHTML = `
@@ -6456,213 +5620,123 @@ function mostrarIndicadorMinimo(mensaje) {
         </div>
     `;
     
-    // Agregar animaciones
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    `;
-    document.head.appendChild(style);
+    if (!document.querySelector('style[data-ocr-animations]')) {
+        const style = document.createElement('style');
+        style.setAttribute('data-ocr-animations', 'true');
+        style.textContent = `
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
     
     document.body.appendChild(indicador);
 }
 
 function cerrarIndicadorMinimo() {
     const indicador = document.getElementById('indicador-ultra-rapido');
-    if (indicador) {
-        indicador.remove();
-    }
+    if (indicador) indicador.remove();
 }
 
 /* ============================================================
-   5️⃣ FUNCIÓN DE EXTRACCIÓN (YA FUNCIONA - MANTENER IGUAL)
+   1️⃣1️⃣ MÉTODOS RÁPIDOS ADICIONALES
    ============================================================ */
-function extraerDatosUberDirecto(texto) {
-    console.log('🎯 [EXTRAER] Extrayendo datos...');
-    
-    const datos = {
-        tarifa: null,
-        tiempoLlegada: null,
-        distanciaLlegada: null,
-        tiempoViaje: null,
-        distanciaViaje: null,
-        tiempoTotal: null,
-        distanciaTotal: null
-    };
-    
-    // Limpiar texto
-    let textoLimpio = texto
-        .replace(/\n/g, ' ')
-        .replace(/\s+/g, ' ')
-        .replace(/[|]/g, '1')
-        .replace(/[O]/g, '0')
-        .replace(/[l]/g, '1')
-        .trim();
-    
-    // Buscar tarifa
-    const matchTarifa = textoLimpio.match(/RD\$\s*(\d+\.?\d{0,2})/i);
-    if (matchTarifa) {
-        datos.tarifa = parseFloat(matchTarifa[1]);
-    }
-    
-    // Buscar llegada
-    const matchLlegada = textoLimpio.match(/A\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i);
-    if (matchLlegada) {
-        datos.tiempoLlegada = parseInt(matchLlegada[1]);
-        datos.distanciaLlegada = parseFloat(matchLlegada[2]);
-    }
-    
-    // Buscar viaje
-    const matchViaje = textoLimpio.match(/Viaje:?\s*(\d+)\s*min\s*\(?\s*(\d+\.?\d*)\s*km\)?/i);
-    if (matchViaje) {
-        datos.tiempoViaje = parseInt(matchViaje[1]);
-        datos.distanciaViaje = parseFloat(matchViaje[2]);
-    }
-    
-    // Calcular totales
-    if (datos.tiempoLlegada && datos.tiempoViaje) {
-        datos.tiempoTotal = datos.tiempoLlegada + datos.tiempoViaje;
-    }
-    
-    if (datos.distanciaLlegada && datos.distanciaViaje) {
-        datos.distanciaTotal = parseFloat((datos.distanciaLlegada + datos.distanciaViaje).toFixed(1));
-    }
-    
-    // Estimación si falta algo
-    if (!datos.tiempoTotal && datos.tarifa) {
-        datos.tiempoTotal = Math.round(datos.tarifa / 9);
-    }
-    
-    if (!datos.distanciaTotal && datos.tarifa) {
-        datos.distanciaTotal = parseFloat((datos.tarifa / 18.5).toFixed(1));
-    }
-    
-    return datos;
-}
 
-/* ============================================================
-   6️⃣ BOTÓN DE CÁMARA DIRECTA (OPCIONAL - MÁS RÁPIDO AÚN)
-   ============================================================ */
-function escanearConCamaraDirecta() {
-    console.log('📸 [CÁMARA] Activando cámara directa...');
-    
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment'; // Cámara trasera
-    
-    mostrarStatus('📸 Toma la foto del viaje...', 'info');
-    
-    input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            procesarImagenUltraRapido(file);
-        }
-    };
-    
-    setTimeout(() => input.click(), 100);
-}
-
-/* ============================================================
-   7️⃣ ATAJO DE TECLADO (OPCIONAL - SÚPER RÁPIDO)
-   ============================================================ */
-function configurarAtajoTeclado() {
-    document.addEventListener('keydown', (e) => {
-        // Presionar "U" para escanear Uber rápido
-        if (e.key === 'u' || e.key === 'U') {
-            // Solo si no estás escribiendo en un input
-            if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+// PEGAR CON CTRL+V
+function inicializarPegadoRapido() {
+    document.addEventListener('paste', async (e) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
                 e.preventDefault();
-                activarEscaneoMejorado();
-                console.log('⚡ Atajo activado: U');
+                const file = items[i].getAsFile();
+                mostrarStatus('📋 Imagen pegada - Procesando...', 'info');
+                await procesarImagenUltraRapido(file);
+                break;
             }
         }
     });
     
-    console.log('✅ Atajo configurado: Presiona "U" para escanear Uber');
+    console.log('✅ Pegado con Ctrl+V activado');
+}
+
+// ARRASTRAR Y SOLTAR
+function crearAreaDrop() {
+    const body = document.body;
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        body.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+    
+    body.addEventListener('drop', async (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+            mostrarStatus('📥 Imagen detectada - Procesando...', 'info');
+            await procesarImagenUltraRapido(files[0]);
+        }
+    });
+    
+    console.log('✅ Arrastrar y soltar activado');
+}
+
+// ATAJO DE TECLADO
+function configurarAtajoTeclado() {
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'u' || e.key === 'U') {
+            if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+                e.preventDefault();
+                activarEscaneoMejorado();
+            }
+        }
+    });
+    
+    console.log('✅ Atajo "U" configurado');
 }
 
 /* ============================================================
-   8️⃣ MODIFICAR BOTÓN EXISTENTE
+   1️⃣2️⃣ INICIALIZACIÓN COMPLETA
    ============================================================ */
-function actualizarBotonFlotante() {
-    const botonExistente = document.getElementById('btn-ocr-ia');
+function inicializarOCRCompleto() {
+    console.log('🚀 Inicializando OCR completo...');
     
-    if (botonExistente) {
-        // Cambiar texto del botón
-        botonExistente.innerHTML = '⚡ ESCANEAR UBER';
-        botonExistente.title = 'Escaneo ultra-rápido - Sin confirmaciones';
-        
-        // Cambiar acción (ya no muestra modal)
-        botonExistente.onclick = activarEscaneoMejorado;
-        
-        console.log('✅ Botón actualizado a modo ultra-rápido');
-    }
-}
-
-/* ============================================================
-   9️⃣ INICIALIZACIÓN
-   ============================================================ */
-function inicializarModoUltraRapido() {
-    console.log('⚡ [INIT] Inicializando modo ultra-rápido...');
+    // Crear botón
+    crearBotonFlotanteOCR();
     
-    // Actualizar botón flotante existente
-    setTimeout(() => {
-        actualizarBotonFlotante();
-    }, 2000);
-    
-    // Configurar atajo de teclado (opcional)
+    // Métodos rápidos
+    inicializarPegadoRapido();
+    crearAreaDrop();
     configurarAtajoTeclado();
     
-    console.log('✅ [INIT] Modo ultra-rápido listo');
-    console.log('💡 [INIT] Presiona "U" o click en "⚡ ESCANEAR UBER"');
+    console.log('✅ OCR listo:');
+    console.log('  • Click botón "⚡ ESCANEAR UBER"');
+    console.log('  • Presionar "U"');
+    console.log('  • Pegar con Ctrl+V');
+    console.log('  • Arrastrar imagen');
 }
 
-// Auto-inicializar cuando se carga
+// Auto-inicializar
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarModoUltraRapido);
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(inicializarOCRCompleto, 2000);
+    });
 } else {
-    setTimeout(inicializarModoUltraRapido, 2000);
+    setTimeout(inicializarOCRCompleto, 2000);
 }
 
-/* ============================================================
-   INSTRUCCIONES DE INTEGRACIÓN:
-   
-   1. REEMPLAZAR en tu app.js:
-      - activarEscaneoMejorado() → Con la versión ultra-rápida
-      - extraerDatosUberDirecto() → Con la versión que funciona
-   
-   2. AGREGAR nuevas funciones:
-      - procesarImagenUltraRapido()
-      - llenarFormularioUltraRapido()
-      - mostrarIndicadorMinimo()
-      - cerrarIndicadorMinimo()
-      - escanearConCamaraDirecta() (opcional)
-      - configurarAtajoTeclado() (opcional)
-      - inicializarModoUltraRapido()
-   
-   3. PROBAR:
-      - Click en botón → Seleccionar imagen → ¡LISTO!
-      - O presionar "U" → Seleccionar imagen → ¡LISTO!
-   
-   TIEMPO TOTAL: 2-3 segundos máximo ⚡
-   
-   ============================================================ */
-
-console.log('✅ Módulo ultra-rápido cargado');
-
-console.log('🧠 MÓDULO OCR IA CARGADO');
+console.log('✅ Módulo OCR Ultra-Optimizado cargado');
 
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
