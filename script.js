@@ -1099,6 +1099,28 @@ class RouteLearningSystem {
         return parseFloat(factor.toFixed(3));
     }
 
+    // ✅ NUEVO MÉTODO: Calcular impacto relativo según radio y duración
+calcularImpactoRelativo(minutosViaje, radioKm) {
+    // ✅ Ajustar umbral de "impacto significativo" según radio y duración
+    let umbralSignificativo = 1.2; // Por defecto 20%
+    let mensajeExtra = '';
+    
+    if (radioKm <= 4 && minutosViaje <= 15) {
+        // Viajes cortos con radio pequeño: impacto más sensible
+        umbralSignificativo = 1.15; // 15% ya es significativo
+        mensajeExtra = ' | Análisis local preciso';
+    } else if (radioKm >= 8 && minutosViaje >= 30) {
+        // Viajes largos con radio grande: impacto menos sensible
+        umbralSignificativo = 1.25; // 25% para ser significativo
+        mensajeExtra = ' | Análisis de área amplia';
+    }
+    
+    return {
+        umbralSignificativo: umbralSignificativo,
+        mensaje: mensajeExtra
+    };
+}
+
     saveLearningLocal(learningData) {
         try {
             const localLearning = JSON.parse(localStorage.getItem('DIBER_route_learning') || '[]');
@@ -2440,21 +2462,20 @@ async function calcularAutomaticoConTraficoReal() {
         
         let trafficInsights = null;
         
-// OBTENER ANÁLISIS DE TRÁFICO EN TIEMPO REAL
-if (realTimeTraffic && realTimeTraffic.initialized) {
-    try {
-        // ✅ MODIFICADO: Pasar la distancia del viaje al análisis
-        trafficInsights = await realTimeTraffic.analyzeTrafficInRadius(distancia);
-        console.log('📊 Insights de tráfico real:', {
-            ...trafficInsights,
-            radioUsado: trafficInsights.radius + 'km'
-        });
-    } catch (error) {
-        console.log('🔄 Usando estimación conservadora de tráfico');
-        // ✅ MODIFICADO: Pasar distancia también al fallback
-        trafficInsights = realTimeTraffic.getConservativeEstimate(distancia);
-    }
-}
+        // OBTENER ANÁLISIS DE TRÁFICO EN TIEMPO REAL
+        if (realTimeTraffic && realTimeTraffic.initialized) {
+            try {
+                trafficInsights = await realTimeTraffic.analyzeTrafficInRadius();
+                console.log('📊 Insights de tráfico real (Radio adaptativo):', {
+                    radio: trafficInsights.radioUsado || trafficInsights.radius,
+                    minutosViaje: minutos,
+                    condition: trafficInsights.trafficCondition
+                });
+            } catch (error) {
+                console.log('🔄 Usando estimación conservadora de tráfico');
+                trafficInsights = realTimeTraffic.getConservativeEstimate();
+            }
+        }
         
         // OBTENER PREDICCIONES INTELIGENTES (tu sistema existente)
         let learningInsights = null;
@@ -2465,6 +2486,7 @@ if (realTimeTraffic && realTimeTraffic.initialized) {
         // COMBINAR AMBOS ANÁLISIS
         let tiempoFinal = minutos;
         let fuenteDatos = 'BASE';
+        let radioUsado = 0;
         
         if (trafficInsights && learningInsights) {
             // Usar el mayor tiempo entre tráfico real y predicciones
@@ -2473,10 +2495,16 @@ if (realTimeTraffic && realTimeTraffic.initialized) {
                 learningInsights.adjustedTime
             );
             fuenteDatos = 'TRÁFICO + APRENDIZAJE';
-            console.log('🎯 Tiempo combinado (tráfico + aprendizaje):', tiempoFinal);
+            radioUsado = trafficInsights.radioUsado || trafficInsights.radius;
+            console.log('🎯 Tiempo combinado (radio adaptativo):', {
+                tiempoFinal,
+                radioUsado,
+                minutosOriginal: minutos
+            });
         } else if (trafficInsights) {
             tiempoFinal = trafficInsights.adjustedTime;
             fuenteDatos = 'TRÁFICO REAL';
+            radioUsado = trafficInsights.radioUsado || trafficInsights.radius;
         } else if (learningInsights) {
             tiempoFinal = learningInsights.adjustedTime;
             fuenteDatos = 'APRENDIZAJE';
@@ -2491,13 +2519,8 @@ if (realTimeTraffic && realTimeTraffic.initialized) {
             resultado.tiempoAjustado = tiempoFinal;
             resultado.tiempoOriginal = minutos;
             resultado.fuenteDatos = fuenteDatos;
+            resultado.radioAnalisis = radioUsado; // ✅ NUEVO: Incluir radio usado
             
-        // ✅ NUEVO: Agregar info de radio usado para debugging
-if (trafficInsights) {
-    resultado.radioAnalizado = trafficInsights.radius;
-    resultado.distanciaViaje = distancia;
-}
-
             Actual = resultado;
             mostrarResultadoRapido(resultado);
         }
@@ -2555,20 +2578,6 @@ function calcularRentabilidad(tarifa, minutos, distancia) {
         mostrarError('Error en el cálculo. Verifica los datos ingresados.');
         return null;
     }
-}
-
-function analizarViajeConDatos(datos) {
-    console.log('🧩 Creando viaje desde OCR...', datos);
-
-    viajeActual = {
-        tarifa: datos.tarifa,
-        tiempo: datos.tiempoTotal,
-        distancia: datos.distanciaTotal,
-        origen: 'OCR',
-        timestamp: Date.now()
-    };
-
-    calcularRentabilidad();
 }
 
 // =============================================
@@ -3248,6 +3257,18 @@ function mostrarResultadoRapido(resultado) {
     // Determinar clase de rentabilidad
     const claseRentabilidad = resultado.rentabilidad || 'oportunidad';
     
+    // ✅ CONSTRUIR INFO DE RADIO
+    let infoRadio = '';
+    if (resultado.radioAnalisis && resultado.radioAnalisis > 0) {
+        infoRadio = `
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0; color: #666; font-size: 0.9em;">
+                <span style="background: #e3f2fd; padding: 4px 10px; border-radius: 12px; border: 1px solid #bbdefb;">
+                    📍 Radio de análisis: ${resultado.radioAnalisis}km
+                </span>
+            </div>
+        `;
+    }
+    
     modal.innerHTML = `
         <div class="modal-contenido-centrado ${claseRentabilidad}">
             <!-- HEADER -->
@@ -3255,6 +3276,9 @@ function mostrarResultadoRapido(resultado) {
                 <div class="modal-titulo">🎯 Análisis Completado</div>
                 <div class="modal-subtitulo">Resultado del cálculo automático</div>
             </div>
+
+            <!-- INFO DE RADIO ADAPTATIVO -->
+            ${infoRadio}
 
             <!-- BADGE DE RESULTADO -->
             <div style="text-align: center;">
@@ -3264,56 +3288,59 @@ function mostrarResultadoRapido(resultado) {
                 </div>
             </div>
 
-            <!-- CUERPO CON MÉTRICAS - MODIFICADO -->
+            <!-- CUERPO CON MÉTRICAS -->
             <div class="modal-body-centrado">
                 <div class="metricas-grid-centrado">
-                    <!-- CAMBIO 1: Por minuto en lugar de Ganancia -->
                     <div class="metrica-item-centrado">
                         <div class="metrica-valor-centrado">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
                         <div class="metrica-label-centrado">Por minuto</div>
                     </div>
                     <div class="metrica-item-centrado">
                         <div class="metrica-valor-centrado">${resultado.minutos} min</div>
-                        <div class="metrica-label-centrado">Tiempo</div>
+                        <div class="metrica-label-centrado">Tiempo estimado</div>
                     </div>
-                    <!-- CAMBIO 2: Por kilómetro en lugar de Por minuto -->
-                    <div class="metrica-item-centrado">
-                        <div class="metrica-valor-centrado">${formatearMoneda(resultado.gananciaPorKm)}/km</div>
-                        <div class="metrica-label-centrado">Por kilómetro</div>
+                    ${resultado.tiempoAjustado && resultado.tiempoAjustado !== resultado.minutos ? `
+                    <div class="metrica-item-centrado" style="background: #fff3cd; border: 1px solid #ffeaa7;">
+                        <div class="metrica-valor-centrado" style="color: #e67e22;">${resultado.tiempoAjustado} min</div>
+                        <div class="metrica-label-centrado">Con tráfico</div>
                     </div>
+                    ` : ''}
                     <div class="metrica-item-centrado">
                         <div class="metrica-valor-centrado">${resultado.distancia} km</div>
                         <div class="metrica-label-centrado">Distancia</div>
                     </div>
                 </div>
 
-                ${resultado.insights ? `
+                ${resultado.learningInsights ? `
                 <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; border-left: 4px solid #4CAF50; margin-top: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="font-weight: 600;">🧠 Predicción Inteligente</span>
                         <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 10px;">
-                            ${resultado.insights.confidence}% confianza
+                            ${resultado.learningInsights.confidence}% confianza
                         </span>
                     </div>
                     <div style="font-size: 0.9em; opacity: 0.9;">
-                        ${resultado.insights.message}
+                        ${resultado.learningInsights.message}
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${resultado.trafficInsights ? `
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; border-left: 4px solid #2196F3; margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 600;">🚗 Análisis de Tráfico</span>
+                        <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 10px;">
+                            Radio: ${resultado.trafficInsights.radius || resultado.radioAnalisis || 10}km
+                        </span>
+                    </div>
+                    <div style="font-size: 0.9em; opacity: 0.9;">
+                        ${resultado.trafficInsights.message || 'Análisis de tráfico local aplicado'}
                     </div>
                 </div>
                 ` : ''}
             </div>
 
-${resultado.trafficInsights ? `
-<div style="background: rgba(74, 144, 226, 0.1); padding: 15px; border-radius: 12px; border-left: 4px solid #4a90e2; margin-top: 10px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-weight: 600;">🚗 Análisis de Tráfico</span>
-<span style="font-size: 0.8em; background: rgba(74, 144, 226, 0.2); padding: 4px 8px; border-radius: 10px;">
-            Radio: ${resultado.radioAnalizado || resultado.trafficInsights.radius}km
-          </span>
-    </div>
-</div>
-` : ''}
-
-            <!-- BOTONES DE ACCIÓN (sin cambios) -->
+            <!-- BOTONES DE ACCIÓN -->
             <div class="modal-actions-centrado">
                 <button class="btn-accion-grande btn-rechazar-grande" onclick="procesarViajeRapido(false)">
                     <span class="btn-icono-grande">❌</span>
@@ -3391,7 +3418,7 @@ function obtenerMensajeImpacto(trafficAnalysis) {
 }
 
 // =============================================
-// SISTEMA DE TRÁFICO EN TIEMPO REAL CON GOOGLE MAPS - CON RADIO ESCALABLE
+// SISTEMA DE TRÁFICO EN TIEMPO REAL CON GOOGLE MAPS
 // =============================================
 
 class RealTimeTrafficSystem {
@@ -3399,7 +3426,7 @@ class RealTimeTrafficSystem {
         this.map = null;
         this.trafficLayer = null;
         this.currentLocation = null;
-        this.radiusKm = 5; // Valor por defecto (más pequeño)
+        this.radiusKm = 10;
         this.initialized = false;
     }
 
@@ -3482,60 +3509,103 @@ class RealTimeTrafficSystem {
         });
     }
 
-    // ✅ NUEVO: Calcular radio óptimo basado en distancia del viaje
-    calculateOptimalRadius(tripDistanceKm = 0) {
-        if (tripDistanceKm <= 0) return 5; // Radio mínimo por defecto
+   // Analizar tráfico en el radio especificado
+   async analyzeTrafficInRadius() {
+    if (!this.initialized) {
+        throw new Error('Sistema de tráfico no inicializado');
+    }
+
+    if (!this.currentLocation) {
+        await this.getCurrentLocation();
+    }
+
+    try {
+        // ✅ OBTENER DURACIÓN DEL VIAJE DEL FORMULARIO
+        const minutosViaje = parseFloat(elementos.minutos?.value) || 0;
         
-        // Lógica escalable inteligente:
-        if (tripDistanceKm < 2) {
-            return 2; // Radio muy pequeño para viajes ultra cortos
-        } else if (tripDistanceKm < 5) {
-            return 4; // Radio pequeño para viajes cortos
-        } else if (tripDistanceKm < 10) {
-            return 6; // Radio mediano para viajes promedio
-        } else if (tripDistanceKm < 20) {
-            return 8; // Radio grande para viajes largos
-        } else {
-            return 10; // Radio máximo para viajes muy largos
-        }
+        // ✅ CALCULAR RADIO ADAPTATIVO SEGÚN DURACIÓN
+        const radioAdaptativo = this.calcularRadioPorDuracion(minutosViaje);
+        
+        // ✅ GUARDAR RADIO CALCULADO PARA USO EN REPORTES
+        this.radiusKm = radioAdaptativo;
+        
+        // ✅ OBTENER DATOS DE TRÁFICO CON RADIO ADAPTATIVO
+        const trafficData = await this.getTrafficDataConRadioAdaptativo(radioAdaptativo);
+        
+        // ✅ RETORNAR ANÁLISIS CON RADIO PERSONALIZADO
+        const impacto = this.calculateTrafficImpact(trafficData);
+        impacto.radioAdaptativo = radioAdaptativo; // Agregar info de radio usado
+        
+        return impacto;
+        
+    } catch (error) {
+        console.error('❌ Error analizando tráfico con radio adaptativo:', error);
+        return this.getConservativeEstimate();
     }
+}
 
-    // ✅ MODIFICADO: Analizar tráfico con radio personalizado
-    async analyzeTrafficInRadius(tripDistanceKm = 0) {
-        if (!this.initialized) {
-            throw new Error('Sistema de tráfico no inicializado');
-        }
-
-        if (!this.currentLocation) {
-            await this.getCurrentLocation();
-        }
-
-        try {
-            // ✅ AJUSTAR RADIO SEGÚN DISTANCIA DEL VIAJE
-            this.radiusKm = this.calculateOptimalRadius(tripDistanceKm);
-            console.log(`📏 Radio ajustado: ${this.radiusKm}km (viaje: ${tripDistanceKm}km)`);
-            
-            const trafficData = await this.getTrafficData(tripDistanceKm);
-            return this.calculateTrafficImpact(trafficData, tripDistanceKm);
-            
-        } catch (error) {
-            console.error('❌ Error analizando tráfico:', error);
-            return this.getConservativeEstimate(tripDistanceKm);
-        }
+calcularRadioPorDuracion(minutosViaje) {
+    // ✅ LÓGICA ADAPTATIVA: Menos tiempo = radio más pequeño
+    console.log('🎯 Calculando radio adaptativo para:', minutosViaje, 'minutos');
+    
+    if (minutosViaje <= 5) {
+        // Viajes MUY cortos (menos de 5 min): solo 2km alrededor
+        console.log('📍 Radio: 2km (viaje muy corto)');
+        return 2;
+    } else if (minutosViaje <= 15) {
+        // Viajes cortos (5-15 min): radio moderado de 4km
+        console.log('📍 Radio: 4km (viaje corto)');
+        return 4;
+    } else if (minutosViaje <= 30) {
+        // Viajes medios (15-30 min): radio de 6km
+        console.log('📍 Radio: 6km (viaje medio)');
+        return 6;
+    } else if (minutosViaje <= 45) {
+        // Viajes largos (30-45 min): radio de 8km
+        console.log('📍 Radio: 8km (viaje largo)');
+        return 8;
+    } else {
+        // Viajes muy largos (+45 min): radio completo de 10km
+        console.log('📍 Radio: 10km (viaje muy largo)');
+        return 10;
     }
+}
 
-    async getTrafficData(tripDistanceKm = 0) {
+async getTrafficDataConRadioAdaptativo(radioKm) {
+    return new Promise((resolve) => {
+        // Simulación mejorada que considera el radio
+        setTimeout(() => {
+            const trafficCondition = this.estimateTrafficFromConditions();
+            
+            // ✅ AJUSTAR CONFIANZA SEGÚN RADIO
+            let confianzaAjustada = trafficCondition.confidence;
+            if (radioKm <= 4) {
+                confianzaAjustada += 0.1; // Más confiable en radios pequeños
+            } else if (radioKm >= 8) {
+                confianzaAjustada -= 0.05; // Menos confiable en radios grandes
+            }
+            
+            resolve({
+                ...trafficCondition,
+                confidence: Math.min(0.95, Math.max(0.5, confianzaAjustada)),
+                radioKm: radioKm, // Incluir radio usado
+                message: `${trafficCondition.message} (Radio: ${radioKm}km)`
+            });
+        }, 1500);
+    });
+}
+
+    async getTrafficData() {
         return new Promise((resolve) => {
-            // Simulación de análisis de tráfico considerando distancia
+            // Simulación de análisis de tráfico basado en hora y ubicación
             setTimeout(() => {
-                const trafficCondition = this.estimateTrafficFromConditions(tripDistanceKm);
+                const trafficCondition = this.estimateTrafficFromConditions();
                 resolve(trafficCondition);
             }, 1500);
         });
     }
 
-    // ✅ MEJORADO: Estimación que considera distancia
-    estimateTrafficFromConditions(tripDistanceKm = 0) {
+    estimateTrafficFromConditions() {
         const now = new Date();
         const hour = now.getHours();
         const day = now.getDay();
@@ -3543,67 +3613,31 @@ class RealTimeTrafficSystem {
         
         let condition, factor, confidence;
 
-        // Lógica mejorada que considera distancia del viaje
-        if (tripDistanceKm < 3) {
-            // Viajes muy cortos: menos afectados por tráfico general
-            if (isWeekend) {
-                condition = 'light';
-                factor = 1.05; // Mínimo impacto
-                confidence = 0.9;
-            } else if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
+        // Lógica mejorada de tráfico para República Dominicana
+        if (isWeekend) {
+            if (hour >= 11 && hour <= 20) {
                 condition = 'moderate';
-                factor = 1.2; // Impacto reducido para distancias cortas
+                factor = 1.4;
                 confidence = 0.8;
             } else {
                 condition = 'light';
-                factor = 1.05;
+                factor = 1.1;
                 confidence = 0.9;
             }
-        } else if (tripDistanceKm < 8) {
-            // Viajes cortos-medianos
-            if (isWeekend) {
-                condition = 'light';
-                factor = 1.1;
-                confidence = 0.85;
-            } else if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
+        } else {
+            // Hora pico en RD: 7-9 AM y 5-7 PM
+            if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
                 condition = 'heavy';
-                factor = 1.5;
+                factor = 1.8;
                 confidence = 0.9;
             } else if (hour >= 12 && hour <= 14) {
                 condition = 'moderate';
-                factor = 1.25;
+                factor = 1.3;
                 confidence = 0.7;
             } else {
                 condition = 'light';
                 factor = 1.1;
                 confidence = 0.8;
-            }
-        } else {
-            // Viajes largos: usar lógica original
-            if (isWeekend) {
-                if (hour >= 11 && hour <= 20) {
-                    condition = 'moderate';
-                    factor = 1.4;
-                    confidence = 0.8;
-                } else {
-                    condition = 'light';
-                    factor = 1.1;
-                    confidence = 0.9;
-                }
-            } else {
-                if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
-                    condition = 'heavy';
-                    factor = 1.8;
-                    confidence = 0.9;
-                } else if (hour >= 12 && hour <= 14) {
-                    condition = 'moderate';
-                    factor = 1.3;
-                    confidence = 0.7;
-                } else {
-                    condition = 'light';
-                    factor = 1.1;
-                    confidence = 0.8;
-                }
             }
         }
 
@@ -3612,108 +3646,80 @@ class RealTimeTrafficSystem {
             trafficFactor: factor,
             confidence,
             radius: this.radiusKm,
-            distanceConsidered: tripDistanceKm,
             location: this.currentLocation,
             timestamp: now.toISOString(),
-            message: this.getTrafficMessage(condition, tripDistanceKm)
+            message: this.getTrafficMessage(condition)
         };
     }
 
-    // ✅ MEJORADO: Mensaje personalizado según distancia
-    getTrafficMessage(condition, tripDistanceKm = 0) {
-        const baseMessages = {
-            light: '✅ Tráfico fluido',
-            moderate: '⚠️ Tráfico moderado',
-            heavy: '🚗 Tráfico pesado',
-            severe: '🚨 Congestión severa'
-        };
-        
-        let baseMessage = baseMessages[condition] || `Condiciones: ${condition}`;
-        
-        // Personalizar según distancia
-        if (tripDistanceKm < 3) {
-            baseMessage += ' - Viaje corto, impacto mínimo';
-        } else if (tripDistanceKm < 8) {
-            baseMessage += ' - Considerar posibles demoras';
-        } else {
-            baseMessage += ' - Puede afectar significativamente';
-        }
-        
-        return baseMessage;
-    }
-
-    // ✅ MEJORADO: Impacto de tráfico considerando distancia
-    calculateTrafficImpact(trafficData, tripDistanceKm = 0) {
-        const baseTime = parseFloat(elementos.minutos?.value) || 0;
-        
-        if (baseTime <= 0) {
-            return {
-                originalTime: 0,
-                adjustedTime: 0,
-                trafficCondition: 'unknown',
-                adjustment: 0,
-                message: 'Ingresa el tiempo estimado primero'
-            };
-        }
-
-        // ✅ AJUSTE MÁS PRECISO PARA VIAJES CORTOS
-        let adjustedFactor = trafficData.trafficFactor;
-        
-        // Reducir impacto para viajes muy cortos
-        if (tripDistanceKm < 2) {
-            adjustedFactor = Math.min(adjustedFactor, 1.3); // Límite máximo para cortos
-        } else if (tripDistanceKm < 5) {
-            adjustedFactor = Math.min(adjustedFactor, 1.5); // Límite moderado
-        }
-        
-        const adjustedTime = Math.ceil(baseTime * adjustedFactor);
-
+  calculateTrafficImpact(trafficData) {
+    const baseTime = parseFloat(elementos.minutos?.value) || 0;
+    
+    if (baseTime <= 0) {
         return {
-            originalTime: baseTime,
-            adjustedTime: adjustedTime,
-            trafficCondition: trafficData.condition,
-            trafficFactor: adjustedFactor,
-            adjustment: Math.round((adjustedFactor - 1) * 100),
-            confidence: trafficData.confidence,
-            radius: trafficData.radius,
-            distanceConsidered: tripDistanceKm,
-            message: trafficData.message,
-            location: trafficData.location,
-            isSignificant: adjustedTime > baseTime * 1.2,
-            isShortTrip: tripDistanceKm < 3
+            originalTime: 0,
+            adjustedTime: 0,
+            trafficCondition: 'unknown',
+            adjustment: 0,
+            message: 'Ingresa el tiempo estimado primero',
+            radioUsado: 0
         };
     }
 
-    // ✅ MEJORADO: Estimación conservadora con distancia
-    getConservativeEstimate(tripDistanceKm = 0) {
-        const baseTime = parseFloat(elementos.minutos?.value) || 0;
-        const hour = new Date().getHours();
-        const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
-        
-        // Factor base ajustado por distancia
-        let factor = isPeak ? 1.6 : 1.2;
-        
-        // Reducir para viajes cortos
-        if (tripDistanceKm < 3) factor = Math.min(factor, 1.3);
-        else if (tripDistanceKm < 5) factor = Math.min(factor, 1.4);
+    const adjustedTime = Math.ceil(baseTime * trafficData.trafficFactor);
 
-        // Calcular radio apropiado
-        const optimalRadius = this.calculateOptimalRadius(tripDistanceKm);
+    // ✅ CALCULAR IMPACTO RELATIVO SEGÚN RADIO
+    const impactoRelativo = this.calcularImpactoRelativo(baseTime, trafficData.radioKm || 10);
+    
+    return {
+        originalTime: baseTime,
+        adjustedTime: adjustedTime,
+        trafficCondition: trafficData.condition,
+        trafficFactor: trafficData.trafficFactor,
+        adjustment: Math.round((trafficData.trafficFactor - 1) * 100),
+        confidence: trafficData.confidence,
+        radius: trafficData.radioKm || 10, // Usar radio del análisis
+        message: `${trafficData.message} ${impactoRelativo.mensaje}`,
+        location: trafficData.location,
+        isSignificant: adjustedTime > baseTime * impactoRelativo.umbralSignificativo,
+        radioUsado: trafficData.radioKm || 10,
+        impactoRelativo: impactoRelativo
+    };
+}
 
-        return {
-            originalTime: baseTime,
-            adjustedTime: Math.ceil(baseTime * factor),
-            trafficCondition: isPeak ? 'heavy' : 'moderate',
-            trafficFactor: factor,
-            adjustment: Math.round((factor - 1) * 100),
-            confidence: 0.6,
-            radius: optimalRadius,
-            distanceConsidered: tripDistanceKm,
-            message: `Estimación base para viaje de ${tripDistanceKm}km: ${isPeak ? 'Hora pico' : 'Tráfico regular'}`,
-            location: this.currentLocation,
-            isSignificant: true
+    getTrafficMessage(condition) {
+        const messages = {
+            light: '✅ Tráfico fluido - Condiciones normales',
+            moderate: '⚠️ Tráfico moderado - Pequeñas demoras',
+            heavy: '🚗 Tráfico pesado - Demoras considerables',
+            severe: '🚨 Congestión severa - Demoras extensas'
         };
+        
+        return messages[condition] || `Condiciones de tráfico: ${condition}`;
     }
+
+   getConservativeEstimate() {
+    const baseTime = parseFloat(elementos.minutos?.value) || 0;
+    const hour = new Date().getHours();
+    const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
+    const factor = isPeak ? 1.6 : 1.2;
+    
+    // ✅ CALCULAR RADIO ADAPTATIVO TAMBIÉN PARA ESTIMACIÓN CONSERVADORA
+    const radioAdaptativo = this.calcularRadioPorDuracion(baseTime);
+
+    return {
+        originalTime: baseTime,
+        adjustedTime: Math.ceil(baseTime * factor),
+        trafficCondition: isPeak ? 'heavy' : 'moderate',
+        trafficFactor: factor,
+        adjustment: Math.round((factor - 1) * 100),
+        confidence: 0.6,
+        radius: radioAdaptativo, // Usar radio adaptativo
+        message: `Estimación base: ${isPeak ? 'Hora pico' : 'Tráfico regular'} (Radio: ${radioAdaptativo}km)`,
+        location: this.currentLocation,
+        isSignificant: true,
+        radioUsado: radioAdaptativo
+    };
 }
 
 // ✅ FUNCIÓN DE INICIALIZACIÓN DEL SISTEMA DE TRÁFICO
@@ -4931,12 +4937,6 @@ async function inicializarApp() {
             mostrarStatus('❌ Error crítico. Recarga la página.', 'error');
         }
     }
-
-// INICIALIZAR SISTEMA ULTRA RÁPIDO
-    setTimeout(() => {
-        inicializarScannerUltraRapido();
-        console.log('⚡ Sistema ultra-rápido listo');
-    }, 2000);
 }
 
 // ✅ FUNCIÓN SIMPLIFICADA: Solo verifica si Google Maps está disponible
@@ -5148,112 +5148,8 @@ window.onclick = function(event) {
     }
 };
 
-function inicializarScannerMejorado() {
-    console.log('🚀 Iniciando escáner OCR mejorado');
-    
-    // Reemplazar función anterior
-    const botonAnterior = document.getElementById('btn-ocr-ia');
-    if (botonAnterior) botonAnterior.remove();
-    
-    // Crear nuevo botón con icono mejorado
-    const boton = document.createElement('button');
-    boton.id = 'btn-ocr-mejorado';
-    boton.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.5em;">🔍</span>
-            <div style="text-align: left;">
-                <div style="font-weight: bold; font-size: 14px;">ESCANEAR UBER</div>
-                <div style="font-size: 11px; opacity: 0.8;">Alta precisión</div>
-            </div>
-        </div>
-    `;
-    
-    // Estilos mejorados
-    Object.assign(boton.style, {
-        position: 'fixed',
-        bottom: '120px',
-        right: '20px',
-        zIndex: '99999',
-        background: 'linear-gradient(135deg, #2196F3, #1976D2)',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '12px',
-        padding: '15px 20px',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        cursor: 'pointer',
-        boxShadow: '0 8px 25px rgba(33, 150, 243, 0.4)',
-        transition: 'all 0.3s ease'
-    });
-    
-    boton.onmouseenter = () => {
-        boton.style.transform = 'translateY(-3px)';
-        boton.style.boxShadow = '0 12px 30px rgba(33, 150, 243, 0.6)';
-    };
-    
-    boton.onmouseleave = () => {
-        boton.style.transform = 'translateY(0)';
-        boton.style.boxShadow = '0 8px 25px rgba(33, 150, 243, 0.4)';
-    };
-    
-    boton.onclick = async () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                console.log('📸 Procesando:', file.name);
-                await procesarImagenConAltaFidelidad(file);
-            }
-        };
-        
-        input.click();
-    };
-    
-    document.body.appendChild(boton);
-    
-    // Agregar tooltip
-    setTimeout(() => {
-        const tooltip = document.createElement('div');
-        tooltip.innerHTML = '📸 Escanea capturas de Uber/Didi<br>💰 Detecta automáticamente precio, tiempo y distancia';
-        Object.assign(tooltip.style, {
-            position: 'fixed',
-            bottom: '190px',
-            right: '30px',
-            background: 'rgba(0,0,0,0.9)',
-            color: 'white',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            fontSize: '12px',
-            maxWidth: '250px',
-            zIndex: '99998',
-            boxShadow: '0 5px 15px rgba(0,0,0,0.2)'
-        });
-        document.body.appendChild(tooltip);
-        
-        setTimeout(() => tooltip.remove(), 5000);
-    }, 1000);
-    
-    console.log('✅ Escáner mejorado inicializado');
-}
-
 window.addEventListener('beforeunload', function() {
     if (firebaseSync) {
         firebaseSync.stopRealTimeListeners();
     }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
