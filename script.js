@@ -686,38 +686,16 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
         costoTotal: analisisNeto.costos.costoTotal,
         impactoMeta: impactoMeta.texto
     });
-
-    // ✅ VERIFICAR PERFIL
-    if (!perfilActual) {
-        console.error('❌ NO hay perfil activo');
-        return;
-    }
-
-    console.log('🎯 PERFIL ACTIVO:', {
-        nombre: perfilActual.nombre,
-        umbralMinutoRentable: perfilActual.umbralMinutoRentable,
-        umbralKmRentable: perfilActual.umbralKmRentable
-    });
-
+    
     // ✅ DECISIÓN: ¿Usar bruto o neto para la rentabilidad?
     // Opción A: Usar NETO (más realista)
     const gananciaParaCalculo = analisisNeto.gananciaNeta > 0 ? analisisNeto.gananciaNeta : 0;
-
-    // ✅ USAR LA GANANCIA TOTAL (BASE + EXTRAS) para el cálculo
-    const gananciaTotal = viajeConTiempoReal.gananciaTotal || viajeConTiempoReal.tarifa;
     
-    // ✅ CALCULAR RENTABILIDAD CON TIEMPO REAL Y GANANCIA TOTAL
+    // ✅ CALCULAR RENTABILIDAD CON GANANCIA TOTAL (EXISTENTE)
+    const gananciaTotal = viajeConTiempoReal.gananciaTotal || viajeConTiempoReal.tarifa;
     const gananciaPorMinutoReal = gananciaTotal / viajeConTiempoReal.tiempoReal;
     const gananciaPorKmReal = viajeConTiempoReal.distancia > 0 ? 
         gananciaTotal / viajeConTiempoReal.distancia : 0;
-
-    console.log('📈 CÁLCULOS REALES CON EXTRAS:', {
-        gananciaTotal: gananciaTotal,
-        gananciaPorMinutoReal: gananciaPorMinutoReal,
-        gananciaPorKmReal: gananciaPorKmReal,
-        umbralMinutoRentable: perfilActual.umbralMinutoRentable,
-        umbralKmRentable: perfilActual.umbralKmRentable
-    });
 
     // ✅ DETERMINAR RENTABILIDAD REAL CON GANANCIA TOTAL
     let rentabilidadReal, emojiReal, textoReal;
@@ -738,25 +716,19 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
         textoReal = 'NO RENTABLE';
     }
 
-    console.log('🎯 RESULTADO RENTABILIDAD:', {
-        rentabilidadReal: rentabilidadReal,
-        textoReal: textoReal,
-        gananciaPorMinutoReal: gananciaPorMinutoReal
-    });
-
-    // ✅ CREAR VIAJE FINAL CON GANANCIA TOTAL
+    // ✅ CREAR VIAJE FINAL CON TODOS LOS DATOS
     const viajeFinal = {
         id: 'viaje_real_' + Date.now(),
         
-        // Datos básicos CON EXTRAS INCLUIDOS
-        tarifa: gananciaTotal, // <--- Esto incluye los extras
-        ganancia: gananciaTotal, // <--- Esto incluye los extras
+        // Datos básicos CON EXTRAS INCLUIDOS (EXISTENTE)
+        tarifa: gananciaTotal,
+        ganancia: gananciaTotal,
         distancia: viajeConTiempoReal.distancia,
         
         // ✅ USAR TIEMPO REAL
         minutos: viajeConTiempoReal.tiempoReal,
         
-        // ✅ RENTABILIDAD RECALCULADA CON GANANCIA TOTAL
+        // ✅ RENTABILIDAD RECALCULADA
         rentabilidad: rentabilidadReal,
         rentable: rentabilidadReal === 'rentable',
         emoji: emojiReal,
@@ -764,7 +736,7 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
         gananciaPorMinuto: parseFloat(gananciaPorMinutoReal.toFixed(2)),
         gananciaPorKm: parseFloat(gananciaPorKmReal.toFixed(2)),
         
-        // Metadata
+        // Metadata (EXISTENTE)
         tiempoRealCapturado: true,
         tiempoReal: viajeConTiempoReal.tiempoReal,
         tiempoEstimado: viajeConTiempoReal.tiempoEstimado,
@@ -775,18 +747,18 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
         perfilId: perfilActual.id,
         perfilNombre: perfilActual.nombre,
         
-        // Para comparación
+        // Para comparación (EXISTENTE)
         rentabilidadOriginal: viajeConTiempoReal.rentabilidadOriginal,
         textoOriginal: viajeConTiempoReal.textoOriginal,
         
-        // ✅ DETALLES DEL COBRO EXTRA
+        // ✅ DETALLES DEL COBRO EXTRA (EXISTENTE)
         tiempoExtraCobradoSegundos: viajeConTiempoReal.tiempoExtraCobradoSegundos,
         montoExtraCobrado: viajeConTiempoReal.montoExtraCobrado,
         tarifaBase: viajeConTiempoReal.tarifaBase,
         extras: viajeConTiempoReal.extras,
-        gananciaTotal: gananciaTotal
+        gananciaTotal: gananciaTotal,
         
-         // ✅ NUEVOS CAMPOS NETOS (usando TU perfil)
+        // ✅ NUEVOS CAMPOS NETOS (usando TU perfil) - ¡VERIFICA QUE NO FALTEN COMAS!
         gananciaNetaReal: analisisNeto.gananciaNeta,
         netoPorMinutoReal: analisisNeto.netoPorMinuto,
         costoTotalReal: analisisNeto.costos.costoTotal,
@@ -801,23 +773,13 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
         costoDepreciacionReal: analisisNeto.costos.depreciacion,
         costoPorKmReal: analisisNeto.costos.costoPorKm
     };
-    
+
     console.log('📊 VIAJE FINAL CON ANÁLISIS NETO:', {
         gananciaBruta: viajeConTiempoReal.gananciaTotal,
         gananciaNeta: viajeFinal.gananciaNetaReal,
         netoPorMinuto: viajeFinal.netoPorMinutoReal,
         rentabilidadReal: viajeFinal.rentabilidadReal.texto,
         porcentajeNetoVsBruto: parseFloat(((analisisNeto.gananciaNeta / viajeConTiempoReal.gananciaTotal) * 100).toFixed(1)) + '%'
-    });
-
-    console.log('💾 VIAJE FINAL A GUARDAR (CON EXTRAS):', {
-        minutos: viajeFinal.minutos,
-        tarifaBase: viajeFinal.tarifaBase,
-        extras: viajeFinal.extras,
-        gananciaTotal: viajeFinal.gananciaTotal,
-        rentabilidad: viajeFinal.rentabilidad,
-        texto: viajeFinal.texto,
-        gananciaPorMinuto: viajeFinal.gananciaPorMinuto
     });
 
     // ✅ GUARDAR DIRECTAMENTE
@@ -5603,4 +5565,5 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
