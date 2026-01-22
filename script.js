@@ -84,7 +84,7 @@ function debugCronometroCompleto() {
         });
     }
     
-    console.log('👤 Perfil actual:', perfilActual ? {
+    console.log('👤  actual:', perfilActual ? {
         nombre: perfilActual.nombre,
         umbralMinutoRentable: perfilActual.umbralMinutoRentable,
         umbralKmRentable: perfilActual.umbralKmRentable
@@ -654,7 +654,38 @@ function actualizarDisplayCobroExtra() {
 // =============================================
 
 function procesarViajeConTiempoReal(viajeConTiempoReal) {
-    console.log('🔄 PROCESAR VIAJE CON TIEMPO REAL - INICIO', viajeConTiempoReal);
+    console.log('🔄 PROCESAR VIAJE CON TIEMPO REAL - CON ANÁLISIS NETO DESDE PERFIL');
+    
+    // ✅ VERIFICAR PERFIL (EXISTENTE)
+    if (!perfilActual) {
+        console.error('❌ NO hay perfil activo');
+        return;
+    }
+    
+    // ✅ NUEVO: CÁLCULO NETO USANDO TU PERFIL
+    const analisisNeto = calcularGananciaNetaRealDesdePerfil(
+        viajeConTiempoReal.gananciaTotal || viajeConTiempoReal.tarifa,
+        viajeConTiempoReal.distancia || 1,
+        viajeConTiempoReal.tiempoReal
+    );
+    
+    if (!analisisNeto) {
+        console.error('❌ Error en cálculo neto');
+        return;
+    }
+    
+    // ✅ IMPACTO EN META 32K
+    const impactoMeta = calcularImpactoEnMeta(analisisNeto.netoPorMinuto);
+    
+    console.log('💰 ANÁLISIS NETO DESDE PERFIL:', {
+        perfil: perfilActual.nombre,
+        tarifaBruta: analisisNeto.tarifaBruta,
+        gananciaNeta: analisisNeto.gananciaNeta,
+        netoPorMinuto: analisisNeto.netoPorMinuto,
+        rentabilidadReal: analisisNeto.rentabilidadReal.texto,
+        costoTotal: analisisNeto.costos.costoTotal,
+        impactoMeta: impactoMeta.texto
+    });
 
     // ✅ VERIFICAR PERFIL
     if (!perfilActual) {
@@ -667,6 +698,10 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
         umbralMinutoRentable: perfilActual.umbralMinutoRentable,
         umbralKmRentable: perfilActual.umbralKmRentable
     });
+
+    // ✅ DECISIÓN: ¿Usar bruto o neto para la rentabilidad?
+    // Opción A: Usar NETO (más realista)
+    const gananciaParaCalculo = analisisNeto.gananciaNeta > 0 ? analisisNeto.gananciaNeta : 0;
 
     // ✅ USAR LA GANANCIA TOTAL (BASE + EXTRAS) para el cálculo
     const gananciaTotal = viajeConTiempoReal.gananciaTotal || viajeConTiempoReal.tarifa;
@@ -750,7 +785,30 @@ function procesarViajeConTiempoReal(viajeConTiempoReal) {
         tarifaBase: viajeConTiempoReal.tarifaBase,
         extras: viajeConTiempoReal.extras,
         gananciaTotal: gananciaTotal
+        
+         // ✅ NUEVOS CAMPOS NETOS (usando TU perfil)
+        gananciaNetaReal: analisisNeto.gananciaNeta,
+        netoPorMinutoReal: analisisNeto.netoPorMinuto,
+        costoTotalReal: analisisNeto.costos.costoTotal,
+        rentabilidadReal: analisisNeto.rentabilidadReal,
+        impactoMeta32k: impactoMeta,
+        comparacionConPerfil: analisisNeto.comparacionConPerfil,
+        
+        // Costos detallados desde TU perfil
+        costoCombustibleReal: analisisNeto.costos.combustible,
+        costoMantenimientoReal: analisisNeto.costos.mantenimiento,
+        costoSeguroReal: analisisNeto.costos.seguro,
+        costoDepreciacionReal: analisisNeto.costos.depreciacion,
+        costoPorKmReal: analisisNeto.costos.costoPorKm
     };
+    
+    console.log('📊 VIAJE FINAL CON ANÁLISIS NETO:', {
+        gananciaBruta: viajeConTiempoReal.gananciaTotal,
+        gananciaNeta: viajeFinal.gananciaNetaReal,
+        netoPorMinuto: viajeFinal.netoPorMinutoReal,
+        rentabilidadReal: viajeFinal.rentabilidadReal.texto,
+        porcentajeNetoVsBruto: parseFloat(((analisisNeto.gananciaNeta / viajeConTiempoReal.gananciaTotal) * 100).toFixed(1)) + '%'
+    });
 
     console.log('💾 VIAJE FINAL A GUARDAR (CON EXTRAS):', {
         minutos: viajeFinal.minutos,
@@ -2434,6 +2492,302 @@ function updateTabIndicator(activeIndex) {
 }
 
 // =============================================
+// NUEVO: CALCULAR COSTOS REALES DESDE PERFIL
+// =============================================
+function calcularCostosDesdePerfil(distanciaKm, minutosReales) {
+    if (!perfilActual) {
+        console.error('❌ No hay perfil para calcular costos');
+        return null;
+    }
+    
+    console.log('📊 Calculando costos desde perfil:', perfilActual.nombre);
+    
+    // 1. COMBUSTIBLE (ya lo calculas en calcularRentabilidad)
+    const combustibleUsado = distanciaKm / perfilActual.rendimiento;
+    const costoCombustible = combustibleUsado * perfilActual.precioCombustible;
+    
+    // 2. MANTENIMIENTO (tú ya tienes costoMantenimiento ANUAL en el perfil)
+    const costoMantenimientoAnual = perfilActual.costoMantenimiento || 0;
+    // Convertir anual a por km: asumimos 20,000 km/año
+    const costoMantenimientoPorKm = costoMantenimientoAnual / 20000;
+    const costoMantenimientoViaje = distanciaKm * costoMantenimientoPorKm;
+    
+    // 3. SEGURO (tú ya tienes costoSeguro MENSUAL en el perfil)
+    const costoSeguroMensual = perfilActual.costoSeguro || 0;
+    // Convertir mensual a por minuto: 30 días × 24 horas × 60 minutos
+    const minutosEnUnMes = 30 * 24 * 60;
+    const costoSeguroPorMinuto = costoSeguroMensual / minutosEnUnMes;
+    const costoSeguroViaje = minutosReales * costoSeguroPorMinuto;
+    
+    // 4. DEPRECIACIÓN (aproximación: 1% del valor del auto por cada 1,000 km)
+    const depreciacionPorKm = 0.01; // 1% cada 1000 km = 0.01% por km
+    
+    const costos = {
+        // Costos variables
+        combustible: parseFloat(costoCombustible.toFixed(2)),
+        mantenimiento: parseFloat(costoMantenimientoViaje.toFixed(2)),
+        depreciacion: parseFloat((distanciaKm * depreciacionPorKm).toFixed(2)),
+        
+        // Costos fijos (proporcionales al tiempo)
+        seguro: parseFloat(costoSeguroViaje.toFixed(2)),
+        
+        // Totales
+        costoVariable: parseFloat((costoCombustible + costoMantenimientoViaje + (distanciaKm * depreciacionPorKm)).toFixed(2)),
+        costoFijo: parseFloat(costoSeguroViaje.toFixed(2)),
+        costoTotal: 0, // Se calcula abajo
+        costoPorKm: 0  // Se calcula abajo
+    };
+    
+    // Calcular totales
+    costos.costoTotal = costos.costoVariable + costos.costoFijo;
+    
+    if (distanciaKm > 0) {
+        costos.costoPorKm = parseFloat((costos.costoTotal / distanciaKm).toFixed(2));
+    }
+    
+    console.log('📈 Costos calculados desde perfil:', {
+        perfil: perfilActual.nombre,
+        rendimiento: perfilActual.rendimiento,
+        precioCombustible: perfilActual.precioCombustible,
+        costoCombustible: costos.combustible,
+        costoMantenimiento: costos.mantenimiento,
+        costoSeguro: costos.seguro,
+        costoTotal: costos.costoTotal
+    });
+    
+    return costos;
+}
+
+// =============================================
+// NUEVO: CALCULAR GANANCIA NETA REAL DESDE PERFIL
+// =============================================
+function calcularGananciaNetaRealDesdePerfil(tarifaBruta, distanciaKm, minutosReales) {
+    if (!perfilActual) {
+        console.error('❌ No hay perfil activo');
+        return null;
+    }
+    
+    // 1. Calcular costos usando el perfil actual
+    const costos = calcularCostosDesdePerfil(distanciaKm, minutosReales);
+    if (!costos) return null;
+    
+    // 2. Ganancia neta
+    const gananciaNeta = tarifaBruta - costos.costoTotal;
+    
+    // 3. Neto por minuto (LA MÉTRICA CLAVE)
+    const netoPorMinuto = minutosReales > 0 ? gananciaNeta / minutosReales : 0;
+    
+    return {
+        // Datos del viaje
+        tarifaBruta: tarifaBruta,
+        distanciaKm: distanciaKm,
+        minutosReales: minutosReales,
+        
+        // Costos detallados
+        costos: costos,
+        
+        // Resultados financieros
+        gananciaNeta: parseFloat(gananciaNeta.toFixed(2)),
+        netoPorMinuto: parseFloat(netoPorMinuto.toFixed(2)),
+        
+        // Rentabilidad según neto (nueva clasificación)
+        rentabilidadReal: clasificarRentabilidadPorNeto(netoPorMinuto),
+        
+        // Comparación con umbrales del perfil
+        comparacionConPerfil: compararConUmbralesPerfil(netoPorMinuto)
+    };
+}
+
+// =============================================
+// NUEVO: CLASIFICAR POR NETO (USA TUS UMBRALES COMO BASE)
+// =============================================
+function clasificarRentabilidadPorNeto(netoPorMinuto) {
+    // Usamos tus umbrales del perfil como referencia
+    const umbralMinuto = perfilActual?.umbralMinutoRentable || 6.0;
+    const umbralOportunidad = perfilActual?.umbralMinutoOportunidad || 5.0;
+    
+    // Ajustamos para neto (neto suele ser ~70-80% del bruto)
+    const ajusteNeto = 0.75; // 75% del bruto es neto aproximado
+    
+    const umbralNetoRentable = umbralMinuto * ajusteNeto;
+    const umbralNetoOportunidad = umbralOportunidad * ajusteNeto;
+    
+    console.log('🎯 Umbrales para neto:', {
+        brutoRentable: umbralMinuto,
+        brutoOportunidad: umbralOportunidad,
+        netoRentable: umbralNetoRentable,
+        netoOportunidad: umbralNetoOportunidad,
+        netoActual: netoPorMinuto
+    });
+    
+    if (netoPorMinuto < 0) {
+        return {
+            categoria: 'perdida',
+            emoji: '💀',
+            texto: 'PÉRDIDA',
+            color: 'c62828',
+            descripcion: 'Estás perdiendo dinero en este viaje',
+            nivel: 0
+        };
+    } else if (netoPorMinuto < umbralNetoOportunidad) {
+        return {
+            categoria: 'sobrevive',
+            emoji: '🟡',
+            texto: 'SOBREVIVE',
+            color: 'ff9800',
+            descripcion: 'Solo cubre costos básicos',
+            nivel: 1
+        };
+    } else if (netoPorMinuto < umbralNetoRentable) {
+        return {
+            categoria: 'oportunidad',
+            emoji: '⚠️',
+            texto: 'OPORTUNIDAD',
+            color: 'ffb300',
+            descripcion: 'Cerca de ser rentable real',
+            nivel: 2
+        };
+    } else if (netoPorMinuto < umbralNetoRentable * 1.3) {
+        return {
+            categoria: 'rentable',
+            emoji: '✅',
+            texto: 'RENTABLE REAL',
+            color: '2e7d32',
+            descripcion: 'Ganancia real después de todos los costos',
+            nivel: 3
+        };
+    } else {
+        return {
+            categoria: 'excelente',
+            emoji: '🔥',
+            texto: 'EXCELENTE',
+            color: '1565c0',
+            descripcion: 'Excelente ganancia neta',
+            nivel: 4
+        };
+    }
+}
+
+// =============================================
+// NUEVO: COMPARAR CON TUS UMBRALES DEL PERFIL
+// =============================================
+function compararConUmbralesPerfil(netoPorMinuto) {
+    if (!perfilActual) return null;
+    
+    const brutoNecesarioRentable = perfilActual.umbralMinutoRentable || 6.0;
+    const brutoNecesarioOportunidad = perfilActual.umbralMinutoOportunidad || 5.0;
+    
+    // Estimación: neto es aproximadamente 75% del bruto
+    const conversionBrutoANeto = 0.75;
+    
+    const netoEquivalenteRentable = brutoNecesarioRentable * conversionBrutoANeto;
+    const netoEquivalenteOportunidad = brutoNecesarioOportunidad * conversionBrutoANeto;
+    
+    return {
+        // Lo que TU configuraste como rentable en bruto
+        tuUmbralRentableBruto: brutoNecesarioRentable,
+        tuUmbralOportunidadBruto: brutoNecesarioOportunidad,
+        
+        // Equivalente en neto
+        equivalenteRentableNeto: parseFloat(netoEquivalenteRentable.toFixed(2)),
+        equivalenteOportunidadNeto: parseFloat(netoEquivalenteOportunidad.toFixed(2)),
+        
+        // Cómo está este viaje comparado
+        vsRentable: parseFloat((netoPorMinuto - netoEquivalenteRentable).toFixed(2)),
+        vsOportunidad: parseFloat((netoPorMinuto - netoEquivalenteOportunidad).toFixed(2)),
+        
+        // Porcentaje de logro
+        porcentajeRentable: parseFloat(((netoPorMinuto / netoEquivalenteRentable) * 100).toFixed(1)),
+        porcentajeOportunidad: parseFloat(((netoPorMinuto / netoEquivalenteOportunidad) * 100).toFixed(1))
+    };
+}
+
+// =============================================
+// NUEVO: CALCULAR META CON TUS HORAS DE TRABAJO
+// =============================================
+function calcularMetaPersonalizada() {
+    if (!perfilActual) {
+        console.log('⚠️ Sin perfil, usando valores por defecto');
+        return {
+            metaMensual: 32000,
+            horasPorDia: 8,
+            diasPorMes: 22,
+            ritmoPorMinuto: 3.03 // 32k ÷ (22×8×60)
+        };
+    }
+    
+    // Aquí puedes añadir campos al perfil para meta personalizada
+    // Por ahora usamos 32k como default
+    const metaMensual = 32000;
+    const horasPorDia = 8; // Podrías añadir este campo al perfil
+    const diasPorMes = 22; // Podrías añadir este campo al perfil
+    
+    const minutosPorMes = diasPorMes * horasPorDia * 60;
+    const ritmoPorMinuto = metaMensual / minutosPorMes;
+    
+    return {
+        metaMensual: metaMensual,
+        metaDiaria: parseFloat((metaMensual / diasPorMes).toFixed(2)),
+        horasPorDia: horasPorDia,
+        diasPorMes: diasPorMes,
+        minutosPorMes: minutosPorMes,
+        ritmoPorMinuto: parseFloat(ritmoPorMinuto.toFixed(2)),
+        ritmoPorHora: parseFloat((metaMensual / (diasPorMes * horasPorDia)).toFixed(2))
+    };
+}
+
+// =============================================
+// NUEVO: CALCULAR IMPACTO EN META (CON TUS DATOS)
+// =============================================
+function calcularImpactoEnMeta(netoPorMinuto) {
+    const meta = calcularMetaPersonalizada();
+    const diferencia = netoPorMinuto - meta.ritmoPorMinuto;
+    
+    // Tu umbral de rentabilidad como referencia
+    const umbralRentable = perfilActual?.umbralMinutoRentable || 6.0;
+    const conversionNeto = 0.75; // 75% del bruto es neto
+    const tuUmbralNeto = umbralRentable * conversionNeto;
+    
+    if (netoPorMinuto >= tuUmbralNeto * 1.2) {
+        return {
+            impacto: 'supera-meta',
+            emoji: '🚀',
+            texto: 'SUPERA META Y UMBRAL',
+            mensaje: `Este viaje (RD$${netoPorMinuto.toFixed(2)}/min neto) supera tu meta y tu umbral de RD$${tuUmbralNeto.toFixed(2)}/min`,
+            diferencia: diferencia.toFixed(2),
+            color: 'blue'
+        };
+    } else if (netoPorMinuto >= meta.ritmoPorMinuto) {
+        return {
+            impacto: 'alcanza-meta',
+            emoji: '🎯',
+            texto: 'ALCANZA META',
+            mensaje: `Este viaje (RD$${netoPorMinuto.toFixed(2)}/min neto) alcanza tu meta de RD$${meta.ritmoPorMinuto}/min`,
+            diferencia: diferencia.toFixed(2),
+            color: 'green'
+        };
+    } else if (netoPorMinuto >= tuUmbralNeto) {
+        return {
+            impacto: 'rentable-pero-no-meta',
+            emoji: '✅',
+            texto: 'RENTABLE PERO NO META',
+            mensaje: `Es rentable (RD$${netoPorMinuto.toFixed(2)}/min) pero no alcanza la meta de RD$${meta.ritmoPorMinuto}/min`,
+            diferencia: diferencia.toFixed(2),
+            color: 'orange'
+        };
+    } else {
+        return {
+            impacto: 'frena-meta',
+            emoji: '🐌',
+            texto: 'FRENA META',
+            mensaje: `Este viaje (RD$${netoPorMinuto.toFixed(2)}/min neto) frena tu camino a la meta`,
+            diferencia: Math.abs(diferencia).toFixed(2),
+            color: 'red'
+        };
+    }
+}
+
+// =============================================
 // SISTEMA DE CÁLCULO - CORREGIDO
 // =============================================
 
@@ -3354,6 +3708,102 @@ function mostrarResultadoRapido(resultado) {
         </div>
     `;
 
+    // ✅ AÑADIR DESPUÉS DE LAS MÉTRICAS EXISTENTES:
+    if (perfilActual) {
+        const analisisNeto = calcularGananciaNetaRealDesdePerfil(
+            resultado.tarifa,
+            resultado.distancia,
+            resultado.minutos
+        );
+        
+        if (analisisNeto) {
+            const impactoMeta = calcularImpactoEnMeta(analisisNeto.netoPorMinuto);
+            
+            const seccionNeto = `
+                <!-- SECCIÓN NETO DESDE TU PERFIL -->
+                <div style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 12px; margin-top: 15px; border-left: 4px solid #${analisisNeto.rentabilidadReal.color}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 600;">💰 ANÁLISIS NETO REAL</span>
+                        <span style="font-size: 0.8em; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 10px;">
+                            ${analisisNeto.rentabilidadReal.emoji} ${analisisNeto.rentabilidadReal.texto}
+                        </span>
+                    </div>
+                    
+                    <!-- COMPARACIÓN CON TUS UMBRALES -->
+                    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+                        <div style="font-size: 0.9em; margin-bottom: 5px;">📊 Comparación con tu perfil:</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85em;">
+                            <div>
+                                <div>Tu umbral rentable:</div>
+                                <div style="font-weight: 600;">RD$${perfilActual.umbralMinutoRentable}/min</div>
+                            </div>
+                            <div>
+                                <div>Neto equivalente:</div>
+                                <div style="font-weight: 600;">~RD$${analisisNeto.comparacionConPerfil?.equivalenteRentableNeto || 4.5}/min</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FINANCIERO -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                        <div>
+                            <div style="font-size: 0.9em;">Bruto:</div>
+                            <div style="font-weight: 600; font-size: 1.1em;">${formatearMoneda(resultado.tarifa)}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em;">Neto real:</div>
+                            <div style="font-weight: 600; font-size: 1.1em; color: ${analisisNeto.gananciaNeta > 0 ? '#4CAF50' : '#f44336'}">
+                                ${formatearMoneda(analisisNeto.gananciaNeta)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- NETO POR MINUTO -->
+                    <div style="margin-top: 10px;">
+                        <div style="font-size: 0.9em;">Por minuto neto:</div>
+                        <div style="font-weight: 600; font-size: 1.1em; color: #${analisisNeto.rentabilidadReal.color}">
+                            ${formatearMoneda(analisisNeto.netoPorMinuto)}/min
+                            <span style="font-size: 0.8em; margin-left: 5px;">
+                                (${analisisNeto.comparacionConPerfil?.porcentajeRentable || 0}% de tu umbral)
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- COSTOS DESGLOSADOS -->
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.2);">
+                        <div style="font-size: 0.85em; margin-bottom: 5px;">📉 Costos desde tu perfil:</div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; font-size: 0.8em;">
+                            <div>⛽ ${formatearMoneda(analisisNeto.costos.combustible)}</div>
+                            <div>🔧 ${formatearMoneda(analisisNeto.costos.mantenimiento)}</div>
+                            <div>🛡️ ${formatearMoneda(analisisNeto.costos.seguro)}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- IMPACTO META -->
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                            <span>${impactoMeta.emoji}</span>
+                            <span style="font-weight: 600;">${impactoMeta.texto}</span>
+                        </div>
+                        <div style="font-size: 0.85em; opacity: 0.9;">
+                            ${impactoMeta.mensaje}
+                        </div>
+                    </div>
+                    
+                    <div style="font-size: 0.8em; opacity: 0.7; margin-top: 10px; font-style: italic;">
+                        ${analisisNeto.rentabilidadReal.descripcion}
+                    </div>
+                </div>
+            `;
+            
+            // Insertar en el modal (ajusta según tu estructura)
+            const modalBody = modal.querySelector('.modal-body-centrado');
+            if (modalBody) {
+                modalBody.insertAdjacentHTML('beforeend', seccionNeto);
+            }
+        }
+    }
+    
     document.body.appendChild(modal);
     calculoActual = resultado;
     
@@ -5153,3 +5603,4 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
