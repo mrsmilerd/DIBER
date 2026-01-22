@@ -4133,8 +4133,9 @@ async getTrafficDataConRadioAdaptativo(radioKm) {
         radioUsado: radioAdaptativo
     };
 }
+}
 
-// ✅ FUNCIÓN DE INICIALIZACIÓN DEL SISTEMA DE TRÁFICO
+    // ✅ FUNCIÓN DE INICIALIZACIÓN DEL SISTEMA DE TRÁFICO
 async function inicializarSistemaTraficoCompleto() {
     console.log('🚗 Inicializando sistema de tráfico en tiempo real...');
     
@@ -4164,7 +4165,7 @@ async function inicializarSistemaTraficoCompleto() {
         return false;
     }
 }
-
+    
 // =============================================
 // CONFIGURACIÓN DE EVENT LISTENERS
 // =============================================
@@ -5565,5 +5566,6 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
