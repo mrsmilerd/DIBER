@@ -6113,15 +6113,18 @@ select:focus-visible {
     box-sizing: border-box;
 }
 
+/* ✅ CORRECCIÓN: Asegurar que SIEMPRE sean 4 elementos visibles */
 .estadistica-item {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     padding: 1rem 0.75rem;
     background: var(--light-grey);
     border-radius: 10px;
     text-align: center;
     box-sizing: border-box;
+    min-height: 90px;
 }
 
 .estadistica-valor {
@@ -6363,15 +6366,26 @@ select:focus-visible {
         padding: 1rem !important;
     }
     
-    /* Estadísticas - 2 columnas en móvil */
+    /* ✅ ESTADÍSTICAS - FORZAR 2x2 para mostrar los 4 elementos */
     .estadisticas-grid {
+        display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
+        grid-template-rows: repeat(2, 1fr) !important;
         gap: 0.5rem !important;
     }
     
     .estadistica-item {
         padding: 0.75rem 0.5rem !important;
+        min-height: 80px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
     }
+    
+    .estadistica-item:nth-child(1) { grid-column: 1; grid-row: 1; }
+    .estadistica-item:nth-child(2) { grid-column: 2; grid-row: 1; }
+    .estadistica-item:nth-child(3) { grid-column: 1; grid-row: 2; }
+    .estadistica-item:nth-child(4) { grid-column: 2; grid-row: 2; }
     
     .estadistica-valor {
         font-size: 1.3em !important;
@@ -6535,16 +6549,40 @@ select:focus-visible {
         margin: 8px 0 !important;
     }
     
-    /* Forzar estadísticas a 2 columnas */
+    /* ✅ FORZAR estadísticas a 2x2 - IMPORTANTE */
     .estadisticas-grid {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
+        grid-template-rows: repeat(2, 1fr) !important;
         gap: 8px !important;
+        width: 100% !important;
     }
     
     .estadistica-item {
         padding: 12px 8px !important;
-        min-height: 70px !important;
+        min-height: 75px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
+    /* Posicionamiento explícito */
+    .estadistica-item:nth-child(1) { 
+        grid-column: 1 / 2; 
+        grid-row: 1 / 2; 
+    }
+    .estadistica-item:nth-child(2) { 
+        grid-column: 2 / 3; 
+        grid-row: 1 / 2; 
+    }
+    .estadistica-item:nth-child(3) { 
+        grid-column: 1 / 2; 
+        grid-row: 2 / 3; 
+    }
+    .estadistica-item:nth-child(4) { 
+        grid-column: 2 / 3; 
+        grid-row: 2 / 3; 
     }
     
     /* Métricas a 1 columna */
@@ -6637,5 +6675,73 @@ select:focus-visible {
     
     .metricas-principales-grid {
         grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* ============================================= */
+/* CORRECCIONES ADICIONALES PARA MÓVILES */
+/* ============================================= */
+
+@media (max-width: 480px) {
+    /* Asegurar que el contenedor principal no desborde */
+    #tab-resumen {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Contenedor de estadísticas */
+    .estadisticas-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0.75rem !important;
+        box-sizing: border-box !important;
+    }
+    
+    .estadisticas-container h3 {
+        font-size: 1em !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    /* Meta diaria header */
+    #meta-diaria-header {
+        font-size: 0.9em !important;
+        padding: 0.5rem !important;
+    }
+    
+    /* Asegurar que nada tenga width fijo mayor a 100% */
+    .meta-mensual-premium,
+    .rendimiento-premium,
+    .meta-diaria-premium {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Evitar que los textos largos rompan el layout */
+    .estadistica-valor,
+    .metrica-valor {
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+}
+
+/* Específico para pantallas muy pequeñas */
+@media (max-width: 360px) {
+    .estadisticas-grid {
+        gap: 6px !important;
+    }
+    
+    .estadistica-item {
+        padding: 10px 6px !important;
+        min-height: 70px !important;
+    }
+    
+    .estadistica-valor {
+        font-size: 1.2em !important;
+    }
+    
+    .estadistica-label {
+        font-size: 0.7em !important;
     }
 }
