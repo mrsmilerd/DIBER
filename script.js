@@ -3752,14 +3752,6 @@ function mostrarResultadoRapido(resultado) {
             cerrarModalRapido();
         }
     });
-    
-    // Auto-cerrar después de 15 segundos si no se decide
-    setTimeout(() => {
-        if (document.body.contains(modal)) {
-            cerrarModalRapido();
-            mostrarStatus('⏰ Modal cerrado por tiempo', 'info');
-        }
-    }, 15000);
 }
 
 function cerrarModalRapido() {
@@ -5564,6 +5556,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
