@@ -3646,95 +3646,99 @@ function mostrarResultadoRapido(resultado) {
     modal.className = 'modal-centrado-elegante';
     
     // Determinar clase de rentabilidad
-    const claseRentabilidad = resultado.rentabilidad || 'oportunidad';
-    
-    // ✅ SOLO LO ESENCIAL: ¿Cuánto gano por minuto?
-    const gananciaPorMinuto = resultado.gananciaPorMinuto || 0;
-    const gananciaPorKm = resultado.gananciaPorKm || (resultado.tarifa / resultado.distancia) || 0;
-    
-    // ✅ SOLO LO ESENCIAL: ¿Es rentable según MIS umbrales?
     const esRentable = resultado.rentabilidad === 'rentable';
     const esOportunidad = resultado.rentabilidad === 'oportunidad';
     
-    // ✅ TEXTO DECISIVO
-    let textoDecision = '';
-    let colorDecision = '';
+    // Colores según rentabilidad
+    const colorPrincipal = esRentable ? '#10B981' : esOportunidad ? '#F59E0B' : '#EF4444';
+    const colorFondo = esRentable ? 'rgba(16, 185, 129, 0.1)' : esOportunidad ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+    const colorBorde = esRentable ? 'rgba(16, 185, 129, 0.3)' : esOportunidad ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)';
     
-    if (esRentable) {
-        textoDecision = '✅ ACEPTAR - RENTABLE';
-        colorDecision = '#4CAF50';
-    } else if (esOportunidad) {
-        textoDecision = '⚠️ ACEPTAR - OPORTUNIDAD';
-        colorDecision = '#FF9800';
-    } else {
-        textoDecision = '❌ RECHAZAR - NO RENTABLE';
-        colorDecision = '#f44336';
-    }
+    // Texto de decisión
+    const textoDecision = esRentable ? 'ACEPTAR - RENTABLE' : esOportunidad ? 'CONSIDERAR - OPORTUNIDAD' : 'RECHAZAR - NO RENTABLE';
     
+    // Icono
+    const icono = esRentable ? '✓' : esOportunidad ? '⚠' : '✗';
+    
+    // Métricas clave
+    const gananciaPorMinuto = resultado.gananciaPorMinuto || 0;
+    const gananciaPorKm = resultado.gananciaPorKm || (resultado.tarifa / resultado.distancia) || 0;
+    
+    // Calcular calidad de cada métrica
+    const colorMinuto = gananciaPorMinuto >= (perfilActual?.umbralMinutoRentable || 6) ? '#10B981' : 
+                       gananciaPorMinuto >= (perfilActual?.umbralMinutoOportunidad || 5) ? '#F59E0B' : '#EF4444';
+    
+    const colorKm = gananciaPorKm >= (perfilActual?.umbralKmRentable || 25) ? '#10B981' : 
+                   gananciaPorKm >= (perfilActual?.umbralKmOportunidad || 23) ? '#F59E0B' : '#EF4444';
+
     modal.innerHTML = `
-        <div class="modal-contenido-centrado ${claseRentabilidad}" style="padding: 20px; max-width: 350px;">
-            <!-- TITULO DECISIVO -->
-            <div style="text-align: center; margin-bottom: 20px;">
-                <div style="font-size: 1.8em; font-weight: bold; margin-bottom: 5px; color: ${colorDecision}">
-                    ${resultado.emoji} ${textoDecision}
+        <div class="modal-contenido-centrado" style="background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); padding: 0; overflow: hidden; max-width: 360px; width: 90vw;">
+            <!-- CABECERA CON COLOR -->
+            <div style="background: ${colorFondo}; border-bottom: 1px solid ${colorBorde}; padding: 24px; text-align: center;">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: ${colorPrincipal}; color: white; border-radius: 50%; font-size: 24px; margin-bottom: 12px;">
+                    ${icono}
                 </div>
-                <div style="font-size: 1em; opacity: 0.8;">
-                    ${formatearMoneda(resultado.tarifa)} • ${resultado.minutos}min • ${resultado.distancia}km
+                <div style="font-size: 20px; font-weight: 600; color: ${colorPrincipal}; margin-bottom: 4px;">
+                    ${textoDecision}
+                </div>
+                <div style="font-size: 15px; color: #6B7280; font-weight: 500;">
+                    ${formatearMoneda(resultado.tarifa)} • ${resultado.minutos} min • ${resultado.distancia} km
                 </div>
             </div>
             
-            <!-- SOLO 2 MÉTRICAS ESENCIALES -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                <div style="text-align: center; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 10px;">
-                    <div style="font-size: 1.3em; font-weight: bold; color: ${gananciaPorMinuto >= (perfilActual?.umbralMinutoRentable || 6) ? '#4CAF50' : gananciaPorMinuto >= (perfilActual?.umbralMinutoOportunidad || 5) ? '#FF9800' : '#f44336'}">
-                        ${formatearMoneda(gananciaPorMinuto)}/min
+            <!-- MÉTRICAS PRINCIPALES -->
+            <div style="padding: 24px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 14px; color: #6B7280; margin-bottom: 6px; font-weight: 500;">POR MINUTO</div>
+                        <div style="font-size: 22px; font-weight: 700; color: ${colorMinuto};">${formatearMoneda(gananciaPorMinuto)}</div>
+                        <div style="height: 4px; background: #E5E7EB; border-radius: 2px; margin-top: 8px; overflow: hidden;">
+                            <div style="height: 100%; background: ${colorMinuto}; width: ${Math.min(100, (gananciaPorMinuto / (perfilActual?.umbralMinutoRentable || 6)) * 100)}%;"></div>
+                        </div>
                     </div>
-                    <div style="font-size: 0.9em; opacity: 0.8; margin-top: 5px;">
-                        Por minuto
+                    
+                    <div style="text-align: center;">
+                        <div style="font-size: 14px; color: #6B7280; margin-bottom: 6px; font-weight: 500;">POR KILÓMETRO</div>
+                        <div style="font-size: 22px; font-weight: 700; color: ${colorKm};">${formatearMoneda(gananciaPorKm)}</div>
+                        <div style="height: 4px; background: #E5E7EB; border-radius: 2px; margin-top: 8px; overflow: hidden;">
+                            <div style="height: 100%; background: ${colorKm}; width: ${Math.min(100, (gananciaPorKm / (perfilActual?.umbralKmRentable || 25)) * 100)}%;"></div>
+                        </div>
                     </div>
                 </div>
                 
-                <div style="text-align: center; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 10px;">
-                    <div style="font-size: 1.3em; font-weight: bold; color: ${gananciaPorKm >= (perfilActual?.umbralKmRentable || 25) ? '#4CAF50' : gananciaPorKm >= (perfilActual?.umbralKmOportunidad || 23) ? '#FF9800' : '#f44336'}">
-                        ${formatearMoneda(gananciaPorKm)}/km
-                    </div>
-                    <div style="font-size: 0.9em; opacity: 0.8; margin-top: 5px;">
-                        Por kilómetro
+                <!-- INFORMACIÓN ADICIONAL MINIMALISTA -->
+                ${resultado.tiempoAjustado && resultado.tiempoAjustado !== resultado.minutos ? `
+                <div style="background: #FFFBEB; border: 1px solid #FEF3C7; border-radius: 10px; padding: 12px; margin-bottom: 16px; text-align: center;">
+                    <div style="font-size: 13px; color: #92400E; font-weight: 500;">
+                        Con tráfico: ${resultado.tiempoAjustado} min (+${Math.round(((resultado.tiempoAjustado / resultado.minutos) - 1) * 100)}%)
                     </div>
                 </div>
+                ` : ''}
+                
+                ${resultado.netoPorMinuto !== undefined ? `
+                <div style="background: #ECFDF5; border: 1px solid #D1FAE5; border-radius: 10px; padding: 12px; margin-bottom: 16px; text-align: center;">
+                    <div style="font-size: 13px; color: #047857; font-weight: 500;">
+                        ${resultado.netoPorMinuto >= 8 ? 'Excelente' : resultado.netoPorMinuto >= 6 ? 'Bueno' : resultado.netoPorMinuto >= 4 ? 'Regular' : 'Bajo'} • 
+                        ${formatearMoneda(resultado.netoPorMinuto)}/min neto
+                    </div>
+                </div>
+                ` : ''}
             </div>
             
-            <!-- SOLO INFORMACIÓN CRÍTICA ADICIONAL -->
-            ${resultado.tiempoAjustado && resultado.tiempoAjustado !== resultado.minutos ? `
-            <div style="text-align: center; margin-bottom: 15px; padding: 10px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeaa7;">
-                <span style="font-size: 0.9em;">⚠️ Con tráfico: ${resultado.tiempoAjustado} min</span>
-            </div>
-            ` : ''}
-            
-            ${resultado.netoPorMinuto !== undefined && resultado.rentabilidadReal ? `
-            <div style="text-align: center; margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px;">
-                <span style="font-size: 0.9em; font-weight: bold; color: #${resultado.rentabilidadReal.color}">
-                    ${resultado.rentabilidadReal.emoji} ${resultado.rentabilidadReal.texto} - ${formatearMoneda(resultado.netoPorMinuto)}/min neto
-                </span>
-            </div>
-            ` : ''}
-            
-            <!-- BOTONES GRANDES Y CLAROS -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <!-- BOTONES PROFESIONALES -->
+            <div style="padding: 20px 24px 24px; background: #F9FAFB; border-top: 1px solid #E5E7EB; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <button onclick="procesarViajeRapido(false)" 
-                        style="padding: 15px; background: #f44336; color: white; border: none; border-radius: 10px; font-size: 1.1em; font-weight: bold; cursor: pointer;">
-                    ❌ RECHAZAR
+                        style="padding: 14px; background: white; color: #374151; border: 1px solid #D1D5DB; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                        onmouseover="this.style.backgroundColor='#FEF2F2'; this.style.borderColor='#EF4444';"
+                        onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#D1D5DB';">
+                    Rechazar
                 </button>
                 <button onclick="iniciarCronometroDesdeModal()" 
-                        style="padding: 15px; background: ${esRentable ? '#4CAF50' : esOportunidad ? '#FF9800' : '#757575'}; color: white; border: none; border-radius: 10px; font-size: 1.1em; font-weight: bold; cursor: pointer;">
-                    ✅ ACEPTAR
+                        style="padding: 14px; background: ${colorPrincipal}; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
+                        onmouseover="this.style.opacity='0.9'; this.style.transform='translateY(-1px)';"
+                        onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)';">
+                    Aceptar Viaje
                 </button>
-            </div>
-            
-            <!-- TEXTO PEQUEÑO DE UMBRALES -->
-            <div style="text-align: center; margin-top: 15px; font-size: 0.8em; opacity: 0.6;">
-                <div>Tu umbral: ${formatearMoneda(perfilActual?.umbralMinutoRentable || 6)}/min • ${formatearMoneda(perfilActual?.umbralKmRentable || 25)}/km</div>
-                <div>${new Date().toLocaleTimeString('es-DO', {hour: '2-digit', minute:'2-digit'})}</div>
             </div>
         </div>
     `;
@@ -3748,15 +3752,14 @@ function mostrarResultadoRapido(resultado) {
             cerrarModalRapido();
         }
     });
-}
-
-function iniciarCronometroDesdeModal() {
-    if (calculoActual) {
-        iniciarCronometroConViaje(calculoActual);
-        cerrarModalRapido();
-    } else {
-        mostrarError('No hay datos del viaje. Por favor, calcula nuevamente.');
-    }
+    
+    // Auto-cerrar después de 15 segundos si no se decide
+    setTimeout(() => {
+        if (document.body.contains(modal)) {
+            cerrarModalRapido();
+            mostrarStatus('⏰ Modal cerrado por tiempo', 'info');
+        }
+    }, 15000);
 }
 
 function cerrarModalRapido() {
@@ -5561,6 +5564,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
