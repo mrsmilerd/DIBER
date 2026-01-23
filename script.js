@@ -3652,16 +3652,6 @@ function mostrarResultadoRapido(resultado) {
     let infoTrafico = '';
     let infoUbicacion = '';
     
-    if (realTimeTraffic && realTimeTraffic.initialized) {
-        infoUbicacion = `
-            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0; color: #666; font-size: 0.9em;">
-                <span style="background: #e8f5e9; padding: 4px 10px; border-radius: 12px; border: 1px solid #c8e6c9;">
-                    📍 Ubicación activa
-                </span>
-            </div>
-        `;
-    }
-    
     if (resultado.tiempoAjustado && resultado.tiempoAjustado !== resultado.minutos) {
         const diferenciaPorcentaje = Math.round(((resultado.tiempoAjustado / resultado.minutos) - 1) * 100);
         infoTrafico = `
@@ -3693,43 +3683,11 @@ function mostrarResultadoRapido(resultado) {
             estadoKm = '❌ Malo';
             colorKm = '#f44336';
         }
-        
-        infoKm = `
-            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0;">
-                <span style="background: ${colorKm}10; padding: 4px 10px; border-radius: 12px; border: 1px solid ${colorKm}30; color: ${colorKm};">
-                    📏 Por km: ${formatearMoneda(gananciaPorKm)} (${estadoKm})
-                </span>
-            </div>
-        `;
-    }
     
     // ✅ ANÁLISIS NETO SI ESTÁ DISPONIBLE
     let seccionNeto = '';
     if (resultado.netoPorMinuto !== undefined && resultado.rentabilidadReal) {
         const impactoMeta = calcularImpactoEnMeta(resultado.netoPorMinuto);
-        
-        seccionNeto = `
-            <div style="background: rgba(0,0,0,0.05); padding: 12px; border-radius: 10px; margin: 12px 0; border-left: 3px solid #${resultado.rentabilidadReal.color}">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                    <span style="font-weight: 600; font-size: 0.95em;">💰 ${resultado.rentabilidadReal.texto}</span>
-                    <span style="font-size: 0.85em; font-weight: 600; color: #${resultado.rentabilidadReal.color}">
-                        ${formatearMoneda(resultado.netoPorMinuto)}/min neto
-                    </span>
-                </div>
-                <div style="font-size: 0.85em; opacity: 0.9; display: flex; align-items: center; gap: 5px;">
-                    ${impactoMeta.emoji} <span>${impactoMeta.texto}</span>
-                </div>
-            </div>
-        `;
-    }
-    
-    modal.innerHTML = `
-        <div class="modal-contenido-centrado ${claseRentabilidad}">
-            <!-- HEADER -->
-            <div class="modal-header-centrado">
-                <div class="modal-titulo">🎯 ${resultado.texto}</div>
-                <div class="modal-subtitulo">${resultado.emoji} Análisis completo del viaje</div>
-            </div>
 
             ${infoUbicacion}
             ${infoTrafico}
@@ -3776,49 +3734,6 @@ function mostrarResultadoRapido(resultado) {
                         <div class="metrica-label-centrado">Distancia</div>
                     </div>
                 </div>
-
-                <!-- RESUMEN DE RENTABILIDAD -->
-                <div style="background: rgba(0,0,0,0.05); padding: 12px; border-radius: 10px; margin-top: 15px;">
-                    <div style="font-weight: 600; margin-bottom: 8px; color: #333;">📊 Resumen de rentabilidad:</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em;">
-                        <div>
-                            <div style="opacity: 0.8;">Por minuto:</div>
-                            <div style="font-weight: 600; color: ${resultado.gananciaPorMinuto >= (perfilActual?.umbralMinutoRentable || 6) ? '#4CAF50' : resultado.gananciaPorMinuto >= (perfilActual?.umbralMinutoOportunidad || 5) ? '#FF9800' : '#f44336'}">
-                                ${formatearMoneda(resultado.gananciaPorMinuto)}/min
-                                <span style="font-size: 0.8em;">
-                                    (${resultado.gananciaPorMinuto >= (perfilActual?.umbralMinutoRentable || 6) ? '✅' : resultado.gananciaPorMinuto >= (perfilActual?.umbralMinutoOportunidad || 5) ? '⚠️' : '❌'})
-                                </span>
-                            </div>
-                        </div>
-                        <div>
-                            <div style="opacity: 0.8;">Por km:</div>
-                            <div style="font-weight: 600; color: ${(resultado.gananciaPorKm || (resultado.tarifa / resultado.distancia)) >= (perfilActual?.umbralKmRentable || 25) ? '#4CAF50' : (resultado.gananciaPorKm || (resultado.tarifa / resultado.distancia)) >= (perfilActual?.umbralKmOportunidad || 23) ? '#FF9800' : '#f44336'}">
-                                ${formatearMoneda(resultado.gananciaPorKm || (resultado.tarifa / resultado.distancia))}/km
-                                <span style="font-size: 0.8em;">
-                                    (${(resultado.gananciaPorKm || (resultado.tarifa / resultado.distancia)) >= (perfilActual?.umbralKmRentable || 25) ? '✅' : (resultado.gananciaPorKm || (resultado.tarifa / resultado.distancia)) >= (perfilActual?.umbralKmOportunidad || 23) ? '⚠️' : '❌'})
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                ${seccionNeto}
-
-                <!-- INFO DE TRÁFICO SI HAY -->
-                ${resultado.trafficInsights ? `
-                <div style="background: rgba(33, 150, 243, 0.1); padding: 12px; border-radius: 10px; margin-top: 10px; border-left: 3px solid #2196F3;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                        <span style="font-weight: 600; color: #2196F3;">🚗 Análisis de Tráfico</span>
-                        <span style="font-size: 0.8em; background: rgba(33, 150, 243, 0.2); padding: 3px 8px; border-radius: 10px;">
-                            Radio: ${resultado.trafficInsights.radius || 10}km
-                        </span>
-                    </div>
-                    <div style="font-size: 0.9em; opacity: 0.9;">
-                        ${resultado.trafficInsights.message || 'Análisis de tráfico local aplicado'}
-                    </div>
-                </div>
-                ` : ''}
-            </div>
 
             <!-- BOTONES DE ACCIÓN -->
             <div class="modal-actions-centrado">
@@ -5656,6 +5571,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
