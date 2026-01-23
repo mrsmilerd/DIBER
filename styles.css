@@ -6078,3 +6078,417 @@ select:focus-visible {
     position: static !important;
     transform: none !important;
 }
+
+
+/* ============================================= */
+/* DISEÑO RESPONSIVO PARA PESTAÑA RESUMEN */
+/* ============================================= */
+
+/* Contenedor principal de resumen con grid responsivo */
+.resumen-layout {
+    display: grid;
+    gap: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Estadísticas del día - Grid responsivo */
+.estadisticas-container {
+    box-sizing: border-box;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.estadisticas-container h3 {
+    margin-bottom: 1rem;
+    font-size: 1.1em;
+}
+
+.estadisticas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+    box-sizing: border-box;
+}
+
+.estadistica-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 0.75rem;
+    background: var(--light-grey);
+    border-radius: 10px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.estadistica-valor {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--primary-blue);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.estadistica-label {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Sección de rendimiento mejorada */
+.rendimiento-section-mejorada {
+    box-sizing: border-box;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    margin-top: 1rem;
+}
+
+.rendimiento-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.rendimiento-header h3 {
+    font-size: 1.1em;
+    margin: 0;
+}
+
+.eficiencia-global {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--light-grey);
+    border-radius: 8px;
+    font-size: 0.9em;
+}
+
+.eficiencia-icon {
+    font-size: 1.2em;
+}
+
+/* Métricas principales en grid */
+.metricas-principales-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    box-sizing: border-box;
+}
+
+.metrica-principal {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--light-grey);
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.metrica-icono,
+.metica-icono {
+    font-size: 1.8em;
+    flex-shrink: 0;
+}
+
+.metrica-contenido {
+    flex: 1;
+    min-width: 0;
+}
+
+.metrica-contenido .metrica-valor {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--primary-blue);
+    display: block;
+    margin-bottom: 0.25rem;
+    word-break: break-word;
+}
+
+.metrica-contenido .metrica-label {
+    font-size: 0.85em;
+    color: var(--text-primary);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.metrica-contenido .metrica-subtexto {
+    font-size: 0.75em;
+    color: var(--text-secondary);
+}
+
+/* Progreso de eficiencia */
+.progreso-eficiencia {
+    box-sizing: border-box;
+    padding: 1rem;
+    background: var(--white);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.progreso-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.progreso-label {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.progreso-porcentaje {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+.progreso-barra {
+    width: 100%;
+    height: 12px;
+    background: var(--light-grey);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+    box-sizing: border-box;
+}
+
+.progreso-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: 6px;
+    transition: width 0.4s ease;
+}
+
+.progreso-marcadores {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    padding: 0 2px;
+}
+
+/* Historial - Control de desbordamiento */
+.history-section {
+    box-sizing: border-box;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.history-list {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-bottom: 1rem;
+    box-sizing: border-box;
+    padding-right: 0.5rem;
+}
+
+.history-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.history-actions button {
+    flex: 1;
+    min-width: 120px;
+    max-width: 200px;
+}
+
+/* ============================================= */
+/* MEDIA QUERIES - RESPONSIVE DESIGN */
+/* ============================================= */
+
+/* Pantallas grandes (PC/Laptop) - 2 columnas */
+@media (min-width: 769px) {
+    .screen {
+        max-width: 900px;
+    }
+    
+    .estadisticas-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .metricas-principales-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Tablets - Layout intermedio */
+@media (min-width: 481px) and (max-width: 768px) {
+    .estadisticas-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .metricas-principales-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .rendimiento-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .eficiencia-global {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Móviles - Compactación máxima */
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        padding: 1rem;
+    }
+    
+    /* Estadísticas - 2 columnas en móvil */
+    .estadisticas-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .estadistica-item {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .estadistica-valor {
+        font-size: 1.3em;
+    }
+    
+    .estadistica-label {
+        font-size: 0.75em;
+    }
+    
+    /* Métricas - 1 columna en móvil */
+    .metricas-principales-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .metrica-principal {
+        padding: 0.75rem;
+    }
+    
+    .metrica-icono,
+    .metica-icono {
+        font-size: 1.5em;
+    }
+    
+    .metrica-contenido .metrica-valor {
+        font-size: 1.1em;
+    }
+    
+    /* Rendimiento - Compactar header */
+    .rendimiento-section-mejorada {
+        padding: 0.75rem;
+        margin-top: 0.75rem;
+    }
+    
+    .rendimiento-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .rendimiento-header h3 {
+        font-size: 1em;
+    }
+    
+    .eficiencia-global {
+        width: 100%;
+        justify-content: center;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85em;
+    }
+    
+    /* Progreso - Reducir espacios */
+    .progreso-eficiencia {
+        padding: 0.75rem;
+    }
+    
+    .progreso-barra {
+        height: 10px;
+    }
+    
+    /* Historial - Altura reducida en móvil */
+    .history-list {
+        max-height: 300px;
+    }
+    
+    .history-actions {
+        gap: 0.5rem;
+    }
+    
+    .history-actions button {
+        min-width: 100px;
+        font-size: 0.85em;
+        padding: 0.6rem 0.75rem;
+    }
+    
+    /* Tabs - Más compactos en móvil */
+    .tab-button {
+        padding: 10px 6px;
+        font-size: 0.75em;
+        min-height: 56px;
+    }
+    
+    .tab-icon {
+        font-size: 1.2em;
+    }
+    
+    .tab-text {
+        font-size: 0.7em;
+    }
+}
+
+/* Móviles muy pequeños - Ultra compacto */
+@media (max-width: 360px) {
+    .estadisticas-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+    }
+    
+    .estadistica-item {
+        padding: 0.6rem 0.4rem;
+    }
+    
+    .estadistica-valor {
+        font-size: 1.2em;
+    }
+    
+    .estadistica-label {
+        font-size: 0.7em;
+    }
+    
+    .metrica-principal {
+        padding: 0.6rem;
+        gap: 0.5rem;
+    }
+    
+    .metrica-icono,
+    .metica-icono {
+        font-size: 1.3em;
+    }
+}
