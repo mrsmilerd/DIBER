@@ -3412,6 +3412,7 @@ function cerrarSyncPanel() {
         fecha: hoy
     });
 }
+}
 
 // =============================================
 // NUEVO: BARRA DE META DIARIA
@@ -5540,6 +5541,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
