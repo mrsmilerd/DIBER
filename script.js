@@ -3248,7 +3248,7 @@ function actualizarPanelMetas(gananciaHoy, tiempoHoy, distanciaHoy, totalViajes,
     
     // Porcentajes
     const porcentajeDiario = Math.min(100, (gananciaHoy / META_DIARIA) * 100);
-    const porcentajeMensual = Math.min(100, (gananciaMensual / META_MENSUAL) * 100);
+    const porcentajeMensual = Math.min(100, (netoMensual / META_MENSUAL) * 100); // ✅ CAMBIO: Usar NETO
     const porcentajeNetoMensual = Math.min(100, (netoMensual / META_MENSUAL) * 100);
     
     // Calcular tiempo formateado
@@ -3265,7 +3265,7 @@ function actualizarPanelMetas(gananciaHoy, tiempoHoy, distanciaHoy, totalViajes,
     // Días restantes y promedio necesario
     const diaActual = new Date().getDate();
     const diasRestantes = Math.max(0, 30 - diaActual);
-    const promedioDiarioNecesario = diasRestantes > 0 ? (META_MENSUAL - gananciaMensual) / diasRestantes : 0;
+    const promedioDiarioNecesario = diasRestantes > 0 ? (META_MENSUAL - netoMensual) / diasRestantes : 0; // ✅ CAMBIO: Usar NETO
     
     // Animación de olas en la barra
     const waveAnimation = `
@@ -3407,7 +3407,7 @@ function actualizarPanelMetas(gananciaHoy, tiempoHoy, distanciaHoy, totalViajes,
                         <div style="font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #3B82F6, #60A5FA); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px;">
                             ${porcentajeMensual.toFixed(1)}%
                         </div>
-                        <div style="font-size: 14px; color: #3B82F6; font-weight: 600;">${formatearMoneda(gananciaMensual)} / ${formatearMoneda(META_MENSUAL)}</div>
+                        <div style="font-size: 14px; color: #3B82F6; font-weight: 600;">${formatearMoneda(netoMensual)} / ${formatearMoneda(META_MENSUAL)}</div>
                     </div>
                 </div>
                 
@@ -3473,7 +3473,7 @@ function actualizarPanelMetas(gananciaHoy, tiempoHoy, distanciaHoy, totalViajes,
                         <div>
                             <div style="font-size: 14px; color: #3B82F6; font-weight: 600; margin-bottom: 4px;">📈 PRONÓSTICO DEL MES</div>
                             <div style="font-size: 18px; font-weight: 700; color: #111827;">
-                                ${gananciaMensual >= META_MENSUAL ? '¡META SUPERADA!' : `Proyectado: ${formatearMoneda(gananciaMensual + (promedioDiarioNecesario * diasRestantes))}`}
+                                ${netoMensual >= META_MENSUAL ? '¡META SUPERADA!' : `Proyectado: ${formatearMoneda(netoMensual + (promedioDiarioNecesario * diasRestantes))}`}
                             </div>
                         </div>
                         <div style="text-align: right;">
