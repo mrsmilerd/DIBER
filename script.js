@@ -3199,34 +3199,214 @@ function actualizarEstadisticas() {
         return item.rentable === true || item.rentabilidad === 'rentable';
     }).length;
     
-    elementos['stats-viajes'].textContent = totalViajes;
-    elementos['stats-ganancia'].textContent = formatearMoneda(gananciaTotal);
+    // ✅ ACTUALIZAR PANEL DE METAS
+    actualizarPanelMetas(gananciaTotal, tiempoTotal, distanciaTotal, totalViajes, viajesRentables);
     
-    if (elementos['stats-tiempo']) {
-        // ✅ CORREGIDO: Simplificar decimales
-        elementos['stats-tiempo'].textContent = `${tiempoTotal.toFixed(1)}min`;
+    console.log('📈 Estadísticas de HOY actualizadas');
+}
+
+// =============================================
+// NUEVO: PANEL DE METAS VISUAL
+// =============================================
+function actualizarPanelMetas(gananciaHoy, tiempoHoy, distanciaHoy, totalViajes, viajesRentables) {
+    const resumenContainer = document.getElementById('tab-resumen') || document.querySelector('.tab-content#tab-resumen');
+    if (!resumenContainer) {
+        console.error('❌ No se encontró contenedor de resumen');
+        return;
     }
     
-    if (elementos['stats-rentables']) {
-        elementos['stats-rentables'].textContent = viajesRentables;
-    }
+    // Calcular metas
+    const META_DIARIA = 1455; // 32,000 ÷ 22 días
+    const META_MENSUAL = 32000;
     
-    const gananciaPorHora = tiempoTotal > 0 ? (gananciaTotal / tiempoTotal) * 60 : 0;
-    const viajePromedio = totalViajes > 0 ? gananciaTotal / totalViajes : 0;
+    // Obtener ganancia mensual
+    const primerDiaMes = new Date();
+    primerDiaMes.setDate(1);
+    primerDiaMes.setHours(0, 0, 0, 0);
+    
+    const gananciaMensual = historial
+        .filter(item => item.aceptado && new Date(item.timestamp) >= primerDiaMes)
+        .reduce((sum, item) => sum + (item.ganancia || item.tarifa || 0), 0);
+    
+    // Porcentajes
+    const porcentajeDiario = Math.min(100, (gananciaHoy / META_DIARIA) * 100);
+    const porcentajeMensual = Math.min(100, (gananciaMensual / META_MENSUAL) * 100);
+    
+    // Calcular tiempo formateado
+    const horas = Math.floor(tiempoHoy / 60);
+    const minutos = Math.floor(tiempoHoy % 60);
+    const tiempoFormateado = `${horas}h ${minutos}m`;
+    
+    // Eficiencia
     const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
     
-    actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia);
-
-    actualizarBarraMetaDiaria(gananciaTotal, tiempoTotal, distanciaTotal);
+    // Ritmo actual
+    const ritmoPorHora = tiempoHoy > 0 ? (gananciaHoy / tiempoHoy) * 60 : 0;
     
-    console.log('📈 Estadísticas de HOY actualizadas:', {
-        totalViajes,
-        viajesRentables,
-        eficiencia: `${eficiencia.toFixed(1)}%`,
-        gananciaTotal: formatearMoneda(gananciaTotal),
-        gananciaPorHora: formatearMoneda(gananciaPorHora),
-        distanciaTotal: `${distanciaTotal} km`,
-        fecha: hoy
+    // Actualizar HTML
+    resumenContainer.innerHTML = `
+        <div class="resumen-container" style="padding: 20px; max-width: 800px; margin: 0 auto;">
+            <!-- TÍTULO -->
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 8px;">🎯 Panel de Metas</h1>
+                <p style="color: #6B7280; font-size: 14px;">Seguimiento de tu progreso hacia RD$32,000 mensuales</p>
+            </div>
+            
+            <!-- META DIARIA -->
+            <div class="meta-card" style="background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #E5E7EB;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <h2 style="font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 4px;">Meta Diaria</h2>
+                        <p style="color: #6B7280; font-size: 14px;">Objetivo: ${formatearMoneda(META_DIARIA)}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 24px; font-weight: 700; color: #10B981;">${porcentajeDiario.toFixed(1)}%</div>
+                        <div style="font-size: 14px; color: #6B7280;">Completado</div>
+                    </div>
+                </div>
+                
+                <!-- BARRA DE PROGRESO -->
+                <div style="height: 12px; background: #E5E7EB; border-radius: 6px; overflow: hidden; margin-bottom: 16px;">
+                    <div style="height: 100%; background: linear-gradient(90deg, #10B981, #34D399); width: ${porcentajeDiario}%; border-radius: 6px; transition: width 0.5s ease;"></div>
+                </div>
+                
+                <!-- ESTADÍSTICAS DIARIAS -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 20px; font-weight: 700; color: #111827;">${formatearMoneda(gananciaHoy)}</div>
+                        <div style="font-size: 12px; color: #6B7280; margin-top: 4px;">Ganancia Hoy</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 20px; font-weight: 700; color: #111827;">${tiempoFormateado}</div>
+                        <div style="font-size: 12px; color: #6B7280; margin-top: 4px;">Tiempo</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 20px; font-weight: 700; color: #111827;">${totalViajes}</div>
+                        <div style="font-size: 12px; color: #6B7280; margin-top: 4px;">Viajes</div>
+                    </div>
+                </div>
+                
+                <!-- RITMO ACTUAL -->
+                ${tiempoHoy > 0 ? `
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #E5E7EB;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; color: #6B7280; margin-bottom: 4px;">Ritmo Actual</div>
+                            <div style="font-size: 18px; font-weight: 600; color: ${ritmoPorHora >= (META_DIARIA/8) ? '#10B981' : '#F59E0B'};">${formatearMoneda(ritmoPorHora)}/h</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 14px; color: #6B7280; margin-bottom: 4px;">Necesario para meta</div>
+                            <div style="font-size: 18px; font-weight: 600; color: #6B7280;">${formatearMoneda(META_DIARIA/8)}/h</div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            
+            <!-- META MENSUAL -->
+            <div class="meta-card" style="background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #E5E7EB;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <h2 style="font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 4px;">Meta Mensual</h2>
+                        <p style="color: #6B7280; font-size: 14px;">Objetivo: ${formatearMoneda(META_MENSUAL)}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 24px; font-weight: 700; color: #3B82F6;">${porcentajeMensual.toFixed(1)}%</div>
+                        <div style="font-size: 14px; color: #6B7280;">Completado</div>
+                    </div>
+                </div>
+                
+                <!-- BARRA DE PROGRESO -->
+                <div style="height: 12px; background: #E5E7EB; border-radius: 6px; overflow: hidden; margin-bottom: 16px;">
+                    <div style="height: 100%; background: linear-gradient(90deg, #3B82F6, #60A5FA); width: ${porcentajeMensual}%; border-radius: 6px; transition: width 0.5s ease;"></div>
+                </div>
+                
+                <!-- ESTADÍSTICAS MENSUALES -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 20px;">
+                    <div>
+                        <div style="font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 4px;">${formatearMoneda(gananciaMensual)}</div>
+                        <div style="font-size: 14px; color: #6B7280;">Ganancia del Mes</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 4px;">${formatearMoneda(META_MENSUAL - gananciaMensual)}</div>
+                        <div style="font-size: 14px; color: #6B7280;">Faltante para Meta</div>
+                    </div>
+                </div>
+                
+                <!-- DÍAS RESTANTES -->
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #E5E7EB;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; color: #6B7280; margin-bottom: 4px;">Días restantes en el mes</div>
+                            <div style="font-size: 18px; font-weight: 600; color: #111827;">${new Date().getDate()} / 30</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 14px; color: #6B7280; margin-bottom: 4px;">Promedio diario necesario</div>
+                            <div style="font-size: 18px; font-weight: 600; color: ${((META_MENSUAL - gananciaMensual) / (30 - new Date().getDate())) <= META_DIARIA ? '#10B981' : '#F59E0B'};">${formatearMoneda((META_MENSUAL - gananciaMensual) / Math.max(1, (30 - new Date().getDate())))}/día</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PANEL DE RENDIMIENTO -->
+            <div class="performance-card" style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #E5E7EB;">
+                <h2 style="font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 20px;">📊 Rendimiento</h2>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <!-- EFICIENCIA -->
+                    <div style="text-align: center; padding: 20px; background: #F9FAFB; border-radius: 12px;">
+                        <div style="font-size: 32px; font-weight: 700; color: ${eficiencia >= 80 ? '#10B981' : eficiencia >= 60 ? '#F59E0B' : '#EF4444'}; margin-bottom: 8px;">
+                            ${eficiencia.toFixed(1)}%
+                        </div>
+                        <div style="font-size: 14px; color: #6B7280;">Eficiencia</div>
+                        <div style="font-size: 12px; color: #9CA3AF; margin-top: 4px;">Viajes rentables</div>
+                    </div>
+                    
+                    <!-- DISTANCIA -->
+                    <div style="text-align: center; padding: 20px; background: #F9FAFB; border-radius: 12px;">
+                        <div style="font-size: 32px; font-weight: 700; color: #111827; margin-bottom: 8px;">
+                            ${distanciaHoy} ${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}
+                        </div>
+                        <div style="font-size: 14px; color: #6B7280;">Distancia Hoy</div>
+                        <div style="font-size: 12px; color: #9CA3AF; margin-top: 4px;">Recorrido total</div>
+                    </div>
+                </div>
+                
+                <!-- RESUMEN RÁPIDO -->
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #E5E7EB;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 12px; color: #6B7280; margin-bottom: 4px;">Viajes Rentables</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #111827;">${viajesRentables} / ${totalViajes}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #6B7280; margin-bottom: 4px;">Promedio por Viaje</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #111827;">${totalViajes > 0 ? formatearMoneda(gananciaHoy / totalViajes) : formatearMoneda(0)}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #6B7280; margin-bottom: 4px;">Tiempo Promedio</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #111827;">${totalViajes > 0 ? (tiempoHoy / totalViajes).toFixed(1) : '0'} min</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- INSPIRACIÓN -->
+            <div style="text-align: center; margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; color: white;">
+                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">${porcentajeMensual >= 100 ? '🎉 ¡META CUMPLIDA!' : '💪 ¡Tú puedes!'}</div>
+                <div style="font-size: 14px; opacity: 0.9;">
+                    ${porcentajeMensual >= 100 ? '¡Has alcanzado tu meta mensual!' : `Faltan ${formatearMoneda(META_MENSUAL - gananciaMensual)} para llegar a RD$32,000`}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    console.log('✅ Panel de metas actualizado:', {
+        gananciaHoy,
+        gananciaMensual,
+        porcentajeDiario,
+        porcentajeMensual,
+        tiempoHoy
     });
 }
 
@@ -5556,6 +5736,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
