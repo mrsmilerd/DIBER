@@ -3208,6 +3208,8 @@ function actualizarEstadisticas() {
     const eficiencia = totalViajes > 0 ? (viajesRentables / totalViajes * 100) : 0;
     
     actualizarRendimientoUnificado(gananciaPorHora, viajePromedio, distanciaTotal, eficiencia);
+
+    actualizarBarraMetaDiaria(gananciaTotal, tiempoTotal, distanciaTotal);
     
     console.log('📈 Estadísticas de HOY actualizadas:', {
         totalViajes,
@@ -3398,22 +3400,7 @@ function cerrarSyncPanel() {
         elementos.syncPanel.style.display = 'none';
     }
 }
-
-// ✅ NUEVO: BARRA DE META DIARIA
-    actualizarBarraMetaDiaria(gananciaTotal, tiempoTotal, distanciaTotal);
-    
-    console.log('📈 Estadísticas de HOY actualizadas:', {
-        totalViajes,
-        viajesRentables,
-        eficiencia: `${eficiencia.toFixed(1)}%`,
-        gananciaTotal: formatearMoneda(gananciaTotal),
-        gananciaPorHora: formatearMoneda(gananciaPorHora),
-        distanciaTotal: `${distanciaTotal} km`,
-        fecha: hoy
-    });
-}
-}
-
+   
 // =============================================
 // NUEVO: BARRA DE META DIARIA
 // =============================================
@@ -5541,6 +5528,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
