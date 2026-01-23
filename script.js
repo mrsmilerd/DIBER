@@ -1119,28 +1119,6 @@ class RouteLearningSystem {
         return parseFloat(factor.toFixed(3));
     }
 
-    // ✅ NUEVO MÉTODO: Calcular impacto relativo según radio y duración
-calcularImpactoRelativo(minutosViaje, radioKm) {
-    // ✅ Ajustar umbral de "impacto significativo" según radio y duración
-    let umbralSignificativo = 1.2; // Por defecto 20%
-    let mensajeExtra = '';
-    
-    if (radioKm <= 4 && minutosViaje <= 15) {
-        // Viajes cortos con radio pequeño: impacto más sensible
-        umbralSignificativo = 1.15; // 15% ya es significativo
-        mensajeExtra = ' | Análisis local preciso';
-    } else if (radioKm >= 8 && minutosViaje >= 30) {
-        // Viajes largos con radio grande: impacto menos sensible
-        umbralSignificativo = 1.25; // 25% para ser significativo
-        mensajeExtra = ' | Análisis de área amplia';
-    }
-    
-    return {
-        umbralSignificativo: umbralSignificativo,
-        mensaje: mensajeExtra
-    };
-}
-
     saveLearningLocal(learningData) {
         try {
             const localLearning = JSON.parse(localStorage.getItem('DIBER_route_learning') || '[]');
@@ -2774,71 +2752,52 @@ async function calcularAutomaticoConTraficoReal() {
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
     if (datosCompletos) {
-        console.log('🔄 Cálculo automático con tráfico real...');
+        console.log('🔄 Cálculo automático con tráfico...');
         
-        let trafficInsights = null;
+        let tiempoAjustado = minutos;
+        let fuente = 'estimación';
         
-        // OBTENER ANÁLISIS DE TRÁFICO EN TIEMPO REAL
+        // Solo análisis esencial de tráfico
         if (realTimeTraffic && realTimeTraffic.initialized) {
             try {
-                trafficInsights = await realTimeTraffic.analyzeTrafficInRadius();
-                console.log('📊 Insights de tráfico real (Radio adaptativo):', {
-                    radio: trafficInsights.radioUsado || trafficInsights.radius,
-                    minutosViaje: minutos,
-                    condition: trafficInsights.trafficCondition
+                const trafficImpact = await realTimeTraffic.analyzeTrafficInRadius();
+                tiempoAjustado = trafficImpact.adjustedTime;
+                fuente = 'tráfico real';
+                
+                console.log('🚗 Ajuste por tráfico:', {
+                    original: minutos,
+                    ajustado: tiempoAjustado,
+                    diferencia: `${Math.round((tiempoAjustado/minutos - 1) * 100)}%`
                 });
             } catch (error) {
-                console.log('🔄 Usando estimación conservadora de tráfico');
-                trafficInsights = realTimeTraffic.getConservativeEstimate();
+                console.log('⚠️ Usando tiempo estimado');
             }
         }
         
-        // OBTENER PREDICCIONES INTELIGENTES (tu sistema existente)
-        let learningInsights = null;
-        if (window.routeLearningSystem) {
-            learningInsights = await window.routeLearningSystem.getPredictiveInsights(minutos, distancia, tarifa);
-        }
-        
-        // COMBINAR AMBOS ANÁLISIS
-        let tiempoFinal = minutos;
-        let fuenteDatos = 'BASE';
-        let radioUsado = 0;
-        
-        if (trafficInsights && learningInsights) {
-            // Usar el mayor tiempo entre tráfico real y predicciones
-            tiempoFinal = Math.max(
-                trafficInsights.adjustedTime,
-                learningInsights.adjustedTime
-            );
-            fuenteDatos = 'TRÁFICO + APRENDIZAJE';
-            radioUsado = trafficInsights.radioUsado || trafficInsights.radius;
-            console.log('🎯 Tiempo combinado (radio adaptativo):', {
-                tiempoFinal,
-                radioUsado,
-                minutosOriginal: minutos
-            });
-        } else if (trafficInsights) {
-            tiempoFinal = trafficInsights.adjustedTime;
-            fuenteDatos = 'TRÁFICO REAL';
-            radioUsado = trafficInsights.radioUsado || trafficInsights.radius;
-        } else if (learningInsights) {
-            tiempoFinal = learningInsights.adjustedTime;
-            fuenteDatos = 'APRENDIZAJE';
-        }
-        
-        const resultado = calcularRentabilidad(tarifa, tiempoFinal, distancia);
+        const resultado = calcularRentabilidad(tarifa, tiempoAjustado, distancia);
         
         if (resultado) {
-            // Agregar todos los insights
-            resultado.trafficInsights = trafficInsights;
-            resultado.learningInsights = learningInsights;
-            resultado.tiempoAjustado = tiempoFinal;
-            resultado.tiempoOriginal = minutos;
-            resultado.fuenteDatos = fuenteDatos;
-            resultado.radioAnalisis = radioUsado; // ✅ NUEVO: Incluir radio usado
+            // ✅ SOLO DATOS ESENCIALES
+            resultado.tiempoAjustado = tiempoAjustado;
+            resultado.fuente = fuente;
+            
+            // ✅ CALCULAR NETO (nueva función simplificada)
+            if (perfilActual) {
+                const analisisNeto = calcularGananciaNetaRealDesdePerfil(
+                    tarifa,
+                    distancia,
+                    tiempoAjustado
+                );
+                
+                if (analisisNeto) {
+                    resultado.gananciaNeta = analisisNeto.gananciaNeta;
+                    resultado.netoPorMinuto = analisisNeto.netoPorMinuto;
+                    resultado.rentabilidadReal = analisisNeto.rentabilidadReal;
+                }
+            }
             
             Actual = resultado;
-            mostrarResultadoRapido(resultado);
+            mostrarResultadoRapidoSimplificado(resultado);
         }
     } else {
         if (elementos['resultado-rapido']) {
@@ -3440,6 +3399,126 @@ function cerrarSyncPanel() {
     }
 }
 
+// ✅ NUEVO: BARRA DE META DIARIA
+    actualizarBarraMetaDiaria(gananciaTotal, tiempoTotal, distanciaTotal);
+    
+    console.log('📈 Estadísticas de HOY actualizadas:', {
+        totalViajes,
+        viajesRentables,
+        eficiencia: `${eficiencia.toFixed(1)}%`,
+        gananciaTotal: formatearMoneda(gananciaTotal),
+        gananciaPorHora: formatearMoneda(gananciaPorHora),
+        distanciaTotal: `${distanciaTotal} km`,
+        fecha: hoy
+    });
+}
+
+// =============================================
+// NUEVO: BARRA DE META DIARIA
+// =============================================
+function actualizarBarraMetaDiaria(gananciaHoy, tiempoHoy, distanciaHoy) {
+    const metaContainer = document.getElementById('meta-diaria-container');
+    if (!metaContainer) {
+        // Crear contenedor si no existe
+        const statsContainer = document.querySelector('.stats-container');
+        if (statsContainer) {
+            statsContainer.insertAdjacentHTML('beforeend', `
+                <div class="meta-diaria-card">
+                    <div class="meta-header">
+                        <span class="meta-icon">🎯</span>
+                        <span class="meta-title">Meta Diaria</span>
+                    </div>
+                    <div class="meta-progress">
+                        <div class="meta-bar-bg">
+                            <div class="meta-bar-fill" id="meta-bar-fill"></div>
+                        </div>
+                        <div class="meta-info">
+                            <span class="meta-current" id="meta-current">RD$0</span>
+                            <span class="meta-target" id="meta-target">de RD$1,455</span>
+                            <span class="meta-percentage" id="meta-percentage">0%</span>
+                        </div>
+                    </div>
+                    <div class="meta-details">
+                        <div class="meta-item">
+                            <span class="meta-label">⏱️ Tiempo:</span>
+                            <span class="meta-value" id="meta-tiempo">0h 0m</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">📏 Distancia:</span>
+                            <span class="meta-value" id="meta-distancia">0 km</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">📈 Ritmo:</span>
+                            <span class="meta-value" id="meta-ritmo">RD$0/h</span>
+                        </div>
+                    </div>
+                </div>
+            `);
+        }
+    }
+    
+    // Calcular meta diaria (32k ÷ 22 días)
+    const metaDiaria = 32000 / 22; // ≈ RD$1,455
+    const porcentajeMeta = Math.min(100, (gananciaHoy / metaDiaria) * 100);
+    
+    // Calcular ritmo necesario
+    const ahora = new Date();
+    const horaActual = ahora.getHours();
+    const horaInicio = 8; // Asumiendo que empiezas a las 8 AM
+    const horasTrabajadas = Math.max(0, horaActual - horaInicio);
+    const horasRestantes = Math.max(0, 8 - horasTrabajadas); // 8 horas de trabajo
+    
+    const ritmoActual = tiempoHoy > 0 ? (gananciaHoy / tiempoHoy) * 60 : 0;
+    const ritmoNecesario = horasRestantes > 0 ? 
+        ((metaDiaria - gananciaHoy) / horasRestantes) : 0;
+    
+    // Actualizar elementos
+    const metaBar = document.getElementById('meta-bar-fill');
+    const metaCurrent = document.getElementById('meta-current');
+    const metaTarget = document.getElementById('meta-target');
+    const metaPercentage = document.getElementById('meta-percentage');
+    const metaTiempo = document.getElementById('meta-tiempo');
+    const metaDistancia = document.getElementById('meta-distancia');
+    const metaRitmo = document.getElementById('meta-ritmo');
+    
+    if (metaBar) metaBar.style.width = `${porcentajeMeta}%`;
+    if (metaCurrent) metaCurrent.textContent = formatearMoneda(gananciaHoy);
+    if (metaTarget) metaTarget.textContent = `de ${formatearMoneda(metaDiaria)}`;
+    if (metaPercentage) metaPercentage.textContent = `${porcentajeMeta.toFixed(1)}%`;
+    
+    // Color según progreso
+    if (metaBar) {
+        if (porcentajeMeta >= 100) {
+            metaBar.style.background = 'linear-gradient(90deg, #00b09b, #96c93d)';
+        } else if (porcentajeMeta >= 70) {
+            metaBar.style.background = 'linear-gradient(90deg, #4facfe, #00f2fe)';
+        } else if (porcentajeMeta >= 40) {
+            metaBar.style.background = 'linear-gradient(90deg, #ff9a9e, #fecfef)';
+        } else {
+            metaBar.style.background = 'linear-gradient(90deg, #ff6b6b, #ffa8a8)';
+        }
+    }
+    
+    // Tiempo formateado
+    const horas = Math.floor(tiempoHoy / 60);
+    const minutos = Math.floor(tiempoHoy % 60);
+    if (metaTiempo) metaTiempo.textContent = `${horas}h ${minutos}m`;
+    
+    // Distancia
+    if (metaDistancia) metaDistancia.textContent = `${distanciaHoy} ${perfilActual?.tipoMedida === 'mi' ? 'mi' : 'km'}`;
+    
+    // Ritmo con indicador
+    let ritmoHTML = formatearMoneda(ritmoActual) + '/h';
+    if (ritmoActual > 0 && ritmoNecesario > 0) {
+        if (ritmoActual >= ritmoNecesario) {
+            ritmoHTML += ' ✅';
+        } else {
+            ritmoHTML += ` (necesitas ${formatearMoneda(ritmoNecesario)}/h)`;
+        }
+    }
+    if (metaRitmo) metaRitmo.innerHTML = ritmoHTML;
+}
+
 // =============================================
 // FUNCIONES DE PROCESAMIENTO DE VIAJES
 // =============================================
@@ -3562,214 +3641,87 @@ function guardarEnHistorial(resultado, aceptado) {
 
 function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
-
-    // Cerrar modal existente si hay
+    
     cerrarModalRapido();
-
+    
     const modal = document.createElement('div');
     modal.id = 'modal-rapido';
     modal.className = 'modal-centrado-elegante';
     
-    // Determinar clase de rentabilidad
-    const claseRentabilidad = resultado.rentabilidad || 'oportunidad';
+    // Análisis neto si está disponible
+    let seccionNeto = '';
+    let botonAceptarTexto = 'Aceptar y Cronometrar';
+    let claseRentabilidad = resultado.rentabilidad || 'oportunidad';
     
-    // ✅ CONSTRUIR INFO DE RADIO
-    let infoRadio = '';
-    if (resultado.radioAnalisis && resultado.radioAnalisis > 0) {
-        infoRadio = `
-            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0; color: #666; font-size: 0.9em;">
-                <span style="background: #e3f2fd; padding: 4px 10px; border-radius: 12px; border: 1px solid #bbdefb;">
-                    📍 Radio de análisis: ${resultado.radioAnalisis}km
-                </span>
+    if (resultado.netoPorMinuto !== undefined && resultado.rentabilidadReal) {
+        const impactoMeta = calcularImpactoEnMeta(resultado.netoPorMinuto);
+        
+        seccionNeto = `
+            <div style="background: rgba(0,0,0,0.1); padding: 10px; border-radius: 10px; margin: 10px 0; border-left: 3px solid #${resultado.rentabilidadReal.color}">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600; font-size: 0.9em;">💰 ${resultado.rentabilidadReal.texto}</span>
+                    <span style="font-size: 0.8em;">${formatearMoneda(resultado.netoPorMinuto)}/min neto</span>
+                </div>
+                <div style="font-size: 0.8em; opacity: 0.9; margin-top: 5px;">
+                    ${impactoMeta.emoji} ${impactoMeta.texto}
+                </div>
             </div>
         `;
+        
+        // Cambiar texto del botón según rentabilidad
+        if (resultado.rentabilidadReal.categoria === 'excelente' || resultado.rentabilidadReal.categoria === 'rentable') {
+            botonAceptarTexto = '✅ Excelente - Aceptar';
+            claseRentabilidad = resultado.rentabilidadReal.categoria;
+        }
     }
     
     modal.innerHTML = `
         <div class="modal-contenido-centrado ${claseRentabilidad}">
-            <!-- HEADER -->
+            <!-- HEADER SIMPLE -->
             <div class="modal-header-centrado">
-                <div class="modal-titulo">🎯 Análisis Completado</div>
-                <div class="modal-subtitulo">Resultado del cálculo automático</div>
+                <div class="modal-titulo">${resultado.emoji} ${resultado.texto}</div>
+                <div class="modal-subtitulo">${formatearMoneda(resultado.tarifa)} • ${resultado.minutos}min • ${resultado.distancia}km</div>
             </div>
-
-            <!-- INFO DE RADIO ADAPTATIVO -->
-            ${infoRadio}
-
-            <!-- BADGE DE RESULTADO -->
-            <div style="text-align: center;">
-                <div class="badge-resultado-centrado">
-                    <div class="badge-emoji-grande">${resultado.emoji}</div>
-                    <div class="badge-texto-grande">${resultado.texto}</div>
-                </div>
-            </div>
-
-            <!-- CUERPO CON MÉTRICAS -->
+            
+            <!-- MÉTRICAS CLAVE -->
             <div class="modal-body-centrado">
-                <div class="metricas-grid-centrado">
+                <div class="metricas-grid-centrado" style="grid-template-columns: repeat(2, 1fr);">
                     <div class="metrica-item-centrado">
-                        <div class="metrica-valor-centrado">${formatearMoneda(resultado.gananciaPorMinuto)}/min</div>
+                        <div class="metrica-valor-centrado">${formatearMoneda(resultado.gananciaPorMinuto)}</div>
                         <div class="metrica-label-centrado">Por minuto</div>
                     </div>
                     <div class="metrica-item-centrado">
                         <div class="metrica-valor-centrado">${resultado.minutos} min</div>
-                        <div class="metrica-label-centrado">Tiempo estimado</div>
+                        <div class="metrica-label-centrado">Tiempo</div>
                     </div>
                     ${resultado.tiempoAjustado && resultado.tiempoAjustado !== resultado.minutos ? `
-                    <div class="metrica-item-centrado" style="background: #fff3cd; border: 1px solid #ffeaa7;">
+                    <div class="metrica-item-centrado" style="grid-column: span 2;">
                         <div class="metrica-valor-centrado" style="color: #e67e22;">${resultado.tiempoAjustado} min</div>
-                        <div class="metrica-label-centrado">Con tráfico</div>
+                        <div class="metrica-label-centrado">Con tráfico (${resultado.fuente})</div>
                     </div>
                     ` : ''}
-                    <div class="metrica-item-centrado">
-                        <div class="metrica-valor-centrado">${resultado.distancia} km</div>
-                        <div class="metrica-label-centrado">Distancia</div>
-                    </div>
                 </div>
-
-                ${resultado.learningInsights ? `
-                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; border-left: 4px solid #4CAF50; margin-top: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-weight: 600;">🧠 Predicción Inteligente</span>
-                        <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 10px;">
-                            ${resultado.learningInsights.confidence}% confianza
-                        </span>
-                    </div>
-                    <div style="font-size: 0.9em; opacity: 0.9;">
-                        ${resultado.learningInsights.message}
-                    </div>
-                </div>
-                ` : ''}
                 
-                ${resultado.trafficInsights ? `
-                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; border-left: 4px solid #2196F3; margin-top: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-weight: 600;">🚗 Análisis de Tráfico</span>
-                        <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 10px;">
-                            Radio: ${resultado.trafficInsights.radius || resultado.radioAnalisis || 10}km
-                        </span>
-                    </div>
-                    <div style="font-size: 0.9em; opacity: 0.9;">
-                        ${resultado.trafficInsights.message || 'Análisis de tráfico local aplicado'}
-                    </div>
-                </div>
-                ` : ''}
+                ${seccionNeto}
             </div>
-
-            <!-- BOTONES DE ACCIÓN -->
+            
+            <!-- BOTONES SIMPLES -->
             <div class="modal-actions-centrado">
-                <button class="btn-accion-grande btn-rechazar-grande" onclick="procesarViajeRapido(false)">
+                <button class="btn-accion-grande btn-rechazar-grande" onclick="procesarViajeRapido(false)" style="flex: 1;">
                     <span class="btn-icono-grande">❌</span>
-                    Rechazar Viaje
+                    Rechazar
                 </button>
-                <button class="btn-accion-grande btn-aceptar-grande" onclick="iniciarCronometroDesdeModal()">
+                <button class="btn-accion-grande btn-aceptar-grande" onclick="iniciarCronometroDesdeModal()" style="flex: 2;">
                     <span class="btn-icono-grande">✅</span>
-                    Aceptar y Cronometrar
+                    ${botonAceptarTexto}
                 </button>
             </div>
         </div>
     `;
-
-    // ✅ AÑADIR DESPUÉS DE LAS MÉTRICAS EXISTENTES:
-    if (perfilActual) {
-        const analisisNeto = calcularGananciaNetaRealDesdePerfil(
-            resultado.tarifa,
-            resultado.distancia,
-            resultado.minutos
-        );
-        
-        if (analisisNeto) {
-            const impactoMeta = calcularImpactoEnMeta(analisisNeto.netoPorMinuto);
-            
-            const seccionNeto = `
-                <!-- SECCIÓN NETO DESDE TU PERFIL -->
-                <div style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 12px; margin-top: 15px; border-left: 4px solid #${analisisNeto.rentabilidadReal.color}">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-weight: 600;">💰 ANÁLISIS NETO REAL</span>
-                        <span style="font-size: 0.8em; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 10px;">
-                            ${analisisNeto.rentabilidadReal.emoji} ${analisisNeto.rentabilidadReal.texto}
-                        </span>
-                    </div>
-                    
-                    <!-- COMPARACIÓN CON TUS UMBRALES -->
-                    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
-                        <div style="font-size: 0.9em; margin-bottom: 5px;">📊 Comparación con tu perfil:</div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85em;">
-                            <div>
-                                <div>Tu umbral rentable:</div>
-                                <div style="font-weight: 600;">RD$${perfilActual.umbralMinutoRentable}/min</div>
-                            </div>
-                            <div>
-                                <div>Neto equivalente:</div>
-                                <div style="font-weight: 600;">~RD$${analisisNeto.comparacionConPerfil?.equivalenteRentableNeto || 4.5}/min</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- FINANCIERO -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                        <div>
-                            <div style="font-size: 0.9em;">Bruto:</div>
-                            <div style="font-weight: 600; font-size: 1.1em;">${formatearMoneda(resultado.tarifa)}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.9em;">Neto real:</div>
-                            <div style="font-weight: 600; font-size: 1.1em; color: ${analisisNeto.gananciaNeta > 0 ? '#4CAF50' : '#f44336'}">
-                                ${formatearMoneda(analisisNeto.gananciaNeta)}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- NETO POR MINUTO -->
-                    <div style="margin-top: 10px;">
-                        <div style="font-size: 0.9em;">Por minuto neto:</div>
-                        <div style="font-weight: 600; font-size: 1.1em; color: #${analisisNeto.rentabilidadReal.color}">
-                            ${formatearMoneda(analisisNeto.netoPorMinuto)}/min
-                            <span style="font-size: 0.8em; margin-left: 5px;">
-                                (${analisisNeto.comparacionConPerfil?.porcentajeRentable || 0}% de tu umbral)
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <!-- COSTOS DESGLOSADOS -->
-                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.2);">
-                        <div style="font-size: 0.85em; margin-bottom: 5px;">📉 Costos desde tu perfil:</div>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; font-size: 0.8em;">
-                            <div>⛽ ${formatearMoneda(analisisNeto.costos.combustible)}</div>
-                            <div>🔧 ${formatearMoneda(analisisNeto.costos.mantenimiento)}</div>
-                            <div>🛡️ ${formatearMoneda(analisisNeto.costos.seguro)}</div>
-                        </div>
-                    </div>
-                    
-                    <!-- IMPACTO META -->
-                    <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-                            <span>${impactoMeta.emoji}</span>
-                            <span style="font-weight: 600;">${impactoMeta.texto}</span>
-                        </div>
-                        <div style="font-size: 0.85em; opacity: 0.9;">
-                            ${impactoMeta.mensaje}
-                        </div>
-                    </div>
-                    
-                    <div style="font-size: 0.8em; opacity: 0.7; margin-top: 10px; font-style: italic;">
-                        ${analisisNeto.rentabilidadReal.descripcion}
-                    </div>
-                </div>
-            `;
-            
-            // Insertar en el modal (ajusta según tu estructura)
-            const modalBody = modal.querySelector('.modal-body-centrado');
-            if (modalBody) {
-                modalBody.insertAdjacentHTML('beforeend', seccionNeto);
-            }
-        }
-    }
     
     document.body.appendChild(modal);
     calculoActual = resultado;
     
-    // Agregar evento para cerrar al hacer clic fuera
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
             cerrarModalRapido();
@@ -4133,6 +4085,28 @@ async getTrafficDataConRadioAdaptativo(radioKm) {
         radioUsado: radioAdaptativo
     };
 }
+
+// ✅ MOVER ESTO DENTRO DE LA CLASE
+    calcularImpactoRelativo(minutosViaje, radioKm) {
+        // ✅ Ajustar umbral de "impacto significativo" según radio y duración
+        let umbralSignificativo = 1.2; // Por defecto 20%
+        let mensajeExtra = '';
+        
+        if (radioKm <= 4 && minutosViaje <= 15) {
+            // Viajes cortos con radio pequeño: impacto más sensible
+            umbralSignificativo = 1.15; // 15% ya es significativo
+            mensajeExtra = ' | Análisis local preciso';
+        } else if (radioKm >= 8 && minutosViaje >= 30) {
+            // Viajes largos con radio grande: impacto menos sensible
+            umbralSignificativo = 1.25; // 25% para ser significativo
+            mensajeExtra = ' | Análisis de área amplia';
+        }
+        
+        return {
+            umbralSignificativo: umbralSignificativo,
+            mensaje: mensajeExtra
+        };
+    }
 }
 
     // ✅ FUNCIÓN DE INICIALIZACIÓN DEL SISTEMA DE TRÁFICO
@@ -5566,6 +5540,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
