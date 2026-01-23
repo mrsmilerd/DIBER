@@ -426,57 +426,44 @@
 
 <!-- Pestaña Resumen - VERSIÓN MEJORADA -->
 <div class="tab-content" id="tab-resumen">
-    <div class="tab-content" id="resumen">
 
-    <!-- 🔹 RESUMEN EN GRID (NUEVO) -->
+    <!-- 🔹 RESUMEN COMPACTO RESPONSIVO -->
     <div class="resumen-layout">
 
         <div class="resumen-card">
-            <h4>⏱️ Tiempo</h4>
-            <div class="valor" id="resumen-tiempo">--</div>
-        </div>
-
-        <div class="resumen-card">
-            <h4>📏 Distancia</h4>
-            <div class="valor" id="resumen-distancia">--</div>
+            <h4>🚗 Viajes</h4>
+            <div class="valor" id="stats-viajes">0</div>
         </div>
 
         <div class="resumen-card">
             <h4>💰 Ganancia</h4>
-            <div class="valor" id="resumen-ganancia">--</div>
+            <div class="valor" id="stats-ganancia">RD$0</div>
         </div>
 
         <div class="resumen-card">
-            <h4>📊 Estado</h4>
-            <div class="valor" id="resumen-estado">--</div>
+            <h4>⏱️ Tiempo</h4>
+            <div class="valor" id="stats-tiempo">0min</div>
         </div>
 
-    </div>
+        <div class="resumen-card">
+            <h4>📊 Rentables</h4>
+            <div class="valor" id="stats-rentables">0</div>
+        </div>
 
-    <!-- 🔹 HISTORIAL CON SCROLL PROPIO -->
-    <div class="resumen-historial" id="resumen-historial">
-        <!-- aquí JS seguirá inyectando el historial -->
+        <div class="resumen-card">
+            <h4>💸 Ganancia / Hora</h4>
+            <div class="valor" id="rendimiento-ganancia-hora-card">RD$0.00</div>
+        </div>
+
+        <div class="resumen-card">
+            <h4>🛣️ Distancia</h4>
+            <div class="valor" id="rendimiento-distancia-total-card">0 km</div>
+        </div>
+
     </div>
 
 </div>
-        </div>
-        
-        <!-- Barra de Progreso de Eficiencia -->
-        <div class="progreso-eficiencia">
-            <div class="progreso-header">
-                <span class="progreso-label">Nivel de Eficiencia</span>
-                <span class="progreso-porcentaje" id="rendimiento-eficiencia-card">0.0%</span>
-            </div>
-            <div class="progreso-barra">
-                <div class="progreso-fill" id="progreso-eficiencia-fill" style="width: 0%"></div>
-            </div>
-            <div class="progreso-marcadores">
-                <span>0%</span>
-                <span>50%</span>
-                <span>100%</span>
-            </div>
-        </div>
-    </div>
+
 </div>
 
 <!-- Pestaña Historial -->
