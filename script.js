@@ -2797,7 +2797,7 @@ async function calcularAutomaticoConTraficoReal() {
             }
             
             Actual = resultado;
-            mostrarResultadoRapidoSimplificado(resultado);
+            mostrarResultadoRapido(resultado);
         }
     } else {
         if (elementos['resultado-rapido']) {
@@ -5528,6 +5528,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
