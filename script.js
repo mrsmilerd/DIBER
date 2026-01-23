@@ -3688,7 +3688,8 @@ function mostrarResultadoRapido(resultado) {
     let seccionNeto = '';
     if (resultado.netoPorMinuto !== undefined && resultado.rentabilidadReal) {
         const impactoMeta = calcularImpactoEnMeta(resultado.netoPorMinuto);
-
+}
+        
             ${infoUbicacion}
             ${infoTrafico}
             ${infoKm}
@@ -5571,6 +5572,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
