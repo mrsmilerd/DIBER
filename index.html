@@ -426,67 +426,39 @@
 
 <!-- Pestaña Resumen - VERSIÓN MEJORADA -->
 <div class="tab-content" id="tab-resumen">
-    <!-- Estadísticas del Día -->
-    <div class="estadisticas-container">
-        <h3>📈 Estadísticas del Día</h3>
-        <div class="estadisticas-grid">
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-viajes">0</span>
-                <span class="estadistica-label">Viajes</span>
-            </div>
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-ganancia">RD$0</span>
-                <span class="estadistica-label">Ganancia</span>
-            </div>
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-tiempo">0min</span>
-                <span class="estadistica-label">Tiempo</span>
-            </div>
-            <div class="estadistica-item">
-                <span class="estadistica-valor" id="stats-rentables">0</span>
-                <span class="estadistica-label">Rentables</span>
-            </div>
+    <div class="tab-content" id="resumen">
+
+    <!-- 🔹 RESUMEN EN GRID (NUEVO) -->
+    <div class="resumen-layout">
+
+        <div class="resumen-card">
+            <h4>⏱️ Tiempo</h4>
+            <div class="valor" id="resumen-tiempo">--</div>
         </div>
+
+        <div class="resumen-card">
+            <h4>📏 Distancia</h4>
+            <div class="valor" id="resumen-distancia">--</div>
+        </div>
+
+        <div class="resumen-card">
+            <h4>💰 Ganancia</h4>
+            <div class="valor" id="resumen-ganancia">--</div>
+        </div>
+
+        <div class="resumen-card">
+            <h4>📊 Estado</h4>
+            <div class="valor" id="resumen-estado">--</div>
+        </div>
+
     </div>
 
-    <!-- Rendimiento - DISEÑO MEJORADO -->
-    <div class="rendimiento-section-mejorada">
-        <div class="rendimiento-header">
-            <h3>🚀 Rendimiento</h3>
-            <div class="eficiencia-global" id="rendimiento-eficiencia-badge">
-                <span class="eficiencia-icon">📊</span>
-                <span class="eficiencia-texto">Eficiencia: <strong>0.0%</strong></span>
-            </div>
-        </div>
-        
-        <!-- Métricas Principales en Grid -->
-        <div class="metricas-principales-grid">
-            <div class="metrica-principal">
-                <div class="metica-icono">💸</div>
-                <div class="metrica-contenido">
-                    <div class="metrica-valor" id="rendimiento-ganancia-hora-card">RD$0.00</div>
-                    <div class="metrica-label">Ganancia por Hora</div>
-                    <div class="metrica-subtexto" id="rendimiento-ganancia-hora-linea">RD$0.00 por hora</div>
-                </div>
-            </div>
-            
-            <div class="metrica-principal">
-                <div class="metrica-icono">📦</div>
-                <div class="metrica-contenido">
-                    <div class="metrica-valor" id="rendimiento-viaje-promedio-linea">RD$0.00</div>
-                    <div class="metrica-label">Viaje Promedio</div>
-                    <div class="metrica-subtexto">Por viaje aceptado</div>
-                </div>
-            </div>
-            
-            <div class="metrica-principal">
-                <div class="metrica-icono">🛣️</div>
-                <div class="metrica-contenido">
-                    <div class="metrica-valor" id="rendimiento-distancia-total-card">0 km</div>
-                    <div class="metrica-label">Distancia Total</div>
-                    <div class="metrica-subtexto">Recorrido hoy</div>
-                </div>
-            </div>
+    <!-- 🔹 HISTORIAL CON SCROLL PROPIO -->
+    <div class="resumen-historial" id="resumen-historial">
+        <!-- aquí JS seguirá inyectando el historial -->
+    </div>
+
+</div>
         </div>
         
         <!-- Barra de Progreso de Eficiencia -->
@@ -756,3 +728,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+
