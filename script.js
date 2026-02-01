@@ -2752,98 +2752,59 @@ async function calcularAutomaticoConTraficoReal() {
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
     if (datosCompletos) {
-        console.log('🔄 Cálculo automático con tráfico real mejorado...', {
-            tarifa, minutos, distancia
-        });
+        console.log('🔄 Cálculo automático con tráfico real...');
         
         let trafficInsights = null;
         
-        // OBTENER ANÁLISIS DE TRÁFICO EN TIEMPO REAL CON RADIO ADAPTATIVO
+        // OBTENER ANÁLISIS DE TRÁFICO EN TIEMPO REAL
         if (realTimeTraffic && realTimeTraffic.initialized) {
             try {
-                // ✅ PASAR distancia y minutos al análisis de tráfico
-                trafficInsights = await realTimeTraffic.analyzeTrafficInRadius(distancia, minutos);
-                console.log('📊 Insights de tráfico con radio adaptativo:', trafficInsights);
+                trafficInsights = await realTimeTraffic.analyzeTrafficInRadius();
+                console.log('📊 Insights de tráfico real:', trafficInsights);
             } catch (error) {
                 console.log('🔄 Usando estimación conservadora de tráfico');
                 trafficInsights = realTimeTraffic.getConservativeEstimate();
             }
         }
         
-        // 🛡️ PROTECCIÓN DE VIAJES CORTOS
-        const esViajeCorto = minutos <= 15 || distancia <= 4;
         let tiempoFinal = minutos;
         let fuenteDatos = 'BASE';
-        let proteccionActivada = false;
         
         if (trafficInsights) {
-            // ✅ APLICAR LÍMITES DE PROTECCIÓN
-            const impactoConLimites = realTimeTraffic.calculateTrafficImpact(
-                trafficInsights, 
-                distancia, 
-                minutos
-            );
-            
-            tiempoFinal = impactoConLimites.adjustedTime;
-            proteccionActivada = impactoConLimites.limitadoPorProteccion;
-            
-            if (proteccionActivada) {
-                fuenteDatos = 'TRÁFICO PROTEGIDO';
-                console.log('🛡️ PROTECCIÓN ACTIVADA:', {
-                    tipo: impactoConLimites.tipoViaje,
-                    tiempoOriginal: minutos,
-                    tiempoAjustado: tiempoFinal,
-                    factorOriginal: impactoConLimites.factorOriginal,
-                    factorAplicado: impactoConLimites.trafficFactor,
-                    incremento: `${((tiempoFinal/minutos - 1) * 100).toFixed(1)}%`
-                });
-            } else {
-                fuenteDatos = 'TRÁFICO REAL';
-            }
-            
-            // Usar el resultado completo
-            trafficInsights = impactoConLimites;
+            tiempoFinal = trafficInsights.adjustedTime;
+            fuenteDatos = 'TRÁFICO REAL';
         }
         
-        // Calcular rentabilidad con tiempo ajustado
         const resultado = calcularRentabilidad(tarifa, tiempoFinal, distancia);
         
         if (resultado) {
-            // Agregar info de tráfico
+            // Agregar todos los insights
             resultado.trafficInsights = trafficInsights;
             resultado.tiempoAjustado = tiempoFinal;
             resultado.tiempoOriginal = minutos;
             resultado.fuenteDatos = fuenteDatos;
-            resultado.proteccionActivada = proteccionActivada;
-            resultado.esViajeCorto = esViajeCorto;
             
-            // 🎯 CLASIFICACIÓN POR GANANCIA NETA REAL
-            const clasificacionNeta = clasificarPorNetoReal(tarifa, tiempoFinal, distancia);
-            if (clasificacionNeta) {
-                resultado.clasificacionNeta = clasificacionNeta;
-                
-                // ✅ SOBRESCRIBIR la rentabilidad bruta con la clasificación neta
-                resultado.rentabilidad = clasificacionNeta.categoria;
-                resultado.emoji = clasificacionNeta.emoji;
-                resultado.texto = clasificacionNeta.texto;
-                resultado.netoPorMinuto = clasificacionNeta.netoPorMinuto;
-                
-                console.log('✅ Clasificación final:', {
-                    categoria: clasificacionNeta.categoria,
-                    neto: `${clasificacionNeta.netoPorMinuto} RD$/min`,
-                    bruto: `${clasificacionNeta.rentabilidadBruta.porMinuto} RD$/min`
-                });
-            }
-            
-            // 📊 ANÁLISIS DE META (solo informativo)
-            if (clasificacionNeta) {
-                const impactoMeta = analizarImpactoMeta(clasificacionNeta.netoPorMinuto);
-                resultado.impactoMeta = impactoMeta;
+            // ✅ AÑADIR ANÁLISIS NETO SI LAS FUNCIONES EXISTEN
+            if (typeof calcularGananciaNetaRealDesdePerfil === 'function') {
+                try {
+                    const analisisNeto = calcularGananciaNetaRealDesdePerfil(
+                        tarifa,
+                        distancia,
+                        tiempoFinal
+                    );
+                    
+                    if (analisisNeto) {
+                        resultado.netoPorMinuto = analisisNeto.netoPorMinuto;
+                        resultado.rentabilidadReal = analisisNeto.rentabilidadReal;
+                    }
+                } catch (error) {
+                    console.log('⚠️ No se pudo calcular neto:', error);
+                }
             }
             
             Actual = resultado;
             
-            // Mostrar resultado
+            // ✅ USAR TU MODAL ORIGINAL (MEJORADO)
             mostrarResultadoRapido(resultado);
         }
     } else {
@@ -2998,89 +2959,6 @@ function calcularRentabilidadConPerfil(tarifa, minutos, distancia) {
             gananciaPorMinuto: 0,
             gananciaPorKm: 0
         };
-    }
-}
-
-function clasificarPorNetoReal(tarifa, minutos, distancia) {
-    if (!perfilActual) {
-        console.error('❌ No hay perfil activo');
-        return null;
-    }
-    
-    console.log('💰 Calculando ganancia neta real:', { tarifa, minutos, distancia });
-    
-    try {
-        // 1. CALCULAR COSTOS COMPLETOS
-        const combustibleUsado = distancia / perfilActual.rendimiento;
-        const costoCombustible = combustibleUsado * perfilActual.precioCombustible;
-        
-        const costoMantenimientoPorKm = (perfilActual.costoMantenimiento || 0) / 1500;
-        const costoSeguroPorMinuto = (perfilActual.costoSeguro || 0) / (30 * 24 * 60);
-        
-        const costoMantenimiento = distancia * costoMantenimientoPorKm;
-        const costoSeguro = minutos * costoSeguroPorMinuto;
-        const costoTotal = costoCombustible + costoMantenimiento + costoSeguro;
-        
-        // 2. GANANCIA NETA REAL
-        const gananciaNeta = tarifa - costoTotal;
-        const netoPorMinuto = gananciaNeta / minutos;
-        const netoPorKm = gananciaNeta / distancia;
-        
-        // 3. CLASIFICACIÓN POR NETO (valores ajustados a realidad neta)
-        // Estos umbrales son NETOS, no brutos
-        let categoria, emoji, texto, color;
-        
-        if (netoPorMinuto < 2.8) { // Menos de ~4 RD$/min bruto
-            categoria = 'malo';
-            emoji = '❌';
-            texto = 'MALO';
-            color = 'red';
-        } else if (netoPorMinuto < 4.2) { // 4-5.9 RD$/min neto (~6-8.5 bruto)
-            categoria = 'oportunidad';
-            emoji = '⚠️';
-            texto = 'OPORTUNIDAD';
-            color = 'orange';
-        } else if (netoPorMinuto < 5.6) { // 6-8 RD$/min neto (~8-11 bruto)
-            categoria = 'rentable';
-            emoji = '✅';
-            texto = 'RENTABLE';
-            color = 'green';
-        } else { // 8+ RD$/min neto (~11+ bruto)
-            categoria = 'excelente';
-            emoji = '🌟';
-            texto = 'EXCELENTE';
-            color = 'darkgreen';
-        }
-        
-        console.log('📊 Clasificación neta:', {
-            categoria,
-            netoPorMinuto: netoPorMinuto.toFixed(2),
-            brutoEquivalente: (tarifa / minutos).toFixed(2),
-            gananciaNeta: gananciaNeta.toFixed(2)
-        });
-        
-        return {
-            gananciaNeta: parseFloat(gananciaNeta.toFixed(2)),
-            netoPorMinuto: parseFloat(netoPorMinuto.toFixed(2)),
-            netoPorKm: parseFloat(netoPorKm.toFixed(2)),
-            categoria,
-            emoji,
-            texto,
-            color,
-            costos: {
-                combustible: parseFloat(costoCombustible.toFixed(2)),
-                mantenimiento: parseFloat(costoMantenimiento.toFixed(2)),
-                seguro: parseFloat(costoSeguro.toFixed(2)),
-                total: parseFloat(costoTotal.toFixed(2))
-            },
-            rentabilidadBruta: {
-                porMinuto: parseFloat((tarifa / minutos).toFixed(2)),
-                porKm: parseFloat((tarifa / distancia).toFixed(2))
-            }
-        };
-    } catch (error) {
-        console.error('❌ Error en clasificación neta:', error);
-        return null;
     }
 }
 
@@ -4362,72 +4240,40 @@ class RealTimeTrafficSystem {
     }
 
    // Analizar tráfico en el radio especificado
-async analyzeTrafficInRadius(distanciaViaje = null, minutosEstimados = null) {
-    // Calcular radio adaptativo basado en distancia del viaje
-    const radioAdaptativo = distanciaViaje 
-        ? this.calcularRadioAdaptativo(distanciaViaje, minutosEstimados)
-        : this.radiusKm; // Fallback al radio configurado
-    
-    console.log(`🎯 Analizando tráfico con radio adaptativo: ${radioAdaptativo.toFixed(1)}km`);
-    
-    if (!this.initialized || !this.currentLocation) {
-        console.warn('⚠️ Sistema no inicializado o sin ubicación');
-        return this.getConservativeEstimate();
+   async analyzeTrafficInRadius() {
+    if (!this.initialized) {
+        throw new Error('Sistema de tráfico no inicializado');
+    }
+
+    if (!this.currentLocation) {
+        await this.getCurrentLocation();
     }
 
     try {
-        const now = new Date();
-        const hour = now.getHours();
-        const dayOfWeek = now.getDay();
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-        let condition, factor, confidence;
-
-        if (isWeekend) {
-            if (hour >= 20 || hour <= 6) {
-                condition = 'light';
-                factor = 1.0;
-                confidence = 0.95;
-            } else if (hour >= 12 && hour <= 18) {
-                condition = 'moderate';
-                factor = 1.4;
-                confidence = 0.8;
-            } else {
-                condition = 'light';
-                factor = 1.1;
-                confidence = 0.9;
-            }
-        } else {
-            if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
-                condition = 'heavy';
-                factor = 1.8;
-                confidence = 0.9;
-            } else if (hour >= 12 && hour <= 14) {
-                condition = 'moderate';
-                factor = 1.3;
-                confidence = 0.7;
-            } else {
-                condition = 'light';
-                factor = 1.1;
-                confidence = 0.8;
-            }
-        }
-
-        return {
-            condition,
-            trafficFactor: factor,
-            confidence,
-            radioKm: radioAdaptativo, // ✅ Usar radio adaptativo
-            location: this.currentLocation,
-            timestamp: now.toISOString(),
-            message: this.getTrafficMessage(condition)
-        };
+        // ✅ OBTENER DURACIÓN DEL VIAJE DEL FORMULARIO
+        const minutosViaje = parseFloat(elementos.minutos?.value) || 0;
+        
+        // ✅ CALCULAR RADIO ADAPTATIVO SEGÚN DURACIÓN
+        const radioAdaptativo = this.calcularRadioPorDuracion(minutosViaje);
+        
+        // ✅ GUARDAR RADIO CALCULADO PARA USO EN REPORTES
+        this.radiusKm = radioAdaptativo;
+        
+        // ✅ OBTENER DATOS DE TRÁFICO CON RADIO ADAPTATIVO
+        const trafficData = await this.getTrafficDataConRadioAdaptativo(radioAdaptativo);
+        
+        // ✅ RETORNAR ANÁLISIS CON RADIO PERSONALIZADO
+        const impacto = this.calculateTrafficImpact(trafficData);
+        impacto.radioAdaptativo = radioAdaptativo; // Agregar info de radio usado
+        
+        return impacto;
+        
     } catch (error) {
-        console.error('❌ Error analizando tráfico:', error);
+        console.error('❌ Error analizando tráfico con radio adaptativo:', error);
         return this.getConservativeEstimate();
     }
 }
-    
+
 calcularRadioPorDuracion(minutosViaje) {
     // ✅ LÓGICA ADAPTATIVA: Menos tiempo = radio más pequeño
     console.log('🎯 Calculando radio adaptativo para:', minutosViaje, 'minutos');
@@ -4478,7 +4324,7 @@ async getTrafficDataConRadioAdaptativo(radioKm) {
         }, 1500);
     });
 }
-    
+
     async getTrafficData() {
         return new Promise((resolve) => {
             // Simulación de análisis de tráfico basado en hora y ubicación
@@ -4536,9 +4382,8 @@ async getTrafficDataConRadioAdaptativo(radioKm) {
         };
     }
 
-  calculateTrafficImpact(trafficData, distanciaKm = 0, minutosBase = 0) {
-    const baseTime = minutosBase || parseFloat(elementos.minutos?.value) || 0;
-    const distancia = distanciaKm || parseFloat(elementos.distancia?.value) || 0;
+  calculateTrafficImpact(trafficData) {
+    const baseTime = parseFloat(elementos.minutos?.value) || 0;
     
     if (baseTime <= 0) {
         return {
@@ -4550,60 +4395,25 @@ async getTrafficDataConRadioAdaptativo(radioKm) {
             radioUsado: 0
         };
     }
-    
-    // 🛡️ PROTECCIÓN DE VIAJES CORTOS Y MEDIANOS
-    const esViajeCorto = baseTime <= 15 || distancia <= 4;
-    const esViajeMediano = distancia > 4 && distancia <= 10;
-    
-    // 🎯 LÍMITES ADAPTATIVOS DE PENALIZACIÓN
-    let factorMaximo;
-    let tipoViaje;
-    
-    if (esViajeCorto) {
-        factorMaximo = 1.15; // Máximo 15% de incremento
-        tipoViaje = 'CORTO';
-    } else if (esViajeMediano) {
-        factorMaximo = 1.30; // Máximo 30% de incremento
-        tipoViaje = 'MEDIANO';
-    } else {
-        factorMaximo = 1.50; // Máximo 50% para viajes largos
-        tipoViaje = 'LARGO';
-    }
-    
-    // Aplicar límite al factor de tráfico
-    const factorLimitado = Math.min(trafficData.trafficFactor, factorMaximo);
-    const ajustadoPorLimite = factorLimitado !== trafficData.trafficFactor;
-    
-    const adjustedTime = Math.ceil(baseTime * factorLimitado);
-    
-    console.log(`🚦 Tráfico ${tipoViaje}:`, {
-        distancia: distancia.toFixed(1),
-        minutos: baseTime,
-        factorOriginal: trafficData.trafficFactor,
-        factorMaximo: factorMaximo,
-        factorAplicado: factorLimitado,
-        limitado: ajustadoPorLimite,
-        tiempoBase: baseTime,
-        tiempoAjustado: adjustedTime,
-        incremento: `${((adjustedTime/baseTime - 1) * 100).toFixed(1)}%`
-    });
+
+    const adjustedTime = Math.ceil(baseTime * trafficData.trafficFactor);
+
+    // ✅ CALCULAR IMPACTO RELATIVO SEGÚN RADIO
+    const impactoRelativo = this.calcularImpactoRelativo(baseTime, trafficData.radioKm || 10);
     
     return {
         originalTime: baseTime,
         adjustedTime: adjustedTime,
         trafficCondition: trafficData.condition,
-        trafficFactor: factorLimitado,
-        factorOriginal: trafficData.trafficFactor,
-        limitadoPorProteccion: ajustadoPorLimite,
-        adjustment: Math.round((factorLimitado - 1) * 100),
+        trafficFactor: trafficData.trafficFactor,
+        adjustment: Math.round((trafficData.trafficFactor - 1) * 100),
         confidence: trafficData.confidence,
-        radius: trafficData.radioKm || 10,
-        message: `${trafficData.message}${ajustadoPorLimite ? ' 🛡️ (protegido)' : ''}`,
+        radius: trafficData.radioKm || 10, // Usar radio del análisis
+        message: `${trafficData.message} ${impactoRelativo.mensaje}`,
         location: trafficData.location,
-        isSignificant: adjustedTime > baseTime * 1.10, // Solo significativo si >10%
+        isSignificant: adjustedTime > baseTime * impactoRelativo.umbralSignificativo,
         radioUsado: trafficData.radioKm || 10,
-        esViajeCorto: esViajeCorto,
-        tipoViaje: tipoViaje
+        impactoRelativo: impactoRelativo
     };
 }
 
@@ -4663,26 +4473,6 @@ async getTrafficDataConRadioAdaptativo(radioKm) {
             mensaje: mensajeExtra
         };
     }
-}
-
-calcularRadioAdaptativo(distanciaKm, minutosEstimados) {
-    console.log('🎯 Calculando radio adaptativo:', { distanciaKm, minutosEstimados });
-    
-    const distancia = distanciaKm || (minutosEstimados / 3);
-    
-    let radio;
-    if (distancia <= 3) {
-        radio = Math.max(0.8, distancia * 0.3);
-    } else if (distancia <= 6) {
-        radio = Math.min(2, distancia * 0.3);
-    } else if (distancia <= 10) {
-        radio = Math.min(3, distancia * 0.25);
-    } else {
-        radio = Math.min(4, 2 + (distancia - 10) * 0.1);
-    }
-    
-    console.log(`📍 Radio calculado: ${radio.toFixed(1)}km para viaje de ${distancia.toFixed(1)}km`);
-    return parseFloat(radio.toFixed(1));
 }
 
     // ✅ FUNCIÓN DE INICIALIZACIÓN DEL SISTEMA DE TRÁFICO
@@ -6269,7 +6059,4 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
-
-
-
 
