@@ -4705,6 +4705,7 @@ calcularRadioAdaptativo(distanciaKm, minutosEstimados) {
     console.log(`📍 Radio calculado: ${radio.toFixed(1)}km para viaje de ${distancia.toFixed(1)}km`);
     return parseFloat(radio.toFixed(1));
 }
+
     // ✅ FUNCIÓN DE INICIALIZACIÓN DEL SISTEMA DE TRÁFICO
 async function inicializarSistemaTraficoCompleto() {
     console.log('🚗 Inicializando sistema de tráfico en tiempo real...');
@@ -6289,5 +6290,6 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
