@@ -4478,27 +4478,6 @@ async getTrafficDataConRadioAdaptativo(radioKm) {
         }, 1500);
     });
 }
-
-calcularRadioAdaptativo(distanciaKm, minutosEstimados) {
-    console.log('🎯 Calculando radio adaptativo:', { distanciaKm, minutosEstimados });
-    
-    // Priorizar distancia, usar minutos como validación
-    const distancia = distanciaKm || (minutosEstimados / 3); // ~20km/h promedio RD
-    
-    let radio;
-    if (distancia <= 3) {
-        radio = Math.max(0.8, distancia * 0.3); // 0.8-1km
-    } else if (distancia <= 6) {
-        radio = Math.min(2, distancia * 0.3); // 1.5-2km
-    } else if (distancia <= 10) {
-        radio = Math.min(3, distancia * 0.25); // 2-3km
-    } else {
-        radio = Math.min(4, 2 + (distancia - 10) * 0.1); // 2-4km
-    }
-    
-    console.log(`📍 Radio calculado: ${radio.toFixed(1)}km para viaje de ${distancia.toFixed(1)}km`);
-    return parseFloat(radio.toFixed(1));
-}
     
     async getTrafficData() {
         return new Promise((resolve) => {
@@ -6290,6 +6269,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
