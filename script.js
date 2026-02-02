@@ -4565,52 +4565,63 @@ async getTrafficDataConRadioAdaptativo(radioKm) {
     }
 
     estimateTrafficFromConditions() {
-        const now = new Date();
-        const hour = now.getHours();
-        const day = now.getDay();
-        const isWeekend = day === 0 || day === 6;
-        
-        let condition, factor, confidence;
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay();
+    const isWeekend = day === 0 || day === 6;
+    
+    let condition, factor, confidence;
 
-        // Lógica mejorada de tráfico para República Dominicana
-        if (isWeekend) {
-            if (hour >= 11 && hour <= 20) {
-                condition = 'moderate';
-                factor = 1.4;
-                confidence = 0.8;
-            } else {
-                condition = 'light';
-                factor = 1.1;
-                confidence = 0.9;
-            }
+    // Lógica mejorada de tráfico para República Dominicana
+    if (isWeekend) {
+        if (hour >= 11 && hour <= 20) {
+            condition = 'moderate';
+            factor = 1.4;
+            confidence = 0.8;
         } else {
-            // Hora pico en RD: 7-9 AM y 5-7 PM
-            if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
-                condition = 'heavy';
-                factor = 1.8;
-                confidence = 0.9;
-            } else if (hour >= 12 && hour <= 14) {
-                condition = 'moderate';
-                factor = 1.3;
-                confidence = 0.7;
-            } else {
-                condition = 'light';
-                factor = 1.1;
-                confidence = 0.8;
-            }
+            condition = 'light';
+            factor = 1.1;
+            confidence = 0.9;
         }
-
-        return {
-            condition,
-            trafficFactor: factor,
-            confidence,
-            radius: this.radiusKm,
-            location: this.currentLocation,
-            timestamp: now.toISOString(),
-            message: this.getTrafficMessage(condition)
-        };
+    } else {
+        // Hora pico en RD: 7-9 AM y 5-7 PM
+        if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
+            condition = 'heavy';
+            factor = 1.8;
+            confidence = 0.9;
+        } else if (hour >= 12 && hour <= 14) {
+            condition = 'moderate';
+            factor = 1.3;
+            confidence = 0.7;
+        } else {
+            condition = 'light';
+            factor = 1.1;
+            confidence = 0.8;
+        }
     }
 
+    return {
+        condition,
+        trafficFactor: factor,
+        confidence,
+        radius: this.radiusKm,
+        location: this.currentLocation,
+        timestamp: now.toISOString(),
+        message: this.getTrafficMessage(condition) // ← AQUÍ ESTÁ EL ERROR
+    };
+}
+
+getTrafficMessage(condition) {
+    const messages = {
+        light: '✅ Tráfico fluido - Condiciones normales',
+        moderate: '⚠️ Tráfico moderado - Pequeñas demoras',
+        heavy: '🚗 Tráfico pesado - Demoras considerables',
+        severe: '🚨 Congestión severa - Demoras extensas'
+    };
+    
+    return messages[condition] || `Condiciones de tráfico: ${condition}`;
+}
+    
 calculateTrafficImpact(trafficData) {
     const baseTime = parseFloat(elementos.minutos?.value) || 0;
     const distancia = parseFloat(elementos.distancia?.value) || 0;
@@ -6286,6 +6297,7 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
 
