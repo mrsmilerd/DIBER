@@ -4679,7 +4679,7 @@ calculateTrafficImpact(trafficData) {
     };
 }
 
-// AÑADIR este método después del anterior:
+// ✅ MÉTODO DE LA CLASE - DENTRO DE RealTimeTrafficSystem
 getAdaptiveTrafficMessage(trafficData, minutos, distancia, factorFinal) {
     let baseMsg = trafficData.message || '';
     
@@ -4697,7 +4697,12 @@ getAdaptiveTrafficMessage(trafficData, minutos, distancia, factorFinal) {
     return baseMsg + msgExtra;
 }
 
-    // ✅ FUNCIÓN DE INICIALIZACIÓN DEL SISTEMA DE TRÁFICO
+} // ← ¡IMPORTANTE! ESTE CIERRE FALTABA PARA LA CLASE RealTimeTrafficSystem
+
+// =============================================
+// ✅ FUNCIÓN GLOBAL DE INICIALIZACIÓN - FUERA DE LA CLASE
+// =============================================
+
 async function inicializarSistemaTraficoCompleto() {
     console.log('🚗 Inicializando sistema de tráfico en tiempo real...');
     
@@ -6281,5 +6286,6 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
 
