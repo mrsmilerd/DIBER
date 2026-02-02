@@ -1072,6 +1072,56 @@ class RouteLearningSystem {
         }
     }
 
+esZonaCongestionadaRD(routeId) {
+    if (!routeId) return false;
+    
+    // Coordenadas aproximadas de zonas típicamente congestionadas en RD
+    const zonasCongestionadas = [
+        '18.48', // Santo Domingo centro
+        '18.49', // Naco
+        '18.50', // Piantini
+        '18.46', // 27 de Febrero
+        '18.47'  // Churchill
+    ];
+    
+    return zonasCongestionadas.some(zona => routeId.includes(zona));
+}
+
+    // MODIFICAR el método getConservativeEstimate (si existe) o crear uno nuevo
+getConservativeEstimateRD(estimatedTime, estimatedDistance) {
+    const ahora = new Date();
+    const hora = ahora.getHours();
+    const esHoraPicoRD = (hora >= 7 && hora <= 9) || (hora >= 17 && hora <= 19);
+    
+    let factorBase = 1.0;
+    
+    if (esHoraPicoRD) {
+        // Hora pico en RD
+        if (estimatedDistance <= 4) {
+            factorBase = 1.15; // 15% máximo para cortos
+        } else if (estimatedDistance <= 10) {
+            factorBase = 1.25; // 25% para medianos
+        } else {
+            factorBase = 1.4; // 40% para largos
+        }
+    } else {
+        // Fuera de hora pico
+        factorBase = 1.1; // Solo 10% extra
+    }
+    
+    return {
+        predictedEfficiency: 8.0,
+        trafficFactor: factorBase,
+        successRate: 60,
+        confidence: 40,
+        dataPoints: 0,
+        adjustedTime: Math.ceil(estimatedTime * factorBase),
+        recommendation: 'CONSERVATIVE_RD',
+        dataSource: 'CONTEXTO_RD',
+        message: `Estimación para ${esHoraPicoRD ? 'hora pico RD' : 'tráfico normal'}`
+    };
+}
+    
     // Generar recomendación basada en datos históricos
     generateRecommendation(stats) {
         if (stats.profitabilityRate >= 80) return 'HIGH_SUCCESS';
@@ -2643,6 +2693,91 @@ function compararConUmbralesPerfil(netoPorMinuto) {
 }
 
 // =============================================
+// CÁLCULO NETO INSTANTÁNEO PARA DECISIÓN
+// =============================================
+
+function calcularRentabilidadNetaInstantanea(tarifa, minutos, distancia) {
+    if (!perfilActual) return null;
+    
+    // 1. Calcular costos REALES
+    const costos = calcularCostosDesdePerfil(distancia, minutos);
+    if (!costos) return null;
+    
+    // 2. Ganancia neta
+    const gananciaNeta = tarifa - costos.costoTotal;
+    const netoPorMinuto = minutos > 0 ? gananciaNeta / minutos : 0;
+    
+    // 3. Clasificación neta (OBLIGATORIA según requerimiento)
+    let clasificacionNeta, colorNeta;
+    if (netoPorMinuto >= 8) {
+        clasificacionNeta = 'EXCELENTE';
+        colorNeta = '#2563EB';
+    } else if (netoPorMinuto >= 6) {
+        clasificacionNeta = 'RENTABLE';
+        colorNeta = '#10B981';
+    } else if (netoPorMinuto >= 4) {
+        clasificacionNeta = 'OPORTUNIDAD';
+        colorNeta = '#F59E0B';
+    } else {
+        clasificacionNeta = 'BAJO';
+        colorNeta = '#EF4444';
+    }
+    
+    return {
+        gananciaNeta: parseFloat(gananciaNeta.toFixed(2)),
+        netoPorMinuto: parseFloat(netoPorMinuto.toFixed(2)),
+        clasificacionNeta,
+        colorNeta,
+        costosTotales: costos.costoTotal,
+        porcentajeNeto: parseFloat(((gananciaNeta / tarifa) * 100).toFixed(1))
+    };
+}
+
+// =============================================
+// IMPACTO EN META 32K (SOLO INFORMATIVO)
+// =============================================
+
+function calcularImpactoEnMeta32k(netoPorMinuto) {
+    if (!netoPorMinuto || netoPorMinuto <= 0) return null;
+    
+    // Meta: 32,000 RD$ en 22 días × 8 horas = 176 horas = 10,560 minutos
+    const ritmoNecesarioNeto = 32000 / 10560; // ≈ 3.03 RD$/min NETO
+    
+    const diferencia = netoPorMinuto - ritmoNecesarioNeto;
+    
+    // Solo informativo, nunca decisorio
+    let impacto, icono, color;
+    
+    if (netoPorMinuto >= ritmoNecesarioNeto * 1.5) {
+        impacto = 'ALTO impacto positivo';
+        icono = '🚀';
+        color = '#10B981';
+    } else if (netoPorMinuto >= ritmoNecesarioNeto) {
+        impacto = 'Contribuye a la meta';
+        icono = '📈';
+        color = '#3B82F6';
+    } else if (netoPorMinuto >= ritmoNecesarioNeto * 0.7) {
+        impacto = 'Impacto moderado';
+        icono = '⚖️';
+        color = '#F59E0B';
+    } else {
+        impacto = 'Impacto bajo (pero aceptable)';
+        icono = '📉';
+        color = '#6B7280';
+    }
+    
+    return {
+        impacto,
+        icono,
+        color,
+        ritmoNecesario: ritmoNecesarioNeto.toFixed(2),
+        ritmoViaje: netoPorMinuto.toFixed(2),
+        diferencia: diferencia.toFixed(2),
+        esAceptable: true // Siempre true, es solo informativo
+    };
+}
+
+// =============================================
 // NUEVO: CALCULAR META CON TUS HORAS DE TRABAJO
 // =============================================
 function calcularMetaPersonalizada() {
@@ -2752,7 +2887,7 @@ async function calcularAutomaticoConTraficoReal() {
     const datosCompletos = tarifa > 0 && minutos > 0 && distancia > 0 && perfilActual;
     
     if (datosCompletos) {
-        console.log('🔄 Cálculo automático con tráfico real...');
+        console.log('🔄 Cálculo automático CON ANÁLISIS NETO...');
         
         let trafficInsights = null;
         
@@ -2760,9 +2895,9 @@ async function calcularAutomaticoConTraficoReal() {
         if (realTimeTraffic && realTimeTraffic.initialized) {
             try {
                 trafficInsights = await realTimeTraffic.analyzeTrafficInRadius();
-                console.log('📊 Insights de tráfico real:', trafficInsights);
+                console.log('📊 Insights de tráfico:', trafficInsights);
             } catch (error) {
-                console.log('🔄 Usando estimación conservadora de tráfico');
+                console.log('🔄 Usando estimación conservadora');
                 trafficInsights = realTimeTraffic.getConservativeEstimate();
             }
         }
@@ -2775,37 +2910,45 @@ async function calcularAutomaticoConTraficoReal() {
             fuenteDatos = 'TRÁFICO REAL';
         }
         
+        // ✅ 1. CALCULAR RENTABILIDAD ORIGINAL
         const resultado = calcularRentabilidad(tarifa, tiempoFinal, distancia);
         
         if (resultado) {
-            // Agregar todos los insights
+            // ✅ 2. CALCULAR ANÁLISIS NETO (OBLIGATORIO)
+            const analisisNeto = calcularRentabilidadNetaInstantanea(
+                tarifa, 
+                tiempoFinal,
+                distancia
+            );
+            
+            // ✅ 3. INTEGRAR ANÁLISIS NETO EN RESULTADO
+            if (analisisNeto) {
+                resultado.netoPorMinuto = analisisNeto.netoPorMinuto;
+                resultado.clasificacionNeta = analisisNeto.clasificacionNeta;
+                resultado.colorNeta = analisisNeto.colorNeta;
+                resultado.gananciaNeta = analisisNeto.gananciaNeta;
+                
+                console.log('💰 Análisis neto calculado:', {
+                    netoPorMinuto: resultado.netoPorMinuto,
+                    clasificacion: resultado.clasificacionNeta
+                });
+            }
+            
+            // ✅ 4. APLICAR PROTECCIÓN DE VIAJES CORTOS
+            resultado.minutosOriginales = minutos; // Guardar tiempo original
+            resultado.distancia = distancia;
             resultado.trafficInsights = trafficInsights;
             resultado.tiempoAjustado = tiempoFinal;
             resultado.tiempoOriginal = minutos;
             resultado.fuenteDatos = fuenteDatos;
             
-            // ✅ AÑADIR ANÁLISIS NETO SI LAS FUNCIONES EXISTEN
-            if (typeof calcularGananciaNetaRealDesdePerfil === 'function') {
-                try {
-                    const analisisNeto = calcularGananciaNetaRealDesdePerfil(
-                        tarifa,
-                        distancia,
-                        tiempoFinal
-                    );
-                    
-                    if (analisisNeto) {
-                        resultado.netoPorMinuto = analisisNeto.netoPorMinuto;
-                        resultado.rentabilidadReal = analisisNeto.rentabilidadReal;
-                    }
-                } catch (error) {
-                    console.log('⚠️ No se pudo calcular neto:', error);
-                }
-            }
+            // Aplicar protección
+            const resultadoProtegido = aplicarProteccionViajesCortos(resultado);
             
-            Actual = resultado;
+            Actual = resultadoProtegido;
             
-            // ✅ USAR TU MODAL ORIGINAL (MEJORADO)
-            mostrarResultadoRapido(resultado);
+            // ✅ 5. MOSTRAR RESULTADO CON NETO
+            mostrarResultadoRapido(resultadoProtegido);
         }
     } else {
         if (elementos['resultado-rapido']) {
@@ -3982,14 +4125,57 @@ function guardarEnHistorial(resultado, aceptado) {
 }
 
 // =============================================
+// SISTEMA DE PROTECCIÓN DE VIAJES CORTOS
+// =============================================
+
+function aplicarProteccionViajesCortos(resultado) {
+    const minutos = resultado.minutos || resultado.tiempoOriginal || 0;
+    const distancia = resultado.distancia || 0;
+    const netoPorMinuto = resultado.netoPorMinuto || 0;
+    
+    const esViajeCorto = (minutos <= 15 || distancia <= 4);
+    const esViajeMediano = (distancia > 4 && distancia <= 10);
+    
+    if (!esViajeCorto && !esViajeMediano) return resultado;
+    
+    console.log('🛡️ Aplicando protección para viaje:', {
+        tipo: esViajeCorto ? 'CORTO' : 'MEDIANO',
+        minutos, distancia, netoPorMinuto
+    });
+    
+    // ✅ REGLA 1: Viajes cortos con neto >= 4 nunca son "no rentables"
+    if (esViajeCorto && netoPorMinuto >= 4) {
+        if (resultado.rentabilidad === 'no-rentable') {
+            resultado.rentabilidad = 'oportunidad';
+            resultado.emoji = '⚡';
+            resultado.texto = 'OPORTUNIDAD (viaje corto)';
+            resultado.protegido = true;
+        }
+    }
+    
+    // ✅ REGLA 2: Limitar penalización por tráfico en viajes medianos
+    if (esViajeMediano && resultado.trafficInsights) {
+        const factorTrafico = resultado.trafficInsights.trafficFactor || 1;
+        if (factorTrafico > 1.3) {
+            resultado.mensajeTrafico = `Tráfico alto (${Math.round((factorTrafico-1)*100)}%) - Considerar alternativas`;
+        }
+    }
+    
+    return resultado;
+}
+
+// =============================================
 // SISTEMA DE RESULTADO RÁPIDO
 // =============================================
 
 function mostrarResultadoRapido(resultado) {
     if (!resultado) return;
 
-    // Cerrar modal existente si hay
+    // Cerrar modal existente
     cerrarModalRapido();
+
+    // ✅ APLICAR PROTECCIÓN (por si acaso)
+    resultado = aplicarProteccionViajesCortos(resultado);
 
     const modal = document.createElement('div');
     modal.id = 'modal-rapido';
@@ -3998,84 +4184,127 @@ function mostrarResultadoRapido(resultado) {
     // Determinar clase de rentabilidad
     const esRentable = resultado.rentabilidad === 'rentable';
     const esOportunidad = resultado.rentabilidad === 'oportunidad';
+    const fueProtegido = resultado.protegido === true;
     
     // Colores según rentabilidad
-    const colorPrincipal = esRentable ? '#10B981' : esOportunidad ? '#F59E0B' : '#EF4444';
-    const colorFondo = esRentable ? 'rgba(16, 185, 129, 0.1)' : esOportunidad ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-    const colorBorde = esRentable ? 'rgba(16, 185, 129, 0.3)' : esOportunidad ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)';
+    let colorPrincipal, colorFondo, colorBorde;
+    
+    if (fueProtegido) {
+        colorPrincipal = '#F59E0B'; // Naranja para protegidos
+        colorFondo = 'rgba(245, 158, 11, 0.1)';
+        colorBorde = 'rgba(245, 158, 11, 0.3)';
+    } else if (esRentable) {
+        colorPrincipal = '#10B981';
+        colorFondo = 'rgba(16, 185, 129, 0.1)';
+        colorBorde = 'rgba(16, 185, 129, 0.3)';
+    } else if (esOportunidad) {
+        colorPrincipal = '#F59E0B';
+        colorFondo = 'rgba(245, 158, 11, 0.1)';
+        colorBorde = 'rgba(245, 158, 11, 0.3)';
+    } else {
+        colorPrincipal = '#EF4444';
+        colorFondo = 'rgba(239, 68, 68, 0.1)';
+        colorBorde = 'rgba(239, 68, 68, 0.3)';
+    }
     
     // Texto de decisión
-    const textoDecision = esRentable ? 'ACEPTAR - RENTABLE' : esOportunidad ? 'CONSIDERAR - OPORTUNIDAD' : 'RECHAZAR - NO RENTABLE';
+    let textoDecision = resultado.texto || 'NO RENTABLE';
+    if (fueProtegido) {
+        textoDecision = 'PROTEGIDO - ' + textoDecision;
+    }
     
     // Icono
-    const icono = esRentable ? '✓' : esOportunidad ? '⚠' : '✗';
+    const icono = fueProtegido ? '🛡️' : 
+                 esRentable ? '✓' : 
+                 esOportunidad ? '⚠' : '✗';
     
     // Métricas clave
     const gananciaPorMinuto = resultado.gananciaPorMinuto || 0;
     const gananciaPorKm = resultado.gananciaPorKm || (resultado.tarifa / resultado.distancia) || 0;
     
-    // Calcular calidad de cada métrica
-    const colorMinuto = gananciaPorMinuto >= (perfilActual?.umbralMinutoRentable || 6) ? '#10B981' : 
-                       gananciaPorMinuto >= (perfilActual?.umbralMinutoOportunidad || 5) ? '#F59E0B' : '#EF4444';
+    // ✅ CALCULAR IMPACTO EN META 32K
+    const impactoMeta = resultado.netoPorMinuto ? 
+        calcularImpactoEnMeta32k(resultado.netoPorMinuto) : null;
     
-    const colorKm = gananciaPorKm >= (perfilActual?.umbralKmRentable || 25) ? '#10B981' : 
-                   gananciaPorKm >= (perfilActual?.umbralKmOportunidad || 23) ? '#F59E0B' : '#EF4444';
-
+    // ✅ GENERAR HTML DEL MODAL
     modal.innerHTML = `
-        <div class="modal-contenido-centrado" style="background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); padding: 0; overflow: hidden; max-width: 360px; width: 90vw;">
-            <!-- CABECERA CON COLOR -->
+        <div class="modal-contenido-centrado" style="background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); padding: 0; overflow: hidden; max-width: 400px; width: 90vw;">
+            <!-- CABECERA -->
             <div style="background: ${colorFondo}; border-bottom: 1px solid ${colorBorde}; padding: 24px; text-align: center;">
                 <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: ${colorPrincipal}; color: white; border-radius: 50%; font-size: 24px; margin-bottom: 12px;">
                     ${icono}
                 </div>
                 <div style="font-size: 20px; font-weight: 600; color: ${colorPrincipal}; margin-bottom: 4px;">
                     ${textoDecision}
+                    ${fueProtegido ? ' 🛡️' : ''}
                 </div>
                 <div style="font-size: 15px; color: #6B7280; font-weight: 500;">
-                    ${formatearMoneda(resultado.tarifa)} • ${resultado.minutos} min • ${resultado.distancia} km
+                    ${formatearMoneda(resultado.tarifa)} • ${resultado.minutos || 0} min • ${resultado.distancia || 0} km
                 </div>
+                ${resultado.tiempoAjustado && resultado.tiempoAjustado !== resultado.tiempoOriginal ? `
+                <div style="margin-top: 8px; font-size: 13px; color: #8B5CF6;">
+                    ⏱️ Con tráfico: ${resultado.tiempoAjustado} min (+${Math.round(((resultado.tiempoAjustado / resultado.tiempoOriginal) - 1) * 100)}%)
+                </div>
+                ` : ''}
             </div>
             
             <!-- MÉTRICAS PRINCIPALES -->
             <div style="padding: 24px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 14px; color: #6B7280; margin-bottom: 6px; font-weight: 500;">POR MINUTO</div>
-                        <div style="font-size: 22px; font-weight: 700; color: ${colorMinuto};">${formatearMoneda(gananciaPorMinuto)}</div>
-                        <div style="height: 4px; background: #E5E7EB; border-radius: 2px; margin-top: 8px; overflow: hidden;">
-                            <div style="height: 100%; background: ${colorMinuto}; width: ${Math.min(100, (gananciaPorMinuto / (perfilActual?.umbralMinutoRentable || 6)) * 100)}%;"></div>
+                <!-- NETO (PRIORIDAD) -->
+                ${resultado.netoPorMinuto ? `
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="font-size: 14px; color: #6B7280; font-weight: 500;">💰 NETO POR MINUTO</div>
+                        <div style="font-size: 18px; font-weight: 700; color: ${resultado.colorNeta || '#6B7280'}">
+                            ${formatearMoneda(resultado.netoPorMinuto)}
                         </div>
                     </div>
-                    
-                    <div style="text-align: center;">
-                        <div style="font-size: 14px; color: #6B7280; margin-bottom: 6px; font-weight: 500;">POR KILÓMETRO</div>
-                        <div style="font-size: 22px; font-weight: 700; color: ${colorKm};">${formatearMoneda(gananciaPorKm)}</div>
-                        <div style="height: 4px; background: #E5E7EB; border-radius: 2px; margin-top: 8px; overflow: hidden;">
-                            <div style="height: 100%; background: ${colorKm}; width: ${Math.min(100, (gananciaPorKm / (perfilActual?.umbralKmRentable || 25)) * 100)}%;"></div>
-                        </div>
+                    <div style="height: 8px; background: #E5E7EB; border-radius: 4px; overflow: hidden;">
+                        <div style="height: 100%; background: ${resultado.colorNeta || '#6B7280'}; width: ${Math.min(100, (resultado.netoPorMinuto / 10) * 100)}%;"></div>
                     </div>
-                </div>
-                
-                <!-- INFORMACIÓN ADICIONAL MINIMALISTA -->
-                ${resultado.tiempoAjustado && resultado.tiempoAjustado !== resultado.minutos ? `
-                <div style="background: #FFFBEB; border: 1px solid #FEF3C7; border-radius: 10px; padding: 12px; margin-bottom: 16px; text-align: center;">
-                    <div style="font-size: 13px; color: #92400E; font-weight: 500;">
-                        Con tráfico: ${resultado.tiempoAjustado} min (+${Math.round(((resultado.tiempoAjustado / resultado.minutos) - 1) * 100)}%)
+                    <div style="text-align: center; margin-top: 6px; font-size: 13px; color: ${resultado.colorNeta || '#6B7280'}; font-weight: 600;">
+                        ${resultado.clasificacionNeta || ''}
                     </div>
                 </div>
                 ` : ''}
                 
-                ${resultado.netoPorMinuto !== undefined ? `
-                <div style="background: #ECFDF5; border: 1px solid #D1FAE5; border-radius: 10px; padding: 12px; margin-bottom: 16px; text-align: center;">
-                    <div style="font-size: 13px; color: #047857; font-weight: 500;">
-                        ${resultado.netoPorMinuto >= 8 ? 'Excelente' : resultado.netoPorMinuto >= 6 ? 'Bueno' : resultado.netoPorMinuto >= 4 ? 'Regular' : 'Bajo'} • 
-                        ${formatearMoneda(resultado.netoPorMinuto)}/min neto
+                <!-- BRUTO -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: ${impactoMeta ? '16px' : '24px'};">
+                    <div style="text-align: center;">
+                        <div style="font-size: 13px; color: #6B7280; margin-bottom: 6px; font-weight: 500;">BRUTO/MIN</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #111827;">${formatearMoneda(gananciaPorMinuto)}</div>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        <div style="font-size: 13px; color: #6B7280; margin-bottom: 6px; font-weight: 500;">BRUTO/KM</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #111827;">${formatearMoneda(gananciaPorKm)}</div>
+                    </div>
+                </div>
+                
+                <!-- IMPACTO EN META 32K -->
+                ${impactoMeta ? `
+                <div style="background: ${impactoMeta.color}15; border: 1px solid ${impactoMeta.color}30; border-radius: 10px; padding: 12px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <span style="font-size: 16px;">${impactoMeta.icono}</span>
+                        <span style="font-size: 13px; color: ${impactoMeta.color}; font-weight: 600;">Impacto en meta mensual</span>
+                    </div>
+                    <div style="font-size: 12px; color: #6B7280;">
+                        ${impactoMeta.impacto} (${formatearMoneda(parseFloat(impactoMeta.ritmoViaje))}/min vs ${formatearMoneda(parseFloat(impactoMeta.ritmoNecesario))}/min necesarios)
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- MENSAJE DE PROTECCIÓN -->
+                ${fueProtegido ? `
+                <div style="background: #FFFBEB; border: 1px solid #FEF3C7; border-radius: 10px; padding: 12px; text-align: center;">
+                    <div style="font-size: 13px; color: #92400E; font-weight: 500;">
+                        🛡️ Viaje corto protegido - Neto aceptable (${formatearMoneda(resultado.netoPorMinuto)}/min)
                     </div>
                 </div>
                 ` : ''}
             </div>
             
-            <!-- BOTONES PROFESIONALES -->
+            <!-- BOTONES -->
             <div style="padding: 20px 24px 24px; background: #F9FAFB; border-top: 1px solid #E5E7EB; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <button onclick="procesarViajeRapido(false)" 
                         style="padding: 14px; background: white; color: #374151; border: 1px solid #D1D5DB; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
@@ -4382,8 +4611,9 @@ async getTrafficDataConRadioAdaptativo(radioKm) {
         };
     }
 
-  calculateTrafficImpact(trafficData) {
+calculateTrafficImpact(trafficData) {
     const baseTime = parseFloat(elementos.minutos?.value) || 0;
+    const distancia = parseFloat(elementos.distancia?.value) || 0;
     
     if (baseTime <= 0) {
         return {
@@ -4396,83 +4626,75 @@ async getTrafficDataConRadioAdaptativo(radioKm) {
         };
     }
 
-    const adjustedTime = Math.ceil(baseTime * trafficData.trafficFactor);
-
-    // ✅ CALCULAR IMPACTO RELATIVO SEGÚN RADIO
-    const impactoRelativo = this.calcularImpactoRelativo(baseTime, trafficData.radioKm || 10);
+    // ✅ 1. LIMITAR PENALIZACIÓN MÁXIMA SEGÚN DURACIÓN/DISTANCIA
+    let factorLimitado = trafficData.trafficFactor;
     
+    console.log('🎯 Aplicando límites de penalización:', {
+        minutos: baseTime,
+        distancia: distancia,
+        factorOriginal: factorLimitado
+    });
+    
+    // Protección para viajes cortos
+    if (baseTime <= 15 || distancia <= 4) {
+        factorLimitado = Math.min(factorLimitado, 1.15); // Máx 15% extra
+        console.log('🛡️ Viaje corto protegido: factor limitado a', factorLimitado);
+    } 
+    // Viajes medianos
+    else if (distancia <= 10) {
+        factorLimitado = Math.min(factorLimitado, 1.3); // Máx 30% extra
+        console.log('📍 Viaje mediano: factor limitado a', factorLimitado);
+    }
+    // Viajes largos mantienen factor original
+    
+    // ✅ 2. CALCULAR RADIO ADAPTATIVO
+    const radioAdaptativo = this.calcularRadioPorDuracion(baseTime);
+    
+    // ✅ 3. APLICAR RADIO A FACTOR (radio más pequeño = factor más preciso)
+    let factorConRadio = factorLimitado;
+    if (radioAdaptativo <= 4) {
+        // Radio pequeño = análisis más preciso, mantener factor
+        console.log('🎯 Radio pequeño (' + radioAdaptativo + 'km): análisis preciso');
+    } else if (radioAdaptativo >= 8) {
+        // Radio grande = análisis menos preciso, reducir impacto
+        factorConRadio = 1 + ((factorLimitado - 1) * 0.8);
+        console.log('📍 Radio grande (' + radioAdaptativo + 'km): impacto reducido 20%');
+    }
+
+    const adjustedTime = Math.ceil(baseTime * factorConRadio);
+
     return {
         originalTime: baseTime,
         adjustedTime: adjustedTime,
         trafficCondition: trafficData.condition,
-        trafficFactor: trafficData.trafficFactor,
-        adjustment: Math.round((trafficData.trafficFactor - 1) * 100),
+        trafficFactor: factorConRadio,
+        adjustment: Math.round((factorConRadio - 1) * 100),
         confidence: trafficData.confidence,
-        radius: trafficData.radioKm || 10, // Usar radio del análisis
-        message: `${trafficData.message} ${impactoRelativo.mensaje}`,
+        radius: radioAdaptativo,
+        message: this.getAdaptiveTrafficMessage(trafficData, baseTime, distancia, factorConRadio),
         location: trafficData.location,
-        isSignificant: adjustedTime > baseTime * impactoRelativo.umbralSignificativo,
-        radioUsado: trafficData.radioKm || 10,
-        impactoRelativo: impactoRelativo
-    };
-}
-
-    getTrafficMessage(condition) {
-        const messages = {
-            light: '✅ Tráfico fluido - Condiciones normales',
-            moderate: '⚠️ Tráfico moderado - Pequeñas demoras',
-            heavy: '🚗 Tráfico pesado - Demoras considerables',
-            severe: '🚨 Congestión severa - Demoras extensas'
-        };
-        
-        return messages[condition] || `Condiciones de tráfico: ${condition}`;
-    }
-
-   getConservativeEstimate() {
-    const baseTime = parseFloat(elementos.minutos?.value) || 0;
-    const hour = new Date().getHours();
-    const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
-    const factor = isPeak ? 1.6 : 1.2;
-    
-    // ✅ CALCULAR RADIO ADAPTATIVO TAMBIÉN PARA ESTIMACIÓN CONSERVADORA
-    const radioAdaptativo = this.calcularRadioPorDuracion(baseTime);
-
-    return {
-        originalTime: baseTime,
-        adjustedTime: Math.ceil(baseTime * factor),
-        trafficCondition: isPeak ? 'heavy' : 'moderate',
-        trafficFactor: factor,
-        adjustment: Math.round((factor - 1) * 100),
-        confidence: 0.6,
-        radius: radioAdaptativo, // Usar radio adaptativo
-        message: `Estimación base: ${isPeak ? 'Hora pico' : 'Tráfico regular'} (Radio: ${radioAdaptativo}km)`,
-        location: this.currentLocation,
-        isSignificant: true,
+        isShortTrip: (baseTime <= 15 || distancia <= 4),
+        protectionApplied: (factorConRadio < trafficData.trafficFactor),
         radioUsado: radioAdaptativo
     };
 }
 
-// ✅ MOVER ESTO DENTRO DE LA CLASE
-    calcularImpactoRelativo(minutosViaje, radioKm) {
-        // ✅ Ajustar umbral de "impacto significativo" según radio y duración
-        let umbralSignificativo = 1.2; // Por defecto 20%
-        let mensajeExtra = '';
-        
-        if (radioKm <= 4 && minutosViaje <= 15) {
-            // Viajes cortos con radio pequeño: impacto más sensible
-            umbralSignificativo = 1.15; // 15% ya es significativo
-            mensajeExtra = ' | Análisis local preciso';
-        } else if (radioKm >= 8 && minutosViaje >= 30) {
-            // Viajes largos con radio grande: impacto menos sensible
-            umbralSignificativo = 1.25; // 25% para ser significativo
-            mensajeExtra = ' | Análisis de área amplia';
-        }
-        
-        return {
-            umbralSignificativo: umbralSignificativo,
-            mensaje: mensajeExtra
-        };
+// AÑADIR este método después del anterior:
+getAdaptiveTrafficMessage(trafficData, minutos, distancia, factorFinal) {
+    let baseMsg = trafficData.message || '';
+    
+    let msgExtra = '';
+    if (minutos <= 15 || distancia <= 4) {
+        msgExtra = " ⚡ Viaje corto - impacto limitado";
+    } else if (distancia <= 10) {
+        msgExtra = " 📍 Radio adaptativo aplicado";
     }
+    
+    if (factorFinal < trafficData.trafficFactor) {
+        msgExtra += ` (penalización reducida de ${Math.round((trafficData.trafficFactor-1)*100)}% a ${Math.round((factorFinal-1)*100)}%)`;
+    }
+    
+    return baseMsg + msgExtra;
 }
 
     // ✅ FUNCIÓN DE INICIALIZACIÓN DEL SISTEMA DE TRÁFICO
@@ -6059,4 +6281,5 @@ window.addEventListener('beforeunload', function() {
         firebaseSync.stopRealTimeListeners();
     }
 });
+
 
