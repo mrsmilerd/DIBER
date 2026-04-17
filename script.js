@@ -5268,35 +5268,22 @@ function mostrarEstadisticasAprendizaje() {
 // =============================================
 
 function verificarConsistenciaHistorial() {
-    console.log('🔍 Verificando consistencia del historial...');
+    // Si no hay perfil activo aún, no hacer nada (se ejecutará de nuevo al seleccionar perfil)
+    if (!perfilActual) return;
     
     historial.forEach((viaje, index) => {
         if (viaje.aceptado && viaje.tiempoRealCapturado) {
-            // Para viajes con tiempo real, verificar que la rentabilidad sea correcta
             const rentabilidadEsperada = calcularRentabilidadConPerfil(
                 viaje.tarifa || viaje.ganancia,
-                viaje.minutos, // Ya debería ser el tiempo real
+                viaje.minutos,
                 viaje.distancia
             );
-            
             if (viaje.rentabilidad !== rentabilidadEsperada.rentabilidad) {
-                console.warn('⚠️ Inconsistencia encontrada en viaje:', {
-                    id: viaje.id,
-                    rentabilidadActual: viaje.rentabilidad,
-                    rentabilidadEsperada: rentabilidadEsperada.rentabilidad
-                });
-                
-                // Opcional: Corregir automáticamente
-                // historial[index] = { ...viaje, ...rentabilidadEsperada };
+                console.warn('⚠️ Inconsistencia en viaje:', viaje.id);
             }
         }
     });
-    
-    console.log('✅ Verificación de consistencia completada');
 }
-
-// Ejecutar al cargar la aplicación
-setTimeout(verificarConsistenciaHistorial, 3000);
 
 // =============================================
 // MIGRACIÓN DE VIAJES ANTIGUOS - CORREGIR RENTABILIDAD
