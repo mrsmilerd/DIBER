@@ -393,6 +393,15 @@
             <span class="error-message" id="distancia-error"></span>
         </div>
 
+        <!-- Botón OCR con IA -->
+        <div class="input-group" style="margin-top:8px;">
+            <button type="button" onclick="abrirOCR()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:10px; background:linear-gradient(135deg,#0f3460,#16213e); color:#00d4ff; border:1px solid #00d4ff44; border-radius:12px; padding:13px 16px; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s;">
+                <span style="font-size:18px;">📸</span>
+                <span>Leer pantalla del móvil con IA</span>
+                <span style="background:#00d4ff22; color:#00d4ff; font-size:11px; padding:2px 8px; border-radius:20px; font-weight:700;">NUEVO</span>
+            </button>
+        </div>
+
 <!-- ✅ AQUÍ VA EL BOTÓN DE ACTIVAR UBICACIÓN -->
         <div class="location-permission-section">
             <button type="button" id="activar-ubicacion-btn" class="location-permission-btn">
@@ -751,6 +760,59 @@
                         <li>Sincronización en tiempo real</li>
                     </ul>
                 </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal OCR con IA -->
+    <div id="ocr-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
+        <div style="background:#1a1a2e; border-radius:20px; width:100%; max-width:420px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+            <div style="background:linear-gradient(135deg,#0f3460,#16213e); padding:20px 24px; display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <div style="color:#00d4ff; font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase;">📸 Lector Inteligente</div>
+                    <div style="color:white; font-size:18px; font-weight:700; margin-top:4px;">Captura la oferta</div>
+                </div>
+                <button onclick="cerrarOCR()" style="background:rgba(255,255,255,0.1); border:none; color:white; width:36px; height:36px; border-radius:50%; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;">×</button>
+            </div>
+            <div style="padding:20px 24px;">
+                <div id="ocr-preview-area" style="background:#0d0d1a; border:2px dashed #00d4ff44; border-radius:14px; min-height:180px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px; margin-bottom:16px; position:relative; overflow:hidden;">
+                    <img id="ocr-preview-img" style="display:none; max-width:100%; max-height:220px; border-radius:10px; object-fit:contain;" />
+                    <div id="ocr-placeholder" style="text-align:center; color:#00d4ff88;">
+                        <div style="font-size:40px; margin-bottom:8px;">📱</div>
+                        <div style="font-size:14px;">Toma una foto de la<br>oferta en InDriver / Uber</div>
+                    </div>
+                </div>
+                <div id="ocr-status" style="display:none; background:#0d3d0d; border:1px solid #00ff6633; border-radius:10px; padding:12px 16px; margin-bottom:16px; text-align:center; color:#00ff88; font-size:14px; font-weight:600;">
+                    🤖 Analizando imagen con IA...
+                </div>
+                <div id="ocr-resultado" style="display:none; background:#0a1628; border:1px solid #00d4ff33; border-radius:12px; padding:16px; margin-bottom:16px;">
+                    <div style="color:#00d4ff; font-size:12px; font-weight:700; letter-spacing:1px; margin-bottom:12px;">✅ DATOS DETECTADOS</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                        <div style="text-align:center; background:#ffffff08; border-radius:8px; padding:10px;">
+                            <div style="color:#888; font-size:11px; margin-bottom:4px;">TARIFA</div>
+                            <div id="ocr-val-tarifa" style="color:#00ff88; font-size:18px; font-weight:700;">--</div>
+                        </div>
+                        <div style="text-align:center; background:#ffffff08; border-radius:8px; padding:10px;">
+                            <div style="color:#888; font-size:11px; margin-bottom:4px;">MINUTOS</div>
+                            <div id="ocr-val-minutos" style="color:#00d4ff; font-size:18px; font-weight:700;">--</div>
+                        </div>
+                        <div style="text-align:center; background:#ffffff08; border-radius:8px; padding:10px;">
+                            <div style="color:#888; font-size:11px; margin-bottom:4px;">KM</div>
+                            <div id="ocr-val-distancia" style="color:#ff9f43; font-size:18px; font-weight:700;">--</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <label for="ocr-file-input" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg,#0f3460,#16213e); color:white; border:1px solid #00d4ff44; border-radius:12px; padding:14px; cursor:pointer; font-size:14px; font-weight:600;">
+                        📷 Cámara / Galería
+                    </label>
+                    <input type="file" id="ocr-file-input" accept="image/*" capture="environment" style="display:none;" onchange="procesarImagenOCR(this)">
+                    <button id="ocr-apply-btn" onclick="aplicarDatosOCR()" style="display:none; flex:1; background:linear-gradient(135deg,#00b894,#00cec9); color:white; border:none; border-radius:12px; padding:14px; font-size:14px; font-weight:700; cursor:pointer;">
+                        ✅ Aplicar Datos
+                    </button>
+                </div>
+                <div style="text-align:center; margin-top:12px; color:#ffffff44; font-size:11px;">La foto se analiza con IA y nunca se guarda</div>
             </div>
         </div>
     </div>
